@@ -1,0 +1,8 @@
+name: Backuper-Spigot
+version: '${project.version}'
+main: ru.dvdishka.backuperspigot.BackuperSpigot
+api-version: 1.13
+prefix: Backuper
+authors: [ dvdishka ]
+description: Backuper plugin for spigot
+website: mc.dvdcraft.ru
