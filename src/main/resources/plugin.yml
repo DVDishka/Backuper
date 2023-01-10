@@ -1,6 +1,6 @@
-name: Backuper-Spigot
+name: Backuper
 version: '${project.version}'
-main: ru.dvdishka.backuperspigot.BackuperSpigot
+main: ru.dvdishka.backuper.Backuper
 api-version: 1.13
 prefix: Backuper
 authors: [ dvdishka ]
