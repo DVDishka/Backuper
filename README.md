@@ -16,5 +16,5 @@
 * Backup time - time in hours when server will be backed up (0 - 23)
 * Backup period - the period after which the server will make backups (Hours)
 * After backup - what will the server do after backup (STOP, RESTART, NOTHING)
-* Max backup number - maximum number of backups to be kept (0 - unimited)
-* Max backup weight - maximum weight of backups that will be stored (MB) (0 - unimited)
+* Max backup number - maximum number of backups to be kept (0 - unlimited)
+* Max backup weight - maximum weight of backups that will be stored (MB) (0 - unlimited)
