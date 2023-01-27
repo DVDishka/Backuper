@@ -31,7 +31,7 @@ public class BackuperAsyncTask implements Runnable {
 
                     try {
 
-                        this.copyFilesInDir(backupDir.toPath().resolve(world.getName()).toFile(), worldDir);
+                        copyFilesInDir(backupDir.toPath().resolve(world.getName()).toFile(), worldDir);
 
                     } catch (Exception e) {
 
@@ -189,7 +189,8 @@ public class BackuperAsyncTask implements Runnable {
                 if (!world.getWorldFolder().setWritable(true)) {
 
                     CommonVariables.logger.warning("Can not set " + world.getWorldFolder().getPath() + " writable!");
-                }                     }
+                }
+            }
 
             CommonVariables.logger.warning("Copy task has finished with an exception!");
             CommonVariables.logger.warning(e.getMessage());
