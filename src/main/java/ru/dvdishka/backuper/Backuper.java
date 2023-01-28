@@ -57,20 +57,20 @@ public class Backuper extends JavaPlugin {
             }
         }
 
-        long delay = 0L;
+        int delay = 0;
 
         if (ConfigVariables.backupTime > LocalDateTime.now().getHour()) {
 
-            delay = ConfigVariables.backupTime * 60L * 60L - (long)(LocalDateTime.now().getHour() * 60 * 60 - LocalDateTime.now().getMinute() * 60 - LocalDateTime.now().getSecond());
+            delay = ConfigVariables.backupTime * 60 * 60 - (LocalDateTime.now().getHour() * 60 * 60 + LocalDateTime.now().getMinute() * 60 + LocalDateTime.now().getSecond());
 
         } else {
 
-            delay = ConfigVariables.backupTime * 60L * 60L + 86400L - (long)(LocalDateTime.now().getHour() * 60 * 60 - LocalDateTime.now().getMinute() * 60 - LocalDateTime.now().getSecond());
+            delay = ConfigVariables.backupTime * 60 * 60 + 86400 - (LocalDateTime.now().getHour() * 60 * 60 + LocalDateTime.now().getMinute() * 60 + LocalDateTime.now().getSecond());
         }
 
-        Bukkit.getScheduler().scheduleSyncRepeatingTask(this, new BackuperStartTask(), delay * 20, (long)ConfigVariables.backupPeriod * 60L * 60L * 20L);
+        Bukkit.getScheduler().scheduleSyncRepeatingTask(this, new BackuperStartTask(), (long) delay * 20, ConfigVariables.backupPeriod * 60L * 60L * 20L);
 
-        CommonVariables.logger.info("Backuper plugin has been enabled!");
+        CommonVariables.logger.info("Backup process has been started");
     }
 
     public void onDisable() {
