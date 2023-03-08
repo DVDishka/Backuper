@@ -7,4 +7,5 @@ public class CommonVariables {
 
     public static Plugin plugin;
     public static Logger logger;
+    public static int bstatsId = 17735;
 }

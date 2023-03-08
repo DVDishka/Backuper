@@ -10,6 +10,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.dvdishka.backuper.common.CommonVariables;
 import ru.dvdishka.backuper.common.ConfigVariables;
+import ru.dvdishka.backuper.common.Initialization;
 import ru.dvdishka.backuper.tasks.BackuperStartTask;
 
 public class Backuper extends JavaPlugin {
@@ -70,7 +71,9 @@ public class Backuper extends JavaPlugin {
 
         Bukkit.getScheduler().scheduleSyncRepeatingTask(this, new BackuperStartTask(), (long) delay * 20, ConfigVariables.backupPeriod * 60L * 60L * 20L);
 
-        CommonVariables.logger.info("Backup process has been started");
+        Initialization.initBstats(this);
+
+        CommonVariables.logger.info("Backuper plugin has been enabled!");
     }
 
     public void onDisable() {
