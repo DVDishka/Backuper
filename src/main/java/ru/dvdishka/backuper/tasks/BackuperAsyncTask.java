@@ -14,6 +14,13 @@ import ru.dvdishka.backuper.common.ConfigVariables;
 
 public class BackuperAsyncTask implements Runnable {
 
+    private final boolean stopRestartServer;
+
+    public BackuperAsyncTask(boolean stopRestartServer) {
+
+        this.stopRestartServer = stopRestartServer;
+    }
+
     public void run() {
 
         try {
@@ -21,7 +28,11 @@ public class BackuperAsyncTask implements Runnable {
             File backupDir = new File("plugins/Backuper/Backups/" +
                     LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
             File backupsDir = new File("plugins/Backuper/Backups");
-            backupDir.mkdir();
+
+            if (!backupDir.mkdir()) {
+
+                CommonVariables.logger.warning("Can not create " + backupDir.getPath() + " dir!");
+            }
 
             for (World world : Bukkit.getWorlds()) {
 
@@ -52,7 +63,7 @@ public class BackuperAsyncTask implements Runnable {
 
             CommonVariables.logger.info("Backup process has been finished!");
 
-            if (ConfigVariables.backupsNumber != 0) {
+            if (ConfigVariables.backupsNumber != 0 && backupDir.listFiles() != null) {
 
                 ArrayList<LocalDateTime> backups = new ArrayList<>();
 
@@ -117,7 +128,7 @@ public class BackuperAsyncTask implements Runnable {
 
                 long backupsFolderWeight = FileUtils.sizeOf(backupsDir);
 
-                if (backupsFolderWeight > ConfigVariables.backupsWeight) {
+                if (backupsFolderWeight > ConfigVariables.backupsWeight && backupDir.listFiles() != null) {
 
                     ArrayList<LocalDateTime> backups = new ArrayList<>();
 
@@ -153,6 +164,11 @@ public class BackuperAsyncTask implements Runnable {
                             break;
                         }
 
+                        if (backupDir.listFiles() == null) {
+
+                            continue;
+                        }
+
                         for (File backup : backupsDir.listFiles()) {
 
                             String backupFileName = backup.getName();
@@ -173,11 +189,11 @@ public class BackuperAsyncTask implements Runnable {
                 }
             }
 
-            if (ConfigVariables.afterBackup.equals("restart")) {
+            if (ConfigVariables.afterBackup.equals("restart") && stopRestartServer) {
 
                 Bukkit.getServer().spigot().restart();
 
-            } else if (ConfigVariables.afterBackup.equals("stop")) {
+            } else if (ConfigVariables.afterBackup.equals("stop") && stopRestartServer) {
 
                 Bukkit.getServer().shutdown();
             }
@@ -200,7 +216,7 @@ public class BackuperAsyncTask implements Runnable {
 
     public void deleteDir(File dir) {
 
-        if (dir != null) {
+        if (dir != null && dir.listFiles() != null) {
 
             for (File file : dir.listFiles()) {
 
@@ -227,7 +243,10 @@ public class BackuperAsyncTask implements Runnable {
 
         if (dir.listFiles() != null) {
 
-            destDir.mkdir();
+            if (!destDir.mkdir()) {
+
+                CommonVariables.logger.warning("Can not create " + destDir.getPath() + " dir");
+            }
 
             for (File file : dir.listFiles()) {
 

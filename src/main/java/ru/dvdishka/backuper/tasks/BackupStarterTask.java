@@ -4,7 +4,20 @@ import org.bukkit.Bukkit;
 import org.bukkit.World;
 import ru.dvdishka.backuper.common.CommonVariables;
 
-public class BackuperStartTask implements Runnable {
+public class BackupStarterTask implements Runnable {
+
+    // IF YOU NEED TO BACKUP WITHOUT STOP OR RESTART DESPITE THE CONFIGS
+    private final boolean stopRestartServer;
+
+    public BackupStarterTask() {
+
+        this.stopRestartServer = true;
+    }
+
+    public BackupStarterTask(boolean stopRestartServer) {
+
+        this.stopRestartServer = stopRestartServer;
+    }
 
     public void run() {
 
@@ -20,7 +33,7 @@ public class BackuperStartTask implements Runnable {
                 }
             }
 
-            Bukkit.getScheduler().runTaskAsynchronously(CommonVariables.plugin, new BackuperAsyncTask());
+            Bukkit.getScheduler().runTaskAsynchronously(CommonVariables.plugin, new BackuperAsyncTask(stopRestartServer));
 
         } catch (Exception e) {
 
