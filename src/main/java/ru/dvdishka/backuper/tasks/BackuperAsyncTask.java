@@ -1,10 +1,15 @@
 package ru.dvdishka.backuper.tasks;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.io.FileUtils;
 import org.bukkit.Bukkit;
@@ -17,6 +22,7 @@ import ru.dvdishka.backuper.handlers.commands.Backup;
 public class BackuperAsyncTask implements Runnable {
 
     private String afterBackup = "NOTHING";
+    private boolean zip = false;
 
     public BackuperAsyncTask(String afterBackup) {
 
@@ -31,10 +37,13 @@ public class BackuperAsyncTask implements Runnable {
                     LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
             File backupsDir = new File("plugins/Backuper/Backups");
 
-            if (!backupDir.mkdir()) {
+            if (!backupDir.mkdir() && !zip) {
 
                 CommonVariables.logger.warning("Can not create " + backupDir.getPath() + " dir!");
             }
+
+            FileOutputStream fileOutputStream = new FileOutputStream(backupDir.getPath() + ".zip");
+            ZipOutputStream zipOutputStream = new ZipOutputStream(fileOutputStream);
 
             for (World world : Bukkit.getWorlds()) {
 
@@ -44,7 +53,14 @@ public class BackuperAsyncTask implements Runnable {
 
                     try {
 
-                        copyFilesInDir(backupDir.toPath().resolve(world.getName()).toFile(), worldDir);
+                        if (zip) {
+
+                            addDirToZip(zipOutputStream, worldDir);
+
+                        } else {
+
+                            copyFilesInDir(backupDir.toPath().resolve(world.getName()).toFile(), worldDir);
+                        }
 
                     } catch (Exception e) {
 
@@ -54,6 +70,7 @@ public class BackuperAsyncTask implements Runnable {
                 }
             }
 
+            zipOutputStream.close();
 
             for (World world : Bukkit.getWorlds()) {
 
@@ -241,16 +258,48 @@ public class BackuperAsyncTask implements Runnable {
         }
     }
 
-    public void copyFilesInDir(File destDir, File dir) {
+    public void addDirToZip(ZipOutputStream zip, File sourceDir) {
 
-        if (dir.listFiles() != null) {
+        for (File file : sourceDir.listFiles()) {
+
+            if (file.isDirectory()) {
+
+                addDirToZip(zip, file);
+
+            } else {
+
+                try {
+
+                    zip.putNextEntry(new ZipEntry(file.getPath()));
+                    FileInputStream fileInputStream = new FileInputStream(file);
+                    byte[] buffer = new byte[4048];
+                    int length = 0;
+
+                    while ((length = fileInputStream.read(buffer)) > 0) {
+
+                        zip.write(buffer, 0, length);
+                    }
+                    zip.closeEntry();
+                    fileInputStream.close();
+
+                } catch (Exception e) {
+
+                    CommonVariables.logger.warning("Something went wrong while trying to put file in ZIP!");
+                }
+            }
+        }
+    }
+
+    public void copyFilesInDir(File destDir, File sourceDir) {
+
+        if (sourceDir.listFiles() != null) {
 
             if (!destDir.mkdir()) {
 
                 CommonVariables.logger.warning("Can not create " + destDir.getPath() + " dir");
             }
 
-            for (File file : dir.listFiles()) {
+            for (File file : sourceDir.listFiles()) {
 
                 if (file.isDirectory()) {
 
