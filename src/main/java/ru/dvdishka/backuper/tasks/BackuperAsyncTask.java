@@ -9,16 +9,18 @@ import java.util.ArrayList;
 import org.apache.commons.io.FileUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
+import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.common.CommonVariables;
 import ru.dvdishka.backuper.common.ConfigVariables;
+import ru.dvdishka.backuper.handlers.commands.Backup;
 
 public class BackuperAsyncTask implements Runnable {
 
-    private final boolean stopRestartServer;
+    private String afterBackup = "NOTHING";
 
-    public BackuperAsyncTask(boolean stopRestartServer) {
+    public BackuperAsyncTask(String afterBackup) {
 
-        this.stopRestartServer = stopRestartServer;
+        this.afterBackup = afterBackup;
     }
 
     public void run() {
@@ -189,11 +191,11 @@ public class BackuperAsyncTask implements Runnable {
                 }
             }
 
-            if (ConfigVariables.afterBackup.equals("restart") && stopRestartServer) {
+            if (afterBackup.equals("RESTART")) {
 
-                Bukkit.getServer().spigot().restart();
+                Bukkit.getScheduler().runTaskLater(CommonVariables.plugin, new RestartSafelyTask(), 20);
 
-            } else if (ConfigVariables.afterBackup.equals("stop") && stopRestartServer) {
+            } else if (afterBackup.equals("STOP")) {
 
                 Bukkit.getServer().shutdown();
             }

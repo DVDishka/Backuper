@@ -50,7 +50,7 @@ public class Backuper extends JavaPlugin {
 
             ConfigVariables.backupTime = config.getInt("backupTime");
             ConfigVariables.backupPeriod = config.getInt("backupPeriod");
-            ConfigVariables.afterBackup = config.getString("afterBackup").toLowerCase();
+            ConfigVariables.afterBackup = config.getString("afterBackup").toUpperCase();
             ConfigVariables.backupsNumber = config.getInt("maxBackupsNumber");
             ConfigVariables.backupsWeight = config.getLong("maxBackupsWeight") * 1_048_576L;
 
@@ -78,7 +78,7 @@ public class Backuper extends JavaPlugin {
             delay = ConfigVariables.backupTime * 60 * 60 + 86400 - (LocalDateTime.now().getHour() * 60 * 60 + LocalDateTime.now().getMinute() * 60 + LocalDateTime.now().getSecond());
         }
 
-        Bukkit.getScheduler().scheduleSyncRepeatingTask(this, new BackupStarterTask(), (long) delay * 20, ConfigVariables.backupPeriod * 60L * 60L * 20L);
+        Bukkit.getScheduler().scheduleSyncRepeatingTask(this, new BackupStarterTask(ConfigVariables.afterBackup), (long) delay * 20, ConfigVariables.backupPeriod * 60L * 60L * 20L);
 
         Initialization.initBStats(this);
         Initialization.initCommands();

@@ -8,10 +8,19 @@ import ru.dvdishka.backuper.tasks.BackupStarterTask;
 
 public class Backup implements CommandInterface {
 
+    private String afterBackup = "NOTHING";
+
+    public Backup() {}
+
+    public Backup(String afterBackup) {
+
+        this.afterBackup = afterBackup;
+    }
+
     @Override
     public void execute(Player sender, Object[] args) {
 
-        Bukkit.getScheduler().runTask(CommonVariables.plugin, new BackupStarterTask(false));
+        Bukkit.getScheduler().runTask(CommonVariables.plugin, new BackupStarterTask(afterBackup));
 
         returnSuccess("Backup process has been started!\nYou can see the result in the console", sender);
     }
