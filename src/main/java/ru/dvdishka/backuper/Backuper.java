@@ -53,6 +53,7 @@ public class Backuper extends JavaPlugin {
             ConfigVariables.afterBackup = config.getString("afterBackup").toUpperCase();
             ConfigVariables.backupsNumber = config.getInt("maxBackupsNumber");
             ConfigVariables.backupsWeight = config.getLong("maxBackupsWeight") * 1_048_576L;
+            ConfigVariables.zipArchive = config.getBoolean("zipArchive");
 
         } else {
 

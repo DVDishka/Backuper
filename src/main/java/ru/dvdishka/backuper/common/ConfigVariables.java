@@ -7,4 +7,5 @@ public class ConfigVariables {
     public static String afterBackup = "NOTHING";
     public static int backupsNumber = 7;
     public static long backupsWeight = 0;
+    public static boolean zipArchive = true;
 }
