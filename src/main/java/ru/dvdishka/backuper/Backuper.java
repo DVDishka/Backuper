@@ -44,29 +44,9 @@ public class Backuper extends JavaPlugin {
             }
         }
 
-        if (configFile.exists()) {
-
-            FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
-
-            ConfigVariables.backupTime = config.getInt("backupTime");
-            ConfigVariables.backupPeriod = config.getInt("backupPeriod");
-            ConfigVariables.afterBackup = config.getString("afterBackup").toUpperCase();
-            ConfigVariables.backupsNumber = config.getInt("maxBackupsNumber");
-            ConfigVariables.backupsWeight = config.getLong("maxBackupsWeight") * 1_048_576L;
-            ConfigVariables.zipArchive = config.getBoolean("zipArchive");
-
-        } else {
-
-            try {
-
-                this.saveDefaultConfig();
-
-            } catch (Exception e) {
-
-                CommonVariables.logger.warning("Something went wrong when trying to create config file!");
-                CommonVariables.logger.warning(e.getMessage());
-            }
-        }
+        Initialization.initConfig(configFile);
+        Initialization.initBStats(this);
+        Initialization.initCommands();
 
         int delay;
 
@@ -80,9 +60,6 @@ public class Backuper extends JavaPlugin {
         }
 
         Bukkit.getScheduler().scheduleSyncRepeatingTask(this, new BackupStarterTask(ConfigVariables.afterBackup), (long) delay * 20, ConfigVariables.backupPeriod * 60L * 60L * 20L);
-
-        Initialization.initBStats(this);
-        Initialization.initCommands();
 
         CommonVariables.logger.info("Backuper plugin has been enabled!");
     }
