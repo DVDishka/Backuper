@@ -29,6 +29,8 @@
 
 * `/backup <stopRestartServer>` - command to backup the server manually, argument means what the server will do after restart (Argument can be STOP or RESTART, also you can use it without argument)
 
+---
+
 ### Notes
 
 * RESTART option may not work well, so it's better to use STOP with a loop in your start script ([start script](https://flags.sh/) auto restart ON)

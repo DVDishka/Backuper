@@ -6,7 +6,7 @@
 
     <groupId>ru.dvdishka</groupId>
     <artifactId>Backuper</artifactId>
-    <version>1.2.2-snapshot-2</version>
+    <version>1.2.2-snapshot-3</version>
     <packaging>jar</packaging>
 
     <name>Backuper</name>
@@ -92,13 +92,13 @@
         <dependency>
             <groupId>org.bstats</groupId>
             <artifactId>bstats-bukkit</artifactId>
-            <version>3.0.0</version>
+            <version>3.0.1</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>dev.jorel</groupId>
             <artifactId>commandapi-shade</artifactId>
-            <version>8.7.6</version>
+            <version>8.8.0</version>
         </dependency>
     </dependencies>
 </project>

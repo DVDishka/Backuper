@@ -1,6 +1,7 @@
 package ru.dvdishka.backuper.handlers.commands;
 
 import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import ru.dvdishka.backuper.common.CommandInterface;
 import ru.dvdishka.backuper.common.CommonVariables;
@@ -18,7 +19,7 @@ public class Backup implements CommandInterface {
     }
 
     @Override
-    public void execute(Player sender, Object[] args) {
+    public void execute(CommandSender sender, Object[] args) {
 
         Bukkit.getScheduler().runTask(CommonVariables.plugin, new BackupStarterTask(afterBackup));
 

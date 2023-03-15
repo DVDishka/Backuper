@@ -1,5 +1,5 @@
 # DO NOT CHANGE
-ConfigVersion: 1.2.2
+ConfigVersion: ${project.version}
 
 # Backup time (0 - 23)
 backupTime: 0

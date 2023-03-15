@@ -1,29 +1,31 @@
 package ru.dvdishka.backuper.common;
 
 import org.bukkit.ChatColor;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 public interface CommandInterface {
 
-    void execute(Player sender, Object[] args);
+    void execute(CommandSender sender, Object[] args);
 
-    default void returnSuccess(String message, Player player) {
+    default void returnSuccess(String message, CommandSender sender) {
 
-        player.sendMessage(ChatColor.GREEN + (ChatColor.BOLD + message));
+        sender.sendMessage(ChatColor.GREEN + (ChatColor.BOLD + message));
     }
 
-    default void returnFailure(String message, Player player) {
+    default void returnFailure(String message, CommandSender sender) {
 
-        player.sendMessage(ChatColor.RED + (ChatColor.BOLD + message));
+        sender.sendMessage(ChatColor.RED + (ChatColor.BOLD + message));
     }
 
-    default void returnSuccess(String message, Player player, ChatColor color) {
+    default void returnSuccess(String message, CommandSender sender, ChatColor color) {
 
-        player.sendMessage(color + (ChatColor.BOLD + message));
+        sender.sendMessage(color + (ChatColor.BOLD + message));
     }
 
-    default void returnFailure(String message, Player player, ChatColor color) {
+    default void returnFailure(String message, CommandSender sender, ChatColor color) {
 
-        player.sendMessage(color + (ChatColor.BOLD + message));
+        sender.sendMessage(color + (ChatColor.BOLD + message));
     }
 }

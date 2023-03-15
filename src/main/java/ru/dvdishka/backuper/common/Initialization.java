@@ -17,21 +17,21 @@ public class Initialization {
 
         CommandTree backupCommandTree = new CommandTree("backup");
 
-        backupCommandTree.executesPlayer((sender, args) -> {
+        backupCommandTree.executes((sender, args) -> {
 
             new Backup().execute(sender, args);
 
         })
                 .then(new LiteralArgument("STOP")
 
-                        .executesPlayer((sender, args) -> {
+                        .executes((sender, args) -> {
 
                             new Backup("STOP").execute(sender, args);
                         })
 
                 ).then(new LiteralArgument("RESTART")
 
-                        .executesPlayer((sender, args) -> {
+                        .executes((sender, args) -> {
 
                     new Backup("RESTART").execute(sender, args);
                 })

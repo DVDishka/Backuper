@@ -3,7 +3,6 @@ package ru.dvdishka.backuper.tasks;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
@@ -15,10 +14,8 @@ import java.util.zip.ZipOutputStream;
 import org.apache.commons.io.FileUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
-import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.common.CommonVariables;
 import ru.dvdishka.backuper.common.ConfigVariables;
-import ru.dvdishka.backuper.handlers.commands.Backup;
 
 public class BackuperAsyncTask implements Runnable {
 
