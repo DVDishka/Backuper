@@ -1,4 +1,4 @@
-<center>
+<div align='center'>
 
 # Backuper
 
@@ -6,7 +6,7 @@
 
 ## _Simple backup plugin for spigot_
 
-</center>
+</div>
 
 ---
 
