@@ -26,7 +26,7 @@ public class Initialization {
 
             String configVersion = config.getString("configVersion");
 
-            if (configVersion.equals("1.2.2-snapshot-3")) {
+            if (configVersion.equals(ConfigVariables.configVersion)) {
 
                 ConfigVariables.backupTime = config.getInt("backupTime");
                 ConfigVariables.backupPeriod = config.getInt("backupPeriod");
@@ -77,6 +77,7 @@ public class Initialization {
                 try {
 
                     newConfig.save(configFile);
+
                 } catch (Exception e) {
 
                     CommonVariables.logger.warning("Can not save config!");
