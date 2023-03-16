@@ -1,6 +1,12 @@
+<center>
+
 # Backuper
 
+<img height="128" src="images\backuper_logo.png" width="128"/>
+
 ## _Simple backup plugin for spigot_
+
+</center>
 
 ---
 
