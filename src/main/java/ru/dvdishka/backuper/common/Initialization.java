@@ -101,27 +101,30 @@ public class Initialization {
 
     public static void initCommands() {
 
-        CommandTree backupCommandTree = new CommandTree("backup");
+        CommandTree backupCommandTree = new CommandTree("backup")
+                .withPermission(Permissions.BACKUP.getPermission());
 
         backupCommandTree.executes((sender, args) -> {
 
             new Backup().execute(sender, args);
 
         })
-                .then(new LiteralArgument("STOP")
+
+                .then(new LiteralArgument("STOP").withPermission(Permissions.STOP.getPermission())
 
                         .executes((sender, args) -> {
 
                             new Backup("STOP").execute(sender, args);
                         })
+                )
 
-                ).then(new LiteralArgument("RESTART")
+                .then(new LiteralArgument("RESTART").withPermission(Permissions.RESTART.getPermission())
 
                         .executes((sender, args) -> {
 
                     new Backup("RESTART").execute(sender, args);
-                })
-        );
+
+                }));
 
         backupCommandTree.register();
     }

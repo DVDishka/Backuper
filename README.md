@@ -37,6 +37,14 @@
 
 ---
 
+### Permissions
+
+* `backuper.backup` - permission to use `/backup` command
+* `backuper.stop` - permission to use `/backup` command with the STOP argument
+* `backuper.restart` - permission to use `/backup` command with the RESTART argument
+
+---
+
 ### Notes
 
 * RESTART option may not work well, so it's better to use STOP with a loop in your start script ([start script](https://flags.sh/) auto restart ON)
