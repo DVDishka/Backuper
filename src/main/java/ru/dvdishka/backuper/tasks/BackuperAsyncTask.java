@@ -88,7 +88,7 @@ public class BackuperAsyncTask implements Runnable {
 
             CommonVariables.logger.info("Backup process has been finished!");
 
-            if (ConfigVariables.backupsNumber != 0 && backupDir.listFiles() != null) {
+            if (ConfigVariables.backupsNumber != 0 && backupsDir.listFiles() != null) {
 
                 ArrayList<LocalDateTime> backups = new ArrayList<>();
 
@@ -96,7 +96,9 @@ public class BackuperAsyncTask implements Runnable {
 
                     try {
 
-                        backups.add(LocalDateTime.parse(file.getName()));
+                        String fileName = file.getName().replace(".zip", "");
+
+                        backups.add(LocalDateTime.parse(fileName));
 
                     } catch (Exception ignored) {}
                 }
@@ -128,7 +130,7 @@ public class BackuperAsyncTask implements Runnable {
 
                         for (File backup : backupsDir.listFiles()) {
 
-                            String backupFileName = backup.getName();
+                            String backupFileName = backup.getName().replace(".zip", "");
 
                             while (backupFileName.length() < fileName.toString().length()) {
 
@@ -137,8 +139,17 @@ public class BackuperAsyncTask implements Runnable {
 
                             if (backupFileName.equals(fileName.toString())) {
 
-                                deleteDir(backup);
-                            }
+                                if (!backup.getName().endsWith(".zip")) {
+
+                                    deleteDir(backup);
+
+                                } else {
+
+                                    if (!backup.delete()) {
+
+                                        CommonVariables.logger.warning("Failed to delete old backup !" + backup.getName());
+                                    }
+                                }                            }
                         }
                     } catch (Exception e) {
 
@@ -153,7 +164,7 @@ public class BackuperAsyncTask implements Runnable {
 
                 long backupsFolderWeight = FileUtils.sizeOf(backupsDir);
 
-                if (backupsFolderWeight > ConfigVariables.backupsWeight && backupDir.listFiles() != null) {
+                if (backupsFolderWeight > ConfigVariables.backupsWeight && backupsDir.listFiles() != null) {
 
                     ArrayList<LocalDateTime> backups = new ArrayList<>();
 
@@ -161,7 +172,9 @@ public class BackuperAsyncTask implements Runnable {
 
                         try {
 
-                            backups.add(LocalDateTime.parse(file.getName()));
+                            String fileName = file.getName().replace(".zip", "");
+
+                            backups.add(LocalDateTime.parse(fileName));
 
                         } catch (Exception ignored) {}
                     }
@@ -189,14 +202,14 @@ public class BackuperAsyncTask implements Runnable {
                             break;
                         }
 
-                        if (backupDir.listFiles() == null) {
+                        if (backupsDir.listFiles() == null) {
 
-                            continue;
+                            CommonVariables.logger.warning("Something went wrong while trying to delete old backup!");
                         }
 
                         for (File backup : backupsDir.listFiles()) {
 
-                            String backupFileName = backup.getName();
+                            String backupFileName = backup.getName().replace(".zip",  "");
 
                             while (backupFileName.length() < fileName.toString().length()) {
 
@@ -207,7 +220,17 @@ public class BackuperAsyncTask implements Runnable {
 
                                 bytesToDelete -= FileUtils.sizeOf(backup);
 
-                                deleteDir(backup);
+                                if (!backup.getName().endsWith(".zip")) {
+
+                                    deleteDir(backup);
+
+                                } else {
+
+                                    if (!backup.delete()) {
+
+                                        CommonVariables.logger.warning("Failed to delete old backup !" + backup.getName());
+                                    }
+                                }
                             }
                         }
                     }
