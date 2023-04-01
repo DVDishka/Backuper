@@ -239,7 +239,9 @@ public class BackuperAsyncTask implements Runnable {
 
             if (afterBackup.equals("RESTART")) {
 
-                Bukkit.getScheduler().runTaskLater(CommonVariables.plugin, new RestartSafelyTask(), 20);
+                Bukkit.getGlobalRegionScheduler().runDelayed(CommonVariables.plugin, (task) -> {
+                    new RestartSafelyTask().run();
+                }, 20);
 
             } else if (afterBackup.equals("STOP")) {
 

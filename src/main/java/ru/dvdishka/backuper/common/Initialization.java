@@ -1,13 +1,9 @@
 package ru.dvdishka.backuper.common;
 
-import dev.jorel.commandapi.CommandTree;
-import dev.jorel.commandapi.arguments.LiteralArgument;
 import org.bstats.bukkit.Metrics;
-import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
-import ru.dvdishka.backuper.handlers.commands.Backup;
 
 import java.io.File;
 
@@ -97,35 +93,5 @@ public class Initialization {
                 CommonVariables.logger.warning(e.getMessage());
             }
         }
-    }
-
-    public static void initCommands() {
-
-        CommandTree backupCommandTree = new CommandTree("backup")
-                .withPermission(Permissions.BACKUP.getPermission());
-
-        backupCommandTree.executes((sender, args) -> {
-
-            new Backup().execute(sender, args);
-
-        })
-
-                .then(new LiteralArgument("STOP").withPermission(Permissions.STOP.getPermission())
-
-                        .executes((sender, args) -> {
-
-                            new Backup("STOP").execute(sender, args);
-                        })
-                )
-
-                .then(new LiteralArgument("RESTART").withPermission(Permissions.RESTART.getPermission())
-
-                        .executes((sender, args) -> {
-
-                    new Backup("RESTART").execute(sender, args);
-
-                }));
-
-        backupCommandTree.register();
     }
 }

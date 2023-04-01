@@ -2,7 +2,6 @@ package ru.dvdishka.backuper.handlers.commands;
 
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 import ru.dvdishka.backuper.common.CommandInterface;
 import ru.dvdishka.backuper.common.CommonVariables;
 import ru.dvdishka.backuper.tasks.BackupStarterTask;

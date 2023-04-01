@@ -6,7 +6,7 @@
 
     <groupId>ru.dvdishka</groupId>
     <artifactId>Backuper</artifactId>
-    <version>1.2.3</version>
+    <version>1.2.3-folia</version>
     <packaging>jar</packaging>
 
     <name>Backuper</name>
@@ -39,10 +39,6 @@
                             <pattern>org.bstats</pattern>
                             <shadedPattern>ru.dvdishka.shade.bstats</shadedPattern>
                         </relocation>
-                        <relocation>
-                            <pattern>dev.jorel.commandapi</pattern>
-                            <shadedPattern>ru.dvdishka.shade.commandapi</shadedPattern>
-                        </relocation>
                     </relocations>
                 </configuration>
                 <executions>
@@ -68,8 +64,8 @@
 
     <repositories>
         <repository>
-            <id>spigotmc-repo</id>
-            <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
+            <id>papermc</id>
+            <url>https://repo.papermc.io/repository/maven-public/</url>
         </repository>
         <repository>
             <id>sonatype</id>
@@ -79,9 +75,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.spigotmc</groupId>
-            <artifactId>spigot-api</artifactId>
-            <version>1.13-R0.1-SNAPSHOT</version>
+            <groupId>dev.folia</groupId>
+            <artifactId>folia-api</artifactId>
+            <version>1.19.4-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -94,11 +90,6 @@
             <artifactId>bstats-bukkit</artifactId>
             <version>3.0.1</version>
             <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>dev.jorel</groupId>
-            <artifactId>commandapi-shade</artifactId>
-            <version>8.8.0</version>
         </dependency>
     </dependencies>
 </project>

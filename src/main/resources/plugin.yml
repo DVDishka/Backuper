@@ -6,6 +6,7 @@ prefix: Backuper
 authors: [ dvdishka ]
 description: Backuper plugin for spigot
 website: mc.dvdcraft.ru
+folia-supported: true
 permissions:
   backuper.*:
     default: op
