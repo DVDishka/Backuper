@@ -10,6 +10,13 @@
 
 ---
 
+### Releases
+
+* `Backuper-x.x.x` for any spigot fork except Folia
+* `Backuper-x.x.x-folia` for Folia only
+
+---
+
 ### How to use
 
 1. Install into your plugins folder
