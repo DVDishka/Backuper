@@ -6,7 +6,6 @@ import ru.dvdishka.backuper.common.CommonVariables;
 
 public class BackupStarterTask implements Runnable {
 
-    // IF YOU NEED TO BACKUP WITHOUT STOP OR RESTART DESPITE THE CONFIGS
     private String afterRestart = "NOTHING";
 
     public BackupStarterTask(String afterRestart) {

@@ -47,4 +47,5 @@
 
 ### Notes
 
+* May not work on Windows!
 * RESTART option may not work well, so it's better to use STOP with a loop in your start script ([start script](https://flags.sh/) auto restart ON)

@@ -6,7 +6,6 @@ import java.io.FileOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -31,7 +30,7 @@ public class BackuperAsyncTask implements Runnable {
         try {
 
             File backupDir = new File("plugins/Backuper/Backups/" +
-                    LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+                    LocalDateTime.now().format(CommonVariables.dateTimeFormatter));
             File backupsDir = new File("plugins/Backuper/Backups");
 
             if (!ConfigVariables.zipArchive && !backupDir.mkdir()) {
@@ -98,7 +97,7 @@ public class BackuperAsyncTask implements Runnable {
 
                         String fileName = file.getName().replace(".zip", "");
 
-                        backups.add(LocalDateTime.parse(fileName));
+                        backups.add(LocalDateTime.parse(fileName, CommonVariables.dateTimeFormatter));
 
                     } catch (Exception ignored) {}
                 }
@@ -174,7 +173,7 @@ public class BackuperAsyncTask implements Runnable {
 
                             String fileName = file.getName().replace(".zip", "");
 
-                            backups.add(LocalDateTime.parse(fileName));
+                            backups.add(LocalDateTime.parse(fileName, CommonVariables.dateTimeFormatter));
 
                         } catch (Exception ignored) {}
                     }

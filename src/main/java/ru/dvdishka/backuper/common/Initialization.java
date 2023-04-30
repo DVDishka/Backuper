@@ -3,7 +3,6 @@ package ru.dvdishka.backuper.common;
 import dev.jorel.commandapi.CommandTree;
 import dev.jorel.commandapi.arguments.LiteralArgument;
 import org.bstats.bukkit.Metrics;
-import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -15,7 +14,7 @@ public class Initialization {
 
     public static void initBStats(JavaPlugin plugin) {
 
-        Metrics bStats = new Metrics(plugin, CommonVariables.bstatsId);
+        Metrics bStats = new Metrics(plugin, CommonVariables.bStatsId);
     }
 
     public static void initConfig(File configFile) {

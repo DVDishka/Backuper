@@ -6,8 +6,6 @@ import java.time.LocalDateTime;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPIConfig;
 import org.bukkit.Bukkit;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.dvdishka.backuper.common.CommonVariables;
 import ru.dvdishka.backuper.common.ConfigVariables;
