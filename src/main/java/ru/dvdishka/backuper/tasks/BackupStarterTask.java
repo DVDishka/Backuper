@@ -21,10 +21,7 @@ public class BackupStarterTask implements Runnable {
 
             for (World world : Bukkit.getWorlds()) {
 
-                if (!world.getWorldFolder().setReadOnly()) {
-
-                    CommonVariables.logger.warning("Can not set " + world.getWorldFolder().getPath() + " read only!");
-                }
+                world.getWorldFolder().setReadOnly();
             }
 
             Bukkit.getScheduler().runTaskAsynchronously(CommonVariables.plugin, new BackuperAsyncTask(afterRestart));

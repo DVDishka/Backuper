@@ -79,10 +79,7 @@ public class BackuperAsyncTask implements Runnable {
 
             for (World world : Bukkit.getWorlds()) {
 
-                if (!world.getWorldFolder().setWritable(true)) {
-
-                    CommonVariables.logger.warning("Can not set " + world.getWorldFolder().getPath() + " writable!");
-                }
+                world.getWorldFolder().setWritable(true);
             }
 
             CommonVariables.logger.info("Backup process has been finished!");
@@ -249,10 +246,7 @@ public class BackuperAsyncTask implements Runnable {
 
             for (World world : Bukkit.getWorlds()) {
 
-                if (!world.getWorldFolder().setWritable(true)) {
-
-                    CommonVariables.logger.warning("Can not set " + world.getWorldFolder().getPath() + " writable!");
-                }
+                world.getWorldFolder().setWritable(true);
             }
 
             CommonVariables.logger.warning("Copy task has finished with an exception!");
@@ -294,13 +288,13 @@ public class BackuperAsyncTask implements Runnable {
 
                 addDirToZip(zip, file, zipFilePath);
 
-            } else {
+            } else if (!file.getName().equals("session.lock")) {
 
                 try {
 
                     String relativeFilePath = zipFilePath.relativize(file.toPath()).toFile().getPath();
                     relativeFilePath = relativeFilePath.replace("./", "");
-                    relativeFilePath = relativeFilePath.replaceFirst(".", "");
+                    relativeFilePath = relativeFilePath.replace("..\\", "");
                     while (relativeFilePath.length() > 0 && relativeFilePath.charAt(0) == '.') {
 
                         relativeFilePath = relativeFilePath.replaceFirst(".", "");
@@ -320,7 +314,8 @@ public class BackuperAsyncTask implements Runnable {
 
                 } catch (Exception e) {
 
-                    CommonVariables.logger.warning("Something went wrong while trying to put file in ZIP!");
+                    CommonVariables.logger.warning("Something went wrong while trying to put file in ZIP! " + file.getName());
+                    CommonVariables.logger.warning(e.getMessage());
                 }
             }
         }
@@ -349,7 +344,7 @@ public class BackuperAsyncTask implements Runnable {
 
                     } catch (Exception e) {
 
-                        CommonVariables.logger.warning("Something went wrong while trying to copy file!");
+                        CommonVariables.logger.warning("Something went wrong while trying to copy file! " + file.getName());
                         CommonVariables.logger.warning(e.getMessage());
                     }
                 }

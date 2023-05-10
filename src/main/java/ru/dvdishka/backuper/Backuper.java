@@ -2,6 +2,7 @@ package ru.dvdishka.backuper;
 
 import java.io.File;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPIConfig;
@@ -45,6 +46,10 @@ public class Backuper extends JavaPlugin {
         Initialization.initConfig(configFile);
         Initialization.initBStats(this);
         Initialization.initCommands();
+
+        if (CommonVariables.isWindows) {
+            CommonVariables.dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH;mm;ss");
+        }
 
         int delay;
 
