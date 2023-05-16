@@ -53,5 +53,5 @@
 
 ### Notes
 
-* **Please, report any issues to** [github](https://github.com/DVDishka/Backuper/issues)
+* **Please report any issues to** [github](https://github.com/DVDishka/Backuper/issues)
 * RESTART option may not work well, so it's better to use STOP with a loop in your start script ([start script](https://flags.sh/) auto restart ON)
