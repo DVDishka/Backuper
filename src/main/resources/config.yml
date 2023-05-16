@@ -1,5 +1,5 @@
 # DO NOT CHANGE
-configVersion: 1.0
+configVersion: 1.1
 
 # Backup time (0 - 23)
 backupTime: 0
@@ -13,3 +13,5 @@ maxBackupsNumber: 7
 maxBackupsWeight: 0
 # Should backups be packaged in a zip archive
 zipArchive: true
+# Better logging
+betterLogging: false

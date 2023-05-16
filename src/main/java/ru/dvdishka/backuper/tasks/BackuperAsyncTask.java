@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -15,6 +16,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.World;
 import ru.dvdishka.backuper.common.CommonVariables;
 import ru.dvdishka.backuper.common.ConfigVariables;
+import ru.dvdishka.backuper.common.classes.Logger;
+import ru.dvdishka.backuper.common.classes.Scheduler;
 
 public class BackuperAsyncTask implements Runnable {
 
@@ -35,7 +38,7 @@ public class BackuperAsyncTask implements Runnable {
 
             if (!ConfigVariables.zipArchive && !backupDir.mkdir()) {
 
-                CommonVariables.logger.warning("Can not create " + backupDir.getPath() + " dir!");
+                Logger.getLogger().warn("Can not create " + backupDir.getPath() + " dir!");
             }
 
             FileOutputStream fileOutputStream;
@@ -66,29 +69,32 @@ public class BackuperAsyncTask implements Runnable {
 
                     } catch (Exception e) {
 
-                        CommonVariables.logger.warning("Something went wrong when trying to copy files!");
-                        CommonVariables.logger.warning(e.getMessage());
+                        Logger.getLogger().warn("Something went wrong when trying to copy files!");
+                        Logger.getLogger().devWarn(e.getMessage());
                     }
                 }
             }
 
             if (ConfigVariables.zipArchive) {
 
+                assert zipOutputStream != null;
                 zipOutputStream.close();
             }
 
             for (World world : Bukkit.getWorlds()) {
 
-                world.getWorldFolder().setWritable(true);
+                if (!world.getWorldFolder().setWritable(true)) {
+                    Logger.getLogger().devWarn("Can not set folder writable!");
+                }
             }
 
-            CommonVariables.logger.info("Backup process has been finished!");
+            Logger.getLogger().log("Backup process has been finished!");
 
             if (ConfigVariables.backupsNumber != 0 && backupsDir.listFiles() != null) {
 
                 ArrayList<LocalDateTime> backups = new ArrayList<>();
 
-                for (File file : backupsDir.listFiles()) {
+                for (File file : Objects.requireNonNull(backupsDir.listFiles())) {
 
                     try {
 
@@ -124,7 +130,7 @@ public class BackuperAsyncTask implements Runnable {
 
                     try {
 
-                        for (File backup : backupsDir.listFiles()) {
+                        for (File backup : Objects.requireNonNull(backupsDir.listFiles())) {
 
                             String backupFileName = backup.getName().replace(".zip", "");
 
@@ -143,13 +149,13 @@ public class BackuperAsyncTask implements Runnable {
 
                                     if (!backup.delete()) {
 
-                                        CommonVariables.logger.warning("Failed to delete old backup !" + backup.getName());
+                                        Logger.getLogger().warn("Failed to delete old backup !" + backup.getName());
                                     }
                                 }                            }
                         }
                     } catch (Exception e) {
 
-                        CommonVariables.logger.warning(e.getMessage());
+                        Logger.getLogger().devWarn(e.getMessage());
                     }
 
                     backupsToDelete--;
@@ -164,7 +170,7 @@ public class BackuperAsyncTask implements Runnable {
 
                     ArrayList<LocalDateTime> backups = new ArrayList<>();
 
-                    for (File file : backupsDir.listFiles()) {
+                    for (File file : Objects.requireNonNull(backupsDir.listFiles())) {
 
                         try {
 
@@ -200,10 +206,10 @@ public class BackuperAsyncTask implements Runnable {
 
                         if (backupsDir.listFiles() == null) {
 
-                            CommonVariables.logger.warning("Something went wrong while trying to delete old backup!");
+                            Logger.getLogger().log("Something went wrong while trying to delete old backup!");
                         }
 
-                        for (File backup : backupsDir.listFiles()) {
+                        for (File backup : Objects.requireNonNull(backupsDir.listFiles())) {
 
                             String backupFileName = backup.getName().replace(".zip",  "");
 
@@ -224,7 +230,7 @@ public class BackuperAsyncTask implements Runnable {
 
                                     if (!backup.delete()) {
 
-                                        CommonVariables.logger.warning("Failed to delete old backup !" + backup.getName());
+                                        Logger.getLogger().log("Failed to delete old backup !" + backup.getName());
                                     }
                                 }
                             }
@@ -235,7 +241,7 @@ public class BackuperAsyncTask implements Runnable {
 
             if (afterBackup.equals("RESTART")) {
 
-                Bukkit.getScheduler().runTaskLater(CommonVariables.plugin, new RestartSafelyTask(), 20);
+                Scheduler.getScheduler().runSyncDelayed(CommonVariables.plugin, new RestartSafelyTask(), 20);
 
             } else if (afterBackup.equals("STOP")) {
 
@@ -245,12 +251,13 @@ public class BackuperAsyncTask implements Runnable {
         } catch (Exception e) {
 
             for (World world : Bukkit.getWorlds()) {
-
-                world.getWorldFolder().setWritable(true);
+                if (!world.getWorldFolder().setWritable(true)) {
+                    Logger.getLogger().devWarn("Can not set folder writable!");
+                }
             }
 
-            CommonVariables.logger.warning("Copy task has finished with an exception!");
-            CommonVariables.logger.warning(e.getMessage());
+            Logger.getLogger().warn("Copy task has finished with an exception!");
+            Logger.getLogger().devWarn(e.getMessage());
         }
 
     }
@@ -259,7 +266,7 @@ public class BackuperAsyncTask implements Runnable {
 
         if (dir != null && dir.listFiles() != null) {
 
-            for (File file : dir.listFiles()) {
+            for (File file : Objects.requireNonNull(dir.listFiles())) {
 
                 if (file.isDirectory()) {
 
@@ -269,20 +276,20 @@ public class BackuperAsyncTask implements Runnable {
 
                     if (!file.delete()) {
 
-                        CommonVariables.logger.warning("Can not delete file " + file.getName());
+                        Logger.getLogger().devWarn("Can not delete file " + file.getName());
                     }
                 }
             }
             if (!dir.delete()) {
 
-                CommonVariables.logger.warning("Can not delete directory " + dir.getName());
+                Logger.getLogger().devWarn("Can not delete directory " + dir.getName());
             }
         }
     }
 
     public void addDirToZip(ZipOutputStream zip, File sourceDir, Path zipFilePath) {
 
-        for (File file : sourceDir.listFiles()) {
+        for (File file : Objects.requireNonNull(sourceDir.listFiles())) {
 
             if (file.isDirectory()) {
 
@@ -303,7 +310,7 @@ public class BackuperAsyncTask implements Runnable {
                     zip.putNextEntry(new ZipEntry(relativeFilePath));
                     FileInputStream fileInputStream = new FileInputStream(file);
                     byte[] buffer = new byte[4048];
-                    int length = 0;
+                    int length;
 
                     while ((length = fileInputStream.read(buffer)) > 0) {
 
@@ -314,8 +321,8 @@ public class BackuperAsyncTask implements Runnable {
 
                 } catch (Exception e) {
 
-                    CommonVariables.logger.warning("Something went wrong while trying to put file in ZIP! " + file.getName());
-                    CommonVariables.logger.warning(e.getMessage());
+                    Logger.getLogger().warn("Something went wrong while trying to put file in ZIP! " + file.getName());
+                    Logger.getLogger().devWarn(e.getMessage());
                 }
             }
         }
@@ -327,10 +334,10 @@ public class BackuperAsyncTask implements Runnable {
 
             if (!destDir.mkdir()) {
 
-                CommonVariables.logger.warning("Can not create " + destDir.getPath() + " dir");
+                Logger.getLogger().warn("Can not create " + destDir.getPath() + " dir");
             }
 
-            for (File file : sourceDir.listFiles()) {
+            for (File file : Objects.requireNonNull(sourceDir.listFiles())) {
 
                 if (file.isDirectory()) {
 
@@ -344,8 +351,8 @@ public class BackuperAsyncTask implements Runnable {
 
                     } catch (Exception e) {
 
-                        CommonVariables.logger.warning("Something went wrong while trying to copy file! " + file.getName());
-                        CommonVariables.logger.warning(e.getMessage());
+                        Logger.getLogger().warn("Something went wrong while trying to copy file! " + file.getName());
+                        Logger.getLogger().devWarn(e.getMessage());
                     }
                 }
             }

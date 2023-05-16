@@ -5,19 +5,20 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 import dev.jorel.commandapi.CommandAPI;
-import dev.jorel.commandapi.CommandAPIConfig;
-import org.bukkit.Bukkit;
+import dev.jorel.commandapi.CommandAPIBukkitConfig;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.dvdishka.backuper.common.CommonVariables;
 import ru.dvdishka.backuper.common.ConfigVariables;
 import ru.dvdishka.backuper.common.Initialization;
+import ru.dvdishka.backuper.common.classes.Logger;
+import ru.dvdishka.backuper.common.classes.Scheduler;
 import ru.dvdishka.backuper.tasks.BackupStarterTask;
 
 public class Backuper extends JavaPlugin {
 
     public void onEnable() {
 
-        CommandAPI.onEnable(this);
+        CommandAPI.onEnable();
 
         CommonVariables.plugin = this;
 
@@ -25,13 +26,11 @@ public class Backuper extends JavaPlugin {
         File backupsDir = new File("plugins/Backuper/Backups");
         File configFile = new File("plugins/Backuper/config.yml");
 
-        CommonVariables.logger = getLogger();
-
         if (!pluginDir.exists()) {
 
             if (!pluginDir.mkdir()) {
 
-                CommonVariables.logger.warning("Can not create plugins/Backuper dir!");
+                Logger.getLogger().warn("Can not create plugins/Backuper dir!");
             }
         }
 
@@ -39,13 +38,14 @@ public class Backuper extends JavaPlugin {
 
             if (!backupsDir.mkdir()) {
 
-                CommonVariables.logger.warning("Can not create plugins/Backuper/Backups dir!");
+                Logger.getLogger().warn("Can not create plugins/Backuper/Backups dir!");
             }
         }
 
         Initialization.initConfig(configFile);
         Initialization.initBStats(this);
         Initialization.initCommands();
+        Initialization.initDependencies();
 
         if (CommonVariables.isWindows) {
             CommonVariables.dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH;mm;ss");
@@ -62,22 +62,22 @@ public class Backuper extends JavaPlugin {
             delay = ConfigVariables.backupTime * 60 * 60 + 86400 - (LocalDateTime.now().getHour() * 60 * 60 + LocalDateTime.now().getMinute() * 60 + LocalDateTime.now().getSecond());
         }
 
-        Bukkit.getScheduler().scheduleSyncRepeatingTask(this, new BackupStarterTask(ConfigVariables.afterBackup), (long) delay * 20, ConfigVariables.backupPeriod * 60L * 60L * 20L);
+        Scheduler.getScheduler().runSyncRepeatingTask(this, new BackupStarterTask(ConfigVariables.afterBackup), (long) delay * 20, ConfigVariables.backupPeriod * 60L * 60L * 20L);
 
-        CommonVariables.logger.info("Backuper plugin has been enabled!");
+        Logger.getLogger().log("Backuper plugin has been enabled!");
     }
 
     public void onLoad() {
 
-        CommandAPI.onLoad(new CommandAPIConfig());
+        CommandAPI.onLoad(new CommandAPIBukkitConfig(this));
     }
 
     public void onDisable() {
 
-        Bukkit.getScheduler().cancelTasks(this);
+        Scheduler.cancelTasks(this);
 
         CommandAPI.onDisable();
 
-        CommonVariables.logger.info("Backuper plugin has been disabled!");
+        Logger.getLogger().log("Backuper plugin has been disabled!");
     }
 }

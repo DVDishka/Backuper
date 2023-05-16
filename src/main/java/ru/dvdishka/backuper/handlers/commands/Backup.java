@@ -1,9 +1,10 @@
 package ru.dvdishka.backuper.handlers.commands;
 
-import org.bukkit.Bukkit;
+import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.common.CommandInterface;
 import ru.dvdishka.backuper.common.CommonVariables;
+import ru.dvdishka.backuper.common.classes.Scheduler;
 import ru.dvdishka.backuper.tasks.BackupStarterTask;
 
 public class Backup implements CommandInterface {
@@ -17,9 +18,9 @@ public class Backup implements CommandInterface {
         this.afterBackup = afterBackup;
     }
 
-    public void execute(CommandSender sender, Object[] args) {
+    public void execute(CommandSender sender, CommandArguments args) {
 
-        Bukkit.getScheduler().runTask(CommonVariables.plugin, new BackupStarterTask(afterBackup));
+        Scheduler.getScheduler().runSync(CommonVariables.plugin, new BackupStarterTask(afterBackup));
 
         returnSuccess("Backup process has been started!\nYou can see the result in the console", sender);
     }

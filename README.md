@@ -4,16 +4,15 @@
 
 <img height="128" src="images\backuper_logo.png" width="128"/>
 
-## _Simple backup plugin for spigot_
+## _Simple backup plugin for Paper/Folia_
 
 </div>
 
 ---
 
-### Releases
+### Pages
 
-* `Backuper-x.x.x` for any spigot fork except Folia
-* `Backuper-x.x.x-folia` for Folia only
+* [Hangar page](https://hangar.papermc.io/Collagen/Backuper)
 
 ---
 
