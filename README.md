@@ -35,7 +35,7 @@
 * `Backup period` - **(1 <= Hours)** - the period after which the server will make backups
 * `After backup` - **(NOTHING/STOP/RESTART)** - what will the server do after backup
 * `Max backup number` - **(0 <=)** - maximum number of backups to be kept **(0 - unlimited)**
-* `Max backup weight` - **(0 <=)** - maximum weight of backups that will be stored (MB)
+* `Max backup weight` - **(0 <=)** - maximum weight of backups that will be stored **(MB)**
 * `Better logging` - **(true/false)** - enable logging of additional information (used for debugging, you probably don't need it)
 
 ---
