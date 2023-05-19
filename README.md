@@ -29,11 +29,14 @@
 
 ### Configuration
 
-* `Backup time` - time in hours when server will be backed up (0 - 23)
-* `Backup period` - the period after which the server will make backups (Hours)
-* `After backup` - what will the server do after backup (STOP, RESTART, NOTHING)
-* `Max backup number` - maximum number of backups to be kept (0 - unlimited)
-* `Max backup weight` - maximum weight of backups that will be stored (MB) (0 - unlimited)
+* `Auto backup` - **(true/false)** -  enables automatic backups once at a specified interval (when disabled, backups will only run on the `/backup` command)
+* `First backup time` - **(0 -23)** - time in hours when server will be backed up first time
+* `Fixed backup time` - **(true/false)** - all backups will take place at a certain time, specified in the `firstBackupTime`. When enabled, the `backupPeriod` automatically becomes 24 hours
+* `Backup period` - **(1 <= Hours)** - the period after which the server will make backups
+* `After backup` - **(NOTHING/STOP/RESTART)** - what will the server do after backup
+* `Max backup number` - **(0 <=)** - maximum number of backups to be kept **(0 - unlimited)**
+* `Max backup weight` - **(0 <=)** - maximum weight of backups that will be stored (MB)
+* `Better logging` - **(true/false)** - enable logging of additional information (used for debugging, you probably don't need it)
 
 ---
 
@@ -53,5 +56,5 @@
 
 ### Notes
 
-* **Please report any issues to** [github](https://github.com/DVDishka/Backuper/issues)
+* **Please report any issues to** [GitHub](https://github.com/DVDishka/Backuper/issues)
 * RESTART option may not work well, so it's better to use STOP with a loop in your start script ([start script](https://flags.sh/) auto restart ON)

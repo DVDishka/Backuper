@@ -28,7 +28,7 @@ public class Scheduler {
         }
     }
 
-    public void runSyncRepeatingTask(Plugin plugin, Runnable task, long periodTicks, long delayTicks) {
+    public void runSyncRepeatingTask(Plugin plugin, Runnable task, long delayTicks, long periodTicks) {
         if (CommonVariables.isFolia) {
             Bukkit.getGlobalRegionScheduler().runAtFixedRate(plugin, (scheduledTask) -> task.run(), delayTicks, periodTicks);
         } else {

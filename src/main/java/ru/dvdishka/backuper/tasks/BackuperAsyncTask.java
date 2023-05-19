@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Objects;
 import java.util.zip.ZipEntry;
@@ -14,6 +15,9 @@ import java.util.zip.ZipOutputStream;
 import org.apache.commons.io.FileUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
+import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.common.CommonVariables;
 import ru.dvdishka.backuper.common.ConfigVariables;
 import ru.dvdishka.backuper.common.classes.Logger;
@@ -22,10 +26,16 @@ import ru.dvdishka.backuper.common.classes.Scheduler;
 public class BackuperAsyncTask implements Runnable {
 
     private String afterBackup = "NOTHING";
+    private boolean isAutoBackup = false;
 
     public BackuperAsyncTask(String afterBackup) {
 
         this.afterBackup = afterBackup;
+    }
+
+    public BackuperAsyncTask(String afterBackup, boolean isAutoBackup) {
+        this.afterBackup = afterBackup;
+        this.isAutoBackup = isAutoBackup;
     }
 
     public void run() {
@@ -89,6 +99,13 @@ public class BackuperAsyncTask implements Runnable {
             }
 
             Logger.getLogger().log("Backup process has been finished!");
+
+            if (isAutoBackup) {
+                File configFile = new File("plugins/Backuper/config.yml");
+                FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
+                config.set("lastBackup", LocalDateTime.now().toEpochSecond(ZoneOffset.UTC));
+                config.save(configFile);
+            }
 
             if (ConfigVariables.backupsNumber != 0 && backupsDir.listFiles() != null) {
 
@@ -245,7 +262,8 @@ public class BackuperAsyncTask implements Runnable {
 
             } else if (afterBackup.equals("STOP")) {
 
-                Bukkit.getServer().shutdown();
+                Logger.getLogger().devLog("Stopping server...");
+                Bukkit.shutdown();
             }
 
         } catch (Exception e) {

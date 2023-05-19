@@ -1,7 +1,10 @@
 package ru.dvdishka.backuper;
 
 import java.io.File;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
 import dev.jorel.commandapi.CommandAPI;
@@ -51,19 +54,31 @@ public class Backuper extends JavaPlugin {
             CommonVariables.dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH;mm;ss");
         }
 
-        int delay;
+        if (ConfigVariables.autoBackup) {
 
-        if (ConfigVariables.backupTime > LocalDateTime.now().getHour()) {
+            long delay = 0;
 
-            delay = ConfigVariables.backupTime * 60 * 60 - (LocalDateTime.now().getHour() * 60 * 60 + LocalDateTime.now().getMinute() * 60 + LocalDateTime.now().getSecond());
+            if (ConfigVariables.lastBackup == 0 || ConfigVariables.fixedBackupTime) {
+                if (ConfigVariables.firstBackupTime > LocalDateTime.now().getHour()) {
 
-        } else {
+                    delay = (long) ConfigVariables.firstBackupTime * 60 * 60 - (LocalDateTime.now().getHour() * 60 * 60 + LocalDateTime.now().getMinute() * 60 + LocalDateTime.now().getSecond());
 
-            delay = ConfigVariables.backupTime * 60 * 60 + 86400 - (LocalDateTime.now().getHour() * 60 * 60 + LocalDateTime.now().getMinute() * 60 + LocalDateTime.now().getSecond());
+                } else {
+
+                    delay = (long) ConfigVariables.firstBackupTime * 60 * 60 + 86400 - (LocalDateTime.now().getHour() * 60 * 60 + LocalDateTime.now().getMinute() * 60 + LocalDateTime.now().getSecond());
+                }
+            } else {
+                delay = ConfigVariables.backupPeriod * 60L * 60L - (LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) - ConfigVariables.lastBackup);
+            }
+
+            if (delay <= 0) {
+                delay = 1;
+            }
+
+            Logger.getLogger().devLog("Delay: " + delay);
+
+            Scheduler.getScheduler().runSyncRepeatingTask(this, new BackupStarterTask(ConfigVariables.afterBackup, true), (long) delay * 20, ConfigVariables.backupPeriod * 60L * 60L * 20L);
         }
-
-        Scheduler.getScheduler().runSyncRepeatingTask(this, new BackupStarterTask(ConfigVariables.afterBackup), (long) delay * 20, ConfigVariables.backupPeriod * 60L * 60L * 20L);
-
         Logger.getLogger().log("Backuper plugin has been enabled!");
     }
 

@@ -9,10 +9,17 @@ import ru.dvdishka.backuper.common.classes.Scheduler;
 public class BackupStarterTask implements Runnable {
 
     private String afterRestart = "NOTHING";
+    private boolean isAutoBackup = false;
 
     public BackupStarterTask(String afterRestart) {
 
         this.afterRestart = afterRestart;
+    }
+
+    public BackupStarterTask(String afterRestart, boolean isAutoBackup) {
+
+        this.afterRestart = afterRestart;
+        this.isAutoBackup = isAutoBackup;
     }
 
     public void run() {
@@ -27,7 +34,7 @@ public class BackupStarterTask implements Runnable {
                 }
             }
 
-            Scheduler.getScheduler().runAsync(CommonVariables.plugin, new BackuperAsyncTask(afterRestart));
+            Scheduler.getScheduler().runAsync(CommonVariables.plugin, new BackuperAsyncTask(afterRestart, isAutoBackup));
 
         } catch (Exception e) {
 

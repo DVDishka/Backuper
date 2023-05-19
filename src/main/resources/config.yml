@@ -1,8 +1,13 @@
 # DO NOT CHANGE
-configVersion: 1.1
+configVersion: 2.0
+lastBackup: 0
 
-# Backup time (0 - 23)
-backupTime: 0
+# Automatic backup once in a specified period
+autoBackup: true
+# First backup time (0 - 23)
+firstBackupTime: 0
+# Fixed backup time (all backups will take place at a certain time, specified in the firstBackupTime. When enabled, the backupPeriod automatically becomes 24 hours) (Recommended)
+fixedBackupTime: true
 # Backup period in hours
 backupPeriod: 24
 # What to do after backup, (STOP, RESTART, NOTHING)

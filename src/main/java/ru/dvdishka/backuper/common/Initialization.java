@@ -32,43 +32,48 @@ public class Initialization {
 
             if (configVersion.equals(ConfigVariables.configVersion)) {
 
-                ConfigVariables.backupTime = config.getInt("backupTime");
+                ConfigVariables.firstBackupTime = config.getInt("firstBackupTime");
                 ConfigVariables.backupPeriod = config.getInt("backupPeriod");
                 ConfigVariables.afterBackup = Objects.requireNonNull(config.getString("afterBackup")).toUpperCase();
                 ConfigVariables.backupsNumber = config.getInt("maxBackupsNumber");
                 ConfigVariables.backupsWeight = config.getLong("maxBackupsWeight") * 1_048_576L;
                 ConfigVariables.zipArchive = config.getBoolean("zipArchive");
                 ConfigVariables.betterLogging = config.getBoolean("betterLogging");
+                ConfigVariables.autoBackup = config.getBoolean("autoBackup");
+                ConfigVariables.lastBackup = config.getLong("lastBackup");
+                ConfigVariables.fixedBackupTime = config.getBoolean("fixedBackupTime");
 
             } else {
 
-                if (config.contains("backupTime")) {
-
-                    ConfigVariables.backupTime = config.getInt("backupTime");
+                if (config.contains("firstBackupTime")) {
+                    ConfigVariables.firstBackupTime = config.getInt("firstBackupTime");
                 }
                 if (config.contains("backupPeriod")) {
-
                     ConfigVariables.backupPeriod = config.getInt("backupPeriod");
                 }
                 if (config.contains("afterBackup")) {
-
                     ConfigVariables.afterBackup = config.getString("afterBackup");
                 }
                 if (config.contains("maxBackupsNumber")) {
-
                     ConfigVariables.backupsNumber = config.getInt("maxBackupsNumber");
                 }
                 if (config.contains("maxBackupsWeight")) {
-
                     ConfigVariables.backupsWeight = config.getLong("maxBackupsWeight");
                 }
                 if (config.contains("zipArchive")) {
-
                     ConfigVariables.zipArchive = config.getBoolean("zipArchive");
                 }
                 if (config.contains("betterLogging")) {
-
                     ConfigVariables.betterLogging = config.getBoolean("betterLogging");
+                }
+                if (config.contains("autoBackup")) {
+                    ConfigVariables.autoBackup = config.getBoolean("autoBackup");
+                }
+                if (config.contains("lastBackup")) {
+                    ConfigVariables.lastBackup = config.getLong("lastBackup");
+                }
+                if (config.contains("fixedBackupTime")) {
+                    ConfigVariables.fixedBackupTime = config.getBoolean("fixedBackupTime");
                 }
 
                 if (!configFile.delete()) {
@@ -78,13 +83,16 @@ public class Initialization {
                 CommonVariables.plugin.saveDefaultConfig();
                 FileConfiguration newConfig = CommonVariables.plugin.getConfig();
 
-                newConfig.set("backupTime", ConfigVariables.backupTime);
+                newConfig.set("firstBackupTime", ConfigVariables.firstBackupTime);
                 newConfig.set("backupPeriod", ConfigVariables.backupPeriod);
                 newConfig.set("afterBackup", ConfigVariables.afterBackup);
                 newConfig.set("maxBackupsNumber", ConfigVariables.backupsNumber);
                 newConfig.set("maxBackupsWeight", ConfigVariables.backupsWeight);
                 newConfig.set("zipArchive", ConfigVariables.zipArchive);
                 newConfig.set("betterLogging", ConfigVariables.betterLogging);
+                newConfig.set("autoBackup", ConfigVariables.autoBackup);
+                newConfig.set("lastBackup", ConfigVariables.lastBackup);
+                newConfig.set("fixedBackupTime", ConfigVariables.fixedBackupTime);
 
                 try {
 
