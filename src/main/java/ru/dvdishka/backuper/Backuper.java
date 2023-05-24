@@ -1,16 +1,14 @@
 package ru.dvdishka.backuper;
 
 import java.io.File;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPIBukkitConfig;
 import org.bukkit.plugin.java.JavaPlugin;
-import ru.dvdishka.backuper.common.CommonVariables;
+import ru.dvdishka.backuper.common.Common;
 import ru.dvdishka.backuper.common.ConfigVariables;
 import ru.dvdishka.backuper.common.Initialization;
 import ru.dvdishka.backuper.common.classes.Logger;
@@ -23,7 +21,7 @@ public class Backuper extends JavaPlugin {
 
         CommandAPI.onEnable();
 
-        CommonVariables.plugin = this;
+        Common.plugin = this;
 
         File pluginDir = new File("plugins/Backuper");
         File backupsDir = new File("plugins/Backuper/Backups");
@@ -48,10 +46,11 @@ public class Backuper extends JavaPlugin {
         Initialization.initConfig(configFile);
         Initialization.initBStats(this);
         Initialization.initCommands();
-        Initialization.initDependencies();
+        Initialization.checkDependencies();
+        Initialization.checkVersion();
 
-        if (CommonVariables.isWindows) {
-            CommonVariables.dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH;mm;ss");
+        if (Common.isWindows) {
+            Common.dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH;mm;ss");
         }
 
         if (ConfigVariables.autoBackup) {

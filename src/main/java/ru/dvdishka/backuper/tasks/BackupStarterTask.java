@@ -2,7 +2,7 @@ package ru.dvdishka.backuper.tasks;
 
 import org.bukkit.Bukkit;
 import org.bukkit.World;
-import ru.dvdishka.backuper.common.CommonVariables;
+import ru.dvdishka.backuper.common.Common;
 import ru.dvdishka.backuper.common.classes.Logger;
 import ru.dvdishka.backuper.common.classes.Scheduler;
 
@@ -34,7 +34,7 @@ public class BackupStarterTask implements Runnable {
                 }
             }
 
-            Scheduler.getScheduler().runAsync(CommonVariables.plugin, new BackuperAsyncTask(afterRestart, isAutoBackup));
+            Scheduler.getScheduler().runAsync(Common.plugin, new BackuperAsyncTask(afterRestart, isAutoBackup));
 
         } catch (Exception e) {
 

@@ -17,8 +17,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.common.CommonVariables;
+import ru.dvdishka.backuper.common.Common;
 import ru.dvdishka.backuper.common.ConfigVariables;
 import ru.dvdishka.backuper.common.classes.Logger;
 import ru.dvdishka.backuper.common.classes.Scheduler;
@@ -43,7 +42,7 @@ public class BackuperAsyncTask implements Runnable {
         try {
 
             File backupDir = new File("plugins/Backuper/Backups/" +
-                    LocalDateTime.now().format(CommonVariables.dateTimeFormatter));
+                    LocalDateTime.now().format(Common.dateTimeFormatter));
             File backupsDir = new File("plugins/Backuper/Backups");
 
             if (!ConfigVariables.zipArchive && !backupDir.mkdir()) {
@@ -117,7 +116,7 @@ public class BackuperAsyncTask implements Runnable {
 
                         String fileName = file.getName().replace(".zip", "");
 
-                        backups.add(LocalDateTime.parse(fileName, CommonVariables.dateTimeFormatter));
+                        backups.add(LocalDateTime.parse(fileName, Common.dateTimeFormatter));
 
                     } catch (Exception ignored) {}
                 }
@@ -193,7 +192,7 @@ public class BackuperAsyncTask implements Runnable {
 
                             String fileName = file.getName().replace(".zip", "");
 
-                            backups.add(LocalDateTime.parse(fileName, CommonVariables.dateTimeFormatter));
+                            backups.add(LocalDateTime.parse(fileName, Common.dateTimeFormatter));
 
                         } catch (Exception ignored) {}
                     }
@@ -258,7 +257,7 @@ public class BackuperAsyncTask implements Runnable {
 
             if (afterBackup.equals("RESTART")) {
 
-                Scheduler.getScheduler().runSyncDelayed(CommonVariables.plugin, new RestartSafelyTask(), 20);
+                Scheduler.getScheduler().runSyncDelayed(Common.plugin, new RestartSafelyTask(), 20);
 
             } else if (afterBackup.equals("STOP")) {
 

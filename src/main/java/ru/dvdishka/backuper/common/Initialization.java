@@ -10,14 +10,17 @@ import ru.dvdishka.backuper.common.classes.Logger;
 import ru.dvdishka.backuper.common.classes.Permissions;
 import ru.dvdishka.backuper.handlers.commands.Backup;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.util.Objects;
 
 public class Initialization {
 
     public static void initBStats(JavaPlugin plugin) {
 
-        Metrics bStats = new Metrics(plugin, CommonVariables.bStatsId);
+        Metrics bStats = new Metrics(plugin, Common.bStatsId);
     }
 
     public static void initConfig(File configFile) {
@@ -80,8 +83,8 @@ public class Initialization {
                     Logger.getLogger().devWarn("Can not delete old config file!");
                 }
 
-                CommonVariables.plugin.saveDefaultConfig();
-                FileConfiguration newConfig = CommonVariables.plugin.getConfig();
+                Common.plugin.saveDefaultConfig();
+                FileConfiguration newConfig = Common.plugin.getConfig();
 
                 newConfig.set("firstBackupTime", ConfigVariables.firstBackupTime);
                 newConfig.set("backupPeriod", ConfigVariables.backupPeriod);
@@ -109,7 +112,7 @@ public class Initialization {
 
             try {
 
-                CommonVariables.plugin.saveDefaultConfig();
+                Common.plugin.saveDefaultConfig();
 
             } catch (Exception e) {
 
@@ -149,15 +152,44 @@ public class Initialization {
         backupCommandTree.register();
     }
 
-    public static void initDependencies() {
+    public static void checkDependencies() {
 
         try {
             Class.forName("io.papermc.paper.threadedregions.scheduler.EntityScheduler");
-            CommonVariables.isFolia = true;
+            Common.isFolia = true;
             Logger.getLogger().devLog("Folia has been detected!");
         } catch (Exception e) {
-            CommonVariables.isFolia = false;
+            Common.isFolia = false;
             Logger.getLogger().devLog("Folia has not been detected!");
+        }
+    }
+
+    public static void checkVersion() {
+
+        try {
+
+            HttpURLConnection connection = (HttpURLConnection) Common.getLatestVersionURL.openConnection();
+            connection.setRequestMethod("GET");
+
+            BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            String input;
+            StringBuilder response = new StringBuilder();
+
+            while ((input = in.readLine()) != null) {
+                response.append(input);
+            }
+            in.close();
+
+            if (response.toString().equals(Common.getProperty("version"))) {
+                Logger.getLogger().log("You are using the latest version of Backuper!");
+            } else {
+                Logger.getLogger().warn("You are using an outdated version of Backuper, please update it to the latest!\nDownload link: " + Common.downloadLink);
+            }
+
+        } catch (Exception e) {
+
+            Logger.getLogger().warn("Failed to check Backuper updates!");
+            Logger.getLogger().devWarn(e.getMessage());
         }
     }
 }
