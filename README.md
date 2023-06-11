@@ -13,6 +13,7 @@
 ### Pages
 
 * [Hangar page](https://hangar.papermc.io/Collagen/Backuper)
+* [bStats](https://bstats.org/plugin/bukkit/Backuper/17735)
 
 ---
 
