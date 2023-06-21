@@ -30,7 +30,8 @@
 
 ### Configuration
 
-* `Auto backup` - **(true/false)** -  enables automatic backups once at a specified interval (when disabled, backups will only run on the `/backup` command)
+* `Auto backup` - **(true/false)** - enables automatic backups once at a specified interval (when disabled, backups will only run on the `/backup` command)
+* `Backups folder` - **(Path)** - **FULL** path to folder, where backups will be stored
 * `First backup time` - **(0 -23)** - time in hours when server will be backed up first time
 * `Fixed backup time` - **(true/false)** - all backups will take place at a certain time, specified in the `firstBackupTime`. When enabled, the `backupPeriod` automatically becomes 24 hours
 * `Backup period` - **(1 <= Hours)** - the period after which the server will make backups

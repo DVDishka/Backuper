@@ -1,9 +1,11 @@
 # DO NOT CHANGE
-configVersion: 2.0
+configVersion: 3.0
 lastBackup: 0
 
 # Automatic backup once in a specified period
 autoBackup: true
+# Directory where backups will be stored
+backupsFolder: plugins/Backuper/Backups
 # First backup time (0 - 23)
 firstBackupTime: 0
 # Fixed backup time (all backups will take place at a certain time, specified in the firstBackupTime. When enabled, the backupPeriod automatically becomes 24 hours) (Recommended)

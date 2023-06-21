@@ -84,6 +84,8 @@ public class BackuperAsyncTask implements Runnable {
                 }
             }
 
+            Logger.getLogger().devLog("Copy/Zip task has been finished");
+
             if (ConfigVariables.zipArchive) {
 
                 assert zipOutputStream != null;
@@ -97,6 +99,32 @@ public class BackuperAsyncTask implements Runnable {
                 }
             }
 
+            Logger.getLogger().devLog("Set writable task has been finished");
+
+            if (!ConfigVariables.backupsFolder.equals("plugins/Backuper/Backups")) {
+
+                if (ConfigVariables.zipArchive) {
+                    try {
+                        Files.copy(new File(backupDir.getPath() + ".zip").toPath(), new File(ConfigVariables.backupsFolder).toPath().resolve(backupDir.getName() + ".zip"));
+                        try {
+                            if (!new File(backupDir.getPath() + ".zip").delete()) {
+                                Logger.getLogger().warn("Can not delete backup in default directory");
+                            }
+                        } catch (Exception e) {
+                            Logger.getLogger().warn("Can not delete backup in default directory");
+                        }
+                    } catch (SecurityException e) {
+                        Logger.getLogger().warn("Backup Directory is not allowed to modify");
+                        Logger.getLogger().warn(e.toString());
+                    }
+                } else {
+                    copyFilesInDir(new File(ConfigVariables.backupsFolder).toPath().resolve(backupDir.getName()).toFile(), backupDir);
+                    deleteDir(backupDir);
+                }
+            }
+
+            Logger.getLogger().devLog("Move task has been finished");
+
             Logger.getLogger().log("Backup process has been finished!");
 
             if (isAutoBackup) {
@@ -104,6 +132,8 @@ public class BackuperAsyncTask implements Runnable {
                 FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
                 config.set("lastBackup", LocalDateTime.now().toEpochSecond(ZoneOffset.UTC));
                 config.save(configFile);
+
+                Logger.getLogger().devLog("LastBackup variable has been updated");
             }
 
             if (ConfigVariables.backupsNumber != 0 && backupsDir.listFiles() != null) {
@@ -275,8 +305,8 @@ public class BackuperAsyncTask implements Runnable {
 
             Logger.getLogger().warn("Copy task has finished with an exception!");
             Logger.getLogger().devWarn(e.getMessage());
+            e.printStackTrace();
         }
-
     }
 
     public void deleteDir(File dir) {
@@ -360,7 +390,7 @@ public class BackuperAsyncTask implements Runnable {
 
                     copyFilesInDir(destDir.toPath().resolve(file.getName()).toFile(), file);
 
-                } else {
+                } else if (!file.getName().equals("session.lock")) {
 
                     try {
 

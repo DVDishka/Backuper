@@ -45,6 +45,7 @@ public class Initialization {
                 ConfigVariables.autoBackup = config.getBoolean("autoBackup");
                 ConfigVariables.lastBackup = config.getLong("lastBackup");
                 ConfigVariables.fixedBackupTime = config.getBoolean("fixedBackupTime");
+                ConfigVariables.backupsFolder = config.getString("backupsFolder");
 
             } else {
 
@@ -78,6 +79,9 @@ public class Initialization {
                 if (config.contains("fixedBackupTime")) {
                     ConfigVariables.fixedBackupTime = config.getBoolean("fixedBackupTime");
                 }
+                if (config.contains("backupsFolder")) {
+                    ConfigVariables.backupsFolder = config.getString("backupsFolder");
+                }
 
                 if (!configFile.delete()) {
                     Logger.getLogger().devWarn("Can not delete old config file!");
@@ -96,6 +100,7 @@ public class Initialization {
                 newConfig.set("autoBackup", ConfigVariables.autoBackup);
                 newConfig.set("lastBackup", ConfigVariables.lastBackup);
                 newConfig.set("fixedBackupTime", ConfigVariables.fixedBackupTime);
+                newConfig.set("backupsFoler", ConfigVariables.backupsFolder);
 
                 try {
 
