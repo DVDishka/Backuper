@@ -15,7 +15,7 @@ backupPeriod: 24
 # What to do after backup, (STOP, RESTART, NOTHING)
 afterBackup: NOTHING
 # Max backups in backups folder, 0 to make it unlimited
-maxBackupsNumber: 7
+maxBackupsNumber: 0
 # Max backups folder weight in MB, 0 to make it unlimited
 maxBackupsWeight: 0
 # Should backups be packaged in a zip archive

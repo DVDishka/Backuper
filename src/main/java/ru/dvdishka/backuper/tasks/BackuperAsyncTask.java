@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Objects;
 import java.util.zip.ZipEntry;
@@ -136,6 +137,8 @@ public class BackuperAsyncTask implements Runnable {
                 Logger.getLogger().devLog("LastBackup variable has been updated");
             }
 
+            backupsDir = new File(ConfigVariables.backupsFolder);
+
             if (ConfigVariables.backupsNumber != 0 && backupsDir.listFiles() != null) {
 
                 ArrayList<LocalDateTime> backups = new ArrayList<>();
@@ -185,7 +188,7 @@ public class BackuperAsyncTask implements Runnable {
                                 backupFileName = backupFileName.concat("0");
                             }
 
-                            if (backupFileName.equals(fileName.toString())) {
+                            if (LocalDateTime.parse(backupFileName, Common.dateTimeFormatter).equals(fileName)) {
 
                                 if (!backup.getName().endsWith(".zip")) {
 
@@ -207,6 +210,8 @@ public class BackuperAsyncTask implements Runnable {
                     backupsToDelete--;
                 }
             }
+
+            Logger.getLogger().devLog("Delete old backups 1 task has been finished!");
 
             if (ConfigVariables.backupsWeight != 0) {
 
@@ -264,7 +269,7 @@ public class BackuperAsyncTask implements Runnable {
                                 backupFileName = backupFileName.concat("0");
                             }
 
-                            if (backupFileName.equals(fileName.toString())) {
+                            if (LocalDateTime.parse(backupFileName, Common.dateTimeFormatter).equals(fileName)) {
 
                                 bytesToDelete -= FileUtils.sizeOf(backup);
 
@@ -284,6 +289,8 @@ public class BackuperAsyncTask implements Runnable {
                     }
                 }
             }
+
+            Logger.getLogger().devLog("Delete old backups 2 task has been finished!");
 
             if (afterBackup.equals("RESTART")) {
 
