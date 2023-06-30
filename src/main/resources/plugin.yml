@@ -17,3 +17,5 @@ permissions:
         default: op
       backuper.restart:
         default: op
+      backuper.list:
+        default: op

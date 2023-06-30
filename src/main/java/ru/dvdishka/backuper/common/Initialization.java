@@ -9,6 +9,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import ru.dvdishka.backuper.common.classes.Logger;
 import ru.dvdishka.backuper.common.classes.Permissions;
 import ru.dvdishka.backuper.handlers.commands.Backup;
+import ru.dvdishka.backuper.handlers.commands.List;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -100,7 +101,7 @@ public class Initialization {
                 newConfig.set("autoBackup", ConfigVariables.autoBackup);
                 newConfig.set("lastBackup", ConfigVariables.lastBackup);
                 newConfig.set("fixedBackupTime", ConfigVariables.fixedBackupTime);
-                newConfig.set("backupsFoler", ConfigVariables.backupsFolder);
+                newConfig.set("backupsFolder", ConfigVariables.backupsFolder);
 
                 try {
 
@@ -150,9 +151,18 @@ public class Initialization {
 
                         .executes((sender, args) -> {
 
-                    new Backup("RESTART").execute(sender, args);
+                            new Backup("RESTART").execute(sender, args);
+                        })
+                )
 
-                }));
+                .then(new LiteralArgument("list").withPermission(Permissions.LIST.getPermission())
+
+                    .executes((sender, args) -> {
+
+                        new List().execute(sender, args);
+                    })
+                )
+        ;
 
         backupCommandTree.register();
     }

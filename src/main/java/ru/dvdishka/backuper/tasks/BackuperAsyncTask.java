@@ -7,7 +7,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Objects;
 import java.util.zip.ZipEntry;
@@ -232,19 +231,7 @@ public class BackuperAsyncTask implements Runnable {
                         } catch (Exception ignored) {}
                     }
 
-                    for (int firstBackupsIndex = 0; firstBackupsIndex < backups.size(); firstBackupsIndex++) {
-
-                        for (int secondBackupsIndex = 0; secondBackupsIndex < backups.size(); secondBackupsIndex++) {
-
-                            if (backups.get(firstBackupsIndex).isBefore(backups.get(secondBackupsIndex))) {
-
-                                LocalDateTime saveDate = backups.get(firstBackupsIndex);
-
-                                backups.set(firstBackupsIndex, backups.get(secondBackupsIndex));
-                                backups.set(secondBackupsIndex, saveDate);
-                            }
-                        }
-                    }
+                    Common.sortLocalDateTime(backups);
 
                     long bytesToDelete = backupsFolderWeight - ConfigVariables.backupsWeight;
 

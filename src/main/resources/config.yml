@@ -4,7 +4,7 @@ lastBackup: 0
 
 # Automatic backup once in a specified period
 autoBackup: true
-# Directory where backups will be stored
+# Full directory where backups will be stored
 backupsFolder: plugins/Backuper/Backups
 # First backup time (0 - 23)
 firstBackupTime: 0

@@ -4,7 +4,8 @@ public enum Permissions {
 
     BACKUP("backuper.backup"),
     STOP("backuper.stop"),
-    RESTART("backuper.restart");
+    RESTART("backuper.restart"),
+    LIST("backuper.list");
 
     private final String permission;
 
