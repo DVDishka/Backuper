@@ -24,7 +24,7 @@
 3. Change config.yml (plugins/Backuper/config.yml)
 4. Restart the server
 
-#### Backups will be stored in (plugins/Backuper/Backups)
+#### By default, backups will be stored in (plugins/Backuper/Backups)
 
 ---
 
