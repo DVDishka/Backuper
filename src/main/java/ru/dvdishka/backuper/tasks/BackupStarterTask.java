@@ -30,7 +30,7 @@ public class BackupStarterTask implements Runnable {
 
             for (World world : Bukkit.getWorlds()) {
                 if (!world.getWorldFolder().setReadOnly()) {
-                    Logger.getLogger().devWarn("Can not set folder read only!");
+                    Logger.getLogger().devWarn(this, "Can not set folder read only!");
                 }
             }
 
@@ -42,12 +42,12 @@ public class BackupStarterTask implements Runnable {
 
                 if (!world.getWorldFolder().setWritable(true)) {
 
-                    Logger.getLogger().devWarn("Can not set " + world.getWorldFolder().getPath() + " writable!");
+                    Logger.getLogger().devWarn(this, "Can not set " + world.getWorldFolder().getPath() + " writable!");
                 }
             }
 
             Logger.getLogger().warn("Backup process has been finished with an exception!");
-            Logger.getLogger().devWarn(e.getMessage());
+            Logger.getLogger().devWarn(this, e.getStackTrace().toString());
         }
     }
 }

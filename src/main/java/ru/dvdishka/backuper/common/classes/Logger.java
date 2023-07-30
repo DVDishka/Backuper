@@ -23,9 +23,15 @@ public class Logger {
         Common.plugin.getLogger().warning(text);
     }
 
-    public void devWarn(String text) {
+    public void devWarn(Object sourceClass, String text) {
         if (ConfigVariables.betterLogging) {
-            Common.plugin.getLogger().warning(text);
+            Common.plugin.getLogger().warning(sourceClass.getClass().getSimpleName() + ": " + text);
+        }
+    }
+
+    public void devWarn(String sourceClassName, String text) {
+        if (ConfigVariables.betterLogging) {
+            Common.plugin.getLogger().warning(sourceClassName + ": " + text);
         }
     }
 }

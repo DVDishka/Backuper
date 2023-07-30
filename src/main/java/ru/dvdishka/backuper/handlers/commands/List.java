@@ -58,9 +58,19 @@ public class List implements CommandInterface {
                 backupSize /= (1024 * 1024);
             }
 
-            HoverEvent<net.kyori.adventure.text.Component> hoverEvent = HoverEvent.showText(net.kyori.adventure.text.Component.text(backupSize + " MB"));
+            String backupText = backups.get(i - 1).format(Common.dateTimeFormatter);
+            String backupFileType = "";
 
-            pages.get(i / 10).add(net.kyori.adventure.text.Component.text(backups.get(i - 1).format(Common.dateTimeFormatter)).hoverEvent(hoverEvent));
+            // CHECKS IF A ZIP FILE EXISTS
+            if (new File(ConfigVariables.backupsFolder).toPath().resolve(new File(backups.get(i - 1).format(Common.dateTimeFormatter) + ".zip").toPath()).toFile().exists()) {
+                backupFileType = "(ZIP)";
+            } else {
+                backupFileType = "(Folder)";
+            }
+
+            HoverEvent<net.kyori.adventure.text.Component> hoverEvent = HoverEvent.showText(net.kyori.adventure.text.Component.text(backupFileType + " " + backupSize + " MB"));
+
+            pages.get(i / 10).add(net.kyori.adventure.text.Component.text(backupText).hoverEvent(hoverEvent));
         }
 
         if (pages.size() == 0) {

@@ -20,8 +20,8 @@ public class Common {
         try {
             properties.load(Common.class.getClassLoader().getResourceAsStream("project.properties"));
         } catch (Exception e) {
-            Logger.getLogger().devWarn("Failed to load properties!");
-            Logger.getLogger().devWarn(e.getMessage());        }
+            Logger.getLogger().devWarn("Common", "Failed to load properties!");
+            Logger.getLogger().devWarn("Common", e.getStackTrace().toString());        }
     }
 
     public static final int bStatsId = 17735;
@@ -32,7 +32,7 @@ public class Common {
             getLatestVersionURL = new URL("https://hangar.papermc.io/api/v1/projects/Collagen/Backuper/latestrelease");
         } catch (MalformedURLException e) {
             Logger.getLogger().warn("Failed to check Backuper updates!");
-            Logger.getLogger().devWarn(e.getMessage());
+            Logger.getLogger().devWarn("Common", e.getStackTrace().toString());
         }
     }
 
@@ -64,11 +64,11 @@ public class Common {
     public static long getPathFileByteSize(File path) {
 
         if (!path.isDirectory()) {
-            Logger.getLogger().warn(path.getPath());
             try {
                 return Files.size(path.toPath());
             } catch (Exception e) {
                 Logger.getLogger().warn("Something went wrong while trying to calculate backup size!");
+                Logger.getLogger().devWarn("Common", e.getStackTrace().toString());
             }
         }
 

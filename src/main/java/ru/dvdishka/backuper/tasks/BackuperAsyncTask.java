@@ -79,7 +79,7 @@ public class BackuperAsyncTask implements Runnable {
                     } catch (Exception e) {
 
                         Logger.getLogger().warn("Something went wrong when trying to copy files!");
-                        Logger.getLogger().devWarn(e.getMessage());
+                        Logger.getLogger().devWarn(this, e.getStackTrace().toString());
                     }
                 }
             }
@@ -95,7 +95,7 @@ public class BackuperAsyncTask implements Runnable {
             for (World world : Bukkit.getWorlds()) {
 
                 if (!world.getWorldFolder().setWritable(true)) {
-                    Logger.getLogger().devWarn("Can not set folder writable!");
+                    Logger.getLogger().devWarn(this, "Can not set folder writable!");
                 }
             }
 
@@ -203,7 +203,7 @@ public class BackuperAsyncTask implements Runnable {
                         }
                     } catch (Exception e) {
 
-                        Logger.getLogger().devWarn(e.getMessage());
+                        Logger.getLogger().devWarn(this, e.getStackTrace().toString());
                     }
 
                     backupsToDelete--;
@@ -293,12 +293,12 @@ public class BackuperAsyncTask implements Runnable {
 
             for (World world : Bukkit.getWorlds()) {
                 if (!world.getWorldFolder().setWritable(true)) {
-                    Logger.getLogger().devWarn("Can not set folder writable!");
+                    Logger.getLogger().devWarn(this, "Can not set folder writable!");
                 }
             }
 
             Logger.getLogger().warn("Copy task has finished with an exception!");
-            Logger.getLogger().devWarn(e.getMessage());
+            Logger.getLogger().devWarn(this, e.getStackTrace().toString());
             e.printStackTrace();
         }
     }
@@ -317,13 +317,13 @@ public class BackuperAsyncTask implements Runnable {
 
                     if (!file.delete()) {
 
-                        Logger.getLogger().devWarn("Can not delete file " + file.getName());
+                        Logger.getLogger().devWarn(this, "Can not delete file " + file.getName());
                     }
                 }
             }
             if (!dir.delete()) {
 
-                Logger.getLogger().devWarn("Can not delete directory " + dir.getName());
+                Logger.getLogger().devWarn(this, "Can not delete directory " + dir.getName());
             }
         }
     }
@@ -363,7 +363,7 @@ public class BackuperAsyncTask implements Runnable {
                 } catch (Exception e) {
 
                     Logger.getLogger().warn("Something went wrong while trying to put file in ZIP! " + file.getName());
-                    Logger.getLogger().devWarn(e.getMessage());
+                    Logger.getLogger().devWarn(this, e.getStackTrace().toString());
                 }
             }
         }
@@ -393,7 +393,7 @@ public class BackuperAsyncTask implements Runnable {
                     } catch (Exception e) {
 
                         Logger.getLogger().warn("Something went wrong while trying to copy file! " + file.getName());
-                        Logger.getLogger().devWarn(e.getMessage());
+                        Logger.getLogger().devWarn(this, e.getStackTrace().toString());
                     }
                 }
             }

@@ -8,7 +8,6 @@ public class RestartSafelyTask implements Runnable {
 
     @Override
     public void run() {
-
         Scheduler.cancelTasks(Common.plugin);
         Bukkit.getServer().spigot().restart();
     }

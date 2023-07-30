@@ -85,7 +85,7 @@ public class Initialization {
                 }
 
                 if (!configFile.delete()) {
-                    Logger.getLogger().devWarn("Can not delete old config file!");
+                    Logger.getLogger().devWarn("Initialization", "Can not delete old config file!");
                 }
 
                 Common.plugin.saveDefaultConfig();
@@ -110,7 +110,7 @@ public class Initialization {
                 } catch (Exception e) {
 
                     Logger.getLogger().warn("Can not save config!");
-                    Logger.getLogger().devWarn(e.getMessage());
+                    Logger.getLogger().devWarn("Initialization", e.getMessage());
                 }
             }
 
@@ -123,7 +123,7 @@ public class Initialization {
             } catch (Exception e) {
 
                 Logger.getLogger().warn("Something went wrong when trying to create config file!");
-                Logger.getLogger().devWarn(e.getMessage());
+                Logger.getLogger().devWarn("Initialization", e.getMessage());
             }
         }
     }
@@ -204,7 +204,7 @@ public class Initialization {
         } catch (Exception e) {
 
             Logger.getLogger().warn("Failed to check Backuper updates!");
-            Logger.getLogger().devWarn(e.getMessage());
+            Logger.getLogger().devWarn("Initialization", e.getStackTrace().toString());
         }
     }
 }
