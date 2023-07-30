@@ -12,7 +12,8 @@
 
 ### Pages
 
-* [Hangar page](https://hangar.papermc.io/Collagen/Backuper)
+* [Hangar](https://hangar.papermc.io/Collagen/Backuper)
+* [Modrinth](https://modrinth.com/plugin/backuper)
 * [bStats](https://bstats.org/plugin/bukkit/Backuper/17735)
 
 ---
