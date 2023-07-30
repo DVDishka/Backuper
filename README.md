@@ -2,7 +2,7 @@
 
 # Backuper
 
-<img height="128" src="images\backuper_logo.png" width="128"/>
+<img height="128" src="images/backuper_logo.png" width="128"/>
 
 ## _Simple backup plugin for Paper/Folia_
 
@@ -24,7 +24,7 @@
 3. Change config.yml (plugins/Backuper/config.yml)
 4. Restart the server
 
-#### Backups will be stored in (plugins/Backuper/Backups)
+#### By default, backups will be stored in (plugins/Backuper/Backups)
 
 ---
 
