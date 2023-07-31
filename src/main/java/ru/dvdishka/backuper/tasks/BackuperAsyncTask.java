@@ -43,7 +43,7 @@ public class BackuperAsyncTask implements Runnable {
 
             File backupDir = new File("plugins/Backuper/Backups/" +
                     LocalDateTime.now().format(Common.dateTimeFormatter));
-            File backupsDir = new File("plugins/Backuper/Backups");
+            File backupsDir = new File(ConfigVariables.backupsFolder);
 
             if (!ConfigVariables.zipArchive && !backupDir.mkdir()) {
 
@@ -79,7 +79,7 @@ public class BackuperAsyncTask implements Runnable {
                     } catch (Exception e) {
 
                         Logger.getLogger().warn("Something went wrong when trying to copy files!");
-                        Logger.getLogger().devWarn(this, e.getStackTrace().toString());
+                        Logger.getLogger().devWarn(this, e);
                     }
                 }
             }
@@ -114,8 +114,8 @@ public class BackuperAsyncTask implements Runnable {
                             Logger.getLogger().warn("Can not delete backup in default directory");
                         }
                     } catch (SecurityException e) {
-                        Logger.getLogger().warn("Backup Directory is not allowed to modify");
-                        Logger.getLogger().warn(e.toString());
+                        Logger.getLogger().warn("Backup Directory is not allowed to modify!");
+                        Logger.getLogger().warn(e.getStackTrace().toString());
                     }
                 } else {
                     copyFilesInDir(new File(ConfigVariables.backupsFolder).toPath().resolve(backupDir.getName()).toFile(), backupDir);
@@ -136,8 +136,6 @@ public class BackuperAsyncTask implements Runnable {
                 Logger.getLogger().devLog("LastBackup variable has been updated");
             }
 
-            backupsDir = new File(ConfigVariables.backupsFolder);
-
             if (ConfigVariables.backupsNumber != 0 && backupsDir.listFiles() != null) {
 
                 ArrayList<LocalDateTime> backups = new ArrayList<>();
@@ -153,19 +151,7 @@ public class BackuperAsyncTask implements Runnable {
                     } catch (Exception ignored) {}
                 }
 
-                for (int firstBackupsIndex = 0; firstBackupsIndex < backups.size(); firstBackupsIndex++) {
-
-                    for (int secondBackupsIndex = 0; secondBackupsIndex < backups.size(); secondBackupsIndex++) {
-
-                        if (backups.get(firstBackupsIndex).isBefore(backups.get(secondBackupsIndex))) {
-
-                            LocalDateTime saveDate = backups.get(firstBackupsIndex);
-
-                            backups.set(firstBackupsIndex, backups.get(secondBackupsIndex));
-                            backups.set(secondBackupsIndex, saveDate);
-                        }
-                    }
-                }
+                Common.sortLocalDateTime(backups);
 
                 int backupsToDelete = backups.size() - ConfigVariables.backupsNumber;
 
@@ -203,7 +189,7 @@ public class BackuperAsyncTask implements Runnable {
                         }
                     } catch (Exception e) {
 
-                        Logger.getLogger().devWarn(this, e.getStackTrace().toString());
+                        Logger.getLogger().devWarn(this, e);
                     }
 
                     backupsToDelete--;
@@ -298,7 +284,7 @@ public class BackuperAsyncTask implements Runnable {
             }
 
             Logger.getLogger().warn("Copy task has finished with an exception!");
-            Logger.getLogger().devWarn(this, e.getStackTrace().toString());
+            Logger.getLogger().devWarn(this, e);
             e.printStackTrace();
         }
     }
@@ -363,7 +349,7 @@ public class BackuperAsyncTask implements Runnable {
                 } catch (Exception e) {
 
                     Logger.getLogger().warn("Something went wrong while trying to put file in ZIP! " + file.getName());
-                    Logger.getLogger().devWarn(this, e.getStackTrace().toString());
+                    Logger.getLogger().devWarn(this, e);
                 }
             }
         }
@@ -390,10 +376,15 @@ public class BackuperAsyncTask implements Runnable {
 
                         Files.copy(file.toPath(), destDir.toPath().resolve(file.getName()));
 
+                    } catch (SecurityException e) {
+
+                        Logger.getLogger().warn("Backup Directory is not allowed to modify! " + file.getName());
+                        Logger.getLogger().devWarn(this, e);
+
                     } catch (Exception e) {
 
                         Logger.getLogger().warn("Something went wrong while trying to copy file! " + file.getName());
-                        Logger.getLogger().devWarn(this, e.getStackTrace().toString());
+                        Logger.getLogger().devWarn(this, e);
                     }
                 }
             }

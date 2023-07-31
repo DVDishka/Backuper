@@ -46,6 +46,7 @@ public class Backuper extends JavaPlugin {
         Initialization.initConfig(configFile);
         Initialization.initBStats(this);
         Initialization.initCommands();
+        Initialization.initEventHandlers();
         Initialization.checkDependencies();
         Initialization.checkVersion();
 

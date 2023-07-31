@@ -1,4 +1,4 @@
-package ru.dvdishka.backuper.common;
+package ru.dvdishka.backuper.common.classes;
 
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.ChatColor;

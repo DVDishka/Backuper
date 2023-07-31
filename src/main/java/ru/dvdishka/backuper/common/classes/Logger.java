@@ -3,6 +3,8 @@ package ru.dvdishka.backuper.common.classes;
 import ru.dvdishka.backuper.common.Common;
 import ru.dvdishka.backuper.common.ConfigVariables;
 
+import java.util.Arrays;
+
 public class Logger {
 
     public static Logger getLogger() {
@@ -32,6 +34,18 @@ public class Logger {
     public void devWarn(String sourceClassName, String text) {
         if (ConfigVariables.betterLogging) {
             Common.plugin.getLogger().warning(sourceClassName + ": " + text);
+        }
+    }
+
+    public void devWarn(Object sourceClass, Exception exception) {
+        if (ConfigVariables.betterLogging) {
+            Common.plugin.getLogger().warning(sourceClass.getClass().getSimpleName() + ": " + Arrays.toString(exception.getStackTrace()));
+        }
+    }
+
+    public void devWarn(String sourceClassName, Exception exception) {
+        if (ConfigVariables.betterLogging) {
+            Common.plugin.getLogger().warning(sourceClassName + ": " + Arrays.toString(exception.getStackTrace()));
         }
     }
 }

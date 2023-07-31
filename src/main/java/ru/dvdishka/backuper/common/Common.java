@@ -50,6 +50,22 @@ public class Common {
 
             for (int secondBackupsIndex = firstBackupsIndex; secondBackupsIndex < backups.size(); secondBackupsIndex++) {
 
+                if (backups.get(firstBackupsIndex).isAfter(backups.get(secondBackupsIndex))) {
+
+                    LocalDateTime saveDate = backups.get(firstBackupsIndex);
+
+                    backups.set(firstBackupsIndex, backups.get(secondBackupsIndex));
+                    backups.set(secondBackupsIndex, saveDate);
+                }
+            }
+        }
+    }
+
+    public static void sortLocalDateTimeDecrease(ArrayList<LocalDateTime> backups) {
+        for (int firstBackupsIndex = 0; firstBackupsIndex < backups.size(); firstBackupsIndex++) {
+
+            for (int secondBackupsIndex = firstBackupsIndex; secondBackupsIndex < backups.size(); secondBackupsIndex++) {
+
                 if (backups.get(firstBackupsIndex).isBefore(backups.get(secondBackupsIndex))) {
 
                     LocalDateTime saveDate = backups.get(firstBackupsIndex);

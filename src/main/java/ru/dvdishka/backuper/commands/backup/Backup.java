@@ -1,8 +1,8 @@
-package ru.dvdishka.backuper.handlers.commands;
+package ru.dvdishka.backuper.commands.backup;
 
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
-import ru.dvdishka.backuper.common.CommandInterface;
+import ru.dvdishka.backuper.common.classes.CommandInterface;
 import ru.dvdishka.backuper.common.Common;
 import ru.dvdishka.backuper.common.classes.Scheduler;
 import ru.dvdishka.backuper.tasks.BackupStarterTask;

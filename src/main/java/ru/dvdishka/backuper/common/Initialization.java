@@ -1,6 +1,7 @@
 package ru.dvdishka.backuper.common;
 
 import dev.jorel.commandapi.CommandTree;
+import dev.jorel.commandapi.arguments.IntegerArgument;
 import dev.jorel.commandapi.arguments.LiteralArgument;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -8,8 +9,8 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.dvdishka.backuper.common.classes.Logger;
 import ru.dvdishka.backuper.common.classes.Permissions;
-import ru.dvdishka.backuper.handlers.commands.Backup;
-import ru.dvdishka.backuper.handlers.commands.List;
+import ru.dvdishka.backuper.commands.backup.Backup;
+import ru.dvdishka.backuper.commands.list.List;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -161,10 +162,18 @@ public class Initialization {
 
                         new List().execute(sender, args);
                     })
+                        .then(new IntegerArgument("pageNumber")
+                                .executes((sender, args) -> {
+                                    new List().execute(sender, args);
+                                })
+                        )
                 )
         ;
 
         backupCommandTree.register();
+    }
+
+    public static void initEventHandlers() {
     }
 
     public static void checkDependencies() {
