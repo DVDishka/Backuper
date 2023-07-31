@@ -46,6 +46,7 @@
 ### Commands
 
 * `/backup <stopRestartServer>` - command to backup the server manually, argument means what the server will do after restart (Argument can be STOP or RESTART, also you can use it without argument)
+* `/backup list` - Command to view the list of backups
 
 ---
 
@@ -54,6 +55,7 @@
 * `backuper.backup` - permission to use `/backup` command
 * `backuper.stop` - permission to use `/backup` command with the STOP argument
 * `backuper.restart` - permission to use `/backup` command with the RESTART argument
+* `backuper.list` - permission to use `/backup list` command
 
 ---
 
@@ -61,4 +63,4 @@
 
 * **Please report any issues to** [GitHub](https://github.com/DVDishka/Backuper/issues)
 * RESTART option may not work well, so it's better to use STOP with a loop in your start script ([start script](https://flags.sh/) auto restart ON)
-* You can reset the backup time if it is broken and you don't use `fixedBackupTime` by changing `lastBackup` to 0. Then the next backup will happen at `firstBackupTime` and the next ones will happen after `backupPeriod`
+* You can reset the backup time if it is broken, and you don't use `fixedBackupTime` by changing `lastBackup` to 0. Then the next backup will happen at `firstBackupTime` and the next ones will happen after `backupPeriod`

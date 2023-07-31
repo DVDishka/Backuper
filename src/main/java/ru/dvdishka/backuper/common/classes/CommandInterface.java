@@ -11,21 +11,21 @@ public interface CommandInterface {
 
     default void returnSuccess(String message, @NotNull CommandSender sender) {
 
-        sender.sendMessage(ChatColor.GREEN + (ChatColor.BOLD + message));
+        sender.sendMessage(ChatColor.GREEN + (message));
     }
 
     default void returnFailure(String message, @NotNull CommandSender sender) {
 
-        sender.sendMessage(ChatColor.RED + (ChatColor.BOLD + message));
+        sender.sendMessage(ChatColor.RED + (message));
     }
 
     default void returnSuccess(String message, @NotNull CommandSender sender, ChatColor color) {
 
-        sender.sendMessage(color + (ChatColor.BOLD + message));
+        sender.sendMessage(color + (message));
     }
 
     default void returnFailure(String message, @NotNull CommandSender sender, ChatColor color) {
 
-        sender.sendMessage(color + (ChatColor.BOLD + message));
+        sender.sendMessage(color + (message));
     }
 }

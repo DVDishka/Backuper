@@ -2,6 +2,7 @@ package ru.dvdishka.backuper.tasks;
 
 import org.bukkit.Bukkit;
 import org.bukkit.World;
+import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.common.Common;
 import ru.dvdishka.backuper.common.classes.Logger;
 import ru.dvdishka.backuper.common.classes.Scheduler;
@@ -9,6 +10,7 @@ import ru.dvdishka.backuper.common.classes.Scheduler;
 public class BackupStarterTask implements Runnable {
 
     private String afterRestart = "NOTHING";
+    private CommandSender sender = null;
     private boolean isAutoBackup = false;
 
     public BackupStarterTask(String afterRestart) {
@@ -22,11 +24,19 @@ public class BackupStarterTask implements Runnable {
         this.isAutoBackup = isAutoBackup;
     }
 
+    public BackupStarterTask(String afterRestart, CommandSender sender) {
+
+        this.afterRestart = afterRestart;
+        this.sender = sender;
+    }
+
     public void run() {
 
         try {
 
             Logger.getLogger().log("Backup process has been started!");
+
+            Common.isBackupRunning = true;
 
             for (World world : Bukkit.getWorlds()) {
                 if (!world.getWorldFolder().setReadOnly()) {
@@ -34,9 +44,11 @@ public class BackupStarterTask implements Runnable {
                 }
             }
 
-            Scheduler.getScheduler().runAsync(Common.plugin, new BackuperAsyncTask(afterRestart, isAutoBackup));
+            Scheduler.getScheduler().runAsync(Common.plugin, new BackuperAsyncTask(afterRestart, isAutoBackup, sender));
 
         } catch (Exception e) {
+
+            Common.isBackupRunning = false;
 
             for (World world : Bukkit.getWorlds()) {
 

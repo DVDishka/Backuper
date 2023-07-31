@@ -20,8 +20,13 @@ public class Backup implements CommandInterface {
 
     public void execute(CommandSender sender, CommandArguments args) {
 
-        Scheduler.getScheduler().runSync(Common.plugin, new BackupStarterTask(afterBackup));
+        if (Common.isBackupRunning) {
+            returnFailure("The backup process is already running!", sender);
+            return;
+        }
 
-        returnSuccess("Backup process has been started!\nYou can see the result in the console", sender);
+        Scheduler.getScheduler().runSync(Common.plugin, new BackupStarterTask(afterBackup, sender));
+
+        returnSuccess("Backup process has been started!", sender);
     }
 }

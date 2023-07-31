@@ -114,7 +114,7 @@ public class List implements CommandInterface {
                 .decorate(TextDecoration.BOLD)
                 .appendNewline());
 
-        for (TextComponent backupComponent : pages.get(0)) {
+        for (TextComponent backupComponent : pages.get(pageNumber - 1)) {
             message = message
                     .append(backupComponent)
                     .appendNewline();

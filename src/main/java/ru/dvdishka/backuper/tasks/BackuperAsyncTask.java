@@ -14,27 +14,48 @@ import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.io.FileUtils;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.World;
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import ru.dvdishka.backuper.common.Common;
 import ru.dvdishka.backuper.common.ConfigVariables;
+import ru.dvdishka.backuper.common.classes.CommandInterface;
 import ru.dvdishka.backuper.common.classes.Logger;
 import ru.dvdishka.backuper.common.classes.Scheduler;
 
 public class BackuperAsyncTask implements Runnable {
 
     private String afterBackup = "NOTHING";
+    private CommandSender sender = null;
     private boolean isAutoBackup = false;
 
     public BackuperAsyncTask(String afterBackup) {
-
         this.afterBackup = afterBackup;
     }
 
     public BackuperAsyncTask(String afterBackup, boolean isAutoBackup) {
         this.afterBackup = afterBackup;
         this.isAutoBackup = isAutoBackup;
+    }
+
+    public BackuperAsyncTask(String afterBackup, boolean isAutoBackup, CommandSender sender) {
+        this.afterBackup = afterBackup;
+        this.isAutoBackup = isAutoBackup;
+        this.sender = sender;
+    }
+
+    public void sendFailureToSender(String message) {
+        try {
+            sender.sendMessage(ChatColor.RED + message);
+        } catch (Exception ignored) {}
+    }
+
+    public void sendSuccessToSender(String message) {
+        try {
+            sender.sendMessage(ChatColor.GREEN + message);
+        } catch (Exception ignored) {}
     }
 
     public void run() {
@@ -125,7 +146,7 @@ public class BackuperAsyncTask implements Runnable {
 
             Logger.getLogger().devLog("Move task has been finished");
 
-            Logger.getLogger().log("Backup process has been finished!");
+            Logger.getLogger().log("Backup task has been finished");
 
             if (isAutoBackup) {
                 File configFile = new File("plugins/Backuper/config.yml");
@@ -196,7 +217,7 @@ public class BackuperAsyncTask implements Runnable {
                 }
             }
 
-            Logger.getLogger().devLog("Delete old backups 1 task has been finished!");
+            Logger.getLogger().devLog("Delete old backups 1 task has been finished");
 
             if (ConfigVariables.backupsWeight != 0) {
 
@@ -263,7 +284,12 @@ public class BackuperAsyncTask implements Runnable {
                 }
             }
 
-            Logger.getLogger().devLog("Delete old backups 2 task has been finished!");
+            Logger.getLogger().devLog("Delete old backups 2 task has been finished");
+            Logger.getLogger().log("Backup process has been finished successfully!");
+
+            sendSuccessToSender("Backup process has been finished successfully!");
+
+            Common.isBackupRunning = false;
 
             if (afterBackup.equals("RESTART")) {
 
@@ -283,9 +309,11 @@ public class BackuperAsyncTask implements Runnable {
                 }
             }
 
+            Common.isBackupRunning = false;
+
+            sendFailureToSender("The backup process was completed with an exception, you can see the exception in the console");
             Logger.getLogger().warn("Copy task has finished with an exception!");
             Logger.getLogger().devWarn(this, e);
-            e.printStackTrace();
         }
     }
 

@@ -16,12 +16,13 @@ public class Common {
 
     public static Plugin plugin;
     public static Properties properties = new Properties();
+    public static boolean isBackupRunning = false;
     static {
         try {
             properties.load(Common.class.getClassLoader().getResourceAsStream("project.properties"));
         } catch (Exception e) {
             Logger.getLogger().devWarn("Common", "Failed to load properties!");
-            Logger.getLogger().devWarn("Common", e.getStackTrace().toString());        }
+            Logger.getLogger().devWarn("Common", e);        }
     }
 
     public static final int bStatsId = 17735;
@@ -32,7 +33,7 @@ public class Common {
             getLatestVersionURL = new URL("https://hangar.papermc.io/api/v1/projects/Collagen/Backuper/latestrelease");
         } catch (MalformedURLException e) {
             Logger.getLogger().warn("Failed to check Backuper updates!");
-            Logger.getLogger().devWarn("Common", e.getStackTrace().toString());
+            Logger.getLogger().devWarn("Common", e);
         }
     }
 

@@ -162,7 +162,7 @@ public class Initialization {
 
                         new List().execute(sender, args);
                     })
-                        .then(new IntegerArgument("pageNumber")
+                        .then(new IntegerArgument("pageNumber").withPermission(Permissions.LIST.getPermission())
                                 .executes((sender, args) -> {
                                     new List().execute(sender, args);
                                 })
@@ -181,10 +181,10 @@ public class Initialization {
         try {
             Class.forName("io.papermc.paper.threadedregions.scheduler.EntityScheduler");
             Common.isFolia = true;
-            Logger.getLogger().devLog("Folia has been detected!");
+            Logger.getLogger().devLog("Folia/Paper has been detected!");
         } catch (Exception e) {
             Common.isFolia = false;
-            Logger.getLogger().devLog("Folia has not been detected!");
+            Logger.getLogger().devLog("Folia/Paper has not been detected!");
         }
     }
 
