@@ -6,6 +6,8 @@
 
 ## _Simple backup plugin for Paper/Folia_
 
+[![bStats Graph Data](https://bstats.org/signatures/bukkit/Backuper.svg)](https://bstats.org/plugin/bukkit/Backuper)
+
 </div>
 
 ---
