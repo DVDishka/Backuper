@@ -14,8 +14,8 @@
 
 ### Pages
 
-* [Hangar](https://hangar.papermc.io/Collagen/Backuper)
-* [Modrinth](https://modrinth.com/plugin/backuper)
+* <img width="20px" src="https://i.imgur.com/o104U27.png"></img> [Modrinth](https://modrinth.com/plugin/backuper)
+* <img width="20px" src="https://i.imgur.com/QJnHi37.png"></img> [Hangar](https://hangar.papermc.io/Collagen/Backuper)
 
 ---
 
