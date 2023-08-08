@@ -6,15 +6,16 @@
 
 ## _Simple backup plugin for Paper/Folia_
 
+[![bStats Graph Data](https://bstats.org/signatures/bukkit/Backuper.svg)](https://bstats.org/plugin/bukkit/Backuper)
+
 </div>
 
 ---
 
 ### Pages
 
-* [Hangar](https://hangar.papermc.io/Collagen/Backuper)
-* [Modrinth](https://modrinth.com/plugin/backuper)
-* [bStats](https://bstats.org/plugin/bukkit/Backuper/17735)
+* <img width="20px" src="https://i.imgur.com/o104U27.png"></img> [Modrinth](https://modrinth.com/plugin/backuper)
+* <img width="20px" src="https://i.imgur.com/QJnHi37.png"></img> [Hangar](https://hangar.papermc.io/Collagen/Backuper)
 
 ---
 
