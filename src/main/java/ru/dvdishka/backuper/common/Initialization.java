@@ -35,55 +35,62 @@ public class Initialization {
 
             assert configVersion != null;
 
-            if (configVersion.equals(ConfigVariables.configVersion)) {
+            ConfigVariables.firstBackupTime = config.getInt("firstBackupTime", 0);
+            ConfigVariables.backupPeriod = config.getInt("backupPeriod", 24);
+            ConfigVariables.afterBackup = config.getString("afterBackup", "NOTHING").toUpperCase();
+            ConfigVariables.backupsNumber = config.getInt("maxBackupsNumber", 7);
+            ConfigVariables.backupsWeight = config.getLong("maxBackupsWeight", 0) * 1_048_576L;
+            ConfigVariables.zipArchive = config.getBoolean("zipArchive", true);
+            ConfigVariables.betterLogging = config.getBoolean("betterLogging", false);
+            ConfigVariables.autoBackup = config.getBoolean("autoBackup", true);
+            ConfigVariables.lastBackup = config.getLong("lastBackup", 0);
+            ConfigVariables.fixedBackupTime = config.getBoolean("fixedBackupTime", true);
+            ConfigVariables.backupsFolder = config.getString("backupsFolder", "plugins/Backuper/Backups");
+            ConfigVariables.autoBackupOnShutDown = config.getBoolean("autoBackupOnShutDown", false);
 
-                ConfigVariables.firstBackupTime = config.getInt("firstBackupTime");
-                ConfigVariables.backupPeriod = config.getInt("backupPeriod");
-                ConfigVariables.afterBackup = Objects.requireNonNull(config.getString("afterBackup")).toUpperCase();
-                ConfigVariables.backupsNumber = config.getInt("maxBackupsNumber");
-                ConfigVariables.backupsWeight = config.getLong("maxBackupsWeight") * 1_048_576L;
-                ConfigVariables.zipArchive = config.getBoolean("zipArchive");
-                ConfigVariables.betterLogging = config.getBoolean("betterLogging");
-                ConfigVariables.autoBackup = config.getBoolean("autoBackup");
-                ConfigVariables.lastBackup = config.getLong("lastBackup");
-                ConfigVariables.fixedBackupTime = config.getBoolean("fixedBackupTime");
-                ConfigVariables.backupsFolder = config.getString("backupsFolder");
+            boolean isConfigFileOk = true;
 
-            } else {
+            if (!configVersion.equals(ConfigVariables.configVersion)) {
+                isConfigFileOk = false;
+            }
+            if (!config.contains("firstBackupTime")) {
+                isConfigFileOk = false;
+            }
+            if (!config.contains("backupPeriod")) {
+                isConfigFileOk = false;
+            }
+            if (!config.contains("afterBackup")) {
+                isConfigFileOk = false;
+            }
+            if (!config.contains("maxBackupsNumber")) {
+                isConfigFileOk = false;
+            }
+            if (!config.contains("maxBackupsWeight")) {
+                isConfigFileOk = false;
+            }
+            if (!config.contains("zipArchive")) {
+                isConfigFileOk = false;
+            }
+            if (!config.contains("betterLogging")) {
+                isConfigFileOk = false;
+            }
+            if (!config.contains("autoBackup")) {
+                isConfigFileOk = false;
+            }
+            if (!config.contains("lastBackup")) {
+                isConfigFileOk = false;
+            }
+            if (!config.contains("fixedBackupTime")) {
+                isConfigFileOk = false;
+            }
+            if (!config.contains("backupsFolder")) {
+                isConfigFileOk = false;
+            }
+            if (!config.contains("autoBackupOnShutDown")) {
+                isConfigFileOk = false;
+            }
 
-                if (config.contains("firstBackupTime")) {
-                    ConfigVariables.firstBackupTime = config.getInt("firstBackupTime");
-                }
-                if (config.contains("backupPeriod")) {
-                    ConfigVariables.backupPeriod = config.getInt("backupPeriod");
-                }
-                if (config.contains("afterBackup")) {
-                    ConfigVariables.afterBackup = config.getString("afterBackup");
-                }
-                if (config.contains("maxBackupsNumber")) {
-                    ConfigVariables.backupsNumber = config.getInt("maxBackupsNumber");
-                }
-                if (config.contains("maxBackupsWeight")) {
-                    ConfigVariables.backupsWeight = config.getLong("maxBackupsWeight");
-                }
-                if (config.contains("zipArchive")) {
-                    ConfigVariables.zipArchive = config.getBoolean("zipArchive");
-                }
-                if (config.contains("betterLogging")) {
-                    ConfigVariables.betterLogging = config.getBoolean("betterLogging");
-                }
-                if (config.contains("autoBackup")) {
-                    ConfigVariables.autoBackup = config.getBoolean("autoBackup");
-                }
-                if (config.contains("lastBackup")) {
-                    ConfigVariables.lastBackup = config.getLong("lastBackup");
-                }
-                if (config.contains("fixedBackupTime")) {
-                    ConfigVariables.fixedBackupTime = config.getBoolean("fixedBackupTime");
-                }
-                if (config.contains("backupsFolder")) {
-                    ConfigVariables.backupsFolder = config.getString("backupsFolder");
-                }
+            if (!isConfigFileOk) {
 
                 if (!configFile.delete()) {
                     Logger.getLogger().devWarn("Initialization", "Can not delete old config file!");
@@ -103,6 +110,7 @@ public class Initialization {
                 newConfig.set("lastBackup", ConfigVariables.lastBackup);
                 newConfig.set("fixedBackupTime", ConfigVariables.fixedBackupTime);
                 newConfig.set("backupsFolder", ConfigVariables.backupsFolder);
+                newConfig.set("autoBackupOnShutDown", ConfigVariables.autoBackupOnShutDown);
 
                 try {
 

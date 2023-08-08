@@ -1,9 +1,11 @@
 # DO NOT CHANGE
-configVersion: 3.0
+configVersion: 4.0
 lastBackup: 0
 
 # Automatic backup once in a specified period
 autoBackup: true
+# Automatic backup on server shutdown
+autoBackupOnShutDown: false
 # Full directory where backups will be stored
 backupsFolder: plugins/Backuper/Backups
 # First backup time (0 - 23)
