@@ -1,7 +1,4 @@
-package ru.dvdishka.backuper.common.classes;
-
-import ru.dvdishka.backuper.common.Common;
-import ru.dvdishka.backuper.common.ConfigVariables;
+package ru.dvdishka.backuper.common;
 
 import java.util.Arrays;
 

@@ -4,28 +4,63 @@ import dev.jorel.commandapi.CommandTree;
 import dev.jorel.commandapi.arguments.IntegerArgument;
 import dev.jorel.commandapi.arguments.LiteralArgument;
 import org.bstats.bukkit.Metrics;
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
-import ru.dvdishka.backuper.common.classes.Logger;
-import ru.dvdishka.backuper.common.classes.Permissions;
+import ru.dvdishka.backuper.commands.common.Scheduler;
+import ru.dvdishka.backuper.commands.reload.Reload;
+import ru.dvdishka.backuper.commands.common.Permissions;
 import ru.dvdishka.backuper.commands.backup.Backup;
 import ru.dvdishka.backuper.commands.list.List;
+import ru.dvdishka.backuper.tasks.BackupStarterTask;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.util.Objects;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 
 public class Initialization {
 
     public static void initBStats(JavaPlugin plugin) {
-
         Metrics bStats = new Metrics(plugin, Common.bStatsId);
     }
 
-    public static void initConfig(File configFile) {
+    public static void initAutoBackup() {
+
+        if (ConfigVariables.autoBackup) {
+
+            long delay = 0;
+
+            if (ConfigVariables.lastBackup == 0 || ConfigVariables.fixedBackupTime) {
+                if (ConfigVariables.firstBackupTime > LocalDateTime.now().getHour()) {
+
+                    delay = (long) ConfigVariables.firstBackupTime * 60 * 60 - (LocalDateTime.now().getHour() * 60 * 60 + LocalDateTime.now().getMinute() * 60 + LocalDateTime.now().getSecond());
+
+                } else {
+
+                    delay = (long) ConfigVariables.firstBackupTime * 60 * 60 + 86400 - (LocalDateTime.now().getHour() * 60 * 60 + LocalDateTime.now().getMinute() * 60 + LocalDateTime.now().getSecond());
+                }
+            } else {
+                delay = ConfigVariables.backupPeriod * 60L * 60L - (LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) - ConfigVariables.lastBackup);
+            }
+
+            if (delay <= 0) {
+                delay = 1;
+            }
+
+            Logger.getLogger().devLog("Delay: " + delay);
+
+            Scheduler.getScheduler().runSyncRepeatingTask(Common.plugin, new BackupStarterTask(ConfigVariables.afterBackup, true), (long) delay * 20, ConfigVariables.backupPeriod * 60L * 60L * 20L);
+        }
+    }
+
+    public static void initConfig(File configFile, CommandSender sender) {
+
+        boolean noErrors = true;
 
         if (configFile.exists()) {
 
@@ -93,7 +128,11 @@ public class Initialization {
             if (!isConfigFileOk) {
 
                 if (!configFile.delete()) {
-                    Logger.getLogger().devWarn("Initialization", "Can not delete old config file!");
+                    if (sender != null) {
+                        Common.returnFailure("Can not delete old config file!", sender);
+                    }
+                    Logger.getLogger().warn("Can not delete old config file!");
+                    noErrors = false;
                 }
 
                 Common.plugin.saveDefaultConfig();
@@ -118,9 +157,22 @@ public class Initialization {
 
                 } catch (Exception e) {
 
-                    Logger.getLogger().warn("Can not save config!");
-                    Logger.getLogger().devWarn("Initialization", e.getMessage());
+                    if (sender != null) {
+                        Common.returnFailure("Can not save config file!", sender);
+                    }
+                    Logger.getLogger().warn("Can not save config file!");
+                    Logger.getLogger().devWarn("Initialization", e);
+                    noErrors = false;
                 }
+            }
+
+            if (sender != null && noErrors) {
+                Common.returnSuccess("Config has been reloaded successfully!", sender);
+                Logger.getLogger().log("Config has been reloaded successfully!");
+            }
+            if (sender != null && !noErrors) {
+                Common.returnFailure("Config has been reloaded with errors!", sender);
+                Logger.getLogger().log("Config has been reloaded with errors!");
             }
 
         } else {
@@ -131,6 +183,9 @@ public class Initialization {
 
             } catch (Exception e) {
 
+                if (sender != null) {
+                    Common.returnFailure("Something went wrong when trying to create config file!", sender);
+                }
                 Logger.getLogger().warn("Something went wrong when trying to create config file!");
                 Logger.getLogger().devWarn("Initialization", e.getMessage());
             }
@@ -166,15 +221,26 @@ public class Initialization {
 
                 .then(new LiteralArgument("list").withPermission(Permissions.LIST.getPermission())
 
-                    .executes((sender, args) -> {
+                        .executes((sender, args) -> {
 
-                        new List().execute(sender, args);
-                    })
+                            new List().execute(sender, args);
+                        })
+
                         .then(new IntegerArgument("pageNumber").withPermission(Permissions.LIST.getPermission())
+
                                 .executes((sender, args) -> {
+
                                     new List().execute(sender, args);
                                 })
                         )
+                )
+
+                .then(new LiteralArgument("reload").withPermission(Permissions.RELOAD.getPermission())
+
+                        .executes((sender, args) -> {
+
+                            new Reload().execute(sender, args);
+                        })
                 )
         ;
 
@@ -193,6 +259,12 @@ public class Initialization {
         } catch (Exception e) {
             Common.isFolia = false;
             Logger.getLogger().devLog("Folia/Paper has not been detected!");
+        }
+    }
+
+    public static void checkOperatingSystem() {
+        if (Common.isWindows) {
+            Common.dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH;mm;ss");
         }
     }
 
@@ -221,7 +293,7 @@ public class Initialization {
         } catch (Exception e) {
 
             Logger.getLogger().warn("Failed to check Backuper updates!");
-            Logger.getLogger().devWarn("Initialization", e.getStackTrace().toString());
+            Logger.getLogger().devWarn("Initialization", e);
         }
     }
 }

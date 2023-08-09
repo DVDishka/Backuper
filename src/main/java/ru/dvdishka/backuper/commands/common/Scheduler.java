@@ -1,4 +1,4 @@
-package ru.dvdishka.backuper.common.classes;
+package ru.dvdishka.backuper.commands.common;
 
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
