@@ -2,7 +2,7 @@ package ru.dvdishka.backuper.tasks;
 
 import org.bukkit.Bukkit;
 import ru.dvdishka.backuper.common.Common;
-import ru.dvdishka.backuper.common.classes.Scheduler;
+import ru.dvdishka.backuper.commands.common.Scheduler;
 
 public class RestartSafelyTask implements Runnable {
 

@@ -6,7 +6,7 @@
 
     <groupId>ru.dvdishka</groupId>
     <artifactId>Backuper</artifactId>
-    <version>1.4.1</version>
+    <version>1.5.0-snapshot</version>
     <packaging>jar</packaging>
 
     <name>Backuper</name>

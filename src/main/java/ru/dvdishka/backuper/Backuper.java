@@ -1,19 +1,14 @@
 package ru.dvdishka.backuper;
 
-import java.io.File;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
-
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPIBukkitConfig;
 import org.bukkit.plugin.java.JavaPlugin;
+import ru.dvdishka.backuper.commands.common.Scheduler;
 import ru.dvdishka.backuper.common.Common;
-import ru.dvdishka.backuper.common.ConfigVariables;
 import ru.dvdishka.backuper.common.Initialization;
-import ru.dvdishka.backuper.common.classes.Logger;
-import ru.dvdishka.backuper.common.classes.Scheduler;
-import ru.dvdishka.backuper.tasks.BackupStarterTask;
+import ru.dvdishka.backuper.common.Logger;
+
+import java.io.File;
 
 public class Backuper extends JavaPlugin {
 
@@ -43,42 +38,15 @@ public class Backuper extends JavaPlugin {
             }
         }
 
-        Initialization.initConfig(configFile);
+        Initialization.initConfig(configFile, null);
         Initialization.initBStats(this);
         Initialization.initCommands();
         Initialization.initEventHandlers();
         Initialization.checkDependencies();
         Initialization.checkVersion();
+        Initialization.checkOperatingSystem();
+        Initialization.initAutoBackup();
 
-        if (Common.isWindows) {
-            Common.dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH;mm;ss");
-        }
-
-        if (ConfigVariables.autoBackup) {
-
-            long delay = 0;
-
-            if (ConfigVariables.lastBackup == 0 || ConfigVariables.fixedBackupTime) {
-                if (ConfigVariables.firstBackupTime > LocalDateTime.now().getHour()) {
-
-                    delay = (long) ConfigVariables.firstBackupTime * 60 * 60 - (LocalDateTime.now().getHour() * 60 * 60 + LocalDateTime.now().getMinute() * 60 + LocalDateTime.now().getSecond());
-
-                } else {
-
-                    delay = (long) ConfigVariables.firstBackupTime * 60 * 60 + 86400 - (LocalDateTime.now().getHour() * 60 * 60 + LocalDateTime.now().getMinute() * 60 + LocalDateTime.now().getSecond());
-                }
-            } else {
-                delay = ConfigVariables.backupPeriod * 60L * 60L - (LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) - ConfigVariables.lastBackup);
-            }
-
-            if (delay <= 0) {
-                delay = 1;
-            }
-
-            Logger.getLogger().devLog("Delay: " + delay);
-
-            Scheduler.getScheduler().runSyncRepeatingTask(this, new BackupStarterTask(ConfigVariables.afterBackup, true), (long) delay * 20, ConfigVariables.backupPeriod * 60L * 60L * 20L);
-        }
         Logger.getLogger().log("Backuper plugin has been enabled!");
     }
 

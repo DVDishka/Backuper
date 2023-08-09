@@ -3,9 +3,9 @@ package ru.dvdishka.backuper.tasks;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
+import ru.dvdishka.backuper.commands.common.Scheduler;
 import ru.dvdishka.backuper.common.Common;
-import ru.dvdishka.backuper.common.classes.Logger;
-import ru.dvdishka.backuper.common.classes.Scheduler;
+import ru.dvdishka.backuper.common.Logger;
 
 public class BackupStarterTask implements Runnable {
 
@@ -44,7 +44,7 @@ public class BackupStarterTask implements Runnable {
                 }
             }
 
-            Scheduler.getScheduler().runAsync(Common.plugin, new BackuperAsyncTask(afterRestart, isAutoBackup, sender));
+            Scheduler.getScheduler().runAsync(Common.plugin, new BackupTask(afterRestart, isAutoBackup, sender));
 
         } catch (Exception e) {
 
@@ -59,7 +59,7 @@ public class BackupStarterTask implements Runnable {
             }
 
             Logger.getLogger().warn("Backup process has been finished with an exception!");
-            Logger.getLogger().devWarn(this, e.getStackTrace().toString());
+            Logger.getLogger().devWarn(this, e);
         }
     }
 }

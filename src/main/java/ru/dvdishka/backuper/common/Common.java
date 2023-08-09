@@ -9,8 +9,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Properties;
 
+import org.bukkit.ChatColor;
+import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
-import ru.dvdishka.backuper.common.classes.Logger;
+import org.jetbrains.annotations.NotNull;
 
 public class Common {
 
@@ -85,7 +87,7 @@ public class Common {
                 return Files.size(path.toPath());
             } catch (Exception e) {
                 Logger.getLogger().warn("Something went wrong while trying to calculate backup size!");
-                Logger.getLogger().devWarn("Common", e.getStackTrace().toString());
+                Logger.getLogger().devWarn("Common", e);
             }
         }
 
@@ -98,5 +100,29 @@ public class Common {
         }
 
         return size;
+    }
+
+    public static void returnFailure(String message, CommandSender sender) {
+        try {
+            sender.sendMessage(ChatColor.RED + message);
+        } catch (Exception ignored) {}
+    }
+
+    public static void returnSuccess(String message, CommandSender sender) {
+        try {
+            sender.sendMessage(ChatColor.GREEN + message);
+        } catch (Exception ignored) {}
+    }
+
+    public static void returnSuccess(String message, @NotNull CommandSender sender, ChatColor color) {
+        try {
+            sender.sendMessage(color + message);
+        } catch (Exception ignored) {}
+    }
+
+    public static void returnFailure(String message, @NotNull CommandSender sender, ChatColor color) {
+        try {
+            sender.sendMessage(color + message);
+        } catch (Exception ignored) {}
     }
 }
