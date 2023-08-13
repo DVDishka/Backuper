@@ -9,6 +9,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.dvdishka.backuper.commands.common.Scheduler;
+import ru.dvdishka.backuper.commands.menu.Menu;
 import ru.dvdishka.backuper.commands.reload.Reload;
 import ru.dvdishka.backuper.commands.common.Permissions;
 import ru.dvdishka.backuper.commands.backup.Backup;
@@ -240,6 +241,14 @@ public class Initialization {
                         .executes((sender, args) -> {
 
                             new Reload().execute(sender, args);
+                        })
+                )
+
+                .then(new LiteralArgument("menu").withPermission(Permissions.LIST.getPermission())
+
+                        .executes((sender, args) -> {
+
+                            new Menu().execute(sender, args);
                         })
                 )
         ;

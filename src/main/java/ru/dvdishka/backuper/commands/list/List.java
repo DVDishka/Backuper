@@ -7,6 +7,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.commands.common.CommandInterface;
@@ -97,9 +98,14 @@ public class List implements CommandInterface {
                 backupFileType = "(Folder)";
             }
 
-            HoverEvent<net.kyori.adventure.text.Component> hoverEvent = HoverEvent.showText(net.kyori.adventure.text.Component.text(backupFileType + " " + backupSize + " MB"));
+            HoverEvent<net.kyori.adventure.text.Component> hoverEvent = HoverEvent
+                    .showText(net.kyori.adventure.text.Component.text(backupFileType + " " + backupSize + " MB"));
+            ClickEvent clickEvent = ClickEvent.runCommand("/backup menu " + backupText);
 
-            pages.get((i - 1) / 10).add(net.kyori.adventure.text.Component.text(backupText).hoverEvent(hoverEvent));
+            pages.get((i - 1) / 10)
+                    .add(net.kyori.adventure.text.Component.text(backupText)
+                    .hoverEvent(hoverEvent)
+                    .clickEvent(clickEvent));
         }
 
         List.pages = pages;
@@ -111,8 +117,9 @@ public class List implements CommandInterface {
 
         message = message
                 .append(Component.text("---------------")
-                .decorate(TextDecoration.BOLD)
-                .appendNewline());
+                        .color(TextColor.color(0xE3A013))
+                        .decorate(TextDecoration.BOLD)
+                        .appendNewline());
 
         for (TextComponent backupComponent : pages.get(pageNumber - 1)) {
             message = message
@@ -133,7 +140,8 @@ public class List implements CommandInterface {
 
         message = message
                 .append(Component.text("---------------")
-                .decorate(TextDecoration.BOLD));
+                        .color(TextColor.color(0xE3A013))
+                        .decorate(TextDecoration.BOLD));
 
         return message;
     }
