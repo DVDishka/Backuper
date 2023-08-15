@@ -130,15 +130,15 @@ public class BackupTask implements Runnable {
                         }
                     } catch (SecurityException e) {
                         Logger.getLogger().warn("Backup Directory is not allowed to modify!");
-                        Logger.getLogger().warn(e.getStackTrace().toString());
+                        Logger.getLogger().devWarn("BackupTask", e);
                     }
                 } else {
                     copyFilesInDir(new File(ConfigVariables.backupsFolder).toPath().resolve(backupDir.getName()).toFile(), backupDir);
+                    Logger.getLogger().devLog("Move copy task has been finished");
                     deleteDir(backupDir);
+                    Logger.getLogger().devLog("Move delete task has been finished");
                 }
             }
-
-            Logger.getLogger().devLog("Move task has been finished");
 
             Logger.getLogger().log("Backup task has been finished");
 
@@ -351,7 +351,7 @@ public class BackupTask implements Runnable {
                     String relativeFilePath = zipFilePath.relativize(file.toPath()).toFile().getPath();
                     relativeFilePath = relativeFilePath.replace("./", "");
                     relativeFilePath = relativeFilePath.replace("..\\", "");
-                    while (relativeFilePath.length() > 0 && relativeFilePath.charAt(0) == '.') {
+                    while (!relativeFilePath.isEmpty() && relativeFilePath.charAt(0) == '.') {
 
                         relativeFilePath = relativeFilePath.replaceFirst(".", "");
                     }

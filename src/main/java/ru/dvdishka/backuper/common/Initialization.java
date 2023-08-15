@@ -1,8 +1,7 @@
 package ru.dvdishka.backuper.common;
 
 import dev.jorel.commandapi.CommandTree;
-import dev.jorel.commandapi.arguments.IntegerArgument;
-import dev.jorel.commandapi.arguments.LiteralArgument;
+import dev.jorel.commandapi.arguments.*;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -23,6 +22,7 @@ import java.net.HttpURLConnection;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 
 public class Initialization {
 
@@ -82,7 +82,6 @@ public class Initialization {
             ConfigVariables.lastBackup = config.getLong("lastBackup", 0);
             ConfigVariables.fixedBackupTime = config.getBoolean("fixedBackupTime", true);
             ConfigVariables.backupsFolder = config.getString("backupsFolder", "plugins/Backuper/Backups");
-            ConfigVariables.autoBackupOnShutDown = config.getBoolean("autoBackupOnShutDown", false);
 
             boolean isConfigFileOk = true;
 
@@ -122,9 +121,6 @@ public class Initialization {
             if (!config.contains("backupsFolder")) {
                 isConfigFileOk = false;
             }
-            if (!config.contains("autoBackupOnShutDown")) {
-                isConfigFileOk = false;
-            }
 
             if (!isConfigFileOk) {
 
@@ -150,7 +146,6 @@ public class Initialization {
                 newConfig.set("lastBackup", ConfigVariables.lastBackup);
                 newConfig.set("fixedBackupTime", ConfigVariables.fixedBackupTime);
                 newConfig.set("backupsFolder", ConfigVariables.backupsFolder);
-                newConfig.set("autoBackupOnShutDown", ConfigVariables.autoBackupOnShutDown);
 
                 try {
 
@@ -246,10 +241,27 @@ public class Initialization {
 
                 .then(new LiteralArgument("menu").withPermission(Permissions.LIST.getPermission())
 
-                        .executes((sender, args) -> {
+                        .then(new TextArgument("backupName").includeSuggestions(ArgumentSuggestions.stringCollection((info) -> {
 
-                            new Menu().execute(sender, args);
-                        })
+                            ArrayList<LocalDateTime> backups = new ArrayList<>();
+                            for (File file : new File(ConfigVariables.backupsFolder).listFiles()) {
+                                backups.add(LocalDateTime.parse(file.getName().replace(".zip", ""), Common.dateTimeFormatter));
+                            }
+
+                            Common.sortLocalDateTimeDecrease(backups);
+                            ArrayList<String> backupSuggestions = new ArrayList<>();
+
+                            for (LocalDateTime backupName : backups) {
+                                backupSuggestions.add("\"" + backupName.format(Common.dateTimeFormatter) + "\"");
+                            }
+                            return backupSuggestions;
+                        }))
+
+                                .executes((sender, args) -> {
+
+                                    new Menu().execute(sender, args);
+                                })
+                        )
                 )
         ;
 

@@ -2,11 +2,10 @@ package ru.dvdishka.backuper.common;
 
 public class ConfigVariables {
 
-    public static final String configVersion = "4.0";
+    public static final String configVersion = "3.0";
     public static long lastBackup = 0;
 
     public static String backupsFolder = "plugins/Backuper/Backups";
-    public static boolean autoBackupOnShutDown = false;
     public static boolean fixedBackupTime = true;
     public static boolean autoBackup = true;
     public static int firstBackupTime = 0;

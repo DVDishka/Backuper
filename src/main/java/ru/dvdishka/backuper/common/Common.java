@@ -80,7 +80,7 @@ public class Common {
         }
     }
 
-    public static long getPathFileByteSize(File path) {
+    public static long getPathOrFileByteSize(File path) {
 
         if (!path.isDirectory()) {
             try {
@@ -95,11 +95,43 @@ public class Common {
 
         if (path.isDirectory()) {
             for (File file : path.listFiles()) {
-                size += getPathFileByteSize(file);
+                size += getPathOrFileByteSize(file);
             }
         }
 
         return size;
+    }
+
+    public static long getBackupMBSizeByName(String backupName) {
+
+        File backupsFolder = new File(ConfigVariables.backupsFolder);
+        String backupFilePath;
+
+        if (backupsFolder.toPath().resolve(backupName).toFile().exists()) {
+            backupFilePath = backupsFolder.toPath().resolve(backupName).toFile().getPath();
+        } else {
+            backupFilePath = backupsFolder.toPath().resolve(backupName).toFile().getPath() + ".zip";
+        }
+
+        long backupSize = Common.getPathOrFileByteSize(new File(backupFilePath));
+
+        if (backupSize != 0) {
+            backupSize /= (1024 * 1024);
+        }
+
+        return backupSize;
+    }
+
+    public static String zipOrFolderBackupByName(String backupName) {
+
+        File backupsFolder = new File(ConfigVariables.backupsFolder);
+        String zipOrFolder = "(ZIP)";
+
+        if (backupsFolder.toPath().resolve(backupName).toFile().exists()) {
+            zipOrFolder = "(Folder)";
+        }
+
+        return zipOrFolder;
     }
 
     public static void returnFailure(String message, CommandSender sender) {

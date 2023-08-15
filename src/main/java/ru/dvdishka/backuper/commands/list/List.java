@@ -74,36 +74,16 @@ public class List implements CommandInterface {
                 pages.add(new ArrayList<>());
             }
 
-            String backupFilePath;
-
-            if (backupsFolder.toPath().resolve(backups.get(i - 1).format(Common.dateTimeFormatter)).toFile().exists()) {
-                backupFilePath = backupsFolder.toPath().resolve(backups.get(i - 1).format(Common.dateTimeFormatter)).toFile().getPath();
-            } else {
-                backupFilePath = backupsFolder.toPath().resolve(backups.get(i - 1).format(Common.dateTimeFormatter)).toFile().getPath() + ".zip";
-            }
-
-            long backupSize = Common.getPathFileByteSize(new File(backupFilePath));
-
-            if (backupSize != 0) {
-                backupSize /= (1024 * 1024);
-            }
-
-            String backupText = backups.get(i - 1).format(Common.dateTimeFormatter);
-            String backupFileType = "";
-
-            // CHECKS IF A ZIP FILE EXISTS
-            if (new File(ConfigVariables.backupsFolder).toPath().resolve(new File(backups.get(i - 1).format(Common.dateTimeFormatter) + ".zip").toPath()).toFile().exists()) {
-                backupFileType = "(ZIP)";
-            } else {
-                backupFileType = "(Folder)";
-            }
+            String backupName = backups.get(i - 1).format(Common.dateTimeFormatter);
+            String backupFileType = Common.zipOrFolderBackupByName(backupName);
+            long backupSize = Common.getBackupMBSizeByName(backupName);
 
             HoverEvent<net.kyori.adventure.text.Component> hoverEvent = HoverEvent
                     .showText(net.kyori.adventure.text.Component.text(backupFileType + " " + backupSize + " MB"));
-            ClickEvent clickEvent = ClickEvent.runCommand("/backup menu " + backupText);
+            ClickEvent clickEvent = ClickEvent.runCommand("/backup menu \"" + backupName + "\"");
 
             pages.get((i - 1) / 10)
-                    .add(net.kyori.adventure.text.Component.text(backupText)
+                    .add(net.kyori.adventure.text.Component.text(backupName)
                     .hoverEvent(hoverEvent)
                     .clickEvent(clickEvent));
         }
