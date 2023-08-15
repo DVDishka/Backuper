@@ -30,28 +30,32 @@ public class Menu implements CommandInterface {
         Component message = Component.text("");
 
         message = message
-                .append(Component.text("---------------------------------")
+                .append(Component.text("---------------")
+                        .decorate(TextDecoration.BOLD)
                         .color(TextColor.color(0xE3A013)))
                 .appendNewline();
 
         message = message
                 .append(Component.text(backupName)
-                        .decorate(TextDecoration.BOLD)
                         .hoverEvent(HoverEvent.showText(Component.text(zipOrFolder + " " + backupSize + " MB"))))
                 .appendNewline();
 
         message = message
-                .append(Component.text("[SET-IT-UP-ON-THE-SERVER]")
-                        .color(TextColor.color(0x1DBD06)))
+                .append(Component.text("[SET]")
+                        .hoverEvent(HoverEvent.showText(Component.text("SET IT UP ON-THE SERVER")))
+                        .decorate(TextDecoration.BOLD)
+                        .color(TextColor.color(0x5DB1)))
                 .appendSpace();
 
         message = message
                 .append(Component.text("[DELETE]")
-                        .color(TextColor.color(0xCB0004)))
+                        .decorate(TextDecoration.BOLD)
+                        .color(TextColor.color(0xB02100)))
                 .appendNewline();
 
         message = message
-                .append(Component.text("---------------------------------")
+                .append(Component.text("---------------")
+                        .decorate(TextDecoration.BOLD)
                         .color(TextColor.color(0xE3A013)));
 
         sender.sendMessage(message);
