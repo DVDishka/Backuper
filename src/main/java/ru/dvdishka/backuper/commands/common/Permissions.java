@@ -6,7 +6,9 @@ public enum Permissions {
     STOP("backuper.stop"),
     RESTART("backuper.restart"),
     LIST("backuper.list"),
-    RELOAD("backuper.reload");
+    RELOAD("backuper.reload"),
+    DELETE("backuper.delete"),
+    SET("backuper.set");
 
     private final String permission;
 

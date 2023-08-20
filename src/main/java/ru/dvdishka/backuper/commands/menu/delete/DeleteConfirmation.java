@@ -1,6 +1,7 @@
-package ru.dvdishka.backuper.commands.menu;
+package ru.dvdishka.backuper.commands.menu.delete;
 
 import dev.jorel.commandapi.executors.CommandArguments;
+import net.kyori.adventure.chat.SignedMessage;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
@@ -10,7 +11,7 @@ import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.commands.common.CommandInterface;
 import ru.dvdishka.backuper.common.Common;
 
-public class Menu implements CommandInterface {
+public class DeleteConfirmation implements CommandInterface {
 
     @Override
     public void execute(CommandSender sender, CommandArguments args) {
@@ -18,14 +19,14 @@ public class Menu implements CommandInterface {
         String backupName = (String) args.get("backupName");
 
         if (!Common.checkBackupExistanceByName(backupName)) {
-            returnFailure("Wrong backupName!", sender);
+            returnFailure("Wrong backup Name!", sender);
             return;
         }
 
         long backupSize = Common.getBackupMBSizeByName(backupName);
-        String zipOrFolder = Common.zipOrFolderBackupByName(backupName);
+        String zipFolderBackup = Common.zipOrFolderBackupByName(backupName);
 
-        Component message = Component.empty();
+        Component message = net.kyori.adventure.text.Component.empty();
 
         message = message
                 .append(Component.text("---------------")
@@ -34,23 +35,22 @@ public class Menu implements CommandInterface {
                 .appendNewline();
 
         message = message
-                .append(Component.text(backupName)
-                        .hoverEvent(HoverEvent.showText(Component.text(zipOrFolder + " " + backupSize + " MB"))))
+                .append(Component.text("Are you sure")
+                        .appendNewline()
+                        .append(Component.text("You want to delete the backup?"))
+                        .color(TextColor.color(0xB02100)))
                 .appendNewline();
 
         message = message
-                .append(Component.text("[SET]")
-                        .clickEvent(ClickEvent.runCommand("/backup menu \"" + backupName + "\"" + " set"))
-                        .hoverEvent(HoverEvent.showText(Component.text("SET IT UP ON-THE SERVER")))
-                        .decorate(TextDecoration.BOLD)
-                        .color(TextColor.color(0x5DB1)))
-                .appendSpace();
+                .append(Component.text(backupName)
+                        .hoverEvent(HoverEvent.showText(Component.text(zipFolderBackup + " " + backupSize + " MB"))))
+                .appendNewline();
 
         message = message
                 .append(Component.text("[DELETE]")
-                        .clickEvent(ClickEvent.runCommand("/backup menu \"" + backupName + "\"" + " deleteConfirmation"))
-                        .decorate(TextDecoration.BOLD)
-                        .color(TextColor.color(0xB02100)))
+                        .clickEvent(ClickEvent.runCommand("/backup menu \"" + backupName + "\" delete"))
+                        .color(TextColor.color(0xB02100))
+                        .decorate(TextDecoration.BOLD))
                 .appendNewline();
 
         message = message

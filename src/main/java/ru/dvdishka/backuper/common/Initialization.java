@@ -9,6 +9,8 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.dvdishka.backuper.commands.common.Scheduler;
 import ru.dvdishka.backuper.commands.menu.Menu;
+import ru.dvdishka.backuper.commands.menu.delete.Delete;
+import ru.dvdishka.backuper.commands.menu.delete.DeleteConfirmation;
 import ru.dvdishka.backuper.commands.reload.Reload;
 import ru.dvdishka.backuper.commands.common.Permissions;
 import ru.dvdishka.backuper.commands.backup.Backup;
@@ -261,6 +263,21 @@ public class Initialization {
 
                                     new Menu().execute(sender, args);
                                 })
+                                        .then(new StringArgument("delete")
+                                                .withPermission(Permissions.DELETE.getPermission())
+                                                .replaceSuggestions(ArgumentSuggestions.empty())
+
+                                                .executes((sender, args) -> {
+
+                                                    if (((String) args.get("delete")).equals("deleteConfirmation")) {
+                                                        new DeleteConfirmation().execute(sender, args);
+                                                    }
+
+                                                    if (((String) args.get("delete")).equals("delete")) {
+                                                        new Delete().execute(sender, args);
+                                                    }
+                                                })
+                                        )
                         )
                 )
         ;

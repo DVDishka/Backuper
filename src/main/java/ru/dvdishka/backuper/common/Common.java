@@ -102,6 +102,21 @@ public class Common {
         return size;
     }
 
+    public static boolean checkBackupExistanceByName(String backupName) {
+
+        try {
+            LocalDateTime.parse(backupName, Common.dateTimeFormatter);
+        } catch (Exception e) {
+            return false;
+        }
+
+        File backupsFolder = new File(ConfigVariables.backupsFolder);
+        String backupFilePath;
+
+        return backupsFolder.toPath().resolve(backupName).toFile().exists() ||
+                backupsFolder.toPath().resolve(backupName + ".zip").toFile().exists();
+    }
+
     public static long getBackupMBSizeByName(String backupName) {
 
         File backupsFolder = new File(ConfigVariables.backupsFolder);
@@ -132,6 +147,21 @@ public class Common {
         }
 
         return zipOrFolder;
+    }
+
+    public static File getBackupFileByName(String backupName) {
+
+        if (!Common.checkBackupExistanceByName(backupName)) {
+            return null;
+        }
+
+        File backupsFolder = new File(ConfigVariables.backupsFolder);
+
+        if (Common.zipOrFolderBackupByName(backupName).equals("(ZIP)")) {
+            return backupsFolder.toPath().resolve(backupName + ".zip").toFile();
+        } else {
+            return backupsFolder.toPath().resolve(backupName).toFile();
+        }
     }
 
     public static void returnFailure(String message, CommandSender sender) {
