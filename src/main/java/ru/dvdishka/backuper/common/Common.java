@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 import org.bukkit.ChatColor;
@@ -28,8 +29,11 @@ public class Common {
     }
 
     public static final int bStatsId = 17735;
-    public static final String downloadLink = "https://hangar.papermc.io/Collagen/Backuper";
+    public static final List<String> downloadLinks = List.of("https://modrinth.com/plugin/backuper/versions#all-versions",
+            "https://hangar.papermc.io/Collagen/Backuper");
+    public static final List<String> downloadLinksName = List.of("Modrinth", "Hangar");
     public static URL getLatestVersionURL = null;
+    public static boolean isUpdatedToLatest = true;
     static {
         try {
             getLatestVersionURL = new URL("https://hangar.papermc.io/api/v1/projects/Collagen/Backuper/latestrelease");

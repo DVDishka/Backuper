@@ -2,10 +2,19 @@ package ru.dvdishka.backuper.common;
 
 import dev.jorel.commandapi.CommandTree;
 import dev.jorel.commandapi.arguments.*;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bstats.bukkit.Metrics;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.dvdishka.backuper.commands.common.Scheduler;
 import ru.dvdishka.backuper.commands.menu.Menu;
@@ -26,7 +35,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
-public class Initialization {
+public class Initialization implements Listener {
 
     public static void initBStats(JavaPlugin plugin) {
         Metrics bStats = new Metrics(plugin, Common.bStatsId);
@@ -286,6 +295,8 @@ public class Initialization {
     }
 
     public static void initEventHandlers() {
+
+        Bukkit.getPluginManager().registerEvents(new Initialization(), Common.plugin);
     }
 
     public static void checkDependencies() {
@@ -323,15 +334,65 @@ public class Initialization {
             in.close();
 
             if (response.toString().equals(Common.getProperty("version"))) {
+                Common.isUpdatedToLatest = true;
                 Logger.getLogger().log("You are using the latest version of Backuper!");
             } else {
-                Logger.getLogger().warn("You are using an outdated version of Backuper, please update it to the latest!\nDownload link: " + Common.downloadLink);
+
+                Common.isUpdatedToLatest = false;
+
+                String message = "You are using an outdated version of Backuper, please update it to the latest!";
+                for (String downloadLink : Common.downloadLinks) {
+                    message = message.concat("\nDownload link: " + downloadLink);
+                }
+
+                Logger.getLogger().warn(message);
             }
 
         } catch (Exception e) {
 
             Logger.getLogger().warn("Failed to check Backuper updates!");
             Logger.getLogger().devWarn("Initialization", e);
+        }
+    }
+
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+
+        if (event.getPlayer().isOp() && !Common.isUpdatedToLatest) {
+
+            Component message = Component.empty();
+
+            message = message
+                    .append(Component.text("------------------------------------------")
+                            .decorate(TextDecoration.BOLD)
+                            .color(TextColor.color(0xE3A013)))
+                    .appendNewline();
+
+            message = message
+                    .append(Component.text("You are using an outdated version of Backuper!\nPlease update it to the latest!")
+                            .decorate(TextDecoration.BOLD)
+                            .color(NamedTextColor.RED));
+
+            int downloadLLinkNumber = 0;
+            for (String downloadLink : Common.downloadLinks) {
+
+                message = message.appendNewline();
+
+                message = message
+                        .append(Component.text("Download link: " + Common.downloadLinksName.get(downloadLLinkNumber))
+                                .clickEvent(ClickEvent.openUrl(downloadLink))
+                                .decorate(TextDecoration.UNDERLINED));
+
+                downloadLLinkNumber++;
+            }
+
+            message = message
+                    .appendNewline()
+                    .append(Component.text("------------------------------------------")
+                            .decorate(TextDecoration.BOLD)
+                            .color(TextColor.color(0xE3A013)));
+
+            event.getPlayer().sendMessage(message);
         }
     }
 }
