@@ -25,4 +25,12 @@ public interface CommandInterface {
     default void returnFailure(String message, @NotNull CommandSender sender, ChatColor color) {
         Common.returnFailure(message, sender, color);
     }
+
+    default void cancelButtonSound(CommandSender sender) {
+        Common.cancelButtonSound(sender);
+    }
+
+    default void normalButtonSound(CommandSender sender) {
+        Common.normalButtonSound(sender);
+    }
 }

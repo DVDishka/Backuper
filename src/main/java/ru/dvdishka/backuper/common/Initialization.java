@@ -66,7 +66,7 @@ public class Initialization implements Listener {
 
             Logger.getLogger().devLog("Delay: " + delay);
 
-            Scheduler.getScheduler().runSyncRepeatingTask(Common.plugin, new BackupStarterTask(ConfigVariables.afterBackup, true), (long) delay * 20, ConfigVariables.backupPeriod * 60L * 60L * 20L);
+            Scheduler.getScheduler().runSyncRepeatingTask(Common.plugin, new BackupStarterTask(ConfigVariables.afterBackup, true), delay * 20, ConfigVariables.backupPeriod * 60L * 60L * 20L);
         }
     }
 
@@ -278,11 +278,11 @@ public class Initialization implements Listener {
 
                                                 .executes((sender, args) -> {
 
-                                                    if (((String) args.get("delete")).equals("deleteConfirmation")) {
+                                                    if (args.get("delete").equals("deleteConfirmation")) {
                                                         new DeleteConfirmation().execute(sender, args);
                                                     }
 
-                                                    if (((String) args.get("delete")).equals("delete")) {
+                                                    if (args.get("delete").equals("delete")) {
                                                         new Delete().execute(sender, args);
                                                     }
                                                 })

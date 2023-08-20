@@ -1,6 +1,8 @@
 package ru.dvdishka.backuper.commands.menu;
 
 import dev.jorel.commandapi.executors.CommandArguments;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
@@ -18,9 +20,12 @@ public class Menu implements CommandInterface {
         String backupName = (String) args.get("backupName");
 
         if (!Common.checkBackupExistanceByName(backupName)) {
-            returnFailure("Wrong backupName!", sender);
+            cancelButtonSound(sender);
+            returnFailure("Backup does not exist!", sender);
             return;
         }
+
+        normalButtonSound(sender);
 
         long backupSize = Common.getBackupMBSizeByName(backupName);
         String zipOrFolder = Common.zipOrFolderBackupByName(backupName);

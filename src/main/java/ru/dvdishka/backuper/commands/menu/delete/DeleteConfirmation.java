@@ -1,7 +1,6 @@
 package ru.dvdishka.backuper.commands.menu.delete;
 
 import dev.jorel.commandapi.executors.CommandArguments;
-import net.kyori.adventure.chat.SignedMessage;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
@@ -19,9 +18,12 @@ public class DeleteConfirmation implements CommandInterface {
         String backupName = (String) args.get("backupName");
 
         if (!Common.checkBackupExistanceByName(backupName)) {
-            returnFailure("Wrong backup Name!", sender);
+            cancelButtonSound(sender);
+            returnFailure("Backup does not exist!", sender);
             return;
         }
+
+        normalButtonSound(sender);
 
         long backupSize = Common.getBackupMBSizeByName(backupName);
         String zipFolderBackup = Common.zipOrFolderBackupByName(backupName);
@@ -47,7 +49,7 @@ public class DeleteConfirmation implements CommandInterface {
                 .appendNewline();
 
         message = message
-                .append(Component.text("[DELETE]")
+                .append(Component.text("[DELETE BACKUP]")
                         .clickEvent(ClickEvent.runCommand("/backup menu \"" + backupName + "\" delete"))
                         .color(TextColor.color(0xB02100))
                         .decorate(TextDecoration.BOLD))

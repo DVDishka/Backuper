@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.sound.Sound;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
@@ -190,5 +192,13 @@ public class Common {
         try {
             sender.sendMessage(color + message);
         } catch (Exception ignored) {}
+    }
+
+    public static void cancelButtonSound(CommandSender sender) {
+        sender.playSound(Sound.sound(Sound.sound(Key.key("block.anvil.place"), Sound.Source.NEUTRAL, 50, 1)).build());
+    }
+
+    public static void normalButtonSound(CommandSender sender) {
+        sender.playSound(Sound.sound(Sound.sound(Key.key("ui.button.click"), Sound.Source.NEUTRAL, 50, 1)).build());
     }
 }

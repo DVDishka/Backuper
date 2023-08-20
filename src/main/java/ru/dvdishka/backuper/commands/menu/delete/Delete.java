@@ -19,9 +19,12 @@ public class Delete implements CommandInterface {
         String backupName = (String) args.get("backupName");
 
         if (!Common.checkBackupExistanceByName(backupName)) {
-            returnFailure("Wrong backup Name!", sender);
+            cancelButtonSound(sender);
+            returnFailure("Backup does not exist!", sender);
             return;
         }
+
+        normalButtonSound(sender);
 
         File backupFile = Common.getBackupFileByName(backupName);
 

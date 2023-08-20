@@ -1,8 +1,6 @@
 package ru.dvdishka.backuper.commands.list;
 
 import dev.jorel.commandapi.executors.CommandArguments;
-import net.kyori.adventure.key.Key;
-import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -41,11 +39,11 @@ public class List implements CommandInterface {
 
         // PAGE DOES NOT EXIST
         if (pageNumber < 1 || pageNumber > List.getListPageCount()) {
-            sender.playSound(Sound.sound(Sound.sound(Key.key("block.anvil.place"), Sound.Source.NEUTRAL, 50, 1)).build());
+            cancelButtonSound(sender);
             return;
         }
 
-        sender.playSound(Sound.sound(Sound.sound(Key.key("ui.button.click"), Sound.Source.NEUTRAL, 50, 1)).build());
+        normalButtonSound(sender);
 
         updateListPages();
 
