@@ -10,6 +10,7 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.commands.common.CommandInterface;
+import ru.dvdishka.backuper.common.Backup;
 import ru.dvdishka.backuper.common.Common;
 
 public class Menu implements CommandInterface {
@@ -19,7 +20,7 @@ public class Menu implements CommandInterface {
 
         String backupName = (String) args.get("backupName");
 
-        if (!Common.checkBackupExistanceByName(backupName)) {
+        if (!Backup.checkBackupExistenceByName(backupName)) {
             cancelButtonSound(sender);
             returnFailure("Backup does not exist!", sender);
             return;
@@ -27,8 +28,10 @@ public class Menu implements CommandInterface {
 
         normalButtonSound(sender);
 
-        long backupSize = Common.getBackupMBSizeByName(backupName);
-        String zipOrFolder = Common.zipOrFolderBackupByName(backupName);
+        Backup backup = new Backup(backupName);
+
+        long backupSize = backup.getMBSize();
+        String zipOrFolder = backup.zipOrFolder();
 
         Component message = Component.empty();
 
@@ -44,11 +47,19 @@ public class Menu implements CommandInterface {
                 .appendNewline();
 
         message = message
-                .append(Component.text("[SET]")
-                        .clickEvent(ClickEvent.runCommand("/backup menu \"" + backupName + "\"" + " set"))
+                .append(Component.text("[MAKE_ZIP]")
+                        .clickEvent(ClickEvent.runCommand("/backup menu \"" + backupName + "\"" + " makeZip"))
                         .hoverEvent(HoverEvent.showText(Component.text("SET IT UP ON-THE SERVER")))
                         .decorate(TextDecoration.BOLD)
-                        .color(TextColor.color(0x5DB1)))
+                        .color(TextColor.color(0x4974B)))
+                .appendSpace();
+
+        message = message
+                .append(Component.text("[UNZIP]")
+                        .clickEvent(ClickEvent.runCommand("/backup menu \"" + backupName + "\"" + " unzip"))
+                        .hoverEvent(HoverEvent.showText(Component.text("SET IT UP ON-THE SERVER")))
+                        .decorate(TextDecoration.BOLD)
+                        .color(TextColor.color(0xB8A500)))
                 .appendSpace();
 
         message = message

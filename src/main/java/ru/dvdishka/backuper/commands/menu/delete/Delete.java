@@ -3,6 +3,7 @@ package ru.dvdishka.backuper.commands.menu.delete;
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.commands.common.CommandInterface;
+import ru.dvdishka.backuper.common.Backup;
 import ru.dvdishka.backuper.common.Common;
 import ru.dvdishka.backuper.common.Logger;
 
@@ -18,7 +19,7 @@ public class Delete implements CommandInterface {
 
         String backupName = (String) args.get("backupName");
 
-        if (!Common.checkBackupExistanceByName(backupName)) {
+        if (!Backup.checkBackupExistenceByName(backupName)) {
             cancelButtonSound(sender);
             returnFailure("Backup does not exist!", sender);
             return;
@@ -26,9 +27,11 @@ public class Delete implements CommandInterface {
 
         normalButtonSound(sender);
 
-        File backupFile = Common.getBackupFileByName(backupName);
+        Backup backup = new Backup(backupName);
 
-        if (Common.zipOrFolderBackupByName(backupName).equals("(ZIP)")) {
+        File backupFile = backup.getFile();
+
+        if (backup.zipOrFolder().equals("(ZIP)")) {
             if (backupFile.delete()) {
                 returnSuccess("Backup has been deleted successfully", sender);
             } else {

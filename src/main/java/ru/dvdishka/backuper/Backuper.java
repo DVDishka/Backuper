@@ -21,6 +21,7 @@ public class Backuper extends JavaPlugin {
         File pluginDir = new File("plugins/Backuper");
         File backupsDir = new File("plugins/Backuper/Backups");
         File configFile = new File("plugins/Backuper/config.yml");
+        File bufferDir = new File("plugins/Backuper/Buffer");
 
         if (!pluginDir.exists()) {
 
@@ -35,6 +36,14 @@ public class Backuper extends JavaPlugin {
             if (!backupsDir.mkdir()) {
 
                 Logger.getLogger().warn("Can not create plugins/Backuper/Backups dir!");
+            }
+        }
+
+        if (!bufferDir.exists()) {
+
+            if (!bufferDir.mkdir()) {
+
+                Logger.getLogger().warn("Can not create plugins/Backuper/Buffer dir!");
             }
         }
 

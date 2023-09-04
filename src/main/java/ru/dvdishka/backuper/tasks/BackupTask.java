@@ -18,6 +18,7 @@ import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import ru.dvdishka.backuper.common.Backup;
 import ru.dvdishka.backuper.common.Common;
 import ru.dvdishka.backuper.common.ConfigVariables;
 import ru.dvdishka.backuper.common.Logger;
@@ -57,7 +58,7 @@ public class BackupTask implements Runnable {
         try {
 
             File backupDir = new File("plugins/Backuper/Backups/" +
-                    LocalDateTime.now().format(Common.dateTimeFormatter));
+                    LocalDateTime.now().format(Backup.dateTimeFormatter));
             File backupsDir = new File(ConfigVariables.backupsFolder);
 
             if (!ConfigVariables.zipArchive && !backupDir.mkdir()) {
@@ -161,12 +162,12 @@ public class BackupTask implements Runnable {
 
                         String fileName = file.getName().replace(".zip", "");
 
-                        backups.add(LocalDateTime.parse(fileName, Common.dateTimeFormatter));
+                        backups.add(LocalDateTime.parse(fileName, Backup.dateTimeFormatter));
 
                     } catch (Exception ignored) {}
                 }
 
-                Common.sortLocalDateTime(backups);
+                Backup.sortLocalDateTime(backups);
 
                 int backupsToDelete = backups.size() - ConfigVariables.backupsNumber;
 
@@ -188,7 +189,7 @@ public class BackupTask implements Runnable {
                                 backupFileName = backupFileName.concat("0");
                             }
 
-                            if (LocalDateTime.parse(backupFileName, Common.dateTimeFormatter).equals(fileName)) {
+                            if (LocalDateTime.parse(backupFileName, Backup.dateTimeFormatter).equals(fileName)) {
 
                                 if (!backup.getName().endsWith(".zip")) {
 
@@ -227,12 +228,12 @@ public class BackupTask implements Runnable {
 
                             String fileName = file.getName().replace(".zip", "");
 
-                            backups.add(LocalDateTime.parse(fileName, Common.dateTimeFormatter));
+                            backups.add(LocalDateTime.parse(fileName, Backup.dateTimeFormatter));
 
                         } catch (Exception ignored) {}
                     }
 
-                    Common.sortLocalDateTime(backups);
+                    Backup.sortLocalDateTime(backups);
 
                     long bytesToDelete = backupsFolderWeight - ConfigVariables.backupsWeight;
 
@@ -257,7 +258,7 @@ public class BackupTask implements Runnable {
                                 backupFileName = backupFileName.concat("0");
                             }
 
-                            if (LocalDateTime.parse(backupFileName, Common.dateTimeFormatter).equals(fileName)) {
+                            if (LocalDateTime.parse(backupFileName, Backup.dateTimeFormatter).equals(fileName)) {
 
                                 bytesToDelete -= FileUtils.sizeOf(backup);
 
@@ -377,7 +378,7 @@ public class BackupTask implements Runnable {
         }
     }
 
-    public void copyFilesInDir(File destDir, File sourceDir) {
+    public static void copyFilesInDir(File destDir, File sourceDir) {
 
         if (sourceDir.listFiles() != null) {
 
@@ -401,12 +402,12 @@ public class BackupTask implements Runnable {
                     } catch (SecurityException e) {
 
                         Logger.getLogger().warn("Backup Directory is not allowed to modify! " + file.getName());
-                        Logger.getLogger().devWarn(this, e);
+                        Logger.getLogger().devWarn("BackupTask", e);
 
                     } catch (Exception e) {
 
                         Logger.getLogger().warn("Something went wrong while trying to copy file! " + file.getName());
-                        Logger.getLogger().devWarn(this, e);
+                        Logger.getLogger().devWarn("BackupTask", e);
                     }
                 }
             }

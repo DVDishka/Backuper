@@ -8,6 +8,7 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.commands.common.CommandInterface;
+import ru.dvdishka.backuper.common.Backup;
 import ru.dvdishka.backuper.common.Common;
 
 public class DeleteConfirmation implements CommandInterface {
@@ -17,7 +18,7 @@ public class DeleteConfirmation implements CommandInterface {
 
         String backupName = (String) args.get("backupName");
 
-        if (!Common.checkBackupExistanceByName(backupName)) {
+        if (!Backup.checkBackupExistenceByName(backupName)) {
             cancelButtonSound(sender);
             returnFailure("Backup does not exist!", sender);
             return;
@@ -25,8 +26,10 @@ public class DeleteConfirmation implements CommandInterface {
 
         normalButtonSound(sender);
 
-        long backupSize = Common.getBackupMBSizeByName(backupName);
-        String zipFolderBackup = Common.zipOrFolderBackupByName(backupName);
+        Backup backup = new Backup(backupName);
+
+        long backupSize = backup.getMBSize();
+        String zipFolderBackup = backup.zipOrFolder();
 
         Component message = net.kyori.adventure.text.Component.empty();
 

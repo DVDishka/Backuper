@@ -9,6 +9,7 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.commands.common.CommandInterface;
+import ru.dvdishka.backuper.common.Backup;
 import ru.dvdishka.backuper.common.Common;
 import ru.dvdishka.backuper.common.ConfigVariables;
 
@@ -59,11 +60,11 @@ public class List implements CommandInterface {
 
             try {
                 backups.add(LocalDateTime.parse(file.getName().replace(".zip", ""),
-                        Common.dateTimeFormatter));
+                        Backup.dateTimeFormatter));
             } catch (Exception ignored) {}
         }
 
-        Common.sortLocalDateTimeDecrease(backups);
+        Backup.sortLocalDateTimeDecrease(backups);
         ArrayList<ArrayList<TextComponent>> pages = new ArrayList<>();
 
         for (int i = 1; i <= backups.size(); i++) {
@@ -72,9 +73,10 @@ public class List implements CommandInterface {
                 pages.add(new ArrayList<>());
             }
 
-            String backupName = backups.get(i - 1).format(Common.dateTimeFormatter);
-            String backupFileType = Common.zipOrFolderBackupByName(backupName);
-            long backupSize = Common.getBackupMBSizeByName(backupName);
+            String backupName = backups.get(i - 1).format(Backup.dateTimeFormatter);
+            Backup backup = new Backup(backupName);
+            String backupFileType = backup.zipOrFolder();
+            long backupSize = backup.getMBSize();
 
             HoverEvent<net.kyori.adventure.text.Component> hoverEvent = HoverEvent
                     .showText(net.kyori.adventure.text.Component.text(backupFileType + " " + backupSize + " MB"));

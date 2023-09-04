@@ -20,6 +20,8 @@ import ru.dvdishka.backuper.commands.common.Scheduler;
 import ru.dvdishka.backuper.commands.menu.Menu;
 import ru.dvdishka.backuper.commands.menu.delete.Delete;
 import ru.dvdishka.backuper.commands.menu.delete.DeleteConfirmation;
+import ru.dvdishka.backuper.commands.menu.set.Set;
+import ru.dvdishka.backuper.commands.menu.set.SetConfirmation;
 import ru.dvdishka.backuper.commands.reload.Reload;
 import ru.dvdishka.backuper.commands.common.Permissions;
 import ru.dvdishka.backuper.commands.backup.Backup;
@@ -256,14 +258,14 @@ public class Initialization implements Listener {
 
                             ArrayList<LocalDateTime> backups = new ArrayList<>();
                             for (File file : new File(ConfigVariables.backupsFolder).listFiles()) {
-                                backups.add(LocalDateTime.parse(file.getName().replace(".zip", ""), Common.dateTimeFormatter));
+                                backups.add(LocalDateTime.parse(file.getName().replace(".zip", ""), ru.dvdishka.backuper.common.Backup.dateTimeFormatter));
                             }
 
-                            Common.sortLocalDateTimeDecrease(backups);
+                            ru.dvdishka.backuper.common.Backup.sortLocalDateTimeDecrease(backups);
                             ArrayList<String> backupSuggestions = new ArrayList<>();
 
                             for (LocalDateTime backupName : backups) {
-                                backupSuggestions.add("\"" + backupName.format(Common.dateTimeFormatter) + "\"");
+                                backupSuggestions.add("\"" + backupName.format(ru.dvdishka.backuper.common.Backup.dateTimeFormatter) + "\"");
                             }
                             return backupSuggestions;
                         }))
@@ -272,17 +274,18 @@ public class Initialization implements Listener {
 
                                     new Menu().execute(sender, args);
                                 })
-                                        .then(new StringArgument("delete")
-                                                .withPermission(Permissions.DELETE.getPermission())
+                                        .then(new StringArgument("action")
                                                 .replaceSuggestions(ArgumentSuggestions.empty())
 
                                                 .executes((sender, args) -> {
 
-                                                    if (args.get("delete").equals("deleteConfirmation")) {
+                                                    if (args.get("action").equals("deleteConfirmation") &&
+                                                            sender.hasPermission(Permissions.DELETE.getPermission())) {
                                                         new DeleteConfirmation().execute(sender, args);
                                                     }
 
-                                                    if (args.get("delete").equals("delete")) {
+                                                    if (args.get("action").equals("delete") &&
+                                                            sender.hasPermission(Permissions.DELETE.getPermission())) {
                                                         new Delete().execute(sender, args);
                                                     }
                                                 })
@@ -313,7 +316,7 @@ public class Initialization implements Listener {
 
     public static void checkOperatingSystem() {
         if (Common.isWindows) {
-            Common.dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH;mm;ss");
+            ru.dvdishka.backuper.common.Backup.dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH;mm;ss");
         }
     }
 

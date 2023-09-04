@@ -36,13 +36,13 @@ public class Logger {
 
     public void devWarn(Object sourceClass, Exception exception) {
         if (ConfigVariables.betterLogging) {
-            Common.plugin.getLogger().warning(sourceClass.getClass().getSimpleName() + ": " + Arrays.toString(exception.getStackTrace()));
+            Common.plugin.getLogger().warning(sourceClass.getClass().getSimpleName() + ": " + exception.getMessage() + "\n" + Arrays.toString(exception.getStackTrace()));
         }
     }
 
     public void devWarn(String sourceClassName, Exception exception) {
         if (ConfigVariables.betterLogging) {
-            Common.plugin.getLogger().warning(sourceClassName + ": " + Arrays.toString(exception.getStackTrace()));
+            Common.plugin.getLogger().warning(sourceClassName + ": " + exception.getMessage() + "\n" + Arrays.toString(exception.getStackTrace()));
         }
     }
 }
