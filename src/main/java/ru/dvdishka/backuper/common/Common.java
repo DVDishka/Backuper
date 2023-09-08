@@ -4,7 +4,10 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Properties;
 
 import net.kyori.adventure.key.Key;
@@ -18,13 +21,14 @@ public class Common {
 
     public static Plugin plugin;
     public static Properties properties = new Properties();
-    public static boolean isBackupRunning = false;
+
     static {
         try {
             properties.load(Common.class.getClassLoader().getResourceAsStream("project.properties"));
         } catch (Exception e) {
             Logger.getLogger().devWarn("Common", "Failed to load properties!");
-            Logger.getLogger().devWarn("Common", e);        }
+            Logger.getLogger().devWarn("Common", e);
+        }
     }
 
     public static final int bStatsId = 17735;
@@ -64,12 +68,21 @@ public class Common {
         long size = 0;
 
         if (path.isDirectory()) {
-            for (File file : path.listFiles()) {
+            for (File file : Objects.requireNonNull(path.listFiles())) {
                 size += getPathOrFileByteSize(file);
             }
         }
 
         return size;
+    }
+
+    public static ArrayList<LocalDateTime> getBackups() {
+
+        ArrayList<LocalDateTime> backups = new ArrayList<>();
+        for (File file : Objects.requireNonNull(new File(ConfigVariables.backupsFolder).listFiles())) {
+            backups.add(LocalDateTime.parse(file.getName().replace(".zip", ""), ru.dvdishka.backuper.common.Backup.dateTimeFormatter));
+        }
+        return backups;
     }
 
     public static void returnFailure(String message, CommandSender sender) {
@@ -93,6 +106,12 @@ public class Common {
     public static void returnFailure(String message, @NotNull CommandSender sender, ChatColor color) {
         try {
             sender.sendMessage(color + message);
+        } catch (Exception ignored) {}
+    }
+
+    public static void sendMessage(String message, @NotNull CommandSender sender) {
+        try {
+            sender.sendMessage(message);
         } catch (Exception ignored) {}
     }
 

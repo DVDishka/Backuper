@@ -12,10 +12,12 @@ import ru.dvdishka.backuper.commands.common.CommandInterface;
 import ru.dvdishka.backuper.common.Backup;
 import ru.dvdishka.backuper.common.Common;
 import ru.dvdishka.backuper.common.ConfigVariables;
+import ru.dvdishka.backuper.common.Logger;
 
 import java.io.File;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Objects;
 
 public class List implements CommandInterface {
 
@@ -56,7 +58,12 @@ public class List implements CommandInterface {
         File backupsFolder = new File(ConfigVariables.backupsFolder);
         ArrayList<LocalDateTime> backups = new ArrayList<>();
 
-        for (File file : backupsFolder.listFiles()) {
+        if (backupsFolder.listFiles() == null) {
+            Logger.getLogger().warn("Wrong backupsFolder path!");
+            return;
+        }
+
+        for (File file : Objects.requireNonNull(backupsFolder.listFiles())) {
 
             try {
                 backups.add(LocalDateTime.parse(file.getName().replace(".zip", ""),

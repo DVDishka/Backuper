@@ -20,7 +20,7 @@ public class Backup implements CommandInterface {
 
     public void execute(CommandSender sender, CommandArguments args) {
 
-        if (Common.isBackupRunning) {
+        if (ru.dvdishka.backuper.common.Backup.isBackupBusy) {
             returnFailure("The backup process is already running!", sender);
             return;
         }

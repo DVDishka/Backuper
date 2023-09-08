@@ -9,7 +9,6 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.commands.common.CommandInterface;
 import ru.dvdishka.backuper.common.Backup;
-import ru.dvdishka.backuper.common.Common;
 
 public class DeleteConfirmation implements CommandInterface {
 
@@ -24,9 +23,17 @@ public class DeleteConfirmation implements CommandInterface {
             return;
         }
 
+        assert backupName != null;
+
         normalButtonSound(sender);
 
         Backup backup = new Backup(backupName);
+
+        if (backup.isLocked() || Backup.isBackupBusy) {
+            cancelButtonSound(sender);
+            returnFailure("Backup is blocked by another operation!", sender);
+            return;
+        }
 
         long backupSize = backup.getMBSize();
         String zipFolderBackup = backup.zipOrFolder();

@@ -20,8 +20,8 @@ import ru.dvdishka.backuper.commands.common.Scheduler;
 import ru.dvdishka.backuper.commands.menu.Menu;
 import ru.dvdishka.backuper.commands.menu.delete.Delete;
 import ru.dvdishka.backuper.commands.menu.delete.DeleteConfirmation;
-import ru.dvdishka.backuper.commands.menu.set.Set;
-import ru.dvdishka.backuper.commands.menu.set.SetConfirmation;
+import ru.dvdishka.backuper.commands.menu.makeZip.ToZIP;
+import ru.dvdishka.backuper.commands.menu.makeZip.ToZIPConfirmation;
 import ru.dvdishka.backuper.commands.reload.Reload;
 import ru.dvdishka.backuper.commands.common.Permissions;
 import ru.dvdishka.backuper.commands.backup.Backup;
@@ -36,10 +36,13 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Objects;
 
 public class Initialization implements Listener {
 
     public static void initBStats(JavaPlugin plugin) {
+
+        @SuppressWarnings("unused")
         Metrics bStats = new Metrics(plugin, Common.bStatsId);
     }
 
@@ -47,7 +50,7 @@ public class Initialization implements Listener {
 
         if (ConfigVariables.autoBackup) {
 
-            long delay = 0;
+            long delay;
 
             if (ConfigVariables.lastBackup == 0 || ConfigVariables.fixedBackupTime) {
                 if (ConfigVariables.firstBackupTime > LocalDateTime.now().getHour()) {
@@ -96,11 +99,8 @@ public class Initialization implements Listener {
             ConfigVariables.fixedBackupTime = config.getBoolean("fixedBackupTime", true);
             ConfigVariables.backupsFolder = config.getString("backupsFolder", "plugins/Backuper/Backups");
 
-            boolean isConfigFileOk = true;
+            boolean isConfigFileOk = configVersion.equals(ConfigVariables.configVersion);
 
-            if (!configVersion.equals(ConfigVariables.configVersion)) {
-                isConfigFileOk = false;
-            }
             if (!config.contains("firstBackupTime")) {
                 isConfigFileOk = false;
             }
@@ -256,12 +256,9 @@ public class Initialization implements Listener {
 
                         .then(new TextArgument("backupName").includeSuggestions(ArgumentSuggestions.stringCollection((info) -> {
 
-                            ArrayList<LocalDateTime> backups = new ArrayList<>();
-                            for (File file : new File(ConfigVariables.backupsFolder).listFiles()) {
-                                backups.add(LocalDateTime.parse(file.getName().replace(".zip", ""), ru.dvdishka.backuper.common.Backup.dateTimeFormatter));
-                            }
-
+                            ArrayList<LocalDateTime> backups = Common.getBackups();
                             ru.dvdishka.backuper.common.Backup.sortLocalDateTimeDecrease(backups);
+
                             ArrayList<String> backupSuggestions = new ArrayList<>();
 
                             for (LocalDateTime backupName : backups) {
@@ -275,18 +272,28 @@ public class Initialization implements Listener {
                                     new Menu().execute(sender, args);
                                 })
                                         .then(new StringArgument("action")
-                                                .replaceSuggestions(ArgumentSuggestions.empty())
+                                                .replaceSuggestions(ArgumentSuggestions.strings("delete", "toZIP", "toZIP"))
 
                                                 .executes((sender, args) -> {
 
-                                                    if (args.get("action").equals("deleteConfirmation") &&
+                                                    if (Objects.equals(args.get("action"), "deleteConfirmation") &&
                                                             sender.hasPermission(Permissions.DELETE.getPermission())) {
                                                         new DeleteConfirmation().execute(sender, args);
                                                     }
 
-                                                    if (args.get("action").equals("delete") &&
+                                                    if (Objects.equals(args.get("action"), "delete") &&
                                                             sender.hasPermission(Permissions.DELETE.getPermission())) {
                                                         new Delete().execute(sender, args);
+                                                    }
+
+                                                    if (Objects.equals(args.get("action"), "toZIPConfirmation") &&
+                                                            sender.hasPermission(Permissions.MAKE_ZIP.getPermission())) {
+                                                        new ToZIPConfirmation().execute(sender, args);
+                                                    }
+
+                                                    if (Objects.equals(args.get("action"), "toZIP") &&
+                                                            sender.hasPermission(Permissions.MAKE_ZIP.getPermission())) {
+                                                        new ToZIP().execute(sender, args);
                                                     }
                                                 })
                                         )

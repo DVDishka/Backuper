@@ -8,6 +8,7 @@ import java.util.ArrayList;
 public class Backup {
 
     public static DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
+    public static volatile boolean isBackupBusy = false;
     private String backupName;
     private LocalDateTime backupLocalDateTime;
 
@@ -73,6 +74,21 @@ public class Backup {
         } else {
             return backupsFolder.toPath().resolve(backupName).toFile();
         }
+    }
+
+    public void lock() {
+
+        isBackupBusy = true;
+    }
+
+    public void unlock() {
+
+        isBackupBusy = false;
+    }
+
+    public boolean isLocked() {
+
+        return isBackupBusy;
     }
 
     public static boolean checkBackupExistenceByName(String backupName) {

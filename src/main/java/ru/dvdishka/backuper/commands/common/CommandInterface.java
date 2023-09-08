@@ -18,12 +18,18 @@ public interface CommandInterface {
         Common.returnFailure(message, sender);
     }
 
+    @SuppressWarnings("unused")
     default void returnSuccess(String message, @NotNull CommandSender sender, ChatColor color) {
         Common.returnSuccess(message, sender, color);
     }
 
+    @SuppressWarnings("unused")
     default void returnFailure(String message, @NotNull CommandSender sender, ChatColor color) {
         Common.returnFailure(message, sender, color);
+    }
+
+    default void sendMessage(String message, @NotNull CommandSender sender) {
+        Common.sendMessage(message, sender);
     }
 
     default void cancelButtonSound(CommandSender sender) {

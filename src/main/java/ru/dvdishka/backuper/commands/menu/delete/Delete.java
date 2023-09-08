@@ -3,6 +3,7 @@ package ru.dvdishka.backuper.commands.menu.delete;
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.commands.common.CommandInterface;
+import ru.dvdishka.backuper.commands.common.Scheduler;
 import ru.dvdishka.backuper.common.Backup;
 import ru.dvdishka.backuper.common.Common;
 import ru.dvdishka.backuper.common.Logger;
@@ -29,23 +30,38 @@ public class Delete implements CommandInterface {
 
         Backup backup = new Backup(backupName);
 
+        if (backup.isLocked() || Backup.isBackupBusy) {
+            cancelButtonSound(sender);
+            returnFailure("Backup is blocked by another operation!", sender);
+            return;
+        }
+
         File backupFile = backup.getFile();
 
+        backup.lock();
+
         if (backup.zipOrFolder().equals("(ZIP)")) {
-            if (backupFile.delete()) {
-                returnSuccess("Backup has been deleted successfully", sender);
-            } else {
-                returnFailure("Backup " + backupName + " can not be deleted!", sender);
-            }
+
+            Scheduler.getScheduler().runAsync(Common.plugin, () -> {
+                if (backupFile.delete()) {
+                    returnSuccess("Backup has been deleted successfully", sender);
+                } else {
+                    returnFailure("Backup " + backupName + " can not be deleted!", sender);
+                }
+                backup.unlock();
+            });
 
         } else {
 
-            deleteDir(backupFile);
-            if (!isDeleteSuccessful) {
-                returnFailure("Delete task has been finished with an exception!", sender);
-            } else {
-                returnSuccess("Backup has been deleted successfully", sender);
-            }
+            Scheduler.getScheduler().runAsync(Common.plugin, () -> {
+                deleteDir(backupFile);
+                if (!isDeleteSuccessful) {
+                    returnFailure("Delete task has been finished with an exception!", sender);
+                } else {
+                    returnSuccess("Backup has been deleted successfully", sender);
+                }
+                backup.unlock();
+            });
         }
     }
 

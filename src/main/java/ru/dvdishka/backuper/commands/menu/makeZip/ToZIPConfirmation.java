@@ -1,8 +1,6 @@
-package ru.dvdishka.backuper.commands.menu;
+package ru.dvdishka.backuper.commands.menu.makeZip;
 
 import dev.jorel.commandapi.executors.CommandArguments;
-import net.kyori.adventure.key.Key;
-import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
@@ -11,9 +9,8 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.commands.common.CommandInterface;
 import ru.dvdishka.backuper.common.Backup;
-import ru.dvdishka.backuper.common.Common;
 
-public class Menu implements CommandInterface {
+public class ToZIPConfirmation implements CommandInterface {
 
     @Override
     public void execute(CommandSender sender, CommandArguments args) {
@@ -33,9 +30,21 @@ public class Menu implements CommandInterface {
         Backup backup = new Backup(backupName);
 
         long backupSize = backup.getMBSize();
-        String zipOrFolder = backup.zipOrFolder();
+        String zipFolderBackup = backup.zipOrFolder();
 
-        Component message = Component.empty();
+        if (zipFolderBackup.equals("(ZIP)")) {
+            cancelButtonSound(sender);
+            returnFailure("Backup is already ZIP!", sender);
+            return;
+        }
+
+        if (backup.isLocked() || Backup.isBackupBusy) {
+            cancelButtonSound(sender);
+            returnFailure("Backup is blocked by another operation!", sender);
+            return;
+        }
+
+        Component message = net.kyori.adventure.text.Component.empty();
 
         message = message
                 .append(Component.text("---------------")
@@ -44,29 +53,22 @@ public class Menu implements CommandInterface {
                 .appendNewline();
 
         message = message
-                .append(Component.text(backupName)
-                        .hoverEvent(HoverEvent.showText(Component.text(zipOrFolder + " " + backupSize + " MB"))))
+                .append(Component.text("Are you sure")
+                        .appendNewline()
+                        .append(Component.text("You want to convert this backup to ZIP?"))
+                        .color(TextColor.color(0xB02100)))
                 .appendNewline();
 
         message = message
-                .append(Component.text("[TO ZIP]")
-                        .clickEvent(ClickEvent.runCommand("/backup menu \"" + backupName + "\"" + " toZIPConfirmation"))
-                        .decorate(TextDecoration.BOLD)
-                        .color(TextColor.color(0x4974B)))
-                .appendSpace();
+                .append(Component.text(backupName)
+                        .hoverEvent(HoverEvent.showText(Component.text(zipFolderBackup + " " + backupSize + " MB"))))
+                .appendNewline();
 
         message = message
-                .append(Component.text("[UNZIP]")
-                        .clickEvent(ClickEvent.runCommand("/backup menu \"" + backupName + "\"" + " unZIP"))
-                        .decorate(TextDecoration.BOLD)
-                        .color(TextColor.color(0xB8A500)))
-                .appendSpace();
-
-        message = message
-                .append(Component.text("[DELETE]")
-                        .clickEvent(ClickEvent.runCommand("/backup menu \"" + backupName + "\"" + " deleteConfirmation"))
-                        .decorate(TextDecoration.BOLD)
-                        .color(TextColor.color(0xB02100)))
+                .append(Component.text("[CONVERT BACKUP]")
+                        .clickEvent(ClickEvent.runCommand("/backup menu \"" + backupName + "\" toZIP"))
+                        .color(TextColor.color(0x4974B))
+                        .decorate(TextDecoration.BOLD))
                 .appendNewline();
 
         message = message

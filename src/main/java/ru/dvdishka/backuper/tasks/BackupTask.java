@@ -26,18 +26,9 @@ import ru.dvdishka.backuper.commands.common.Scheduler;
 
 public class BackupTask implements Runnable {
 
-    private String afterBackup = "NOTHING";
-    private CommandSender sender = null;
-    private boolean isAutoBackup = false;
-
-    public BackupTask(String afterBackup) {
-        this.afterBackup = afterBackup;
-    }
-
-    public BackupTask(String afterBackup, boolean isAutoBackup) {
-        this.afterBackup = afterBackup;
-        this.isAutoBackup = isAutoBackup;
-    }
+    private final String afterBackup;
+    private final CommandSender sender;
+    private final boolean isAutoBackup;
 
     public BackupTask(String afterBackup, boolean isAutoBackup, CommandSender sender) {
         this.afterBackup = afterBackup;
@@ -154,20 +145,7 @@ public class BackupTask implements Runnable {
 
             if (ConfigVariables.backupsNumber != 0 && backupsDir.listFiles() != null) {
 
-                ArrayList<LocalDateTime> backups = new ArrayList<>();
-
-                for (File file : Objects.requireNonNull(backupsDir.listFiles())) {
-
-                    try {
-
-                        String fileName = file.getName().replace(".zip", "");
-
-                        backups.add(LocalDateTime.parse(fileName, Backup.dateTimeFormatter));
-
-                    } catch (Exception ignored) {}
-                }
-
-                Backup.sortLocalDateTime(backups);
+                ArrayList<LocalDateTime> backups = Common.getBackups();
 
                 int backupsToDelete = backups.size() - ConfigVariables.backupsNumber;
 
@@ -189,7 +167,7 @@ public class BackupTask implements Runnable {
                                 backupFileName = backupFileName.concat("0");
                             }
 
-                            if (LocalDateTime.parse(backupFileName, Backup.dateTimeFormatter).equals(fileName)) {
+                            if (LocalDateTime.parse(backupFileName, ru.dvdishka.backuper.common.Backup.dateTimeFormatter).equals(fileName)) {
 
                                 if (!backup.getName().endsWith(".zip")) {
 
@@ -220,20 +198,8 @@ public class BackupTask implements Runnable {
 
                 if (backupsFolderWeight > ConfigVariables.backupsWeight && backupsDir.listFiles() != null) {
 
-                    ArrayList<LocalDateTime> backups = new ArrayList<>();
-
-                    for (File file : Objects.requireNonNull(backupsDir.listFiles())) {
-
-                        try {
-
-                            String fileName = file.getName().replace(".zip", "");
-
-                            backups.add(LocalDateTime.parse(fileName, Backup.dateTimeFormatter));
-
-                        } catch (Exception ignored) {}
-                    }
-
-                    Backup.sortLocalDateTime(backups);
+                    ArrayList<LocalDateTime> backups = Common.getBackups();
+                    ru.dvdishka.backuper.common.Backup.sortLocalDateTime(backups);
 
                     long bytesToDelete = backupsFolderWeight - ConfigVariables.backupsWeight;
 
@@ -258,7 +224,7 @@ public class BackupTask implements Runnable {
                                 backupFileName = backupFileName.concat("0");
                             }
 
-                            if (LocalDateTime.parse(backupFileName, Backup.dateTimeFormatter).equals(fileName)) {
+                            if (LocalDateTime.parse(backupFileName, ru.dvdishka.backuper.common.Backup.dateTimeFormatter).equals(fileName)) {
 
                                 bytesToDelete -= FileUtils.sizeOf(backup);
 
@@ -284,7 +250,7 @@ public class BackupTask implements Runnable {
 
             returnSuccess("Backup process has been finished successfully!");
 
-            Common.isBackupRunning = false;
+            Backup.isBackupBusy = false;
 
             if (afterBackup.equals("RESTART")) {
 
@@ -304,7 +270,7 @@ public class BackupTask implements Runnable {
                 }
             }
 
-            Common.isBackupRunning = false;
+            Backup.isBackupBusy = false;
 
             returnFailure("The backup process was completed with an exception, you can see the exception in the console");
             Logger.getLogger().warn("Copy task has finished with an exception!");

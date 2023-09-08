@@ -4,15 +4,17 @@ import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.commands.common.Scheduler;
+import ru.dvdishka.backuper.common.Backup;
 import ru.dvdishka.backuper.common.Common;
 import ru.dvdishka.backuper.common.Logger;
 
 public class BackupStarterTask implements Runnable {
 
-    private String afterRestart = "NOTHING";
+    private final String afterRestart;
     private CommandSender sender = null;
     private boolean isAutoBackup = false;
 
+    @SuppressWarnings("unused")
     public BackupStarterTask(String afterRestart) {
 
         this.afterRestart = afterRestart;
@@ -36,7 +38,7 @@ public class BackupStarterTask implements Runnable {
 
             Logger.getLogger().log("Backup process has been started!");
 
-            Common.isBackupRunning = true;
+            Backup.isBackupBusy = true;
 
             for (World world : Bukkit.getWorlds()) {
                 if (!world.getWorldFolder().setReadOnly()) {
@@ -48,7 +50,7 @@ public class BackupStarterTask implements Runnable {
 
         } catch (Exception e) {
 
-            Common.isBackupRunning = false;
+            Backup.isBackupBusy = false;
 
             for (World world : Bukkit.getWorlds()) {
 

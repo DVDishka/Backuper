@@ -44,6 +44,7 @@ public class Scheduler {
         }
     }
 
+    @SuppressWarnings("unused")
     public void runAsyncDelayed(Plugin plugin, Runnable task, long delayTicks) {
         if (Common.isFolia) {
             Bukkit.getAsyncScheduler().runDelayed(plugin, (scheduledTask) -> task.run(), delayTicks * 20, TimeUnit.SECONDS);
