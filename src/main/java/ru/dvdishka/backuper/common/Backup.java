@@ -76,6 +76,16 @@ public class Backup {
         }
     }
 
+    public File getZIPFile() {
+
+        File backupsFolder = new File(ConfigVariables.backupsFolder);
+
+        if (backupsFolder.toPath().resolve(backupName + ".zip").toFile().exists()) {
+            return backupsFolder.toPath().resolve(backupName + ".zip").toFile();
+        }
+        return null;
+    }
+
     public void lock() {
 
         isBackupBusy = true;
@@ -91,6 +101,7 @@ public class Backup {
         return isBackupBusy;
     }
 
+    @SuppressWarnings({"BooleanMethodIsAlwaysInverted", "ResultOfMethodCallIgnored"})
     public static boolean checkBackupExistenceByName(String backupName) {
 
         try {

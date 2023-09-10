@@ -20,8 +20,10 @@ import ru.dvdishka.backuper.commands.common.Scheduler;
 import ru.dvdishka.backuper.commands.menu.Menu;
 import ru.dvdishka.backuper.commands.menu.delete.Delete;
 import ru.dvdishka.backuper.commands.menu.delete.DeleteConfirmation;
-import ru.dvdishka.backuper.commands.menu.makeZip.ToZIP;
-import ru.dvdishka.backuper.commands.menu.makeZip.ToZIPConfirmation;
+import ru.dvdishka.backuper.commands.menu.toZIP.ToZIP;
+import ru.dvdishka.backuper.commands.menu.toZIP.ToZIPConfirmation;
+import ru.dvdishka.backuper.commands.menu.unZIP.UnZIP;
+import ru.dvdishka.backuper.commands.menu.unZIP.UnZIPConfirmation;
 import ru.dvdishka.backuper.commands.reload.Reload;
 import ru.dvdishka.backuper.commands.common.Permissions;
 import ru.dvdishka.backuper.commands.backup.Backup;
@@ -272,7 +274,7 @@ public class Initialization implements Listener {
                                     new Menu().execute(sender, args);
                                 })
                                         .then(new StringArgument("action")
-                                                .replaceSuggestions(ArgumentSuggestions.strings("delete", "toZIP", "toZIP"))
+                                                .replaceSuggestions(ArgumentSuggestions.strings("delete", "toZIP", "unZIP"))
 
                                                 .executes((sender, args) -> {
 
@@ -294,6 +296,16 @@ public class Initialization implements Listener {
                                                     if (Objects.equals(args.get("action"), "toZIP") &&
                                                             sender.hasPermission(Permissions.MAKE_ZIP.getPermission())) {
                                                         new ToZIP().execute(sender, args);
+                                                    }
+
+                                                    if (Objects.equals(args.get("action"), "unZIPConfirmation") &&
+                                                            sender.hasPermission(Permissions.UNZIP.getPermission())) {
+                                                        new UnZIPConfirmation().execute(sender, args);
+                                                    }
+
+                                                    if (Objects.equals(args.get("action"), "unZIP") &&
+                                                            sender.hasPermission(Permissions.UNZIP.getPermission())) {
+                                                        new UnZIP().execute(sender, args);
                                                     }
                                                 })
                                         )

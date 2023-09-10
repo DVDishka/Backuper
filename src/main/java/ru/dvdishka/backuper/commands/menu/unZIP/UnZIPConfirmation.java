@@ -1,4 +1,4 @@
-package ru.dvdishka.backuper.commands.menu.makeZip;
+package ru.dvdishka.backuper.commands.menu.unZIP;
 
 import dev.jorel.commandapi.executors.CommandArguments;
 import net.kyori.adventure.text.Component;
@@ -10,7 +10,7 @@ import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.commands.common.CommandInterface;
 import ru.dvdishka.backuper.common.Backup;
 
-public class ToZIPConfirmation implements CommandInterface {
+public class UnZIPConfirmation implements CommandInterface {
 
     @Override
     public void execute(CommandSender sender, CommandArguments args) {
@@ -32,9 +32,9 @@ public class ToZIPConfirmation implements CommandInterface {
         long backupSize = backup.getMBSize();
         String zipFolderBackup = backup.zipOrFolder();
 
-        if (zipFolderBackup.equals("(ZIP)")) {
+        if (zipFolderBackup.equals("(Folder)")) {
             cancelButtonSound(sender);
-            returnFailure("Backup is already ZIP!", sender);
+            returnFailure("Backup is already Folder!", sender);
             return;
         }
 
@@ -55,7 +55,7 @@ public class ToZIPConfirmation implements CommandInterface {
         message = message
                 .append(Component.text("Are you sure")
                         .appendNewline()
-                        .append(Component.text("You want to convert this backup to ZIP?"))
+                        .append(Component.text("You want to convert this backup from ZIP to Folder?"))
                         .color(TextColor.color(0xB02100)))
                 .appendNewline();
 
@@ -66,7 +66,7 @@ public class ToZIPConfirmation implements CommandInterface {
 
         message = message
                 .append(Component.text("[CONVERT BACKUP]")
-                        .clickEvent(ClickEvent.runCommand("/backup menu \"" + backupName + "\" toZIP"))
+                        .clickEvent(ClickEvent.runCommand("/backup menu \"" + backupName + "\" unZIP"))
                         .color(TextColor.color(0x4974B))
                         .decorate(TextDecoration.BOLD))
                 .appendNewline();

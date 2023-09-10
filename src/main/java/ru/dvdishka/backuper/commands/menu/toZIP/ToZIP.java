@@ -1,6 +1,8 @@
-package ru.dvdishka.backuper.commands.menu.makeZip;
+package ru.dvdishka.backuper.commands.menu.toZIP;
 
 import dev.jorel.commandapi.executors.CommandArguments;
+import org.bukkit.Bukkit;
+import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.commands.common.CommandInterface;
 import ru.dvdishka.backuper.commands.common.Scheduler;
@@ -18,8 +20,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public class ToZIP implements CommandInterface {
-
-    private boolean isDeleteSuccessful = true;
 
     @Override
     public void execute(CommandSender sender, CommandArguments args) {
@@ -58,24 +58,30 @@ public class ToZIP implements CommandInterface {
 
             Scheduler.getScheduler().runAsync(Common.plugin, () -> {
 
-                Logger.getLogger().log("Convert Backup To ZIP process has been started");
-                sendMessage("Convert Backup To ZIP process has been started", sender);
-                Logger.getLogger().log("Pack To Zip task has been started...");
-                sendMessage("Pack To Zip task has been started...", sender);
+                Logger.getLogger().log("The Convert Backup To ZIP process has been started");
+                sendMessage("The Convert Backup To ZIP process has been started", sender);
+                Logger.getLogger().log("The Pack To Zip task has been started...");
+                sendMessage("The Pack To Zip task has been started...", sender);
 
-                packToZIP(backup.getFile(), zip, new File(backup.getFile().getPath() + ".zip").toPath());
+                for (World world : Bukkit.getWorlds()) {
+                    Logger.getLogger().log("The Pack World " + world.getName() + " To ZIP task has been started");
+                    sendMessage("The Pack World " + world.getName() + " To ZIP task has been started", sender);
+                    packToZIP(world.getWorldFolder(), zip, new File(backup.getFile().getPath() + ".zip").toPath());
+                    Logger.getLogger().log("The Pack World " + world.getName() + " To ZIP task has been finished");
+                    sendMessage("The Pack World " + world.getName() + " To ZIP task has been finished", sender);
+                }
 
-                Logger.getLogger().log("Pack To Zip task has been finished");
-                sendMessage("Pack To Zip task has been finished", sender);
-                Logger.getLogger().log("Delete Old Backup Folder task has been started...");
-                sendMessage("Delete Old Backup Folder task has been started...", sender);
+                Logger.getLogger().log("The Pack To Zip task has been finished");
+                sendMessage("The Pack To Zip task has been finished", sender);
+                Logger.getLogger().log("The Delete Old Backup Folder task has been started...");
+                sendMessage("The Delete Old Backup Folder task has been started...", sender);
 
                 deleteDir(backup.getFile());
 
-                Logger.getLogger().log("Delete Old Backup Folder task has been finished");
-                sendMessage("Delete Old Backup Folder task has been finished", sender);
-                Logger.getLogger().log("Convert Backup To ZIP process has been finished successfully");
-                returnSuccess("Convert Backup To ZIP process has been finished successfully", sender);
+                Logger.getLogger().log("The Delete Old Backup Folder task has been finished");
+                sendMessage("The Delete Old Backup Folder task has been finished", sender);
+                Logger.getLogger().log("The Convert Backup To ZIP process has been finished successfully");
+                returnSuccess("The Convert Backup To ZIP process has been finished successfully", sender);
 
                 backup.unlock();
             });
@@ -83,8 +89,8 @@ public class ToZIP implements CommandInterface {
         } catch (Exception e) {
 
             backup.unlock();
-            returnFailure("Something went wrong when trying to convert the backup to zip!", sender);
-            Logger.getLogger().warn("Something went wrong when trying to convert the backup to zip!");
+            returnFailure("The Convert Backup To Folder process has been finished with an exception!", sender);
+            Logger.getLogger().warn("The Convert Backup To Folder process has been finished with an exception!");
             Logger.getLogger().devWarn(this, e);
         }
     }
@@ -144,14 +150,12 @@ public class ToZIP implements CommandInterface {
 
                     if (!file.delete()) {
 
-                        isDeleteSuccessful = false;
                         Logger.getLogger().devWarn(this, "Can not delete file " + file.getName());
                     }
                 }
             }
             if (!dir.delete()) {
 
-                isDeleteSuccessful = false;
                 Logger.getLogger().devWarn(this, "Can not delete directory " + dir.getName());
             }
         }

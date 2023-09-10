@@ -1,7 +1,7 @@
 package ru.dvdishka.backuper.commands.common;
 
 import dev.jorel.commandapi.executors.CommandArguments;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 import ru.dvdishka.backuper.common.Common;
@@ -19,12 +19,12 @@ public interface CommandInterface {
     }
 
     @SuppressWarnings("unused")
-    default void returnSuccess(String message, @NotNull CommandSender sender, ChatColor color) {
+    default void returnSuccess(String message, @NotNull CommandSender sender, TextColor color) {
         Common.returnSuccess(message, sender, color);
     }
 
     @SuppressWarnings("unused")
-    default void returnFailure(String message, @NotNull CommandSender sender, ChatColor color) {
+    default void returnFailure(String message, @NotNull CommandSender sender, TextColor color) {
         Common.returnFailure(message, sender, color);
     }
 

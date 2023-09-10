@@ -12,7 +12,9 @@ import java.util.Properties;
 
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
@@ -20,7 +22,7 @@ import org.jetbrains.annotations.NotNull;
 public class Common {
 
     public static Plugin plugin;
-    public static Properties properties = new Properties();
+    public static final Properties properties = new Properties();
 
     static {
         try {
@@ -87,25 +89,25 @@ public class Common {
 
     public static void returnFailure(String message, CommandSender sender) {
         try {
-            sender.sendMessage(ChatColor.RED + message);
+            sender.sendMessage(Component.text(message).color(NamedTextColor.RED));
         } catch (Exception ignored) {}
     }
 
     public static void returnSuccess(String message, CommandSender sender) {
         try {
-            sender.sendMessage(ChatColor.GREEN + message);
+            sender.sendMessage(Component.text(message).color(NamedTextColor.GREEN));
         } catch (Exception ignored) {}
     }
 
-    public static void returnSuccess(String message, @NotNull CommandSender sender, ChatColor color) {
+    public static void returnSuccess(String message, @NotNull CommandSender sender, TextColor color) {
         try {
             sender.sendMessage(color + message);
         } catch (Exception ignored) {}
     }
 
-    public static void returnFailure(String message, @NotNull CommandSender sender, ChatColor color) {
+    public static void returnFailure(String message, @NotNull CommandSender sender, TextColor color) {
         try {
-            sender.sendMessage(color + message);
+            sender.sendMessage(Component.text(message).color(color));
         } catch (Exception ignored) {}
     }
 
