@@ -1,7 +1,7 @@
 name: Backuper
 version: '${project.version}'
 main: ru.dvdishka.backuper.Backuper
-api-version: 1.13
+api-version: 1.16
 prefix: Backuper
 authors: [ dvdishka ]
 description: Backuper plugin for spigot
@@ -23,5 +23,7 @@ permissions:
         default: op
       backuper.delete:
         default: op
-      backuper.set:
+      backuper.toZip:
+        default: op
+      backuper.unZip:
         default: op

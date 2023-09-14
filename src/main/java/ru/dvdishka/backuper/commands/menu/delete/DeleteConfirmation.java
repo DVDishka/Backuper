@@ -44,26 +44,26 @@ public class DeleteConfirmation implements CommandInterface {
                 .append(Component.text("---------------")
                         .decorate(TextDecoration.BOLD)
                         .color(TextColor.color(0xE3A013)))
-                .appendNewline();
+                .append(Component.newline());
 
         message = message
                 .append(Component.text("Are you sure")
-                        .appendNewline()
+                        .append(Component.newline())
                         .append(Component.text("You want to delete the backup?"))
                         .color(TextColor.color(0xB02100)))
-                .appendNewline();
+                .append(Component.newline());
 
         message = message
                 .append(Component.text(backupName)
                         .hoverEvent(HoverEvent.showText(Component.text(zipFolderBackup + " " + backupSize + " MB"))))
-                .appendNewline();
+                .append(Component.newline());
 
         message = message
                 .append(Component.text("[DELETE BACKUP]")
                         .clickEvent(ClickEvent.runCommand("/backup menu \"" + backupName + "\" delete"))
                         .color(TextColor.color(0xB02100))
                         .decorate(TextDecoration.BOLD))
-                .appendNewline();
+                .append(Component.newline());
 
         message = message
                 .append(Component.text("---------------")

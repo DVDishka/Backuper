@@ -44,6 +44,8 @@ public class BackupTask implements Runnable {
         Common.returnSuccess(message, sender);
     }
 
+    public void sendMessage(String message) {Common.sendMessage(message, sender);}
+
     public void run() {
 
         try {

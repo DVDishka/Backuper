@@ -21,12 +21,12 @@ public class Backup implements CommandInterface {
     public void execute(CommandSender sender, CommandArguments args) {
 
         if (ru.dvdishka.backuper.common.Backup.isBackupBusy) {
-            returnFailure("The backup process is already running!", sender);
+            returnFailure("Blocked by another operation!", sender);
             return;
         }
 
         Scheduler.getScheduler().runSync(Common.plugin, new BackupStarterTask(afterBackup, sender));
 
-        returnSuccess("Backup process has been started!", sender);
+        sendMessage("Backup process has been started!", sender);
     }
 }

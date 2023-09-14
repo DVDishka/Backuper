@@ -105,12 +105,12 @@ public class List implements CommandInterface {
                 .append(Component.text("---------------")
                         .color(TextColor.color(0xE3A013))
                         .decorate(TextDecoration.BOLD)
-                        .appendNewline());
+                        .append(Component.newline()));
 
         for (TextComponent backupComponent : pages.get(pageNumber - 1)) {
             message = message
                     .append(backupComponent)
-                    .appendNewline();
+                    .append(Component.newline());
         }
 
         message = message
@@ -122,7 +122,7 @@ public class List implements CommandInterface {
                 .append(Component.text(">>>>>>>>")
                         .decorate(TextDecoration.BOLD)
                         .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backup list " + (pageNumber + 1))))
-                .appendNewline();
+                .append(Component.newline());
 
         message = message
                 .append(Component.text("---------------")

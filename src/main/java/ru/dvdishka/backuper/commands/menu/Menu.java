@@ -38,33 +38,33 @@ public class Menu implements CommandInterface {
                 .append(Component.text("---------------")
                         .decorate(TextDecoration.BOLD)
                         .color(TextColor.color(0xE3A013)))
-                .appendNewline();
+                .append(Component.newline());
 
         message = message
                 .append(Component.text(backupName)
                         .hoverEvent(HoverEvent.showText(Component.text(zipOrFolder + " " + backupSize + " MB"))))
-                .appendNewline();
+                .append(Component.newline());
 
         message = message
                 .append(Component.text("[TO ZIP]")
                         .clickEvent(ClickEvent.runCommand("/backup menu \"" + backupName + "\"" + " toZIPConfirmation"))
                         .decorate(TextDecoration.BOLD)
                         .color(TextColor.color(0x4974B)))
-                .appendSpace();
+                .append(Component.space());
 
         message = message
                 .append(Component.text("[UNZIP]")
                         .clickEvent(ClickEvent.runCommand("/backup menu \"" + backupName + "\"" + " unZIPConfirmation"))
                         .decorate(TextDecoration.BOLD)
                         .color(TextColor.color(0xB8A500)))
-                .appendSpace();
+                .append(Component.space());
 
         message = message
                 .append(Component.text("[DELETE]")
                         .clickEvent(ClickEvent.runCommand("/backup menu \"" + backupName + "\"" + " deleteConfirmation"))
                         .decorate(TextDecoration.BOLD)
                         .color(TextColor.color(0xB02100)))
-                .appendNewline();
+                .append(Component.newline());
 
         message = message
                 .append(Component.text("---------------")

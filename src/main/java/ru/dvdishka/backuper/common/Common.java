@@ -118,10 +118,16 @@ public class Common {
     }
 
     public static void cancelButtonSound(CommandSender sender) {
-        sender.playSound(Sound.sound(Sound.sound(Key.key("block.anvil.place"), Sound.Source.NEUTRAL, 50, 1)).build());
+        try {
+            Class.forName("net.kyori.adventure.sound.Sound").getMethod("sound");
+            sender.playSound(Sound.sound(Sound.sound(Key.key("block.anvil.place"), Sound.Source.NEUTRAL, 50, 1)).build());
+        } catch (Exception ignored) {}
     }
 
     public static void normalButtonSound(CommandSender sender) {
-        sender.playSound(Sound.sound(Sound.sound(Key.key("ui.button.click"), Sound.Source.NEUTRAL, 50, 1)).build());
+        try {
+            Class.forName("net.kyori.adventure.sound.Sound").getMethod("sound");
+            sender.playSound(Sound.sound(Sound.sound(Key.key("ui.button.click"), Sound.Source.NEUTRAL, 50, 1)).build());
+        } catch (Exception ignored) {}
     }
 }

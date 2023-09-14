@@ -2,7 +2,7 @@
 
 # Backuper
 
-<img height="128" src="images/backuper_logo.png" width="128"/>
+<img height="128" src="images/backuper_logo.png" width="128" alt=""/>
 
 ## _Simple backup plugin for Paper/Folia_
 
@@ -32,22 +32,27 @@
 
 ### Configuration
 
-* `Auto backup` - **(true/false)** - enables automatic backups once at a specified interval (when disabled, backups will only run on the `/backup` command)
+* `Auto backup` - **(true/false)** - enables automatic backups once at a specified interval **(when disabled, backups will only run on the `/backup` command)**
 * `Backups folder` - **(Path)** - **FULL** path to folder, where backups will be stored
 * `First backup time` - **(0 -23)** - time in hours when server will be backed up first time
 * `Fixed backup time` - **(true/false)** - all backups will take place at a certain time, specified in the `firstBackupTime`. When enabled, the `backupPeriod` automatically becomes 24 hours
-* `Backup period` - **(1 <= Hours)** - the period after which the server will make backups
+* `Backup period` - **(1 <= Hours)** - the period after which the server will make backups **(If you want to change this you need to make fixedBackupTime = false)**
 * `After backup` - **(NOTHING/STOP/RESTART)** - what will the server do after backup
 * `Max backup number` - **(0 <=)** - maximum number of backups to be kept **(0 - unlimited)**
 * `Max backup weight` - **(0 <=)** - maximum weight of backups that will be stored **(MB)**
-* `Better logging` - **(true/false)** - enable logging of additional information (used for debugging, you probably don't need it)
+* `Zip Archive` - **(true/false)** - do you want to store backups in ZIP archives?
+* `Better logging` - **(true/false)** - enable logging of additional information **(used for debugging, you probably don't need it)**
 
 ---
 
 ### Commands
 
-* `/backup <stopRestartServer>` - command to backup the server manually, argument means what the server will do after restart (Argument can be STOP or RESTART, also you can use it without argument)
-* `/backup list` - Command to view the list of backups
+* `/backup <stopRestartServer>` - command to backup the server manually, argument means what the server will do after restart **(Argument can be STOP or RESTART, also you can use it without argument)**
+* `/backup list` - command to view the list of backups **(click on a backup to open its menu)**
+* `/backup menu <backupName>` - command to open the menu of the specified backup **(can be opened by clicking on the specified backup in `/backup list`)**
+* `/backup menu <backupName> toZIP` - command to convert the specified backup to a ZIP archive **(can be used by clicking on the `[TO ZIP]` option in `/backup menu <backupName>`)**
+* `/backup menu <backupName> unZIP` - command to convert the specified backup from a ZIP archive to a folder **(can be used by clicking on the `[UNZIP]` option in `/backup menu <backupName>`)**
+* `/backup menu <backupName> delete` - command to delete the specified backup **(can be used by clicking on the `[DELETE]` option in `/backup menu <backupName>`)**
 
 ---
 
@@ -57,6 +62,9 @@
 * `backuper.stop` - permission to use `/backup` command with the STOP argument
 * `backuper.restart` - permission to use `/backup` command with the RESTART argument
 * `backuper.list` - permission to use `/backup list` command
+* `backuper.toZip` = permission to convert backups to a ZIP archive
+* `backuper.unZip` = permission to convert backups from a ZIP archive to a folder
+* `backuper.delete` = permission to delete backups
 
 ---
 

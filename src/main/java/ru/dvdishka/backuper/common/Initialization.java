@@ -289,12 +289,12 @@ public class Initialization implements Listener {
                                                     }
 
                                                     if (Objects.equals(args.get("action"), "toZIPConfirmation") &&
-                                                            sender.hasPermission(Permissions.MAKE_ZIP.getPermission())) {
+                                                            sender.hasPermission(Permissions.TO_ZIP.getPermission())) {
                                                         new ToZIPConfirmation().execute(sender, args);
                                                     }
 
                                                     if (Objects.equals(args.get("action"), "toZIP") &&
-                                                            sender.hasPermission(Permissions.MAKE_ZIP.getPermission())) {
+                                                            sender.hasPermission(Permissions.TO_ZIP.getPermission())) {
                                                         new ToZIP().execute(sender, args);
                                                     }
 
@@ -339,7 +339,7 @@ public class Initialization implements Listener {
         }
     }
 
-    public static void checkVersion() {
+    public static void checkPluginVersion() {
 
         try {
 
@@ -388,7 +388,7 @@ public class Initialization implements Listener {
                     .append(Component.text("------------------------------------------")
                             .decorate(TextDecoration.BOLD)
                             .color(TextColor.color(0xE3A013)))
-                    .appendNewline();
+                    .append(Component.newline());
 
             message = message
                     .append(Component.text("You are using an outdated version of Backuper!\nPlease update it to the latest!")
@@ -398,7 +398,7 @@ public class Initialization implements Listener {
             int downloadLLinkNumber = 0;
             for (String downloadLink : Common.downloadLinks) {
 
-                message = message.appendNewline();
+                message = message.append(Component.newline());
 
                 message = message
                         .append(Component.text("Download link: " + Common.downloadLinksName.get(downloadLLinkNumber))
@@ -409,7 +409,7 @@ public class Initialization implements Listener {
             }
 
             message = message
-                    .appendNewline()
+                    .append(Component.newline())
                     .append(Component.text("------------------------------------------")
                             .decorate(TextDecoration.BOLD)
                             .color(TextColor.color(0xE3A013)));
