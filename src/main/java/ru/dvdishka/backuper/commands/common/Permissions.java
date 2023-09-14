@@ -8,8 +8,8 @@ public enum Permissions {
     LIST("backuper.list"),
     RELOAD("backuper.reload"),
     DELETE("backuper.delete"),
-    TO_ZIP("backuper.toZip"),
-    UNZIP("backuper.unZip");
+    TO_ZIP("backuper.tozip"),
+    UNZIP("backuper.unzip");
 
     private final String permission;
 
