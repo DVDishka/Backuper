@@ -205,13 +205,15 @@ public class Initialization implements Listener {
 
     public static void initCommands() {
 
-        CommandTree backupCommandTree = new CommandTree("backup")
-                .withPermission(Permissions.BACKUP.getPermission());
+        CommandTree backupCommandTree = new CommandTree("backup");
 
         backupCommandTree.executes((sender, args) -> {
 
-            new Backup().execute(sender, args);
-
+            if (sender.hasPermission(Permissions.BACKUP.getPermission())) {
+                new Backup().execute(sender, args);
+            } else {
+                Common.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+            }
         })
 
                 .then(new LiteralArgument("STOP").withPermission(Permissions.STOP.getPermission())
@@ -229,6 +231,11 @@ public class Initialization implements Listener {
                             new Backup("RESTART").execute(sender, args);
                         })
                 )
+        ;
+        backupCommandTree.register();
+
+        CommandTree backupListCommandTree = new CommandTree("backup").withPermission(Permissions.LIST.getPermission());
+        backupListCommandTree
 
                 .then(new LiteralArgument("list").withPermission(Permissions.LIST.getPermission())
 
@@ -245,7 +252,11 @@ public class Initialization implements Listener {
                                 })
                         )
                 )
+        ;
+        backupListCommandTree.register();
 
+        CommandTree backupReloadCommandTree = new CommandTree("backup");
+        backupReloadCommandTree
                 .then(new LiteralArgument("reload").withPermission(Permissions.RELOAD.getPermission())
 
                         .executes((sender, args) -> {
@@ -253,6 +264,11 @@ public class Initialization implements Listener {
                             new Reload().execute(sender, args);
                         })
                 )
+        ;
+        backupReloadCommandTree.register();
+
+        CommandTree backupMenuCommandTree = new CommandTree("backup");
+        backupMenuCommandTree
 
                 .then(new LiteralArgument("menu").withPermission(Permissions.LIST.getPermission())
 
@@ -269,51 +285,69 @@ public class Initialization implements Listener {
                             return backupSuggestions;
                         }))
 
-                                .executes((sender, args) -> {
+                                        .executes((sender, args) -> {
 
-                                    new Menu().execute(sender, args);
-                                })
+                                            new Menu().execute(sender, args);
+                                        })
+
                                         .then(new StringArgument("action")
                                                 .replaceSuggestions(ArgumentSuggestions.strings("delete", "toZIP", "unZIP"))
 
                                                 .executes((sender, args) -> {
 
-                                                    if (Objects.equals(args.get("action"), "deleteConfirmation") &&
-                                                            sender.hasPermission(Permissions.DELETE.getPermission())) {
-                                                        new DeleteConfirmation().execute(sender, args);
+                                                    if (Objects.equals(args.get("action"), "deleteConfirmation")) {
+                                                        if (sender.hasPermission(Permissions.DELETE.getPermission())) {
+                                                            new DeleteConfirmation().execute(sender, args);
+                                                        } else {
+                                                            Common.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                        }
                                                     }
 
-                                                    if (Objects.equals(args.get("action"), "delete") &&
-                                                            sender.hasPermission(Permissions.DELETE.getPermission())) {
-                                                        new Delete().execute(sender, args);
+                                                    if (Objects.equals(args.get("action"), "delete")) {
+                                                        if (sender.hasPermission(Permissions.DELETE.getPermission())) {
+                                                            new Delete().execute(sender, args);
+                                                        } else {
+                                                            Common.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                        }
                                                     }
 
-                                                    if (Objects.equals(args.get("action"), "toZIPConfirmation") &&
-                                                            sender.hasPermission(Permissions.TO_ZIP.getPermission())) {
-                                                        new ToZIPConfirmation().execute(sender, args);
+                                                    if (Objects.equals(args.get("action"), "toZIPConfirmation")) {
+                                                        if (sender.hasPermission(Permissions.TO_ZIP.getPermission())) {
+                                                            new ToZIPConfirmation().execute(sender, args);
+                                                        } else {
+                                                            Common.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                        }
                                                     }
 
-                                                    if (Objects.equals(args.get("action"), "toZIP") &&
-                                                            sender.hasPermission(Permissions.TO_ZIP.getPermission())) {
-                                                        new ToZIP().execute(sender, args);
+                                                    if (Objects.equals(args.get("action"), "toZIP")) {
+                                                        if (sender.hasPermission(Permissions.TO_ZIP.getPermission())) {
+                                                            new ToZIP().execute(sender, args);
+                                                        } else {
+                                                            Common.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                        }
                                                     }
 
-                                                    if (Objects.equals(args.get("action"), "unZIPConfirmation") &&
-                                                            sender.hasPermission(Permissions.UNZIP.getPermission())) {
-                                                        new UnZIPConfirmation().execute(sender, args);
+                                                    if (Objects.equals(args.get("action"), "unZIPConfirmation")) {
+                                                        if (sender.hasPermission(Permissions.UNZIP.getPermission())) {
+                                                            new UnZIPConfirmation().execute(sender, args);
+                                                        } else {
+                                                            Common.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                        }
                                                     }
 
-                                                    if (Objects.equals(args.get("action"), "unZIP") &&
-                                                            sender.hasPermission(Permissions.UNZIP.getPermission())) {
-                                                        new UnZIP().execute(sender, args);
+                                                    if (Objects.equals(args.get("action"), "unZIP")) {
+                                                        if (sender.hasPermission(Permissions.UNZIP.getPermission())) {
+                                                            new UnZIP().execute(sender, args);
+                                                        } else {
+                                                            Common.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                        }
                                                     }
                                                 })
                                         )
                         )
                 )
         ;
-
-        backupCommandTree.register();
+        backupMenuCommandTree.register();
     }
 
     public static void initEventHandlers() {
@@ -326,10 +360,10 @@ public class Initialization implements Listener {
         try {
             Class.forName("io.papermc.paper.threadedregions.scheduler.EntityScheduler");
             Common.isFolia = true;
-            Logger.getLogger().devLog("Folia/Paper has been detected!");
+            Logger.getLogger().devLog("Folia/Paper(1.20+) has been detected!");
         } catch (Exception e) {
             Common.isFolia = false;
-            Logger.getLogger().devLog("Folia/Paper has not been detected!");
+            Logger.getLogger().devLog("Folia/Paper(1.20+) has not been detected!");
         }
     }
 

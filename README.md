@@ -61,9 +61,9 @@
 * `backuper.backup` - permission to use `/backup` command
 * `backuper.stop` - permission to use `/backup` command with the STOP argument
 * `backuper.restart` - permission to use `/backup` command with the RESTART argument
-* `backuper.list` - permission to use `/backup list` command
-* `backuper.toZip` = permission to convert backups to a ZIP archive
-* `backuper.unZip` = permission to convert backups from a ZIP archive to a folder
+* `backuper.list` - permission to use `/backup list` and `/backup menu` commands
+* `backuper.tozip` = permission to convert backups to a ZIP archive
+* `backuper.unzip` = permission to convert backups from a ZIP archive to a folder
 * `backuper.delete` = permission to delete backups
 
 ---
