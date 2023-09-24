@@ -63,10 +63,6 @@ public class Backup {
 
     public File getFile() {
 
-        if (!checkBackupExistenceByName(backupName)) {
-            return null;
-        }
-
         File backupsFolder = new File(ConfigVariables.backupsFolder);
 
         if (this.zipOrFolder().equals("(ZIP)")) {

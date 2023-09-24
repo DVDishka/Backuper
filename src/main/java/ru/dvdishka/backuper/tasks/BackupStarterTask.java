@@ -3,6 +3,7 @@ package ru.dvdishka.backuper.tasks;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 import ru.dvdishka.backuper.commands.common.Scheduler;
 import ru.dvdishka.backuper.common.Backup;
 import ru.dvdishka.backuper.common.Common;
@@ -41,6 +42,8 @@ public class BackupStarterTask implements Runnable {
             Backup.isBackupBusy = true;
 
             for (World world : Bukkit.getWorlds()) {
+
+                world.setAutoSave(false);
                 if (!world.getWorldFolder().setReadOnly()) {
                     Logger.getLogger().devWarn(this, "Can not set folder read only!");
                 }
@@ -58,6 +61,8 @@ public class BackupStarterTask implements Runnable {
 
                     Logger.getLogger().devWarn(this, "Can not set " + world.getWorldFolder().getPath() + " writable!");
                 }
+
+                world.setAutoSave(true);
             }
 
             Logger.getLogger().warn("Backup process has been finished with an exception!");

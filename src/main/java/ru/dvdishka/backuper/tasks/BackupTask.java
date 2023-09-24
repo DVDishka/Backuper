@@ -106,6 +106,7 @@ public class BackupTask implements Runnable {
                 if (!world.getWorldFolder().setWritable(true)) {
                     Logger.getLogger().devWarn(this, "Can not set folder writable!");
                 }
+                world.setAutoSave(true);
             }
 
             Logger.getLogger().devLog("Set writable task has been finished");
@@ -270,6 +271,7 @@ public class BackupTask implements Runnable {
                 if (!world.getWorldFolder().setWritable(true)) {
                     Logger.getLogger().devWarn(this, "Can not set folder writable!");
                 }
+                world.setAutoSave(true);
             }
 
             Backup.isBackupBusy = false;
