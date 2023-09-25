@@ -3,6 +3,7 @@ package ru.dvdishka.backuper.commands.menu.unZIP;
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
 import ru.dvdishka.backuper.commands.common.CommandInterface;
 import ru.dvdishka.backuper.commands.common.Scheduler;
 import ru.dvdishka.backuper.common.Backup;
@@ -53,47 +54,40 @@ public class UnZIP implements CommandInterface {
 
         backup.lock();
 
-        Scheduler.getScheduler().runAsync(Common.plugin, () -> {
-            try {
-                Logger.getLogger().log("The Convert Backup To Folder process has been started, it may take a long time...");
-                sendMessage("The UnZIP process has been started, it may take a long time...", sender);
+        try {
 
-                Logger.getLogger().log("The Unpack task has been started");
-                sendMessage("The Unpack task has been started", sender);
+            Scheduler.getScheduler().runAsync(Common.plugin, () -> {
+
+                Logger.getLogger().log("The Convert Backup To Folder process has been started, it may take a long time...", sender);
+
+                Logger.getLogger().devLog("The Unpack task has been started");
                 unPack(backup, sender);
 
-                Logger.getLogger().log("The Delete Old Backup ZIP task has been started");
-                sendMessage("The Delete Old Backup ZIP task has been started", sender);
+                Logger.getLogger().devLog("The Delete Old Backup ZIP task has been started");
                 if (!backup.getZIPFile().delete()) {
-                    Logger.getLogger().warn("Something went wrong while trying to delete old backup ZIP");
-                    returnFailure("Something went wrong while trying to delete old backup ZIP", sender);
+                    Logger.getLogger().warn("The Delete Old Backup ZIP task has been finished with an exception", sender);
                     throw new RuntimeException();
                 }
-                Logger.getLogger().log("The Delete Old Backup ZIP task has been finished");
-                sendMessage("The Delete Old Backup ZIP task has been finished", sender);
+                Logger.getLogger().devLog("The Delete Old Backup ZIP task has been finished");
 
-                Logger.getLogger().log("The Rename \"in progress\" Folder task has been started");
-                sendMessage("The Rename \"in progress\" Folder task has been started", sender);
+                Logger.getLogger().devLog("The Rename \"in progress\" Folder task has been started");
                 if (!new File(backup.getFile().getPath().replace(".zip", "") + " in process")
                         .renameTo(new File(backup.getFile().getPath().replace(".zip", "")))) {
-                    Logger.getLogger().warn("Something went wrong while trying to delete old backup ZIP");
-                    returnFailure("Something went wrong while trying to rename folder", sender);
+                    Logger.getLogger().warn("The Rename \"in progress\" Folder task has been finished with an exception!", sender);
                     throw new RuntimeException();
                 }
-                Logger.getLogger().log("The Rename \"in progress\" Folder task has been finished");
-                sendMessage("The Rename \"in progress\" Folder task has been finished", sender);
+                Logger.getLogger().devLog("The Rename \"in progress\" Folder task has been finished");
 
                 backup.unlock();
 
-                Logger.getLogger().log("The Convert Backup To Folder process has been finished successfully");
-                returnSuccess("The UnZIP process has been finished successfully", sender);
+                Logger.getLogger().success("The Convert Backup To Folder process has been finished successfully", sender);
+            });
+        } catch (Exception e) {
 
-            } catch (Exception e) {
-                returnFailure("The Convert Backup To Folder process has been finished with an exception!", sender);
-                Logger.getLogger().warn("The Convert Backup To Folder process has been finished with an exception!");
-                Logger.getLogger().devWarn(this, e);
-            }
-        });
+            backup.unlock();
+            Logger.getLogger().warn("The Convert Backup To Folder process has been finished with an exception!", sender);
+            Logger.getLogger().devWarn(this, e);
+        }
     }
 
     public void unPack(Backup backup, CommandSender sender) {
@@ -118,11 +112,12 @@ public class UnZIP implements CommandInterface {
                 final int taskID = iterationNumber;
 
                 Scheduler.getScheduler().runAsync(Common.plugin, () -> {
+
                     try {
 
                         if (!new File(backup.getFile().getPath().replace(".zip", "") + " in process").toPath().resolve(name).getParent().toFile().exists() &&
                                 !new File(backup.getFile().getPath().replace(".zip", "") + " in process").toPath().resolve(name).getParent().toFile().mkdirs()) {
-                            returnFailure("Can not create directory " + new File(backup.getFile().getPath().replace(".zip", "") + " in process").toPath().resolve(name).getParent(), sender);
+                            Logger.getLogger().warn("Can not create directory " + new File(backup.getFile().getPath().replace(".zip", "") + " in process").toPath().resolve(name).getParent(), sender);
                         }
 
                         FileOutputStream outputStream = new FileOutputStream(new File(backup.getFile().getPath().replace(".zip", "") + " in process").toPath().resolve(name).toFile());
@@ -135,6 +130,8 @@ public class UnZIP implements CommandInterface {
                         completedUnZIPTasks.add(taskID);
 
                     } catch (Exception e) {
+
+                        Logger.getLogger().warn("Something went wrong while trying to unPack file", sender);
                         Logger.getLogger().devWarn(this, e);
                     }
                 });
@@ -144,13 +141,11 @@ public class UnZIP implements CommandInterface {
 
             while (iterationNumber != completedUnZIPTasks.size()) {}
 
-            Logger.getLogger().log("The Unpack task has been finished");
-            sendMessage("The Unpack task has been finished", sender);
+            Logger.getLogger().devLog("The Unpack task has been finished");
 
         } catch (Exception e) {
 
-            Logger.getLogger().warn("The Unpack task has been finished with an exception!");
-            returnFailure("The Unpack task has been finished with an exception!", sender);
+            Logger.getLogger().warn("The Unpack task has been finished with an exception!", sender);
             Logger.getLogger().devWarn(this, e);
         }
     }

@@ -5,7 +5,6 @@ import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.commands.common.CommandInterface;
 import ru.dvdishka.backuper.common.Common;
 import ru.dvdishka.backuper.commands.common.Scheduler;
-import ru.dvdishka.backuper.tasks.BackupStarterTask;
 
 public class Backup implements CommandInterface {
 
@@ -25,8 +24,6 @@ public class Backup implements CommandInterface {
             return;
         }
 
-        Scheduler.getScheduler().runSync(Common.plugin, new BackupStarterTask(afterBackup, sender));
-
-        sendMessage("Backup process has been started!", sender);
+        Scheduler.getScheduler().runSync(Common.plugin, new BackupProcessStarter(afterBackup, sender));
     }
 }

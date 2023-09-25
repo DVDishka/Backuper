@@ -28,7 +28,7 @@ import ru.dvdishka.backuper.commands.reload.Reload;
 import ru.dvdishka.backuper.commands.common.Permissions;
 import ru.dvdishka.backuper.commands.backup.Backup;
 import ru.dvdishka.backuper.commands.list.List;
-import ru.dvdishka.backuper.tasks.BackupStarterTask;
+import ru.dvdishka.backuper.commands.backup.BackupProcessStarter;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -73,7 +73,7 @@ public class Initialization implements Listener {
 
             Logger.getLogger().devLog("Delay: " + delay);
 
-            Scheduler.getScheduler().runSyncRepeatingTask(Common.plugin, new BackupStarterTask(ConfigVariables.afterBackup, true), delay * 20, ConfigVariables.backupPeriod * 60L * 60L * 20L);
+            Scheduler.getScheduler().runSyncRepeatingTask(Common.plugin, new BackupProcessStarter(ConfigVariables.afterBackup, true), delay * 20, ConfigVariables.backupPeriod * 60L * 60L * 20L);
         }
     }
 

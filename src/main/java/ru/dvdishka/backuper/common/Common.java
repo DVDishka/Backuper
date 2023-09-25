@@ -93,21 +93,34 @@ public class Common {
         } catch (Exception ignored) {}
     }
 
+    public static void returnFailure(String message, CommandSender sender, TextColor color) {
+        try {
+            sender.sendMessage(Component.text(message).color(color));
+        } catch (Exception ignored) {}
+    }
+
     public static void returnSuccess(String message, CommandSender sender) {
         try {
             sender.sendMessage(Component.text(message).color(NamedTextColor.GREEN));
         } catch (Exception ignored) {}
     }
 
-    public static void returnSuccess(String message, @NotNull CommandSender sender, TextColor color) {
+    public static void returnSuccess(String message, CommandSender sender, TextColor color) {
         try {
             sender.sendMessage(color + message);
         } catch (Exception ignored) {}
     }
 
-    public static void returnFailure(String message, @NotNull CommandSender sender, TextColor color) {
+    public static void returnWarning(String message, CommandSender sender) {
         try {
-            sender.sendMessage(Component.text(message).color(color));
+            sender.sendMessage(Component.text(message).color(TextColor.color(211, 145, 0)));
+        } catch (Exception ignored) {}
+    }
+
+
+    public static void returnWarning(String message, CommandSender sender, TextColor color) {
+        try {
+            sender.sendMessage(color + message);
         } catch (Exception ignored) {}
     }
 

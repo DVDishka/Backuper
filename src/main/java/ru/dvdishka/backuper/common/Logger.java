@@ -1,5 +1,8 @@
 package ru.dvdishka.backuper.common;
 
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
+
 import java.util.Arrays;
 
 public class Logger {
@@ -12,14 +15,65 @@ public class Logger {
         Common.plugin.getLogger().info(text);
     }
 
+    public void log(String text, CommandSender sender) {
+
+        Common.plugin.getLogger().info(text);
+
+        if (!(sender instanceof ConsoleCommandSender)) {
+            try {
+                Common.sendMessage(text, sender);
+            } catch (Exception ignored) {}
+        }
+    }
+
     public void devLog(String text) {
         if (ConfigVariables.betterLogging) {
             Common.plugin.getLogger().info(text);
         }
     }
 
+    public void devLog(String text, CommandSender sender) {
+
+        if (ConfigVariables.betterLogging) {
+            Common.plugin.getLogger().info(text);
+
+            if (!(sender instanceof ConsoleCommandSender)) {
+                try {
+                    Common.sendMessage(text, sender);
+                } catch (Exception ignored) {}
+            }
+        }
+    }
+
+
     public void warn(String text) {
         Common.plugin.getLogger().warning(text);
+    }
+
+    public void warn(String text, CommandSender sender) {
+
+        Common.plugin.getLogger().warning(text);
+
+        if (!(sender instanceof ConsoleCommandSender)) {
+            try {
+                Common.returnWarning(text, sender);
+            } catch (Exception ignored) {}
+        }
+    }
+
+    public void success(String text) {
+        Common.plugin.getLogger().info(text);
+    }
+
+    public void success(String text, CommandSender sender) {
+
+        Common.plugin.getLogger().info(text);
+
+        if (!(sender instanceof ConsoleCommandSender)) {
+            try {
+                Common.returnSuccess(text, sender);
+            } catch (Exception ignored) {}
+        }
     }
 
     public void devWarn(Object sourceClass, String text) {

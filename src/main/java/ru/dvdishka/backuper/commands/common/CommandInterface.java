@@ -10,25 +10,33 @@ public interface CommandInterface {
 
     void execute(CommandSender sender, CommandArguments args);
 
-    default void returnSuccess(String message, @NotNull CommandSender sender) {
+    default void returnSuccess(String message, CommandSender sender) {
         Common.returnSuccess(message, sender);
     }
 
-    default void returnFailure(String message, @NotNull CommandSender sender) {
+    @SuppressWarnings("unused")
+    default void returnSuccess(String message, CommandSender sender, TextColor color) {
+        Common.returnSuccess(message, sender, color);
+    }
+
+    default void returnFailure(String message, CommandSender sender) {
         Common.returnFailure(message, sender);
     }
 
     @SuppressWarnings("unused")
-    default void returnSuccess(String message, @NotNull CommandSender sender, TextColor color) {
-        Common.returnSuccess(message, sender, color);
-    }
-
-    @SuppressWarnings("unused")
-    default void returnFailure(String message, @NotNull CommandSender sender, TextColor color) {
+    default void returnFailure(String message, CommandSender sender, TextColor color) {
         Common.returnFailure(message, sender, color);
     }
 
-    default void sendMessage(String message, @NotNull CommandSender sender) {
+    default void returnWarning(String message, CommandSender sender, TextColor color) {
+        Common.returnWarning(message, sender, color);
+    }
+
+    default void returnWarning(String message, CommandSender sender) {
+        Common.returnWarning(message, sender);
+    }
+
+    default void sendMessage(String message, CommandSender sender) {
         Common.sendMessage(message, sender);
     }
 
