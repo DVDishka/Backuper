@@ -54,9 +54,9 @@ public class UnZIP implements CommandInterface {
 
         backup.lock();
 
-        try {
+        Scheduler.getScheduler().runAsync(Common.plugin, () -> {
 
-            Scheduler.getScheduler().runAsync(Common.plugin, () -> {
+            try {
 
                 Logger.getLogger().log("The Convert Backup To Folder process has been started, it may take a long time...", sender);
 
@@ -71,7 +71,7 @@ public class UnZIP implements CommandInterface {
                 Logger.getLogger().devLog("The Delete Old Backup ZIP task has been finished");
 
                 Logger.getLogger().devLog("The Rename \"in progress\" Folder task has been started");
-                if (!new File(backup.getFile().getPath().replace(".zip", "") + " in process")
+                if (!new File(backup.getFile().getPath().replace(".zip", "") + " in progress")
                         .renameTo(new File(backup.getFile().getPath().replace(".zip", "")))) {
                     Logger.getLogger().warn("The Rename \"in progress\" Folder task has been finished with an exception!", sender);
                     throw new RuntimeException();
@@ -81,13 +81,14 @@ public class UnZIP implements CommandInterface {
                 backup.unlock();
 
                 Logger.getLogger().success("The Convert Backup To Folder process has been finished successfully", sender);
-            });
-        } catch (Exception e) {
 
-            backup.unlock();
-            Logger.getLogger().warn("The Convert Backup To Folder process has been finished with an exception!", sender);
-            Logger.getLogger().devWarn(this, e);
-        }
+            } catch (Exception e) {
+
+                backup.unlock();
+                Logger.getLogger().warn("The Convert Backup To Folder process has been finished with an exception!", sender);
+                Logger.getLogger().devWarn(this, e);
+            }
+        });
     }
 
     public void unPack(Backup backup, CommandSender sender) {
@@ -115,12 +116,12 @@ public class UnZIP implements CommandInterface {
 
                     try {
 
-                        if (!new File(backup.getFile().getPath().replace(".zip", "") + " in process").toPath().resolve(name).getParent().toFile().exists() &&
-                                !new File(backup.getFile().getPath().replace(".zip", "") + " in process").toPath().resolve(name).getParent().toFile().mkdirs()) {
-                            Logger.getLogger().warn("Can not create directory " + new File(backup.getFile().getPath().replace(".zip", "") + " in process").toPath().resolve(name).getParent(), sender);
+                        if (!new File(backup.getFile().getPath().replace(".zip", "") + " in progress").toPath().resolve(name).getParent().toFile().exists() &&
+                                !new File(backup.getFile().getPath().replace(".zip", "") + " in progress").toPath().resolve(name).getParent().toFile().mkdirs()) {
+                            Logger.getLogger().warn("Can not create directory " + new File(backup.getFile().getPath().replace(".zip", "") + " in progress").toPath().resolve(name).getParent(), sender);
                         }
 
-                        FileOutputStream outputStream = new FileOutputStream(new File(backup.getFile().getPath().replace(".zip", "") + " in process").toPath().resolve(name).toFile());
+                        FileOutputStream outputStream = new FileOutputStream(new File(backup.getFile().getPath().replace(".zip", "") + " in progress").toPath().resolve(name).toFile());
                         for (int c : content) {
                                 outputStream.write(c);
                         }

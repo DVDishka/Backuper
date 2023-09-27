@@ -39,7 +39,7 @@ public class BackupProcessStarter implements Runnable {
 
         try {
 
-            Logger.getLogger().log("Backup process has been started!", sender);
+            Logger.getLogger().log("Backup process has been started", sender);
 
             Backup.isBackupBusy = true;
 

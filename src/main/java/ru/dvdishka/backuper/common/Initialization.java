@@ -140,10 +140,7 @@ public class Initialization implements Listener {
             if (!isConfigFileOk) {
 
                 if (!configFile.delete()) {
-                    if (sender != null) {
-                        Common.returnFailure("Can not delete old config file!", sender);
-                    }
-                    Logger.getLogger().warn("Can not delete old config file!");
+                    Logger.getLogger().warn("Can not delete old config file!", sender);
                     noErrors = false;
                 }
 
@@ -168,22 +165,17 @@ public class Initialization implements Listener {
 
                 } catch (Exception e) {
 
-                    if (sender != null) {
-                        Common.returnFailure("Can not save config file!", sender);
-                    }
-                    Logger.getLogger().warn("Can not save config file!");
+                    Logger.getLogger().warn("Can not save config file!", sender);
                     Logger.getLogger().devWarn("Initialization", e);
                     noErrors = false;
                 }
             }
 
             if (sender != null && noErrors) {
-                Common.returnSuccess("Config has been reloaded successfully!", sender);
-                Logger.getLogger().log("Config has been reloaded successfully!");
+                Logger.getLogger().success("Config has been reloaded successfully!", sender);
             }
             if (sender != null && !noErrors) {
-                Common.returnFailure("Config has been reloaded with errors!", sender);
-                Logger.getLogger().log("Config has been reloaded with errors!");
+                Logger.getLogger().log("Config has been reloaded with errors!", sender);
             }
 
         } else {
@@ -194,10 +186,7 @@ public class Initialization implements Listener {
 
             } catch (Exception e) {
 
-                if (sender != null) {
-                    Common.returnFailure("Something went wrong when trying to create config file!", sender);
-                }
-                Logger.getLogger().warn("Something went wrong when trying to create config file!");
+                Logger.getLogger().warn("Something went wrong when trying to create config file!", sender);
                 Logger.getLogger().devWarn("Initialization", e.getMessage());
             }
         }

@@ -81,7 +81,7 @@ public class BackupProcess implements Runnable {
 
                             if (ConfigVariables.zipArchive) {
 
-                                addDirToZip(zipOutputStream, worldDir, new File(backupDir.getPath() + ".zip").toPath());
+                                addDirToZip(zipOutputStream, worldDir, worldDir.getParentFile().toPath());
 
                             } else {
 
@@ -159,6 +159,7 @@ public class BackupProcess implements Runnable {
                     Logger.getLogger().devLog("Delete Old Backups 1 task has been started");
 
                     ArrayList<LocalDateTime> backups = Common.getBackups();
+                    Backup.sortLocalDateTime(backups);
 
                     int backupsToDelete = backups.size() - ConfigVariables.backupsNumber;
 
@@ -323,25 +324,19 @@ public class BackupProcess implements Runnable {
         }
     }
 
-    public void addDirToZip(ZipOutputStream zip, File sourceDir, Path zipFilePath) {
+    public void addDirToZip(ZipOutputStream zip, File sourceDir, Path folderDir) {
 
         for (File file : Objects.requireNonNull(sourceDir.listFiles())) {
 
             if (file.isDirectory()) {
 
-                addDirToZip(zip, file, zipFilePath);
+                addDirToZip(zip, file, folderDir);
 
             } else if (!file.getName().equals("session.lock")) {
 
                 try {
 
-                    String relativeFilePath = zipFilePath.relativize(file.toPath()).toFile().getPath();
-                    relativeFilePath = relativeFilePath.replace("./", "");
-                    relativeFilePath = relativeFilePath.replace("..\\", "");
-                    while (!relativeFilePath.isEmpty() && relativeFilePath.charAt(0) == '.') {
-
-                        relativeFilePath = relativeFilePath.replaceFirst(".", "");
-                    }
+                    String relativeFilePath = folderDir.toAbsolutePath().relativize(file.toPath().toAbsolutePath()).toString();
 
                     zip.putNextEntry(new ZipEntry(relativeFilePath));
                     FileInputStream fileInputStream = new FileInputStream(file);
