@@ -58,7 +58,7 @@ public class UnZIP implements CommandInterface {
 
             try {
 
-                Logger.getLogger().log("The Convert Backup To Folder process has been started, it may take a long time...", sender);
+                Logger.getLogger().log("The Convert Backup To Folder process has been started, it may take a some time...", sender);
 
                 Logger.getLogger().devLog("The Unpack task has been started");
                 unPack(backup, sender);
@@ -119,6 +119,7 @@ public class UnZIP implements CommandInterface {
                         if (!new File(backup.getFile().getPath().replace(".zip", "") + " in progress").toPath().resolve(name).getParent().toFile().exists() &&
                                 !new File(backup.getFile().getPath().replace(".zip", "") + " in progress").toPath().resolve(name).getParent().toFile().mkdirs()) {
                             Logger.getLogger().warn("Can not create directory " + new File(backup.getFile().getPath().replace(".zip", "") + " in progress").toPath().resolve(name).getParent(), sender);
+                            throw new RuntimeException();
                         }
 
                         FileOutputStream outputStream = new FileOutputStream(new File(backup.getFile().getPath().replace(".zip", "") + " in progress").toPath().resolve(name).toFile());
@@ -132,8 +133,9 @@ public class UnZIP implements CommandInterface {
 
                     } catch (Exception e) {
 
-                        Logger.getLogger().warn("Something went wrong while trying to unPack file", sender);
+                        Logger.getLogger().warn("Something went wrong while trying to unpack file", sender);
                         Logger.getLogger().devWarn(this, e);
+                        throw new RuntimeException();
                     }
                 });
 
@@ -148,6 +150,7 @@ public class UnZIP implements CommandInterface {
 
             Logger.getLogger().warn("The Unpack task has been finished with an exception!", sender);
             Logger.getLogger().devWarn(this, e);
+            throw new RuntimeException();
         }
     }
 }

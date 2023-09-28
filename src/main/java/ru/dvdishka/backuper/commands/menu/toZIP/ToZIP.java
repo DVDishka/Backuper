@@ -60,7 +60,7 @@ public class ToZIP implements CommandInterface {
 
                 try {
 
-                    Logger.getLogger().log("The Convert Backup To ZIP process has been started, it may take a long time...", sender);
+                    Logger.getLogger().log("The Convert Backup To ZIP process has been started, it may take a some time...", sender);
 
                     Logger.getLogger().devLog("The Pack To Zip task has been started");
                     for (File file : backup.getFile().listFiles()) {
@@ -129,6 +129,7 @@ public class ToZIP implements CommandInterface {
 
                     Logger.getLogger().warn("Something went wrong while trying to put file in ZIP! " + file.getName(), sender);
                     Logger.getLogger().devWarn(this, e);
+                    throw new RuntimeException();
                 }
             }
         }
