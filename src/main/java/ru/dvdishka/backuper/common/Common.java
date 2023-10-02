@@ -82,7 +82,9 @@ public class Common {
 
         ArrayList<LocalDateTime> backups = new ArrayList<>();
         for (File file : Objects.requireNonNull(new File(ConfigVariables.backupsFolder).listFiles())) {
-            backups.add(LocalDateTime.parse(file.getName().replace(".zip", ""), ru.dvdishka.backuper.common.Backup.dateTimeFormatter));
+            try {
+                backups.add(LocalDateTime.parse(file.getName().replace(".zip", ""), ru.dvdishka.backuper.common.Backup.dateTimeFormatter));
+            } catch (Exception ignored) {}
         }
         return backups;
     }

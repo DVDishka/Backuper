@@ -8,6 +8,7 @@ import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
 import ru.dvdishka.backuper.commands.common.CommandInterface;
 import ru.dvdishka.backuper.common.Backup;
 import ru.dvdishka.backuper.common.ConfigVariables;
@@ -49,7 +50,7 @@ public class List implements CommandInterface {
 
         updateListPages();
 
-        sender.sendMessage(createListMessage(pageNumber));
+        sender.sendMessage(createListMessage(pageNumber, sender));
     }
 
     public static void updateListPages() {
@@ -97,38 +98,63 @@ public class List implements CommandInterface {
         List.pages = pages;
     }
 
-    public static Component createListMessage(int pageNumber) {
+    public Component createListMessage(int pageNumber, CommandSender sender) {
 
         Component message = Component.empty();
 
-        message = message
-                .append(Component.text("---------------")
-                        .color(TextColor.color(0xE3A013))
-                        .decorate(TextDecoration.BOLD)
-                        .append(Component.newline()));
+        if (!(sender instanceof ConsoleCommandSender)) {
 
-        for (TextComponent backupComponent : pages.get(pageNumber - 1)) {
             message = message
-                    .append(backupComponent)
+                    .append(Component.text("---------------")
+                            .color(TextColor.color(0xE3A013))
+                            .decorate(TextDecoration.BOLD)
+                            .append(Component.newline()));
+
+            for (TextComponent backupComponent : pages.get(pageNumber - 1)) {
+                message = message
+                        .append(backupComponent)
+                        .append(Component.newline());
+            }
+
+            message = message
+                    .append(Component.text("<<<<<<<<")
+                            .decorate(TextDecoration.BOLD)
+                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backup list " + (pageNumber - 1))))
+                    .append(Component.text(String.valueOf(pageNumber))
+                            .decorate(TextDecoration.BOLD))
+                    .append(Component.text(">>>>>>>>")
+                            .decorate(TextDecoration.BOLD)
+                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backup list " + (pageNumber + 1))))
                     .append(Component.newline());
+
+            message = message
+                    .append(Component.text("---------------")
+                            .color(TextColor.color(0xE3A013))
+                            .decorate(TextDecoration.BOLD));
+
+        } else {
+
+            message = message
+                    .append(Component.newline())
+                    .append(Component.text("--------------------------------"));
+
+            for (TextComponent backupComponent : pages.get(pageNumber - 1)) {
+                message = message
+                        .append(Component.newline())
+                        .append(Component.text(backupComponent.content()))
+                        .append(Component.space())
+                        .append(Component.text(new Backup(backupComponent.content()).zipOrFolder()))
+                        .append(Component.space())
+                        .append(Component.text(new Backup(backupComponent.content()).getMBSize()))
+                        .append(Component.space())
+                        .append(Component.text(" MB"));
+            }
+
+            message = message
+                    .append(Component.newline())
+                    .append(Component.text("--------------------------------"));
+
         }
-
-        message = message
-                .append(Component.text("<<<<<<<<")
-                        .decorate(TextDecoration.BOLD)
-                        .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backup list " + (pageNumber - 1))))
-                .append(Component.text(String.valueOf(pageNumber))
-                        .decorate(TextDecoration.BOLD))
-                .append(Component.text(">>>>>>>>")
-                        .decorate(TextDecoration.BOLD)
-                        .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backup list " + (pageNumber + 1))))
-                .append(Component.newline());
-
-        message = message
-                .append(Component.text("---------------")
-                        .color(TextColor.color(0xE3A013))
-                        .decorate(TextDecoration.BOLD));
-
         return message;
     }
 

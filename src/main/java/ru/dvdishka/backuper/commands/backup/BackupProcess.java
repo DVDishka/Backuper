@@ -36,22 +36,12 @@ public class BackupProcess implements Runnable {
         this.sender = sender;
     }
 
-    public void returnFailure(String message) {
-        Common.returnFailure(message, sender);
-    }
-
-    public void returnSuccess(String message) {
-        Common.returnSuccess(message, sender);
-    }
-
-    public void sendMessage(String message) {Common.sendMessage(message, sender);}
-
     public void run() {
 
         try {
 
             File backupDir = new File("plugins/Backuper/Backups/" +
-                    LocalDateTime.now().format(Backup.dateTimeFormatter));
+                    LocalDateTime.now().format(Backup.dateTimeFormatter) + " in progress");
             File backupsDir = new File(ConfigVariables.backupsFolder);
 
             {
@@ -143,6 +133,23 @@ public class BackupProcess implements Runnable {
             }
 
             {
+                Logger.getLogger().devLog("The Rename \"in progress\" Folder/ZIP task has been started");
+                if (ConfigVariables.zipArchive) {
+
+                    if (!new File(ConfigVariables.backupsFolder).toPath().resolve(backupDir.getName() + ".zip").toFile()
+                            .renameTo(new File(ConfigVariables.backupsFolder).toPath().resolve(backupDir.getName().replace(" in progress", "") + ".zip").toFile())) {
+                        Logger.getLogger().warn("The Rename \"in progress\" ZIP task has been finished with an exception!", sender);
+                    }
+                } else {
+                    if (!new File(ConfigVariables.backupsFolder).toPath().resolve(backupDir.getName()).toFile()
+                            .renameTo(new File(ConfigVariables.backupsFolder).toPath().resolve(backupDir.getName().replace(" in progress", "")).toFile())) {
+                        Logger.getLogger().warn("The Rename \"in progress\" ZIP task has been finished with an exception!", sender);
+                    }
+                }
+                Logger.getLogger().devLog("The Rename \"in progress\" Folder/ZIP task has been finished");
+            }
+
+            {
                 if (isAutoBackup) {
                     Logger.getLogger().devLog("Update \"lastBackup\" Variable task has been started");
                     File configFile = new File("plugins/Backuper/config.yml");
@@ -170,17 +177,17 @@ public class BackupProcess implements Runnable {
                             break;
                         }
 
-                        try {
 
-                            for (File backup : Objects.requireNonNull(backupsDir.listFiles())) {
+                        for (File backup : Objects.requireNonNull(backupsDir.listFiles())) {
 
-                                String backupFileName = backup.getName().replace(".zip", "");
+                            String backupFileName = backup.getName().replace(".zip", "");
 
-                                while (backupFileName.length() < fileName.toString().length()) {
+                            while (backupFileName.length() < fileName.toString().length()) {
 
-                                    backupFileName = backupFileName.concat("0");
-                                }
+                                backupFileName = backupFileName.concat("0");
+                            }
 
+                            try {
                                 if (LocalDateTime.parse(backupFileName, ru.dvdishka.backuper.common.Backup.dateTimeFormatter).equals(fileName)) {
 
                                     if (!backup.getName().endsWith(".zip")) {
@@ -195,12 +202,8 @@ public class BackupProcess implements Runnable {
                                         }
                                     }
                                 }
-                            }
-                        } catch (Exception e) {
-
-                            Logger.getLogger().devWarn(this, e);
+                            } catch (Exception ignored) {}
                         }
-
                         backupsToDelete--;
                     }
                     Logger.getLogger().devLog("Delete Old Backups 1 task has been finished");
@@ -237,27 +240,25 @@ public class BackupProcess implements Runnable {
 
                                 String backupFileName = backup.getName().replace(".zip", "");
 
-                                while (backupFileName.length() < fileName.toString().length()) {
+                                try {
 
-                                    backupFileName = backupFileName.concat("0");
-                                }
+                                    if (LocalDateTime.parse(backupFileName, ru.dvdishka.backuper.common.Backup.dateTimeFormatter).equals(fileName)) {
 
-                                if (LocalDateTime.parse(backupFileName, ru.dvdishka.backuper.common.Backup.dateTimeFormatter).equals(fileName)) {
+                                        bytesToDelete -= FileUtils.sizeOf(backup);
 
-                                    bytesToDelete -= FileUtils.sizeOf(backup);
+                                        if (!backup.getName().endsWith(".zip")) {
 
-                                    if (!backup.getName().endsWith(".zip")) {
+                                            deleteDir(backup);
 
-                                        deleteDir(backup);
+                                        } else {
 
-                                    } else {
+                                            if (!backup.delete()) {
 
-                                        if (!backup.delete()) {
-
-                                            Logger.getLogger().warn("Failed to delete old backup !" + backup.getName(), sender);
+                                                Logger.getLogger().warn("Failed to delete old backup !" + backup.getName(), sender);
+                                            }
                                         }
                                     }
-                                }
+                                } catch (Exception ignored) {}
                             }
                         }
                     }
@@ -293,8 +294,7 @@ public class BackupProcess implements Runnable {
 
             Backup.isBackupBusy = false;
 
-            returnFailure("The Backup process has been finished with an exception, check the server console to get more info");
-            Logger.getLogger().warn("The Backup process has been finished with an exception!");
+            Logger.getLogger().warn("The Backup process has been finished with an exception!", sender);
             Logger.getLogger().devWarn(this, e);
         }
     }
