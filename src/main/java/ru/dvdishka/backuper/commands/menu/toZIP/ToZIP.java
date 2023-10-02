@@ -78,6 +78,7 @@ public class ToZIP implements CommandInterface {
                     if (!new File(backup.getFile().getPath().replace(".zip", "") + " in progress" + ".zip")
                             .renameTo(new File(backup.getFile().getPath().replace(".zip", "") + ".zip"))) {
                         Logger.getLogger().warn("The Rename \"in progress\" ZIP task has been finished with an exception!", sender);
+                        backup.unlock();
                         throw new RuntimeException();
                     }
                     Logger.getLogger().devLog("The Rename \"in progress\" Folder task has been finished");

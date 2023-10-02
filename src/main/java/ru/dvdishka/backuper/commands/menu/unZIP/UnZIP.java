@@ -66,6 +66,7 @@ public class UnZIP implements CommandInterface {
                 Logger.getLogger().devLog("The Delete Old Backup ZIP task has been started");
                 if (!backup.getZIPFile().delete()) {
                     Logger.getLogger().warn("The Delete Old Backup ZIP task has been finished with an exception", sender);
+                    backup.unlock();
                     throw new RuntimeException();
                 }
                 Logger.getLogger().devLog("The Delete Old Backup ZIP task has been finished");
@@ -74,6 +75,7 @@ public class UnZIP implements CommandInterface {
                 if (!new File(backup.getFile().getPath().replace(".zip", "") + " in progress")
                         .renameTo(new File(backup.getFile().getPath().replace(".zip", "")))) {
                     Logger.getLogger().warn("The Rename \"in progress\" Folder task has been finished with an exception!", sender);
+                    backup.unlock();
                     throw new RuntimeException();
                 }
                 Logger.getLogger().devLog("The Rename \"in progress\" Folder task has been finished");
@@ -119,7 +121,6 @@ public class UnZIP implements CommandInterface {
                         if (!new File(backup.getFile().getPath().replace(".zip", "") + " in progress").toPath().resolve(name).getParent().toFile().exists() &&
                                 !new File(backup.getFile().getPath().replace(".zip", "") + " in progress").toPath().resolve(name).getParent().toFile().mkdirs()) {
                             Logger.getLogger().warn("Can not create directory " + new File(backup.getFile().getPath().replace(".zip", "") + " in progress").toPath().resolve(name).getParent(), sender);
-                            throw new RuntimeException();
                         }
 
                         FileOutputStream outputStream = new FileOutputStream(new File(backup.getFile().getPath().replace(".zip", "") + " in progress").toPath().resolve(name).toFile());
@@ -133,6 +134,7 @@ public class UnZIP implements CommandInterface {
 
                     } catch (Exception e) {
 
+                        backup.unlock();
                         Logger.getLogger().warn("Something went wrong while trying to unpack file", sender);
                         Logger.getLogger().devWarn(this, e);
                         throw new RuntimeException();
