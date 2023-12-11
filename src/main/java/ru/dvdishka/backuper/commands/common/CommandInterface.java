@@ -3,7 +3,6 @@ package ru.dvdishka.backuper.commands.common;
 import dev.jorel.commandapi.executors.CommandArguments;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.command.CommandSender;
-import org.jetbrains.annotations.NotNull;
 import ru.dvdishka.backuper.common.Common;
 
 public interface CommandInterface {
