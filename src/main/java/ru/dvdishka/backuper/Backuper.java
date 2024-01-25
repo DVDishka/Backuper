@@ -2,6 +2,9 @@ package ru.dvdishka.backuper;
 
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPIBukkitConfig;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.server.ServerLoadEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.dvdishka.backuper.commands.common.Scheduler;
 import ru.dvdishka.backuper.common.Common;
@@ -45,7 +48,6 @@ public class Backuper extends JavaPlugin {
         Initialization.checkDependencies();
         Initialization.checkPluginVersion();
         Initialization.checkOperatingSystem();
-        Initialization.initAutoBackup();
 
         Logger.getLogger().log("Backuper plugin has been enabled!");
     }

@@ -39,6 +39,16 @@ public class BackupProcessStarter implements Runnable {
 
         try {
 
+            if (isAutoBackup && Backup.isBackupBusy) {
+                Logger.getLogger().warn("Failed to start an automatic backup because the previous process is not completed");
+                return;
+            }
+
+            if (Backup.isBackupBusy) {
+                Logger.getLogger().warn("Failed to start the backup because the previous process is not completed");
+                return;
+            }
+
             Logger.getLogger().log("Backup process has been started", sender);
 
             Backup.isBackupBusy = true;

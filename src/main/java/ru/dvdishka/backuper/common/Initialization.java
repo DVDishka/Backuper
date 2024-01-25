@@ -15,6 +15,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.server.ServerLoadEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.dvdishka.backuper.commands.common.Scheduler;
 import ru.dvdishka.backuper.commands.menu.Menu;
@@ -54,17 +55,16 @@ public class Initialization implements Listener {
 
             long delay;
 
-            if (ConfigVariables.lastBackup == 0 || ConfigVariables.fixedBackupTime) {
-                if (ConfigVariables.firstBackupTime > LocalDateTime.now().getHour()) {
+            if (ConfigVariables.fixedBackupTime) {
 
-                    delay = (long) ConfigVariables.firstBackupTime * 60 * 60 - (LocalDateTime.now().getHour() * 60 * 60 + LocalDateTime.now().getMinute() * 60 + LocalDateTime.now().getSecond());
+                if (ConfigVariables.backupTime > LocalDateTime.now().getHour()) {
+                    delay = (long) ConfigVariables.backupTime * 60 * 60 - (LocalDateTime.now().getHour() * 60 * 60 + LocalDateTime.now().getMinute() * 60 + LocalDateTime.now().getSecond());
 
                 } else {
-
-                    delay = (long) ConfigVariables.firstBackupTime * 60 * 60 + 86400 - (LocalDateTime.now().getHour() * 60 * 60 + LocalDateTime.now().getMinute() * 60 + LocalDateTime.now().getSecond());
+                    delay = (long) ConfigVariables.backupTime * 60 * 60 + 86400 - (LocalDateTime.now().getHour() * 60 * 60 + LocalDateTime.now().getMinute() * 60 + LocalDateTime.now().getSecond());
                 }
             } else {
-                delay = ConfigVariables.backupPeriod * 60L * 60L - (LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) - ConfigVariables.lastBackup);
+                delay = ConfigVariables.backupPeriod * 60L - (LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) - ConfigVariables.lastBackup);
             }
 
             if (delay <= 0) {
@@ -73,7 +73,7 @@ public class Initialization implements Listener {
 
             Logger.getLogger().devLog("Delay: " + delay);
 
-            Scheduler.getScheduler().runSyncRepeatingTask(Common.plugin, new BackupProcessStarter(ConfigVariables.afterBackup, true), delay * 20, ConfigVariables.backupPeriod * 60L * 60L * 20L);
+            Scheduler.getScheduler().runSyncRepeatingTask(Common.plugin, new BackupProcessStarter(ConfigVariables.afterBackup, true), delay * 20, ConfigVariables.backupPeriod * 60L * 20L);
         }
     }
 
@@ -89,8 +89,11 @@ public class Initialization implements Listener {
 
             assert configVersion != null;
 
-            ConfigVariables.firstBackupTime = config.getInt("firstBackupTime", 0);
-            ConfigVariables.backupPeriod = config.getInt("backupPeriod", 24);
+            BackwardsCompatibility.backupPeriodFromHoursToMinutes(config);
+            BackwardsCompatibility.fixedBackupTimeToBackupTime(config);
+
+            ConfigVariables.backupTime = config.getInt("backupTime", -1);
+            ConfigVariables.backupPeriod = config.getInt("backupPeriod", 1440);
             ConfigVariables.afterBackup = config.getString("afterBackup", "NOTHING").toUpperCase();
             ConfigVariables.backupsNumber = config.getInt("maxBackupsNumber", 7);
             ConfigVariables.backupsWeight = config.getLong("maxBackupsWeight", 0) * 1_048_576L;
@@ -98,12 +101,12 @@ public class Initialization implements Listener {
             ConfigVariables.betterLogging = config.getBoolean("betterLogging", false);
             ConfigVariables.autoBackup = config.getBoolean("autoBackup", true);
             ConfigVariables.lastBackup = config.getLong("lastBackup", 0);
-            ConfigVariables.fixedBackupTime = config.getBoolean("fixedBackupTime", true);
+            ConfigVariables.fixedBackupTime = ConfigVariables.backupTime > -1;
             ConfigVariables.backupsFolder = config.getString("backupsFolder", "plugins/Backuper/Backups");
 
             boolean isConfigFileOk = configVersion.equals(ConfigVariables.configVersion);
 
-            if (!config.contains("firstBackupTime")) {
+            if (!config.contains("backupTime")) {
                 isConfigFileOk = false;
             }
             if (!config.contains("backupPeriod")) {
@@ -130,9 +133,6 @@ public class Initialization implements Listener {
             if (!config.contains("lastBackup")) {
                 isConfigFileOk = false;
             }
-            if (!config.contains("fixedBackupTime")) {
-                isConfigFileOk = false;
-            }
             if (!config.contains("backupsFolder")) {
                 isConfigFileOk = false;
             }
@@ -147,16 +147,15 @@ public class Initialization implements Listener {
                 Common.plugin.saveDefaultConfig();
                 FileConfiguration newConfig = Common.plugin.getConfig();
 
-                newConfig.set("firstBackupTime", ConfigVariables.firstBackupTime);
+                newConfig.set("backupTime", ConfigVariables.backupTime);
                 newConfig.set("backupPeriod", ConfigVariables.backupPeriod);
                 newConfig.set("afterBackup", ConfigVariables.afterBackup);
                 newConfig.set("maxBackupsNumber", ConfigVariables.backupsNumber);
-                newConfig.set("maxBackupsWeight", ConfigVariables.backupsWeight);
+                newConfig.set("maxBackupsWeight", ConfigVariables.backupsWeight / 1_048_576L);
                 newConfig.set("zipArchive", ConfigVariables.zipArchive);
                 newConfig.set("betterLogging", ConfigVariables.betterLogging);
                 newConfig.set("autoBackup", ConfigVariables.autoBackup);
                 newConfig.set("lastBackup", ConfigVariables.lastBackup);
-                newConfig.set("fixedBackupTime", ConfigVariables.fixedBackupTime);
                 newConfig.set("backupsFolder", ConfigVariables.backupsFolder);
 
                 try {
@@ -342,6 +341,7 @@ public class Initialization implements Listener {
     public static void initEventHandlers() {
 
         Bukkit.getPluginManager().registerEvents(new Initialization(), Common.plugin);
+
     }
 
     public static void checkDependencies() {
@@ -385,7 +385,7 @@ public class Initialization implements Listener {
 
                 Common.isUpdatedToLatest = false;
 
-                String message = "You are using an outdated version of Backuper, please update it to the latest!";
+                String message = "You are using an outdated version of Backuper, please update it to the latest and check the changelist!";
                 for (String downloadLink : Common.downloadLinks) {
                     message = message.concat("\nDownload link: " + downloadLink);
                 }
@@ -414,7 +414,7 @@ public class Initialization implements Listener {
                     .append(Component.newline());
 
             message = message
-                    .append(Component.text("You are using an outdated version of Backuper!\nPlease update it to the latest!")
+                    .append(Component.text("You are using an outdated version of Backuper!\nPlease update it to the latest and check the changelist!")
                             .decorate(TextDecoration.BOLD)
                             .color(NamedTextColor.RED));
 
@@ -439,5 +439,10 @@ public class Initialization implements Listener {
 
             event.getPlayer().sendMessage(message);
         }
+    }
+
+    @EventHandler
+    public void onStartCompleted(ServerLoadEvent event) {
+        Initialization.initAutoBackup();
     }
 }

@@ -30,16 +30,30 @@
 
 ---
 
+### How does automatic backup work
+
+- **If `backupTime` is not set to -1**
+    
+  - Backups will occur every day at the time specified in `backupTime`, regardless of `backupPeriod`
+
+
+
+- **If `backupTime` is set to -1**
+    
+  - First backup will happen at the server start
+  - Next backups will happen after `backupPeriod`
+
+---
+
 ### Configuration
 
 * `Auto backup` - **(true/false)** - enables automatic backups once at a specified interval **(when disabled, backups will only run on the `/backup` command)**
 * `Backups folder` - **(Path)** - **FULL** path to folder, where backups will be stored
-* `First backup time` - **(0 -23)** - time in hours when server will be backed up first time
-* `Fixed backup time` - **(true/false)** - all backups will take place at a certain time, specified in the `firstBackupTime`. When enabled, the `backupPeriod` automatically becomes 24 hours
-* `Backup period` - **(1 <= Hours)** - the period after which the server will make backups **(If you want to change this you need to make fixedBackupTime = false)**
+* `backup time` - **(0 -23)** - **(fixedBackupTime)** Backups will be made at this time every day. (`backupPeriod` will be automatically set to 24 hours). **-1 to disable backup time fixation**
+* `Backup period` - **(1 <= Minutes)** - the period after which the server will make backups **(To change this value you need to set `backupTime` to -1)**
 * `After backup` - **(NOTHING/STOP/RESTART)** - what will the server do after backup
 * `Max backup number` - **(0 <=)** - maximum number of backups to be kept **(0 - unlimited)**
-* `Max backup weight` - **(0 <=)** - maximum weight of backups that will be stored **(MB)**
+* `Max backup weight` - **(0 <=)** - maximum weight of backups that will be stored **(MB)** **(0 - unlimited)**
 * `Zip Archive` - **(true/false)** - do you want to store backups in ZIP archives?
 * `Better logging` - **(true/false)** - enable logging of additional information **(used for debugging, you probably don't need it)**
 
@@ -72,4 +86,4 @@
 
 * **Please report any issues to** [GitHub](https://github.com/DVDishka/Backuper/issues)
 * RESTART option may not work well, so it's better to use STOP with a loop in your start script ([start script](https://flags.sh/) auto restart ON)
-* You can reset the backup time if it is broken, and you don't use `fixedBackupTime` by changing `lastBackup` to 0. Then the next backup will happen at `firstBackupTime` and the next ones will happen after `backupPeriod`
+* You can reset the backup time if it is broken **and your `backupTime` is set to -1** by changing `lastBackup` to 0. Then the next backup will happen at the server start and the next ones will happen after `backupPeriod`
