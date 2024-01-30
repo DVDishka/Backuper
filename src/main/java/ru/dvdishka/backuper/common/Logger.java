@@ -2,6 +2,7 @@ package ru.dvdishka.backuper.common;
 
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
+import ru.dvdishka.backuper.back.Config;
 
 import java.util.Arrays;
 
@@ -27,14 +28,14 @@ public class Logger {
     }
 
     public void devLog(String text) {
-        if (ConfigVariables.betterLogging) {
+        if (Config.getInstance().isBetterLogging()) {
             Common.plugin.getLogger().info(text);
         }
     }
 
     public void devLog(String text, CommandSender sender) {
 
-        if (ConfigVariables.betterLogging) {
+        if (Config.getInstance().isBetterLogging()) {
             Common.plugin.getLogger().info(text);
 
             if (!(sender instanceof ConsoleCommandSender)) {
@@ -77,25 +78,25 @@ public class Logger {
     }
 
     public void devWarn(Object sourceClass, String text) {
-        if (ConfigVariables.betterLogging) {
+        if (Config.getInstance().isBetterLogging()) {
             Common.plugin.getLogger().warning(sourceClass.getClass().getSimpleName() + ": " + text);
         }
     }
 
     public void devWarn(String sourceClassName, String text) {
-        if (ConfigVariables.betterLogging) {
+        if (Config.getInstance().isBetterLogging()) {
             Common.plugin.getLogger().warning(sourceClassName + ": " + text);
         }
     }
 
     public void devWarn(Object sourceClass, Exception exception) {
-        if (ConfigVariables.betterLogging) {
+        if (Config.getInstance().isBetterLogging()) {
             Common.plugin.getLogger().warning(sourceClass.getClass().getSimpleName() + ": " + exception.getMessage() + "\n" + Arrays.toString(exception.getStackTrace()));
         }
     }
 
     public void devWarn(String sourceClassName, Exception exception) {
-        if (ConfigVariables.betterLogging) {
+        if (Config.getInstance().isBetterLogging()) {
             Common.plugin.getLogger().warning(sourceClassName + ": " + exception.getMessage() + "\n" + Arrays.toString(exception.getStackTrace()));
         }
     }

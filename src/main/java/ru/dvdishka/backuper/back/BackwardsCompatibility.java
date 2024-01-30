@@ -1,4 +1,4 @@
-package ru.dvdishka.backuper.common;
+package ru.dvdishka.backuper.back;
 
 import org.bukkit.configuration.file.FileConfiguration;
 

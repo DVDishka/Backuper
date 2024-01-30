@@ -1,4 +1,4 @@
-package ru.dvdishka.backuper.common;
+package ru.dvdishka.backuper.back;
 
 import dev.jorel.commandapi.CommandTree;
 import dev.jorel.commandapi.arguments.*;
@@ -10,26 +10,27 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.server.ServerLoadEvent;
 import org.bukkit.plugin.java.JavaPlugin;
-import ru.dvdishka.backuper.commands.common.Scheduler;
-import ru.dvdishka.backuper.commands.menu.Menu;
-import ru.dvdishka.backuper.commands.menu.delete.Delete;
-import ru.dvdishka.backuper.commands.menu.delete.DeleteConfirmation;
-import ru.dvdishka.backuper.commands.menu.toZIP.ToZIP;
-import ru.dvdishka.backuper.commands.menu.toZIP.ToZIPConfirmation;
-import ru.dvdishka.backuper.commands.menu.unZIP.UnZIP;
-import ru.dvdishka.backuper.commands.menu.unZIP.UnZIPConfirmation;
-import ru.dvdishka.backuper.commands.reload.Reload;
-import ru.dvdishka.backuper.commands.common.Permissions;
-import ru.dvdishka.backuper.commands.backup.Backup;
-import ru.dvdishka.backuper.commands.list.List;
-import ru.dvdishka.backuper.commands.backup.BackupProcessStarter;
+import ru.dvdishka.backuper.common.Common;
+import ru.dvdishka.backuper.common.Logger;
+import ru.dvdishka.backuper.handlers.WorldChangeCatcher;
+import ru.dvdishka.backuper.handlers.commands.common.Scheduler;
+import ru.dvdishka.backuper.handlers.commands.menu.Menu;
+import ru.dvdishka.backuper.handlers.commands.menu.delete.Delete;
+import ru.dvdishka.backuper.handlers.commands.menu.delete.DeleteConfirmation;
+import ru.dvdishka.backuper.handlers.commands.menu.toZIP.ToZIP;
+import ru.dvdishka.backuper.handlers.commands.menu.toZIP.ToZIPConfirmation;
+import ru.dvdishka.backuper.handlers.commands.menu.unZIP.UnZIP;
+import ru.dvdishka.backuper.handlers.commands.menu.unZIP.UnZIPConfirmation;
+import ru.dvdishka.backuper.handlers.commands.reload.Reload;
+import ru.dvdishka.backuper.handlers.commands.common.Permissions;
+import ru.dvdishka.backuper.handlers.commands.backup.Backup;
+import ru.dvdishka.backuper.handlers.commands.list.List;
+import ru.dvdishka.backuper.handlers.commands.backup.BackupProcessStarter;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -44,27 +45,26 @@ import java.util.Objects;
 public class Initialization implements Listener {
 
     public static void initBStats(JavaPlugin plugin) {
-
         @SuppressWarnings("unused")
         Metrics bStats = new Metrics(plugin, Common.bStatsId);
     }
 
     public static void initAutoBackup() {
 
-        if (ConfigVariables.autoBackup) {
+        if (Config.getInstance().isAutoBackup()) {
 
             long delay;
 
-            if (ConfigVariables.fixedBackupTime) {
+            if (Config.getInstance().isFixedBackupTime()) {
 
-                if (ConfigVariables.backupTime > LocalDateTime.now().getHour()) {
-                    delay = (long) ConfigVariables.backupTime * 60 * 60 - (LocalDateTime.now().getHour() * 60 * 60 + LocalDateTime.now().getMinute() * 60 + LocalDateTime.now().getSecond());
+                if (Config.getInstance().getBackupTime() > LocalDateTime.now().getHour()) {
+                    delay = (long) Config.getInstance().getBackupTime() * 60 * 60 - (LocalDateTime.now().getHour() * 60 * 60 + LocalDateTime.now().getMinute() * 60 + LocalDateTime.now().getSecond());
 
                 } else {
-                    delay = (long) ConfigVariables.backupTime * 60 * 60 + 86400 - (LocalDateTime.now().getHour() * 60 * 60 + LocalDateTime.now().getMinute() * 60 + LocalDateTime.now().getSecond());
+                    delay = (long) Config.getInstance().getBackupTime() * 60 * 60 + 86400 - (LocalDateTime.now().getHour() * 60 * 60 + LocalDateTime.now().getMinute() * 60 + LocalDateTime.now().getSecond());
                 }
             } else {
-                delay = ConfigVariables.backupPeriod * 60L - (LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) - ConfigVariables.lastBackup);
+                delay = Config.getInstance().getBackupPeriod() * 60L - (LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) - Config.getInstance().getLastBackup());
             }
 
             if (delay <= 0) {
@@ -73,109 +73,15 @@ public class Initialization implements Listener {
 
             Logger.getLogger().devLog("Delay: " + delay);
 
-            Scheduler.getScheduler().runSyncRepeatingTask(Common.plugin, new BackupProcessStarter(ConfigVariables.afterBackup, true), delay * 20, ConfigVariables.backupPeriod * 60L * 20L);
+            Scheduler.getScheduler().runSyncRepeatingTask(Common.plugin, new BackupProcessStarter(Config.getInstance().getAfterBackup(), true), delay * 20, Config.getInstance().getBackupPeriod() * 60L * 20L);
         }
     }
 
     public static void initConfig(File configFile, CommandSender sender) {
 
-        boolean noErrors = true;
-
         if (configFile.exists()) {
 
-            FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
-
-            String configVersion = config.getString("configVersion");
-
-            assert configVersion != null;
-
-            BackwardsCompatibility.backupPeriodFromHoursToMinutes(config);
-            BackwardsCompatibility.fixedBackupTimeToBackupTime(config);
-
-            ConfigVariables.backupTime = config.getInt("backupTime", -1);
-            ConfigVariables.backupPeriod = config.getInt("backupPeriod", 1440);
-            ConfigVariables.afterBackup = config.getString("afterBackup", "NOTHING").toUpperCase();
-            ConfigVariables.backupsNumber = config.getInt("maxBackupsNumber", 7);
-            ConfigVariables.backupsWeight = config.getLong("maxBackupsWeight", 0) * 1_048_576L;
-            ConfigVariables.zipArchive = config.getBoolean("zipArchive", true);
-            ConfigVariables.betterLogging = config.getBoolean("betterLogging", false);
-            ConfigVariables.autoBackup = config.getBoolean("autoBackup", true);
-            ConfigVariables.lastBackup = config.getLong("lastBackup", 0);
-            ConfigVariables.fixedBackupTime = ConfigVariables.backupTime > -1;
-            ConfigVariables.backupsFolder = config.getString("backupsFolder", "plugins/Backuper/Backups");
-
-            boolean isConfigFileOk = configVersion.equals(ConfigVariables.configVersion);
-
-            if (!config.contains("backupTime")) {
-                isConfigFileOk = false;
-            }
-            if (!config.contains("backupPeriod")) {
-                isConfigFileOk = false;
-            }
-            if (!config.contains("afterBackup")) {
-                isConfigFileOk = false;
-            }
-            if (!config.contains("maxBackupsNumber")) {
-                isConfigFileOk = false;
-            }
-            if (!config.contains("maxBackupsWeight")) {
-                isConfigFileOk = false;
-            }
-            if (!config.contains("zipArchive")) {
-                isConfigFileOk = false;
-            }
-            if (!config.contains("betterLogging")) {
-                isConfigFileOk = false;
-            }
-            if (!config.contains("autoBackup")) {
-                isConfigFileOk = false;
-            }
-            if (!config.contains("lastBackup")) {
-                isConfigFileOk = false;
-            }
-            if (!config.contains("backupsFolder")) {
-                isConfigFileOk = false;
-            }
-
-            if (!isConfigFileOk) {
-
-                if (!configFile.delete()) {
-                    Logger.getLogger().warn("Can not delete old config file!", sender);
-                    noErrors = false;
-                }
-
-                Common.plugin.saveDefaultConfig();
-                FileConfiguration newConfig = Common.plugin.getConfig();
-
-                newConfig.set("backupTime", ConfigVariables.backupTime);
-                newConfig.set("backupPeriod", ConfigVariables.backupPeriod);
-                newConfig.set("afterBackup", ConfigVariables.afterBackup);
-                newConfig.set("maxBackupsNumber", ConfigVariables.backupsNumber);
-                newConfig.set("maxBackupsWeight", ConfigVariables.backupsWeight / 1_048_576L);
-                newConfig.set("zipArchive", ConfigVariables.zipArchive);
-                newConfig.set("betterLogging", ConfigVariables.betterLogging);
-                newConfig.set("autoBackup", ConfigVariables.autoBackup);
-                newConfig.set("lastBackup", ConfigVariables.lastBackup);
-                newConfig.set("backupsFolder", ConfigVariables.backupsFolder);
-
-                try {
-
-                    newConfig.save(configFile);
-
-                } catch (Exception e) {
-
-                    Logger.getLogger().warn("Can not save config file!", sender);
-                    Logger.getLogger().devWarn("Initialization", e);
-                    noErrors = false;
-                }
-            }
-
-            if (sender != null && noErrors) {
-                Logger.getLogger().success("Config has been reloaded successfully!", sender);
-            }
-            if (sender != null && !noErrors) {
-                Logger.getLogger().log("Config has been reloaded with errors!", sender);
-            }
+            Config.getInstance().load(configFile, sender);
 
         } else {
 
@@ -341,7 +247,7 @@ public class Initialization implements Listener {
     public static void initEventHandlers() {
 
         Bukkit.getPluginManager().registerEvents(new Initialization(), Common.plugin);
-
+        Bukkit.getPluginManager().registerEvents(new WorldChangeCatcher(), Common.plugin);
     }
 
     public static void checkDependencies() {

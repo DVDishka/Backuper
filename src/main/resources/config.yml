@@ -1,6 +1,7 @@
 # DO NOT CHANGE
-configVersion: 4.0
+configVersion: 5.0
 lastBackup: 0
+lastChange: 0
 
 
 # Automatic backup once in a specified period
@@ -16,6 +17,8 @@ backupPeriod: 1440
 # What to do after backup, (STOP, RESTART, NOTHING)
 afterBackup: NOTHING
 
+# The backup will only occur if the world has been changed since the last backup. If the world has not been changed, this backup cycle will be skipped
+skipDuplicateBackup: true
 # Max backups in backups folder, 0 to make it unlimited
 maxBackupsNumber: 0
 # Max backups folder weight in MB, 0 to make it unlimited

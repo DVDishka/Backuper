@@ -1,4 +1,4 @@
-package ru.dvdishka.backuper.commands.common;
+package ru.dvdishka.backuper.handlers.commands.common;
 
 public enum Permissions {
 

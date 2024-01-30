@@ -1,4 +1,4 @@
-package ru.dvdishka.backuper.commands.list;
+package ru.dvdishka.backuper.handlers.commands.list;
 
 import dev.jorel.commandapi.executors.CommandArguments;
 import net.kyori.adventure.text.Component;
@@ -9,9 +9,9 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
-import ru.dvdishka.backuper.commands.common.CommandInterface;
+import ru.dvdishka.backuper.handlers.commands.common.CommandInterface;
 import ru.dvdishka.backuper.common.Backup;
-import ru.dvdishka.backuper.common.ConfigVariables;
+import ru.dvdishka.backuper.back.Config;
 import ru.dvdishka.backuper.common.Logger;
 
 import java.io.File;
@@ -26,7 +26,7 @@ public class List implements CommandInterface {
     @Override
     public void execute(CommandSender sender, CommandArguments args) {
 
-        File backupsFolder = new File(ConfigVariables.backupsFolder);
+        File backupsFolder = new File(Config.getInstance().getBackupsFolder());
 
         if (backupsFolder.listFiles() == null) {
             returnFailure("Wrong backups folder in config.yml!", sender);
@@ -55,7 +55,7 @@ public class List implements CommandInterface {
 
     public static void updateListPages() {
 
-        File backupsFolder = new File(ConfigVariables.backupsFolder);
+        File backupsFolder = new File(Config.getInstance().getBackupsFolder());
         ArrayList<LocalDateTime> backups = new ArrayList<>();
 
         if (backupsFolder.listFiles() == null) {

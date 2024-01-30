@@ -1,5 +1,7 @@
 package ru.dvdishka.backuper.common;
 
+import ru.dvdishka.backuper.back.Config;
+
 import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -31,7 +33,7 @@ public class Backup {
 
     public long getMBSize() {
 
-        File backupsFolder = new File(ConfigVariables.backupsFolder);
+        File backupsFolder = new File(Config.getInstance().getBackupsFolder());
         String backupFilePath;
 
         if (backupsFolder.toPath().resolve(backupName).toFile().exists()) {
@@ -51,7 +53,7 @@ public class Backup {
 
     public String zipOrFolder() {
 
-        File backupsFolder = new File(ConfigVariables.backupsFolder);
+        File backupsFolder = new File(Config.getInstance().getBackupsFolder());
         String zipOrFolder = "(ZIP)";
 
         if (backupsFolder.toPath().resolve(backupName).toFile().exists()) {
@@ -63,7 +65,7 @@ public class Backup {
 
     public File getFile() {
 
-        File backupsFolder = new File(ConfigVariables.backupsFolder);
+        File backupsFolder = new File(Config.getInstance().getBackupsFolder());
 
         if (this.zipOrFolder().equals("(ZIP)")) {
             return backupsFolder.toPath().resolve(backupName + ".zip").toFile();
@@ -74,7 +76,7 @@ public class Backup {
 
     public File getZIPFile() {
 
-        File backupsFolder = new File(ConfigVariables.backupsFolder);
+        File backupsFolder = new File(Config.getInstance().getBackupsFolder());
 
         if (backupsFolder.toPath().resolve(backupName + ".zip").toFile().exists()) {
             return backupsFolder.toPath().resolve(backupName + ".zip").toFile();
@@ -106,7 +108,7 @@ public class Backup {
             return false;
         }
 
-        File backupsFolder = new File(ConfigVariables.backupsFolder);
+        File backupsFolder = new File(Config.getInstance().getBackupsFolder());
 
         return backupsFolder.toPath().resolve(backupName).toFile().exists() ||
                 backupsFolder.toPath().resolve(backupName + ".zip").toFile().exists();

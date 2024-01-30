@@ -1,12 +1,12 @@
-package ru.dvdishka.backuper.commands.reload;
+package ru.dvdishka.backuper.handlers.commands.reload;
 
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
-import ru.dvdishka.backuper.commands.common.Scheduler;
+import ru.dvdishka.backuper.handlers.commands.common.Scheduler;
 import ru.dvdishka.backuper.common.Backup;
 import ru.dvdishka.backuper.common.Common;
-import ru.dvdishka.backuper.common.Initialization;
-import ru.dvdishka.backuper.commands.common.CommandInterface;
+import ru.dvdishka.backuper.back.Initialization;
+import ru.dvdishka.backuper.handlers.commands.common.CommandInterface;
 
 import java.io.File;
 

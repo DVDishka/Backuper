@@ -1,4 +1,4 @@
-package ru.dvdishka.backuper.commands.backup;
+package ru.dvdishka.backuper.handlers.commands.backup;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -20,9 +20,9 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import ru.dvdishka.backuper.common.Backup;
 import ru.dvdishka.backuper.common.Common;
-import ru.dvdishka.backuper.common.ConfigVariables;
+import ru.dvdishka.backuper.back.Config;
 import ru.dvdishka.backuper.common.Logger;
-import ru.dvdishka.backuper.commands.common.Scheduler;
+import ru.dvdishka.backuper.handlers.commands.common.Scheduler;
 
 public class BackupProcess implements Runnable {
 
@@ -42,12 +42,12 @@ public class BackupProcess implements Runnable {
 
             File backupDir = new File("plugins/Backuper/Backups/" +
                     LocalDateTime.now().format(Backup.dateTimeFormatter) + " in progress");
-            File backupsDir = new File(ConfigVariables.backupsFolder);
+            File backupsDir = new File(Config.getInstance().getBackupsFolder());
 
             {
                 Logger.getLogger().devLog("Copy/Zip task has been started");
 
-                if (!ConfigVariables.zipArchive && !backupDir.mkdir()) {
+                if (!Config.getInstance().isZipArchive() && !backupDir.mkdir()) {
 
                     Logger.getLogger().warn("Can not create " + backupDir.getPath() + " dir!", sender);
                 }
@@ -55,7 +55,7 @@ public class BackupProcess implements Runnable {
                 FileOutputStream fileOutputStream;
                 ZipOutputStream zipOutputStream = null;
 
-                if (ConfigVariables.zipArchive) {
+                if (Config.getInstance().isZipArchive()) {
 
                     fileOutputStream = new FileOutputStream(backupDir.getPath() + ".zip");
                     zipOutputStream = new ZipOutputStream(fileOutputStream);
@@ -69,7 +69,7 @@ public class BackupProcess implements Runnable {
 
                         try {
 
-                            if (ConfigVariables.zipArchive) {
+                            if (Config.getInstance().isZipArchive()) {
 
                                 addDirToZip(zipOutputStream, worldDir, worldDir.getParentFile().toPath());
 
@@ -86,7 +86,7 @@ public class BackupProcess implements Runnable {
                     }
                 }
 
-                if (ConfigVariables.zipArchive) {
+                if (Config.getInstance().isZipArchive()) {
 
                     assert zipOutputStream != null;
                     zipOutputStream.close();
@@ -108,11 +108,11 @@ public class BackupProcess implements Runnable {
 
             {
                 Logger.getLogger().devLog("Move task has been started");
-                if (!ConfigVariables.backupsFolder.equals("plugins/Backuper/Backups")) {
+                if (!Config.getInstance().getBackupsFolder().equals("plugins/Backuper/Backups")) {
 
-                    if (ConfigVariables.zipArchive) {
+                    if (Config.getInstance().isZipArchive()) {
                         try {
-                            Files.copy(new File(backupDir.getPath() + ".zip").toPath(), new File(ConfigVariables.backupsFolder).toPath().resolve(backupDir.getName() + ".zip"));
+                            Files.copy(new File(backupDir.getPath() + ".zip").toPath(), new File(Config.getInstance().getBackupsFolder()).toPath().resolve(backupDir.getName() + ".zip"));
                             try {
                                 if (!new File(backupDir.getPath() + ".zip").delete()) {
                                     Logger.getLogger().warn("Can not delete backup in default directory", sender);
@@ -125,7 +125,7 @@ public class BackupProcess implements Runnable {
                             Logger.getLogger().devWarn(this, e);
                         }
                     } else {
-                        copyFilesInDir(new File(ConfigVariables.backupsFolder).toPath().resolve(backupDir.getName()).toFile(), backupDir);
+                        copyFilesInDir(new File(Config.getInstance().getBackupsFolder()).toPath().resolve(backupDir.getName()).toFile(), backupDir);
                         deleteDir(backupDir);
                     }
                 }
@@ -134,15 +134,15 @@ public class BackupProcess implements Runnable {
 
             {
                 Logger.getLogger().devLog("The Rename \"in progress\" Folder/ZIP task has been started");
-                if (ConfigVariables.zipArchive) {
+                if (Config.getInstance().isZipArchive()) {
 
-                    if (!new File(ConfigVariables.backupsFolder).toPath().resolve(backupDir.getName() + ".zip").toFile()
-                            .renameTo(new File(ConfigVariables.backupsFolder).toPath().resolve(backupDir.getName().replace(" in progress", "") + ".zip").toFile())) {
+                    if (!new File(Config.getInstance().getBackupsFolder()).toPath().resolve(backupDir.getName() + ".zip").toFile()
+                            .renameTo(new File(Config.getInstance().getBackupsFolder()).toPath().resolve(backupDir.getName().replace(" in progress", "") + ".zip").toFile())) {
                         Logger.getLogger().warn("The Rename \"in progress\" ZIP task has been finished with an exception!", sender);
                     }
                 } else {
-                    if (!new File(ConfigVariables.backupsFolder).toPath().resolve(backupDir.getName()).toFile()
-                            .renameTo(new File(ConfigVariables.backupsFolder).toPath().resolve(backupDir.getName().replace(" in progress", "")).toFile())) {
+                    if (!new File(Config.getInstance().getBackupsFolder()).toPath().resolve(backupDir.getName()).toFile()
+                            .renameTo(new File(Config.getInstance().getBackupsFolder()).toPath().resolve(backupDir.getName().replace(" in progress", "")).toFile())) {
                         Logger.getLogger().warn("The Rename \"in progress\" ZIP task has been finished with an exception!", sender);
                     }
                 }
@@ -152,23 +152,20 @@ public class BackupProcess implements Runnable {
             {
                 if (isAutoBackup) {
                     Logger.getLogger().devLog("Update \"lastBackup\" Variable task has been started");
-                    File configFile = new File("plugins/Backuper/config.yml");
-                    FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
-                    config.set("lastBackup", LocalDateTime.now().toEpochSecond(ZoneOffset.UTC));
-                    config.save(configFile);
+                    Config.getInstance().updateLastBackup();
                     Logger.getLogger().devLog("Update \"lastBackup\" Variable task has been finished");
                 }
             }
 
             {
-                if (ConfigVariables.backupsNumber != 0 && backupsDir.listFiles() != null) {
+                if (Config.getInstance().getBackupsNumber() != 0 && backupsDir.listFiles() != null) {
 
                     Logger.getLogger().devLog("Delete Old Backups 1 task has been started");
 
                     ArrayList<LocalDateTime> backups = Common.getBackups();
                     Backup.sortLocalDateTime(backups);
 
-                    int backupsToDelete = backups.size() - ConfigVariables.backupsNumber;
+                    int backupsToDelete = backups.size() - Config.getInstance().getBackupsNumber();
 
                     for (LocalDateTime fileName : backups) {
 
@@ -211,18 +208,18 @@ public class BackupProcess implements Runnable {
             }
 
             {
-                if (ConfigVariables.backupsWeight != 0) {
+                if (Config.getInstance().getBackupsWeight() != 0) {
 
                     Logger.getLogger().devLog("Delete Old Backups 2 task has been started");
 
                     long backupsFolderWeight = FileUtils.sizeOf(backupsDir);
 
-                    if (backupsFolderWeight > ConfigVariables.backupsWeight && backupsDir.listFiles() != null) {
+                    if (backupsFolderWeight > Config.getInstance().getBackupsWeight() && backupsDir.listFiles() != null) {
 
                         ArrayList<LocalDateTime> backups = Common.getBackups();
                         ru.dvdishka.backuper.common.Backup.sortLocalDateTime(backups);
 
-                        long bytesToDelete = backupsFolderWeight - ConfigVariables.backupsWeight;
+                        long bytesToDelete = backupsFolderWeight - Config.getInstance().getBackupsWeight();
 
                         for (LocalDateTime fileName : backups) {
 

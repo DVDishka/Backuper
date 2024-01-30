@@ -49,7 +49,7 @@
 
 * `Auto backup` - **(true/false)** - enables automatic backups once at a specified interval **(when disabled, backups will only run on the `/backup` command)**
 * `Backups folder` - **(Path)** - **FULL** path to folder, where backups will be stored
-* `backup time` - **(0 -23)** - **(fixedBackupTime)** Backups will be made at this time every day. (`backupPeriod` will be automatically set to 24 hours). **-1 to disable backup time fixation**
+* `backup time` - **(0 - 23)** - **(fixedBackupTime)** Backups will be made at this time every day. (`backupPeriod` will be automatically set to 24 hours). **-1 to disable backup time fixation**
 * `Backup period` - **(1 <= Minutes)** - the period after which the server will make backups **(To change this value you need to set `backupTime` to -1)**
 * `After backup` - **(NOTHING/STOP/RESTART)** - what will the server do after backup
 * `Max backup number` - **(0 <=)** - maximum number of backups to be kept **(0 - unlimited)**

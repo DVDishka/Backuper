@@ -18,6 +18,7 @@ import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
+import ru.dvdishka.backuper.back.Config;
 
 public class Common {
 
@@ -81,7 +82,7 @@ public class Common {
     public static ArrayList<LocalDateTime> getBackups() {
 
         ArrayList<LocalDateTime> backups = new ArrayList<>();
-        for (File file : Objects.requireNonNull(new File(ConfigVariables.backupsFolder).listFiles())) {
+        for (File file : Objects.requireNonNull(new File(Config.getInstance().getBackupsFolder()).listFiles())) {
             try {
                 backups.add(LocalDateTime.parse(file.getName().replace(".zip", ""), ru.dvdishka.backuper.common.Backup.dateTimeFormatter));
             } catch (Exception ignored) {}

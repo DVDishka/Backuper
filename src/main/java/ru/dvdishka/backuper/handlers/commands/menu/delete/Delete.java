@@ -1,9 +1,9 @@
-package ru.dvdishka.backuper.commands.menu.delete;
+package ru.dvdishka.backuper.handlers.commands.menu.delete;
 
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
-import ru.dvdishka.backuper.commands.common.CommandInterface;
-import ru.dvdishka.backuper.commands.common.Scheduler;
+import ru.dvdishka.backuper.handlers.commands.common.CommandInterface;
+import ru.dvdishka.backuper.handlers.commands.common.Scheduler;
 import ru.dvdishka.backuper.common.Backup;
 import ru.dvdishka.backuper.common.Common;
 import ru.dvdishka.backuper.common.Logger;

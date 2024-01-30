@@ -1,4 +1,4 @@
-package ru.dvdishka.backuper.commands.menu;
+package ru.dvdishka.backuper.handlers.commands.menu;
 
 import dev.jorel.commandapi.executors.CommandArguments;
 import net.kyori.adventure.text.Component;
@@ -8,7 +8,7 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
-import ru.dvdishka.backuper.commands.common.CommandInterface;
+import ru.dvdishka.backuper.handlers.commands.common.CommandInterface;
 import ru.dvdishka.backuper.common.Backup;
 
 public class Menu implements CommandInterface {

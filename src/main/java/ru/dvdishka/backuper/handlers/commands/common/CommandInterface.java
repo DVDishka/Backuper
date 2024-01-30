@@ -1,4 +1,4 @@
-package ru.dvdishka.backuper.commands.common;
+package ru.dvdishka.backuper.handlers.commands.common;
 
 import dev.jorel.commandapi.executors.CommandArguments;
 import net.kyori.adventure.text.format.TextColor;
