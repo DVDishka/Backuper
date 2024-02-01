@@ -2,6 +2,7 @@ package ru.dvdishka.backuper.back;
 
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import ru.dvdishka.backuper.common.Common;
 import ru.dvdishka.backuper.common.Logger;
 
@@ -11,12 +12,14 @@ import java.time.ZoneOffset;
 
 public class Config {
 
+    private File configFile = null;
+
     private final String configVersion = "5.0";
     private long lastBackup = 0;
     private long lastChange = 0;
 
     private String backupsFolder = "plugins/Backuper/Backups";
-    private boolean fixedBackupTime = true;
+    private boolean fixedBackupTime = false;
     private boolean autoBackup = true;
     private int backupTime = -1;
     private int backupPeriod = 1440;
@@ -41,7 +44,7 @@ public class Config {
 
     private void setConfigField(String path, Object value) {
 
-        FileConfiguration config = Common.plugin.getConfig();
+        FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
         config.set(path, value);
         Common.plugin.saveConfig();
     }
@@ -58,7 +61,9 @@ public class Config {
 
     public void load(File configFile, CommandSender sender) {
 
-        FileConfiguration config = Common.plugin.getConfig();
+        this.configFile = configFile;
+
+        FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
         boolean noErrors = true;
 
         String configVersion = config.getString("configVersion");
@@ -128,7 +133,7 @@ public class Config {
             }
 
             Common.plugin.saveDefaultConfig();
-            FileConfiguration newConfig = Common.plugin.getConfig();
+            FileConfiguration newConfig = YamlConfiguration.loadConfiguration(configFile);
 
             newConfig.set("backupTime", this.backupTime);
             newConfig.set("backupPeriod", this.backupPeriod);
