@@ -1,10 +1,10 @@
-package ru.dvdishka.backuper.back;
+package ru.dvdishka.backuper.back.config;
 
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import ru.dvdishka.backuper.common.Common;
-import ru.dvdishka.backuper.common.Logger;
+import ru.dvdishka.backuper.back.common.Common;
+import ru.dvdishka.backuper.back.common.Logger;
 
 import java.io.File;
 import java.time.LocalDateTime;
@@ -25,7 +25,7 @@ public class Config {
     private int backupPeriod = 1440;
     private String afterBackup = "NOTHING";
     private boolean skipDuplicateBackup = true;
-    private int backupsNumber = 7;
+    private int backupsNumber = 0;
     private long backupsWeight = 0;
     private boolean zipArchive = true;
     private boolean betterLogging = false;
@@ -46,7 +46,11 @@ public class Config {
 
         FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
         config.set(path, value);
-        Common.plugin.saveConfig();
+        try {
+            config.save(configFile);
+        } catch (Exception e) {
+            Logger.getLogger().warn("Failed to set config field \"" + path + "\" to " + value);
+        }
     }
 
     public void updateLastChange() {

@@ -1,15 +1,19 @@
 package ru.dvdishka.backuper.handlers;
 
+import io.papermc.paper.event.player.PlayerInventorySlotChangeEvent;
+import io.papermc.paper.event.player.PlayerPickItemEvent;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.EntityDropItemEvent;
+import org.bukkit.event.entity.EntityPickupItemEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.InventoryInteractEvent;
-import org.bukkit.event.player.PlayerInteractAtEntityEvent;
-import org.bukkit.event.player.PlayerInteractEntityEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.server.ServerCommandEvent;
-import ru.dvdishka.backuper.back.Config;
+import org.bukkit.event.inventory.InventoryPickupItemEvent;
+import org.bukkit.event.player.*;
+import ru.dvdishka.backuper.back.config.Config;
 
 public class WorldChangeCatcher implements Listener {
 
@@ -44,7 +48,32 @@ public class WorldChangeCatcher implements Listener {
     }
 
     @EventHandler
-    public static void onServer(ServerCommandEvent event) {
+    public static void onItemPickUp(InventoryPickupItemEvent event) {
+        Config.getInstance().updateLastChange();
+    }
+
+    @EventHandler
+    public static void onItemPickUp(PlayerPickItemEvent event) {
+        Config.getInstance().updateLastChange();
+    }
+
+    @EventHandler
+    public static void onItemDrop(PlayerDropItemEvent event) {
+        Config.getInstance().updateLastChange();
+    }
+
+    @EventHandler
+    public static void onPlayerDeath(PlayerDeathEvent event) {
+        Config.getInstance().updateLastChange();
+    }
+
+    @EventHandler
+    public static void onPlayerInventoryEvent(PlayerInventorySlotChangeEvent event) {
+        Config.getInstance().updateLastChange();
+    }
+
+    @EventHandler
+    public static void onPlayerQuit(PlayerQuitEvent event) {
         Config.getInstance().updateLastChange();
     }
 }

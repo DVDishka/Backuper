@@ -1,4 +1,4 @@
-package ru.dvdishka.backuper.back;
+package ru.dvdishka.backuper.back.config;
 
 import org.bukkit.configuration.file.FileConfiguration;
 
@@ -11,7 +11,7 @@ public class BackwardsCompatibility {
             return;
         }
 
-        int backupPeriod = config.getInt("backupPeriod");
+        int backupPeriod = config.getInt("backupPeriod", 1440);
         backupPeriod *= 60;
 
         config.set("backupPeriod", backupPeriod);
@@ -24,7 +24,7 @@ public class BackwardsCompatibility {
             return;
         }
 
-        boolean fixedBackupTime = config.getBoolean("fixedBackupTime");
+        boolean fixedBackupTime = config.getBoolean("fixedBackupTime", false);
 
         if (!fixedBackupTime) {
             config.set("backupTime", -1);

@@ -1,8 +1,7 @@
-package ru.dvdishka.backuper.handlers.commands.common;
+package ru.dvdishka.backuper.back.common;
 
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
-import ru.dvdishka.backuper.common.Common;
 
 import java.util.concurrent.TimeUnit;
 

@@ -10,9 +10,9 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import ru.dvdishka.backuper.handlers.commands.common.CommandInterface;
-import ru.dvdishka.backuper.common.Backup;
-import ru.dvdishka.backuper.back.Config;
-import ru.dvdishka.backuper.common.Logger;
+import ru.dvdishka.backuper.back.common.Backup;
+import ru.dvdishka.backuper.back.config.Config;
+import ru.dvdishka.backuper.back.common.Logger;
 
 import java.io.File;
 import java.time.LocalDateTime;

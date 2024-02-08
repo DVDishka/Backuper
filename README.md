@@ -52,6 +52,7 @@
 * `backup time` - **(0 - 23)** - **(fixedBackupTime)** Backups will be made at this time every day. (`backupPeriod` will be automatically set to 24 hours). **-1 to disable backup time fixation**
 * `Backup period` - **(1 <= Minutes)** - the period after which the server will make backups **(To change this value you need to set `backupTime` to -1)**
 * `After backup` - **(NOTHING/STOP/RESTART)** - what will the server do after backup
+* `Skip duplicate backup` - **(true/false)** - backup will only occur if the world has been changed since the last backup. If the world has not been changed, this backup cycle will be skipped. `After backup` **will be executed anyway**
 * `Max backup number` - **(0 <=)** - maximum number of backups to be kept **(0 - unlimited)**
 * `Max backup weight` - **(0 <=)** - maximum weight of backups that will be stored **(MB)** **(0 - unlimited)**
 * `Zip Archive` - **(true/false)** - do you want to store backups in ZIP archives?

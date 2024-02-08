@@ -3,10 +3,10 @@ package ru.dvdishka.backuper.handlers.commands.menu.delete;
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.handlers.commands.common.CommandInterface;
-import ru.dvdishka.backuper.handlers.commands.common.Scheduler;
-import ru.dvdishka.backuper.common.Backup;
-import ru.dvdishka.backuper.common.Common;
-import ru.dvdishka.backuper.common.Logger;
+import ru.dvdishka.backuper.back.common.Scheduler;
+import ru.dvdishka.backuper.back.common.Backup;
+import ru.dvdishka.backuper.back.common.Common;
+import ru.dvdishka.backuper.back.common.Logger;
 
 import java.io.File;
 import java.util.Objects;

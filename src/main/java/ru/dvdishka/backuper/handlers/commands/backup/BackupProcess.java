@@ -6,7 +6,6 @@ import java.io.FileOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Objects;
 import java.util.zip.ZipEntry;
@@ -16,13 +15,11 @@ import org.apache.commons.io.FileUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
-import ru.dvdishka.backuper.common.Backup;
-import ru.dvdishka.backuper.common.Common;
-import ru.dvdishka.backuper.back.Config;
-import ru.dvdishka.backuper.common.Logger;
-import ru.dvdishka.backuper.handlers.commands.common.Scheduler;
+import ru.dvdishka.backuper.back.common.Backup;
+import ru.dvdishka.backuper.back.common.Common;
+import ru.dvdishka.backuper.back.config.Config;
+import ru.dvdishka.backuper.back.common.Logger;
+import ru.dvdishka.backuper.back.common.Scheduler;
 
 public class BackupProcess implements Runnable {
 
@@ -185,7 +182,7 @@ public class BackupProcess implements Runnable {
                             }
 
                             try {
-                                if (LocalDateTime.parse(backupFileName, ru.dvdishka.backuper.common.Backup.dateTimeFormatter).equals(fileName)) {
+                                if (LocalDateTime.parse(backupFileName, ru.dvdishka.backuper.back.common.Backup.dateTimeFormatter).equals(fileName)) {
 
                                     if (!backup.getName().endsWith(".zip")) {
 
@@ -217,7 +214,7 @@ public class BackupProcess implements Runnable {
                     if (backupsFolderWeight > Config.getInstance().getBackupsWeight() && backupsDir.listFiles() != null) {
 
                         ArrayList<LocalDateTime> backups = Common.getBackups();
-                        ru.dvdishka.backuper.common.Backup.sortLocalDateTime(backups);
+                        ru.dvdishka.backuper.back.common.Backup.sortLocalDateTime(backups);
 
                         long bytesToDelete = backupsFolderWeight - Config.getInstance().getBackupsWeight();
 
@@ -239,7 +236,7 @@ public class BackupProcess implements Runnable {
 
                                 try {
 
-                                    if (LocalDateTime.parse(backupFileName, ru.dvdishka.backuper.common.Backup.dateTimeFormatter).equals(fileName)) {
+                                    if (LocalDateTime.parse(backupFileName, ru.dvdishka.backuper.back.common.Backup.dateTimeFormatter).equals(fileName)) {
 
                                         bytesToDelete -= FileUtils.sizeOf(backup);
 

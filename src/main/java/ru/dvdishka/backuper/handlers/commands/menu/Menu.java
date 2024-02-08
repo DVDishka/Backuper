@@ -9,7 +9,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import ru.dvdishka.backuper.handlers.commands.common.CommandInterface;
-import ru.dvdishka.backuper.common.Backup;
+import ru.dvdishka.backuper.back.common.Backup;
 
 public class Menu implements CommandInterface {
 

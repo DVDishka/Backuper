@@ -3,10 +3,10 @@ package ru.dvdishka.backuper;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPIBukkitConfig;
 import org.bukkit.plugin.java.JavaPlugin;
-import ru.dvdishka.backuper.handlers.commands.common.Scheduler;
-import ru.dvdishka.backuper.common.Common;
+import ru.dvdishka.backuper.back.common.Scheduler;
+import ru.dvdishka.backuper.back.common.Common;
 import ru.dvdishka.backuper.back.Initialization;
-import ru.dvdishka.backuper.common.Logger;
+import ru.dvdishka.backuper.back.common.Logger;
 
 import java.io.File;
 

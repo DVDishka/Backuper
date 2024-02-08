@@ -8,7 +8,7 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.handlers.commands.common.CommandInterface;
-import ru.dvdishka.backuper.common.Backup;
+import ru.dvdishka.backuper.back.common.Backup;
 
 public class ToZIPConfirmation implements CommandInterface {
 

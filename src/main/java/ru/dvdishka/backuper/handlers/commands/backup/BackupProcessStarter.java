@@ -3,11 +3,11 @@ package ru.dvdishka.backuper.handlers.commands.backup;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
-import ru.dvdishka.backuper.back.Config;
-import ru.dvdishka.backuper.handlers.commands.common.Scheduler;
-import ru.dvdishka.backuper.common.Backup;
-import ru.dvdishka.backuper.common.Common;
-import ru.dvdishka.backuper.common.Logger;
+import ru.dvdishka.backuper.back.config.Config;
+import ru.dvdishka.backuper.back.common.Scheduler;
+import ru.dvdishka.backuper.back.common.Backup;
+import ru.dvdishka.backuper.back.common.Common;
+import ru.dvdishka.backuper.back.common.Logger;
 
 import java.util.HashMap;
 
@@ -52,6 +52,7 @@ public class BackupProcessStarter implements Runnable {
             if (Config.getInstance().isSkipDuplicateBackup() && isAutoBackup && Config.getInstance().getLastBackup() > Config.getInstance().getLastChange()) {
 
                 Logger.getLogger().warn("The backup cycle will be skipped since there were no changes from the previous backup", sender);
+                Config.getInstance().updateLastBackup();
 
                 if (afterBackup.equals("RESTART")) {
 

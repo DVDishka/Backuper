@@ -15,10 +15,11 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.server.ServerLoadEvent;
 import org.bukkit.plugin.java.JavaPlugin;
-import ru.dvdishka.backuper.common.Common;
-import ru.dvdishka.backuper.common.Logger;
+import ru.dvdishka.backuper.back.config.Config;
+import ru.dvdishka.backuper.back.common.Common;
+import ru.dvdishka.backuper.back.common.Logger;
 import ru.dvdishka.backuper.handlers.WorldChangeCatcher;
-import ru.dvdishka.backuper.handlers.commands.common.Scheduler;
+import ru.dvdishka.backuper.back.common.Scheduler;
 import ru.dvdishka.backuper.handlers.commands.menu.Menu;
 import ru.dvdishka.backuper.handlers.commands.menu.delete.Delete;
 import ru.dvdishka.backuper.handlers.commands.menu.delete.DeleteConfirmation;
@@ -169,12 +170,12 @@ public class Initialization implements Listener {
                         .then(new TextArgument("backupName").includeSuggestions(ArgumentSuggestions.stringCollection((info) -> {
 
                             ArrayList<LocalDateTime> backups = Common.getBackups();
-                            ru.dvdishka.backuper.common.Backup.sortLocalDateTimeDecrease(backups);
+                            ru.dvdishka.backuper.back.common.Backup.sortLocalDateTimeDecrease(backups);
 
                             ArrayList<String> backupSuggestions = new ArrayList<>();
 
                             for (LocalDateTime backupName : backups) {
-                                backupSuggestions.add("\"" + backupName.format(ru.dvdishka.backuper.common.Backup.dateTimeFormatter) + "\"");
+                                backupSuggestions.add("\"" + backupName.format(ru.dvdishka.backuper.back.common.Backup.dateTimeFormatter) + "\"");
                             }
                             return backupSuggestions;
                         }))
@@ -264,7 +265,7 @@ public class Initialization implements Listener {
 
     public static void checkOperatingSystem() {
         if (Common.isWindows) {
-            ru.dvdishka.backuper.common.Backup.dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH;mm;ss");
+            ru.dvdishka.backuper.back.common.Backup.dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH;mm;ss");
         }
     }
 

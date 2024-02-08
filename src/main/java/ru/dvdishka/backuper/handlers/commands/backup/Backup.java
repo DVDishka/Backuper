@@ -3,8 +3,8 @@ package ru.dvdishka.backuper.handlers.commands.backup;
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.handlers.commands.common.CommandInterface;
-import ru.dvdishka.backuper.common.Common;
-import ru.dvdishka.backuper.handlers.commands.common.Scheduler;
+import ru.dvdishka.backuper.back.common.Common;
+import ru.dvdishka.backuper.back.common.Scheduler;
 
 public class Backup implements CommandInterface {
 
@@ -19,7 +19,7 @@ public class Backup implements CommandInterface {
 
     public void execute(CommandSender sender, CommandArguments args) {
 
-        if (ru.dvdishka.backuper.common.Backup.isBackupBusy) {
+        if (ru.dvdishka.backuper.back.common.Backup.isBackupBusy) {
             returnFailure("Blocked by another operation!", sender);
             return;
         }

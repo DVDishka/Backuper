@@ -1,6 +1,6 @@
-package ru.dvdishka.backuper.common;
+package ru.dvdishka.backuper.back.common;
 
-import ru.dvdishka.backuper.back.Config;
+import ru.dvdishka.backuper.back.config.Config;
 
 import java.io.File;
 import java.time.LocalDateTime;
@@ -9,10 +9,11 @@ import java.util.ArrayList;
 
 public class Backup {
 
-    public static DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
-    public static volatile boolean isBackupBusy = false;
     private String backupName;
     private LocalDateTime backupLocalDateTime;
+
+    public static DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
+    public static volatile boolean isBackupBusy = false;
 
     public Backup(String backupName) {
 
