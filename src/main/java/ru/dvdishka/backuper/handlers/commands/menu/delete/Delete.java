@@ -2,7 +2,7 @@ package ru.dvdishka.backuper.handlers.commands.menu.delete;
 
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
-import ru.dvdishka.backuper.handlers.commands.common.CommandInterface;
+import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.back.common.Scheduler;
 import ru.dvdishka.backuper.back.common.Backup;
 import ru.dvdishka.backuper.back.common.Common;
@@ -11,28 +11,32 @@ import ru.dvdishka.backuper.back.common.Logger;
 import java.io.File;
 import java.util.Objects;
 
-public class Delete implements CommandInterface {
+public class Delete extends Command {
 
     private boolean isDeleteSuccessful = true;
 
-    @Override
-    public void execute(CommandSender sender, CommandArguments args) {
+    public Delete(CommandSender sender, CommandArguments arguments) {
+        super(sender, arguments);
+    }
 
-        String backupName = (String) args.get("backupName");
+    @Override
+    public void execute() {
+
+        String backupName = (String) arguments.get("backupName");
 
         if (!Backup.checkBackupExistenceByName(backupName)) {
-            cancelButtonSound(sender);
-            returnFailure("Backup does not exist!", sender);
+            cancelButtonSound();
+            returnFailure("Backup does not exist!");
             return;
         }
 
-        normalButtonSound(sender);
+        normalButtonSound();
 
         Backup backup = new Backup(backupName);
 
         if (backup.isLocked() || Backup.isBackupBusy) {
-            cancelButtonSound(sender);
-            returnFailure("Backup is blocked by another operation!", sender);
+            cancelButtonSound();
+            returnFailure("Backup is blocked by another operation!");
             return;
         }
 
@@ -44,9 +48,9 @@ public class Delete implements CommandInterface {
 
             Scheduler.getScheduler().runAsync(Common.plugin, () -> {
                 if (backupFile.delete()) {
-                    returnSuccess("Backup has been deleted successfully", sender);
+                    returnSuccess("Backup has been deleted successfully");
                 } else {
-                    returnFailure("Backup " + backupName + " can not be deleted!", sender);
+                    returnFailure("Backup " + backupName + " can not be deleted!");
                 }
                 backup.unlock();
             });
@@ -56,9 +60,9 @@ public class Delete implements CommandInterface {
             Scheduler.getScheduler().runAsync(Common.plugin, () -> {
                 deleteDir(backupFile);
                 if (!isDeleteSuccessful) {
-                    returnFailure("Delete task has been finished with an exception!", sender);
+                    returnFailure("Delete task has been finished with an exception!");
                 } else {
-                    returnSuccess("Backup has been deleted successfully", sender);
+                    returnSuccess("Backup has been deleted successfully");
                 }
                 backup.unlock();
             });

@@ -227,4 +227,8 @@ public class Config {
     public String getConfigVersion() {
         return configVersion;
     }
+
+    public FileConfiguration getFileConfiguration() {
+        return YamlConfiguration.loadConfiguration(configFile);
+    }
 }

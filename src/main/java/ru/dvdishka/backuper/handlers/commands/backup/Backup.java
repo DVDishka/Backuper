@@ -2,25 +2,29 @@ package ru.dvdishka.backuper.handlers.commands.backup;
 
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
-import ru.dvdishka.backuper.handlers.commands.common.CommandInterface;
+import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.back.common.Common;
 import ru.dvdishka.backuper.back.common.Scheduler;
 
-public class Backup implements CommandInterface {
+public class Backup extends Command {
 
     private String afterBackup = "NOTHING";
 
-    public Backup() {}
+    public Backup(CommandSender sender, CommandArguments args, String afterBackup) {
 
-    public Backup(String afterBackup) {
-
+        super(sender, args);
         this.afterBackup = afterBackup;
     }
 
-    public void execute(CommandSender sender, CommandArguments args) {
+    public Backup(CommandSender sender, CommandArguments args) {
+
+        super(sender, args);
+    }
+
+    public void execute() {
 
         if (ru.dvdishka.backuper.back.common.Backup.isBackupBusy) {
-            returnFailure("Blocked by another operation!", sender);
+            returnFailure("Blocked by another operation!");
             return;
         }
 

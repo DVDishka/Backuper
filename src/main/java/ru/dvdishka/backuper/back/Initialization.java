@@ -28,7 +28,7 @@ import ru.dvdishka.backuper.handlers.commands.menu.toZIP.ToZIPConfirmation;
 import ru.dvdishka.backuper.handlers.commands.menu.unZIP.UnZIP;
 import ru.dvdishka.backuper.handlers.commands.menu.unZIP.UnZIPConfirmation;
 import ru.dvdishka.backuper.handlers.commands.reload.Reload;
-import ru.dvdishka.backuper.handlers.commands.common.Permissions;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
 import ru.dvdishka.backuper.handlers.commands.backup.Backup;
 import ru.dvdishka.backuper.handlers.commands.list.List;
 import ru.dvdishka.backuper.handlers.commands.backup.BackupProcessStarter;
@@ -105,7 +105,7 @@ public class Initialization implements Listener {
         backupCommandTree.executes((sender, args) -> {
 
             if (sender.hasPermission(Permissions.BACKUP.getPermission())) {
-                new Backup().execute(sender, args);
+                new Backup(sender, args).execute();
             } else {
                 Common.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
             }
@@ -115,7 +115,7 @@ public class Initialization implements Listener {
 
                         .executes((sender, args) -> {
 
-                            new Backup("STOP").execute(sender, args);
+                            new Backup(sender, args, "STOP").execute();
                         })
                 )
 
@@ -123,7 +123,7 @@ public class Initialization implements Listener {
 
                         .executes((sender, args) -> {
 
-                            new Backup("RESTART").execute(sender, args);
+                            new Backup(sender, args, "RESTART").execute();
                         })
                 )
         ;
@@ -136,14 +136,14 @@ public class Initialization implements Listener {
 
                         .executes((sender, args) -> {
 
-                            new List().execute(sender, args);
+                            new List(sender, args).execute();
                         })
 
                         .then(new IntegerArgument("pageNumber").withPermission(Permissions.LIST.getPermission())
 
                                 .executes((sender, args) -> {
 
-                                    new List().execute(sender, args);
+                                    new List(sender, args).execute();
                                 })
                         )
                 )
@@ -156,7 +156,7 @@ public class Initialization implements Listener {
 
                         .executes((sender, args) -> {
 
-                            new Reload().execute(sender, args);
+                            new Reload(sender, args).execute();
                         })
                 )
         ;
@@ -182,7 +182,7 @@ public class Initialization implements Listener {
 
                                         .executes((sender, args) -> {
 
-                                            new Menu().execute(sender, args);
+                                            new Menu(sender, args).execute();
                                         })
 
                                         .then(new StringArgument("action")
@@ -192,7 +192,7 @@ public class Initialization implements Listener {
 
                                                     if (Objects.equals(args.get("action"), "deleteConfirmation")) {
                                                         if (sender.hasPermission(Permissions.DELETE.getPermission())) {
-                                                            new DeleteConfirmation().execute(sender, args);
+                                                            new DeleteConfirmation(sender, args).execute();
                                                         } else {
                                                             Common.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                         }
@@ -200,7 +200,7 @@ public class Initialization implements Listener {
 
                                                     if (Objects.equals(args.get("action"), "delete")) {
                                                         if (sender.hasPermission(Permissions.DELETE.getPermission())) {
-                                                            new Delete().execute(sender, args);
+                                                            new Delete(sender, args).execute();
                                                         } else {
                                                             Common.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                         }
@@ -208,7 +208,7 @@ public class Initialization implements Listener {
 
                                                     if (Objects.equals(args.get("action"), "toZIPConfirmation")) {
                                                         if (sender.hasPermission(Permissions.TO_ZIP.getPermission())) {
-                                                            new ToZIPConfirmation().execute(sender, args);
+                                                            new ToZIPConfirmation(sender, args).execute();
                                                         } else {
                                                             Common.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                         }
@@ -216,7 +216,7 @@ public class Initialization implements Listener {
 
                                                     if (Objects.equals(args.get("action"), "toZIP")) {
                                                         if (sender.hasPermission(Permissions.TO_ZIP.getPermission())) {
-                                                            new ToZIP().execute(sender, args);
+                                                            new ToZIP(sender, args).execute();
                                                         } else {
                                                             Common.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                         }
@@ -224,7 +224,7 @@ public class Initialization implements Listener {
 
                                                     if (Objects.equals(args.get("action"), "unZIPConfirmation")) {
                                                         if (sender.hasPermission(Permissions.UNZIP.getPermission())) {
-                                                            new UnZIPConfirmation().execute(sender, args);
+                                                            new UnZIPConfirmation(sender, args).execute();
                                                         } else {
                                                             Common.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                         }
@@ -232,7 +232,7 @@ public class Initialization implements Listener {
 
                                                     if (Objects.equals(args.get("action"), "unZIP")) {
                                                         if (sender.hasPermission(Permissions.UNZIP.getPermission())) {
-                                                            new UnZIP().execute(sender, args);
+                                                            new UnZIP(sender, args).execute();
                                                         } else {
                                                             Common.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                         }

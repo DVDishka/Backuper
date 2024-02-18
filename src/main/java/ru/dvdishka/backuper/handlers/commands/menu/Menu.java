@@ -8,25 +8,29 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
-import ru.dvdishka.backuper.handlers.commands.common.CommandInterface;
+import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.back.common.Backup;
 
-public class Menu implements CommandInterface {
+public class Menu extends Command {
+
+    public Menu(CommandSender sender, CommandArguments arguments) {
+        super(sender, arguments);
+    }
 
     @Override
-    public void execute(CommandSender sender, CommandArguments args) {
+    public void execute() {
 
-        String backupName = (String) args.get("backupName");
+        String backupName = (String) arguments.get("backupName");
 
         if (!Backup.checkBackupExistenceByName(backupName)) {
-            cancelButtonSound(sender);
-            returnFailure("Backup does not exist!", sender);
+            cancelButtonSound();
+            returnFailure("Backup does not exist!");
             return;
         }
 
         assert backupName != null;
 
-        normalButtonSound(sender);
+        normalButtonSound();
 
         Backup backup = new Backup(backupName);
 

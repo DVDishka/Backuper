@@ -9,7 +9,7 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
-import ru.dvdishka.backuper.handlers.commands.common.CommandInterface;
+import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.back.common.Backup;
 import ru.dvdishka.backuper.back.config.Config;
 import ru.dvdishka.backuper.back.common.Logger;
@@ -19,38 +19,42 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Objects;
 
-public class List implements CommandInterface {
+public class List extends Command {
 
     public static ArrayList<ArrayList<TextComponent>> pages;
 
+    public List(CommandSender sender, CommandArguments arguments) {
+        super(sender, arguments);
+    }
+
     @Override
-    public void execute(CommandSender sender, CommandArguments args) {
+    public void execute() {
 
         File backupsFolder = new File(Config.getInstance().getBackupsFolder());
 
         if (backupsFolder.listFiles() == null) {
-            returnFailure("Wrong backups folder in config.yml!", sender);
+            returnFailure("Wrong backups folder in config.yml!");
             return;
         }
 
         if (List.getListPageCount() == 0) {
-            returnFailure("There are no backups yet!", sender);
+            returnFailure("There are no backups yet!");
             return;
         }
 
-        int pageNumber = (Integer) args.getOptional("pageNumber").orElse(1);
+        int pageNumber = (Integer) arguments.getOptional("pageNumber").orElse(1);
 
         // PAGE DOES NOT EXIST
         if (pageNumber < 1 || pageNumber > List.getListPageCount()) {
-            cancelButtonSound(sender);
+            cancelButtonSound();
             return;
         }
 
-        normalButtonSound(sender);
+        normalButtonSound();
 
         updateListPages();
 
-        sender.sendMessage(createListMessage(pageNumber, sender));
+        sender.sendMessage(createListMessage(pageNumber));
     }
 
     public static void updateListPages() {
@@ -98,7 +102,7 @@ public class List implements CommandInterface {
         List.pages = pages;
     }
 
-    public Component createListMessage(int pageNumber, CommandSender sender) {
+    public Component createListMessage(int pageNumber) {
 
         Component message = Component.empty();
 

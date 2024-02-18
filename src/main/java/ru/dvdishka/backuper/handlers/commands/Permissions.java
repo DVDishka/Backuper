@@ -1,4 +1,4 @@
-package ru.dvdishka.backuper.handlers.commands.common;
+package ru.dvdishka.backuper.handlers.commands;
 
 public enum Permissions {
 
@@ -9,7 +9,8 @@ public enum Permissions {
     RELOAD("backuper.reload"),
     DELETE("backuper.delete"),
     TO_ZIP("backuper.tozip"),
-    UNZIP("backuper.unzip");
+    UNZIP("backuper.unzip"),
+    CONFIG("backuper.config");
 
     private final String permission;
 

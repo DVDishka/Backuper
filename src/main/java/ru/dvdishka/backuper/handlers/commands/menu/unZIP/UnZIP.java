@@ -2,7 +2,7 @@ package ru.dvdishka.backuper.handlers.commands.menu.unZIP;
 
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
-import ru.dvdishka.backuper.handlers.commands.common.CommandInterface;
+import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.back.common.Scheduler;
 import ru.dvdishka.backuper.back.common.Backup;
 import ru.dvdishka.backuper.back.common.Common;
@@ -15,36 +15,40 @@ import java.util.ArrayList;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-public class UnZIP implements CommandInterface {
+public class UnZIP extends Command {
 
     private volatile ArrayList<Integer> completedUnZIPTasks = new ArrayList<>();
 
-    @Override
-    public void execute(CommandSender sender, CommandArguments args) {
+    public UnZIP(CommandSender sender, CommandArguments arguments) {
+        super(sender, arguments);
+    }
 
-        String backupName = (String) args.get("backupName");
+    @Override
+    public void execute() {
+
+        String backupName = (String) arguments.get("backupName");
 
         if (!Backup.checkBackupExistenceByName(backupName)) {
-            cancelButtonSound(sender);
-            returnFailure("Backup does not exist!", sender);
+            cancelButtonSound();
+            returnFailure("Backup does not exist!");
             return;
         }
 
         assert backupName != null;
 
-        normalButtonSound(sender);
+        normalButtonSound();
 
         Backup backup = new Backup(backupName);
 
         if (backup.zipOrFolder().equals("(Folder)")) {
-            cancelButtonSound(sender);
-            returnFailure("Backup is already Folder!", sender);
+            cancelButtonSound();
+            returnFailure("Backup is already Folder!");
             return;
         }
 
         if (backup.isLocked() || Backup.isBackupBusy) {
-            cancelButtonSound(sender);
-            returnFailure("Blocked by another operation!", sender);
+            cancelButtonSound();
+            returnFailure("Blocked by another operation!");
             return;
         }
 

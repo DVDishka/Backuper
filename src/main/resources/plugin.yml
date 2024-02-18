@@ -27,3 +27,5 @@ permissions:
         default: op
       backuper.unZip:
         default: op
+      backuper.config:
+        default: op

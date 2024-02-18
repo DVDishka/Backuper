@@ -7,31 +7,35 @@ import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
-import ru.dvdishka.backuper.handlers.commands.common.CommandInterface;
+import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.back.common.Backup;
 
-public class DeleteConfirmation implements CommandInterface {
+public class DeleteConfirmation extends Command {
+
+    public DeleteConfirmation(CommandSender sender, CommandArguments arguments) {
+        super(sender, arguments);
+    }
 
     @Override
-    public void execute(CommandSender sender, CommandArguments args) {
+    public void execute() {
 
-        String backupName = (String) args.get("backupName");
+        String backupName = (String) arguments.get("backupName");
 
         if (!Backup.checkBackupExistenceByName(backupName)) {
-            cancelButtonSound(sender);
-            returnFailure("Backup does not exist!", sender);
+            cancelButtonSound();
+            returnFailure("Backup does not exist!");
             return;
         }
 
         assert backupName != null;
 
-        normalButtonSound(sender);
+        normalButtonSound();
 
         Backup backup = new Backup(backupName);
 
         if (backup.isLocked() || Backup.isBackupBusy) {
-            cancelButtonSound(sender);
-            returnFailure("Backup is blocked by another operation!", sender);
+            cancelButtonSound();
+            returnFailure("Backup is blocked by another operation!");
             return;
         }
 

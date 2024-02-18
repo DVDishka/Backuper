@@ -2,7 +2,7 @@ package ru.dvdishka.backuper.handlers.commands.menu.toZIP;
 
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
-import ru.dvdishka.backuper.handlers.commands.common.CommandInterface;
+import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.back.common.Scheduler;
 import ru.dvdishka.backuper.back.common.Backup;
 import ru.dvdishka.backuper.back.common.Common;
@@ -17,34 +17,38 @@ import java.util.Objects;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-public class ToZIP implements CommandInterface {
+public class ToZIP extends Command {
+
+    public ToZIP(CommandSender sender, CommandArguments arguments) {
+        super(sender, arguments);
+    }
 
     @Override
-    public void execute(CommandSender sender, CommandArguments args) {
+    public void execute() {
 
-        String backupName = (String) args.get("backupName");
+        String backupName = (String) arguments.get("backupName");
 
         if (!Backup.checkBackupExistenceByName(backupName)) {
-            cancelButtonSound(sender);
-            returnFailure("Backup does not exist!", sender);
+            cancelButtonSound();
+            returnFailure("Backup does not exist!");
             return;
         }
 
         assert backupName != null;
 
-        normalButtonSound(sender);
+        normalButtonSound();
 
         Backup backup = new Backup(backupName);
 
         if (backup.zipOrFolder().equals("(ZIP)")) {
-            cancelButtonSound(sender);
-            returnFailure("Backup is already ZIP!", sender);
+            cancelButtonSound();
+            returnFailure("Backup is already ZIP!");
             return;
         }
 
         if (backup.isLocked() || Backup.isBackupBusy) {
-            cancelButtonSound(sender);
-            returnFailure("Blocked by another operation!", sender);
+            cancelButtonSound();
+            returnFailure("Blocked by another operation!");
             return;
         }
 
