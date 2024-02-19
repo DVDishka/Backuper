@@ -68,12 +68,12 @@ public class WorldChangeCatcher implements Listener {
     }
 
     @EventHandler
-    public static void onPlayerInventoryEvent(PlayerInventorySlotChangeEvent event) {
+    public static void onPlayerQuit(PlayerQuitEvent event) {
         Config.getInstance().updateLastChange();
     }
 
     @EventHandler
-    public static void onPlayerQuit(PlayerQuitEvent event) {
+    public static void onPlayerJoin(PlayerJoinEvent event) {
         Config.getInstance().updateLastChange();
     }
 }
