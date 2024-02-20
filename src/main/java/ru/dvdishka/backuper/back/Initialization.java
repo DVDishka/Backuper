@@ -89,6 +89,7 @@ public class Initialization implements Listener {
             try {
 
                 Common.plugin.saveDefaultConfig();
+                Config.getInstance().load(configFile, sender);
 
             } catch (Exception e) {
 
