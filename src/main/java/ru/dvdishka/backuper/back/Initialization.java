@@ -18,7 +18,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import ru.dvdishka.backuper.back.config.Config;
 import ru.dvdishka.backuper.back.common.Common;
 import ru.dvdishka.backuper.back.common.Logger;
-import ru.dvdishka.backuper.handlers.WorldChangeCatcher;
+import ru.dvdishka.backuper.handlers.worldchangecatch.WorldChangeCatcher;
 import ru.dvdishka.backuper.back.common.Scheduler;
 import ru.dvdishka.backuper.handlers.commands.menu.Menu;
 import ru.dvdishka.backuper.handlers.commands.menu.delete.Delete;
@@ -32,6 +32,7 @@ import ru.dvdishka.backuper.handlers.commands.common.Permissions;
 import ru.dvdishka.backuper.handlers.commands.backup.Backup;
 import ru.dvdishka.backuper.handlers.commands.list.List;
 import ru.dvdishka.backuper.handlers.commands.backup.BackupProcessStarter;
+import ru.dvdishka.backuper.handlers.worldchangecatch.WorldChangeCatcherNew;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -250,6 +251,18 @@ public class Initialization implements Listener {
 
         Bukkit.getPluginManager().registerEvents(new Initialization(), Common.plugin);
         Bukkit.getPluginManager().registerEvents(new WorldChangeCatcher(), Common.plugin);
+
+        boolean areWorldChangeEventsExists = true;
+        for (String eventName : WorldChangeCatcherNew.eventNames) {
+            try {
+                Class.forName(eventName);
+            } catch (Exception e) {
+                areWorldChangeEventsExists = false;
+            }
+        }
+        if (areWorldChangeEventsExists) {
+            Bukkit.getPluginManager().registerEvents(new WorldChangeCatcherNew(), Common.plugin);
+        }
     }
 
     public static void checkDependencies() {

@@ -1,14 +1,9 @@
-package ru.dvdishka.backuper.handlers;
+package ru.dvdishka.backuper.handlers.worldchangecatch;
 
-import io.papermc.paper.event.player.PlayerInventorySlotChangeEvent;
-import io.papermc.paper.event.player.PlayerPickItemEvent;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.event.entity.EntityDeathEvent;
-import org.bukkit.event.entity.EntityDropItemEvent;
-import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.InventoryInteractEvent;
 import org.bukkit.event.inventory.InventoryPickupItemEvent;
@@ -46,17 +41,6 @@ public class WorldChangeCatcher implements Listener {
     public static void onBlockBreak(BlockBreakEvent event) {
         Config.getInstance().updateLastChange();
     }
-
-    @EventHandler
-    public static void onItemPickUp(InventoryPickupItemEvent event) {
-        Config.getInstance().updateLastChange();
-    }
-
-    @EventHandler
-    public static void onItemPickUp(PlayerPickItemEvent event) {
-        Config.getInstance().updateLastChange();
-    }
-
     @EventHandler
     public static void onItemDrop(PlayerDropItemEvent event) {
         Config.getInstance().updateLastChange();
@@ -68,12 +52,12 @@ public class WorldChangeCatcher implements Listener {
     }
 
     @EventHandler
-    public static void onPlayerInventoryEvent(PlayerInventorySlotChangeEvent event) {
+    public static void onPlayerQuit(PlayerQuitEvent event) {
         Config.getInstance().updateLastChange();
     }
 
     @EventHandler
-    public static void onPlayerQuit(PlayerQuitEvent event) {
+    public static void onItemPickUp(InventoryPickupItemEvent event) {
         Config.getInstance().updateLastChange();
     }
 }
