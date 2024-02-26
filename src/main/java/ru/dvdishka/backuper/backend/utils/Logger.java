@@ -1,8 +1,8 @@
-package ru.dvdishka.backuper.back.common;
+package ru.dvdishka.backuper.backend.utils;
 
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
-import ru.dvdishka.backuper.back.config.Config;
+import ru.dvdishka.backuper.backend.config.Config;
 
 import java.util.Arrays;
 

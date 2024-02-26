@@ -3,10 +3,10 @@ package ru.dvdishka.backuper.handlers.commands.menu.unZIP;
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.handlers.commands.Command;
-import ru.dvdishka.backuper.back.common.Scheduler;
-import ru.dvdishka.backuper.back.common.Backup;
-import ru.dvdishka.backuper.back.common.Common;
-import ru.dvdishka.backuper.back.common.Logger;
+import ru.dvdishka.backuper.backend.utils.Scheduler;
+import ru.dvdishka.backuper.backend.utils.Backup;
+import ru.dvdishka.backuper.backend.utils.Common;
+import ru.dvdishka.backuper.backend.utils.Logger;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -15,11 +15,11 @@ import java.util.ArrayList;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-public class UnZIP extends Command {
+public class UnZIPCommand extends Command {
 
     private volatile ArrayList<Integer> completedUnZIPTasks = new ArrayList<>();
 
-    public UnZIP(CommandSender sender, CommandArguments arguments) {
+    public UnZIPCommand(CommandSender sender, CommandArguments arguments) {
         super(sender, arguments);
     }
 

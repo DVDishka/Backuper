@@ -23,9 +23,11 @@ permissions:
         default: op
       backuper.delete:
         default: op
-      backuper.toZip:
+      backuper.tozip:
         default: op
-      backuper.unZip:
+      backuper.unzip:
         default: op
       backuper.config:
         default: op
+      backuper.backup_alert:
+        default: true

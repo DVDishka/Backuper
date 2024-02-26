@@ -10,7 +10,8 @@ public enum Permissions {
     DELETE("backuper.delete"),
     TO_ZIP("backuper.tozip"),
     UNZIP("backuper.unzip"),
-    CONFIG("backuper.config");
+    CONFIG("backuper.config"),
+    ALERT("backuper.backup_alert");
 
     private final String permission;
 

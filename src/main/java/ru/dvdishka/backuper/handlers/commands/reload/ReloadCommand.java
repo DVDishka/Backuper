@@ -2,17 +2,17 @@ package ru.dvdishka.backuper.handlers.commands.reload;
 
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
-import ru.dvdishka.backuper.back.common.Scheduler;
-import ru.dvdishka.backuper.back.common.Backup;
-import ru.dvdishka.backuper.back.common.Common;
-import ru.dvdishka.backuper.back.Initialization;
+import ru.dvdishka.backuper.backend.utils.Scheduler;
+import ru.dvdishka.backuper.backend.utils.Backup;
+import ru.dvdishka.backuper.backend.utils.Common;
+import ru.dvdishka.backuper.backend.Initialization;
 import ru.dvdishka.backuper.handlers.commands.Command;
 
 import java.io.File;
 
-public class Reload extends Command {
+public class ReloadCommand extends Command {
 
-    public Reload(CommandSender sender, CommandArguments arguments) {
+    public ReloadCommand(CommandSender sender, CommandArguments arguments) {
         super(sender, arguments);
     }
 

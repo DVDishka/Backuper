@@ -1,10 +1,10 @@
-package ru.dvdishka.backuper.back.config;
+package ru.dvdishka.backuper.backend.config;
 
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import ru.dvdishka.backuper.back.common.Common;
-import ru.dvdishka.backuper.back.common.Logger;
+import ru.dvdishka.backuper.backend.utils.Common;
+import ru.dvdishka.backuper.backend.utils.Logger;
 
 import java.io.File;
 import java.time.LocalDateTime;
@@ -14,7 +14,7 @@ public class Config {
 
     private File configFile = null;
 
-    private final String configVersion = "5.0";
+    private final String configVersion = "6.0";
     private long lastBackup = 0;
     private long lastChange = 0;
 
@@ -28,6 +28,7 @@ public class Config {
     private int backupsNumber = 0;
     private long backupsWeight = 0;
     private boolean zipArchive = true;
+    private long alertTimeBeforeRestart = 60;
     private boolean betterLogging = false;
 
     private static Config instance = null;
@@ -89,6 +90,7 @@ public class Config {
         this.skipDuplicateBackup = config.getBoolean("skipDuplicateBackup", true);
         this.fixedBackupTime = this.backupTime > -1;
         this.backupsFolder = config.getString("backupsFolder", "plugins/Backuper/Backups");
+        this.alertTimeBeforeRestart = config.getLong("alertTimeBeforeRestart", 60);
 
         boolean isConfigFileOk = configVersion.equals(this.configVersion);
 
@@ -128,6 +130,9 @@ public class Config {
         if (!config.contains("skipDuplicateBackup")) {
             isConfigFileOk = false;
         }
+        if (!config.contains("alertTimeBeforeRestart")) {
+            isConfigFileOk = false;
+        }
 
         if (!isConfigFileOk) {
 
@@ -151,6 +156,7 @@ public class Config {
             newConfig.set("lastChange", this.lastChange);
             newConfig.set("backupsFolder", this.backupsFolder);
             newConfig.set("skipDuplicateBackup", this.skipDuplicateBackup);
+            newConfig.set("alertTimeBeforeRestart", this.alertTimeBeforeRestart);
 
             try {
 
@@ -226,6 +232,10 @@ public class Config {
 
     public String getConfigVersion() {
         return configVersion;
+    }
+
+    public long getAlertTimeBeforeRestart() {
+        return alertTimeBeforeRestart;
     }
 
     public FileConfiguration getFileConfiguration() {

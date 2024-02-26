@@ -15,11 +15,11 @@ import org.apache.commons.io.FileUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
-import ru.dvdishka.backuper.back.common.Backup;
-import ru.dvdishka.backuper.back.common.Common;
-import ru.dvdishka.backuper.back.config.Config;
-import ru.dvdishka.backuper.back.common.Logger;
-import ru.dvdishka.backuper.back.common.Scheduler;
+import ru.dvdishka.backuper.backend.utils.Backup;
+import ru.dvdishka.backuper.backend.utils.Common;
+import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.backend.utils.Logger;
+import ru.dvdishka.backuper.backend.utils.Scheduler;
 
 public class BackupProcess implements Runnable {
 
@@ -182,7 +182,7 @@ public class BackupProcess implements Runnable {
                             }
 
                             try {
-                                if (LocalDateTime.parse(backupFileName, ru.dvdishka.backuper.back.common.Backup.dateTimeFormatter).equals(fileName)) {
+                                if (LocalDateTime.parse(backupFileName, ru.dvdishka.backuper.backend.utils.Backup.dateTimeFormatter).equals(fileName)) {
 
                                     if (!backup.getName().endsWith(".zip")) {
 
@@ -214,7 +214,7 @@ public class BackupProcess implements Runnable {
                     if (backupsFolderWeight > Config.getInstance().getBackupsWeight() && backupsDir.listFiles() != null) {
 
                         ArrayList<LocalDateTime> backups = Common.getBackups();
-                        ru.dvdishka.backuper.back.common.Backup.sortLocalDateTime(backups);
+                        ru.dvdishka.backuper.backend.utils.Backup.sortLocalDateTime(backups);
 
                         long bytesToDelete = backupsFolderWeight - Config.getInstance().getBackupsWeight();
 
@@ -236,7 +236,7 @@ public class BackupProcess implements Runnable {
 
                                 try {
 
-                                    if (LocalDateTime.parse(backupFileName, ru.dvdishka.backuper.back.common.Backup.dateTimeFormatter).equals(fileName)) {
+                                    if (LocalDateTime.parse(backupFileName, ru.dvdishka.backuper.backend.utils.Backup.dateTimeFormatter).equals(fileName)) {
 
                                         bytesToDelete -= FileUtils.sizeOf(backup);
 

@@ -3,10 +3,10 @@ package ru.dvdishka.backuper.handlers.commands.menu.toZIP;
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.handlers.commands.Command;
-import ru.dvdishka.backuper.back.common.Scheduler;
-import ru.dvdishka.backuper.back.common.Backup;
-import ru.dvdishka.backuper.back.common.Common;
-import ru.dvdishka.backuper.back.common.Logger;
+import ru.dvdishka.backuper.backend.utils.Scheduler;
+import ru.dvdishka.backuper.backend.utils.Backup;
+import ru.dvdishka.backuper.backend.utils.Common;
+import ru.dvdishka.backuper.backend.utils.Logger;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -17,9 +17,9 @@ import java.util.Objects;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-public class ToZIP extends Command {
+public class ToZIPCommand extends Command {
 
-    public ToZIP(CommandSender sender, CommandArguments arguments) {
+    public ToZIPCommand(CommandSender sender, CommandArguments arguments) {
         super(sender, arguments);
     }
 

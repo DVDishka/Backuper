@@ -3,11 +3,11 @@ package ru.dvdishka.backuper.handlers.commands.backup;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
-import ru.dvdishka.backuper.back.config.Config;
-import ru.dvdishka.backuper.back.common.Scheduler;
-import ru.dvdishka.backuper.back.common.Backup;
-import ru.dvdishka.backuper.back.common.Common;
-import ru.dvdishka.backuper.back.common.Logger;
+import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.backend.utils.Scheduler;
+import ru.dvdishka.backuper.backend.utils.Backup;
+import ru.dvdishka.backuper.backend.utils.Common;
+import ru.dvdishka.backuper.backend.utils.Logger;
 
 import java.util.HashMap;
 

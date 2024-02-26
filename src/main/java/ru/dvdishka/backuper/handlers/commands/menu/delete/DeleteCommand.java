@@ -3,19 +3,19 @@ package ru.dvdishka.backuper.handlers.commands.menu.delete;
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.handlers.commands.Command;
-import ru.dvdishka.backuper.back.common.Scheduler;
-import ru.dvdishka.backuper.back.common.Backup;
-import ru.dvdishka.backuper.back.common.Common;
-import ru.dvdishka.backuper.back.common.Logger;
+import ru.dvdishka.backuper.backend.utils.Scheduler;
+import ru.dvdishka.backuper.backend.utils.Backup;
+import ru.dvdishka.backuper.backend.utils.Common;
+import ru.dvdishka.backuper.backend.utils.Logger;
 
 import java.io.File;
 import java.util.Objects;
 
-public class Delete extends Command {
+public class DeleteCommand extends Command {
 
     private boolean isDeleteSuccessful = true;
 
-    public Delete(CommandSender sender, CommandArguments arguments) {
+    public DeleteCommand(CommandSender sender, CommandArguments arguments) {
         super(sender, arguments);
     }
 

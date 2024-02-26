@@ -9,11 +9,11 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import ru.dvdishka.backuper.handlers.commands.Command;
-import ru.dvdishka.backuper.back.common.Backup;
+import ru.dvdishka.backuper.backend.utils.Backup;
 
-public class Menu extends Command {
+public class MenuCommand extends Command {
 
-    public Menu(CommandSender sender, CommandArguments arguments) {
+    public MenuCommand(CommandSender sender, CommandArguments arguments) {
         super(sender, arguments);
     }
 

@@ -1,6 +1,10 @@
-package ru.dvdishka.backuper.back.common;
+package ru.dvdishka.backuper.backend.utils;
 
-import ru.dvdishka.backuper.back.config.Config;
+import net.kyori.adventure.text.Component;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
+import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.io.File;
 import java.time.LocalDateTime;
@@ -144,6 +148,29 @@ public class Backup {
                     backups.set(secondBackupsIndex, saveDate);
                 }
             }
+        }
+    }
+
+    public static void sendBackupAlert(long timeSeconds) {
+
+        for (Player player : Bukkit.getOnlinePlayers()) {
+
+            if (!player.hasPermission(Permissions.ALERT.getPermission())) {
+                continue;
+            }
+
+            Component message = Component.empty();
+
+            message = message.append(Component.text("---------"))
+                    .append(Component.newline());
+
+            message = message.append(Component.text("Server will be restarted in ~ " +
+                            timeSeconds + " seconds"))
+                    .append(Component.newline());
+
+            message = message.append(Component.text("---------"));
+
+            player.sendMessage(message);
         }
     }
 }

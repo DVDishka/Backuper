@@ -1,4 +1,4 @@
-package ru.dvdishka.backuper.back;
+package ru.dvdishka.backuper.backend;
 
 import dev.jorel.commandapi.CommandTree;
 import dev.jorel.commandapi.arguments.*;
@@ -10,27 +10,29 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.server.ServerLoadEvent;
 import org.bukkit.plugin.java.JavaPlugin;
-import ru.dvdishka.backuper.back.config.Config;
-import ru.dvdishka.backuper.back.common.Common;
-import ru.dvdishka.backuper.back.common.Logger;
+import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.backend.utils.Backup;
+import ru.dvdishka.backuper.backend.utils.Common;
+import ru.dvdishka.backuper.backend.utils.Logger;
 import ru.dvdishka.backuper.handlers.WorldChangeCatcher;
-import ru.dvdishka.backuper.back.common.Scheduler;
-import ru.dvdishka.backuper.handlers.commands.menu.Menu;
-import ru.dvdishka.backuper.handlers.commands.menu.delete.Delete;
-import ru.dvdishka.backuper.handlers.commands.menu.delete.DeleteConfirmation;
-import ru.dvdishka.backuper.handlers.commands.menu.toZIP.ToZIP;
-import ru.dvdishka.backuper.handlers.commands.menu.toZIP.ToZIPConfirmation;
-import ru.dvdishka.backuper.handlers.commands.menu.unZIP.UnZIP;
-import ru.dvdishka.backuper.handlers.commands.menu.unZIP.UnZIPConfirmation;
-import ru.dvdishka.backuper.handlers.commands.reload.Reload;
+import ru.dvdishka.backuper.backend.utils.Scheduler;
+import ru.dvdishka.backuper.handlers.commands.menu.MenuCommand;
+import ru.dvdishka.backuper.handlers.commands.menu.delete.DeleteCommand;
+import ru.dvdishka.backuper.handlers.commands.menu.delete.DeleteConfirmationCommand;
+import ru.dvdishka.backuper.handlers.commands.menu.toZIP.ToZIPCommand;
+import ru.dvdishka.backuper.handlers.commands.menu.toZIP.ToZIPConfirmationCommand;
+import ru.dvdishka.backuper.handlers.commands.menu.unZIP.UnZIPCommand;
+import ru.dvdishka.backuper.handlers.commands.menu.unZIP.UnZIPConfirmationCommand;
+import ru.dvdishka.backuper.handlers.commands.reload.ReloadCommand;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
-import ru.dvdishka.backuper.handlers.commands.backup.Backup;
-import ru.dvdishka.backuper.handlers.commands.list.List;
+import ru.dvdishka.backuper.handlers.commands.backup.BackupCommand;
+import ru.dvdishka.backuper.handlers.commands.list.ListCommand;
 import ru.dvdishka.backuper.handlers.commands.backup.BackupProcessStarter;
 
 import java.io.BufferedReader;
@@ -42,6 +44,8 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Objects;
+
+import static java.lang.Math.max;
 
 public class Initialization implements Listener {
 
@@ -74,6 +78,14 @@ public class Initialization implements Listener {
 
             Logger.getLogger().devLog("Delay: " + delay);
 
+            if (Config.getInstance().getAlertTimeBeforeRestart() != -1) {
+                Scheduler.getScheduler().runSyncRepeatingTask(Common.plugin, () -> {
+
+                    Backup.sendBackupAlert(Config.getInstance().getAlertTimeBeforeRestart());
+
+                }, max((delay - Config.getInstance().getAlertTimeBeforeRestart()) * 20, 1),
+                        Config.getInstance().getBackupPeriod() * 60L * 20L);
+            }
             Scheduler.getScheduler().runSyncRepeatingTask(Common.plugin, new BackupProcessStarter(Config.getInstance().getAfterBackup(), true), delay * 20, Config.getInstance().getBackupPeriod() * 60L * 20L);
         }
     }
@@ -106,17 +118,25 @@ public class Initialization implements Listener {
         backupCommandTree.executes((sender, args) -> {
 
             if (sender.hasPermission(Permissions.BACKUP.getPermission())) {
-                new Backup(sender, args).execute();
+                new BackupCommand(sender, args).execute();
             } else {
                 Common.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
             }
         })
 
+                .then(new LongArgument("delay")
+
+                        .executes((sender, args) -> {
+
+                            new BackupCommand(sender, args).execute();
+                        })
+                )
+
                 .then(new LiteralArgument("STOP").withPermission(Permissions.STOP.getPermission())
 
                         .executes((sender, args) -> {
 
-                            new Backup(sender, args, "STOP").execute();
+                            new BackupCommand(sender, args, "STOP").execute();
                         })
                 )
 
@@ -124,7 +144,7 @@ public class Initialization implements Listener {
 
                         .executes((sender, args) -> {
 
-                            new Backup(sender, args, "RESTART").execute();
+                            new BackupCommand(sender, args, "RESTART").execute();
                         })
                 )
         ;
@@ -137,14 +157,14 @@ public class Initialization implements Listener {
 
                         .executes((sender, args) -> {
 
-                            new List(sender, args).execute();
+                            new ListCommand(sender, args).execute();
                         })
 
                         .then(new IntegerArgument("pageNumber").withPermission(Permissions.LIST.getPermission())
 
                                 .executes((sender, args) -> {
 
-                                    new List(sender, args).execute();
+                                    new ListCommand(sender, args).execute();
                                 })
                         )
                 )
@@ -157,7 +177,7 @@ public class Initialization implements Listener {
 
                         .executes((sender, args) -> {
 
-                            new Reload(sender, args).execute();
+                            new ReloadCommand(sender, args).execute();
                         })
                 )
         ;
@@ -171,19 +191,19 @@ public class Initialization implements Listener {
                         .then(new TextArgument("backupName").includeSuggestions(ArgumentSuggestions.stringCollection((info) -> {
 
                             ArrayList<LocalDateTime> backups = Common.getBackups();
-                            ru.dvdishka.backuper.back.common.Backup.sortLocalDateTimeDecrease(backups);
+                            ru.dvdishka.backuper.backend.utils.Backup.sortLocalDateTimeDecrease(backups);
 
                             ArrayList<String> backupSuggestions = new ArrayList<>();
 
                             for (LocalDateTime backupName : backups) {
-                                backupSuggestions.add("\"" + backupName.format(ru.dvdishka.backuper.back.common.Backup.dateTimeFormatter) + "\"");
+                                backupSuggestions.add("\"" + backupName.format(ru.dvdishka.backuper.backend.utils.Backup.dateTimeFormatter) + "\"");
                             }
                             return backupSuggestions;
                         }))
 
                                         .executes((sender, args) -> {
 
-                                            new Menu(sender, args).execute();
+                                            new MenuCommand(sender, args).execute();
                                         })
 
                                         .then(new StringArgument("action")
@@ -193,7 +213,7 @@ public class Initialization implements Listener {
 
                                                     if (Objects.equals(args.get("action"), "deleteConfirmation")) {
                                                         if (sender.hasPermission(Permissions.DELETE.getPermission())) {
-                                                            new DeleteConfirmation(sender, args).execute();
+                                                            new DeleteConfirmationCommand(sender, args).execute();
                                                         } else {
                                                             Common.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                         }
@@ -201,7 +221,7 @@ public class Initialization implements Listener {
 
                                                     if (Objects.equals(args.get("action"), "delete")) {
                                                         if (sender.hasPermission(Permissions.DELETE.getPermission())) {
-                                                            new Delete(sender, args).execute();
+                                                            new DeleteCommand(sender, args).execute();
                                                         } else {
                                                             Common.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                         }
@@ -209,7 +229,7 @@ public class Initialization implements Listener {
 
                                                     if (Objects.equals(args.get("action"), "toZIPConfirmation")) {
                                                         if (sender.hasPermission(Permissions.TO_ZIP.getPermission())) {
-                                                            new ToZIPConfirmation(sender, args).execute();
+                                                            new ToZIPConfirmationCommand(sender, args).execute();
                                                         } else {
                                                             Common.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                         }
@@ -217,7 +237,7 @@ public class Initialization implements Listener {
 
                                                     if (Objects.equals(args.get("action"), "toZIP")) {
                                                         if (sender.hasPermission(Permissions.TO_ZIP.getPermission())) {
-                                                            new ToZIP(sender, args).execute();
+                                                            new ToZIPCommand(sender, args).execute();
                                                         } else {
                                                             Common.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                         }
@@ -225,7 +245,7 @@ public class Initialization implements Listener {
 
                                                     if (Objects.equals(args.get("action"), "unZIPConfirmation")) {
                                                         if (sender.hasPermission(Permissions.UNZIP.getPermission())) {
-                                                            new UnZIPConfirmation(sender, args).execute();
+                                                            new UnZIPConfirmationCommand(sender, args).execute();
                                                         } else {
                                                             Common.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                         }
@@ -233,7 +253,7 @@ public class Initialization implements Listener {
 
                                                     if (Objects.equals(args.get("action"), "unZIP")) {
                                                         if (sender.hasPermission(Permissions.UNZIP.getPermission())) {
-                                                            new UnZIP(sender, args).execute();
+                                                            new UnZIPCommand(sender, args).execute();
                                                         } else {
                                                             Common.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                         }
@@ -266,7 +286,7 @@ public class Initialization implements Listener {
 
     public static void checkOperatingSystem() {
         if (Common.isWindows) {
-            ru.dvdishka.backuper.back.common.Backup.dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH;mm;ss");
+            ru.dvdishka.backuper.backend.utils.Backup.dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH;mm;ss");
         }
     }
 

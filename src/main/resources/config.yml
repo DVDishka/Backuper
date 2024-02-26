@@ -1,5 +1,5 @@
 # DO NOT CHANGE
-configVersion: 5.0
+configVersion: 6.0
 lastBackup: 0
 lastChange: 0
 
@@ -10,7 +10,7 @@ autoBackup: true
 # Full directory where backups will be stored
 backupsFolder: plugins/Backuper/Backups
 
-# Backup time (0 - 23). Backups will be made at this time every day. (backupPeriod will be automatically set to 24 hours). -1 to disable backup time fixation
+# (0 - 23). Backups will be made at this time every day. (backupPeriod will be automatically set to 24 hours). -1 to disable backup time fixation
 backupTime: -1
 # Backup period in MINUTES. To change this value you need to set backupTime to -1
 backupPeriod: 1440
@@ -26,5 +26,8 @@ maxBackupsWeight: 0
 # Should backups be packaged in a zip archive
 zipArchive: true
 
-# Better logging
+# (SECONDS) A notification about server restart will be sent to all players on the server {timeToAlertBeforeRestart} seconds before the restart (if afterBackup = NOTHING, no notification will be sent). -1 to disable notifications
+alertTimeBeforeRestart: 60
+
+# Better logging (Some statistic and other information for debugging, you probably don't need it)
 betterLogging: false

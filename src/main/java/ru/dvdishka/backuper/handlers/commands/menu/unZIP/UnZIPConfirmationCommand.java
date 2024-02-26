@@ -1,4 +1,4 @@
-package ru.dvdishka.backuper.handlers.commands.menu.toZIP;
+package ru.dvdishka.backuper.handlers.commands.menu.unZIP;
 
 import dev.jorel.commandapi.executors.CommandArguments;
 import net.kyori.adventure.text.Component;
@@ -8,11 +8,11 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.handlers.commands.Command;
-import ru.dvdishka.backuper.back.common.Backup;
+import ru.dvdishka.backuper.backend.utils.Backup;
 
-public class ToZIPConfirmation extends Command {
+public class UnZIPConfirmationCommand extends Command {
 
-    public ToZIPConfirmation(CommandSender sender, CommandArguments arguments) {
+    public UnZIPConfirmationCommand(CommandSender sender, CommandArguments arguments) {
         super(sender, arguments);
     }
 
@@ -36,9 +36,9 @@ public class ToZIPConfirmation extends Command {
         long backupSize = backup.getMBSize();
         String zipFolderBackup = backup.zipOrFolder();
 
-        if (zipFolderBackup.equals("(ZIP)")) {
+        if (zipFolderBackup.equals("(Folder)")) {
             cancelButtonSound();
-            returnFailure("Backup is already ZIP!");
+            returnFailure("Backup is already Folder!");
             return;
         }
 
@@ -59,7 +59,7 @@ public class ToZIPConfirmation extends Command {
         message = message
                 .append(Component.text("Are you sure")
                         .append(Component.newline())
-                        .append(Component.text("You want to convert this backup to ZIP?"))
+                        .append(Component.text("You want to convert this backup from ZIP to Folder?"))
                         .color(TextColor.color(0xB02100)))
                 .append(Component.newline());
 
@@ -70,7 +70,7 @@ public class ToZIPConfirmation extends Command {
 
         message = message
                 .append(Component.text("[CONVERT BACKUP]")
-                        .clickEvent(ClickEvent.runCommand("/backup menu \"" + backupName + "\" toZIP"))
+                        .clickEvent(ClickEvent.runCommand("/backup menu \"" + backupName + "\" unZIP"))
                         .color(TextColor.color(0x4974B))
                         .decorate(TextDecoration.BOLD))
                 .append(Component.newline());

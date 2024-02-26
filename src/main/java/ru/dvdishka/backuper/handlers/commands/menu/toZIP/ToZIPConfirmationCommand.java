@@ -1,4 +1,4 @@
-package ru.dvdishka.backuper.handlers.commands.menu.delete;
+package ru.dvdishka.backuper.handlers.commands.menu.toZIP;
 
 import dev.jorel.commandapi.executors.CommandArguments;
 import net.kyori.adventure.text.Component;
@@ -8,11 +8,11 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.handlers.commands.Command;
-import ru.dvdishka.backuper.back.common.Backup;
+import ru.dvdishka.backuper.backend.utils.Backup;
 
-public class DeleteConfirmation extends Command {
+public class ToZIPConfirmationCommand extends Command {
 
-    public DeleteConfirmation(CommandSender sender, CommandArguments arguments) {
+    public ToZIPConfirmationCommand(CommandSender sender, CommandArguments arguments) {
         super(sender, arguments);
     }
 
@@ -33,14 +33,20 @@ public class DeleteConfirmation extends Command {
 
         Backup backup = new Backup(backupName);
 
+        long backupSize = backup.getMBSize();
+        String zipFolderBackup = backup.zipOrFolder();
+
+        if (zipFolderBackup.equals("(ZIP)")) {
+            cancelButtonSound();
+            returnFailure("Backup is already ZIP!");
+            return;
+        }
+
         if (backup.isLocked() || Backup.isBackupBusy) {
             cancelButtonSound();
             returnFailure("Backup is blocked by another operation!");
             return;
         }
-
-        long backupSize = backup.getMBSize();
-        String zipFolderBackup = backup.zipOrFolder();
 
         Component message = net.kyori.adventure.text.Component.empty();
 
@@ -53,7 +59,7 @@ public class DeleteConfirmation extends Command {
         message = message
                 .append(Component.text("Are you sure")
                         .append(Component.newline())
-                        .append(Component.text("You want to delete the backup?"))
+                        .append(Component.text("You want to convert this backup to ZIP?"))
                         .color(TextColor.color(0xB02100)))
                 .append(Component.newline());
 
@@ -63,9 +69,9 @@ public class DeleteConfirmation extends Command {
                 .append(Component.newline());
 
         message = message
-                .append(Component.text("[DELETE BACKUP]")
-                        .clickEvent(ClickEvent.runCommand("/backup menu \"" + backupName + "\" delete"))
-                        .color(TextColor.color(0xB02100))
+                .append(Component.text("[CONVERT BACKUP]")
+                        .clickEvent(ClickEvent.runCommand("/backup menu \"" + backupName + "\" toZIP"))
+                        .color(TextColor.color(0x4974B))
                         .decorate(TextDecoration.BOLD))
                 .append(Component.newline());
 

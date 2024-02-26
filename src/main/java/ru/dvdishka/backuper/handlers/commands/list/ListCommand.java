@@ -10,20 +10,20 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import ru.dvdishka.backuper.handlers.commands.Command;
-import ru.dvdishka.backuper.back.common.Backup;
-import ru.dvdishka.backuper.back.config.Config;
-import ru.dvdishka.backuper.back.common.Logger;
+import ru.dvdishka.backuper.backend.utils.Backup;
+import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.backend.utils.Logger;
 
 import java.io.File;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Objects;
 
-public class List extends Command {
+public class ListCommand extends Command {
 
     public static ArrayList<ArrayList<TextComponent>> pages;
 
-    public List(CommandSender sender, CommandArguments arguments) {
+    public ListCommand(CommandSender sender, CommandArguments arguments) {
         super(sender, arguments);
     }
 
@@ -37,7 +37,7 @@ public class List extends Command {
             return;
         }
 
-        if (List.getListPageCount() == 0) {
+        if (ListCommand.getListPageCount() == 0) {
             returnFailure("There are no backups yet!");
             return;
         }
@@ -45,7 +45,7 @@ public class List extends Command {
         int pageNumber = (Integer) arguments.getOptional("pageNumber").orElse(1);
 
         // PAGE DOES NOT EXIST
-        if (pageNumber < 1 || pageNumber > List.getListPageCount()) {
+        if (pageNumber < 1 || pageNumber > ListCommand.getListPageCount()) {
             cancelButtonSound();
             return;
         }
@@ -99,7 +99,7 @@ public class List extends Command {
                     .clickEvent(clickEvent));
         }
 
-        List.pages = pages;
+        ListCommand.pages = pages;
     }
 
     public Component createListMessage(int pageNumber) {
