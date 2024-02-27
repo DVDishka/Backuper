@@ -16,7 +16,9 @@ public class BackupProcessStarter implements Runnable {
     private final String afterBackup;
     private CommandSender sender = null;
     private boolean isAutoBackup = false;
+
     public static HashMap<String, Boolean> isAutoSaveEnabled = new HashMap<>();
+    public static boolean errorSetWritable = false;
 
     @SuppressWarnings("unused")
     public BackupProcessStarter(String afterBackup) {
@@ -73,15 +75,7 @@ public class BackupProcessStarter implements Runnable {
 
             Backup.isBackupBusy = true;
 
-            for (World world : Bukkit.getWorlds()) {
-
-                isAutoSaveEnabled.put(world.getName(), world.isAutoSave());
-
-                world.setAutoSave(false);
-                if (!world.getWorldFolder().setReadOnly()) {
-                    Logger.getLogger().warn("Can not set folder read only!", sender);
-                }
-            }
+            setReadOnly(sender);
 
             Scheduler.getScheduler().runAsync(Common.plugin, new BackupProcess(afterBackup, isAutoBackup, sender));
 
@@ -89,15 +83,42 @@ public class BackupProcessStarter implements Runnable {
 
             Backup.isBackupBusy = false;
 
-            for (World world : Bukkit.getWorlds()) {
-                if (!world.getWorldFolder().setWritable(true)) {
-                    Logger.getLogger().warn("Can not set " + world.getWorldFolder().getPath() + " writable!", sender);
-                }
-                world.setAutoSave(isAutoSaveEnabled.get(world.getName()));
-            }
+            setWritable(sender, false);
 
             Logger.getLogger().warn("Backup process has been finished with an exception!", sender);
             Logger.getLogger().devWarn(this, e);
+        }
+    }
+
+    public static void setReadOnly(CommandSender sender) {
+
+        for (World world : Bukkit.getWorlds()) {
+
+            if (!errorSetWritable) {
+                isAutoSaveEnabled.put(world.getName(), world.isAutoSave());
+            }
+
+            world.setAutoSave(false);
+            if (!world.getWorldFolder().setReadOnly()) {
+                Logger.getLogger().warn("Can not set folder read only!", sender);
+            }
+        }
+    }
+
+    public static void setWritable(CommandSender sender, boolean forceWritable) {
+
+        errorSetWritable = false;
+
+        for (World world : Bukkit.getWorlds()) {
+
+            if (!world.getWorldFolder().setWritable(true)) {
+                Logger.getLogger().warn("Can not set " + world.getWorldFolder().getPath() + " writable!", sender);
+                errorSetWritable = true;
+            }
+
+            if (isAutoSaveEnabled.containsKey(world.getName())) {
+                world.setAutoSave(forceWritable || isAutoSaveEnabled.get(world.getName()));
+            }
         }
     }
 }

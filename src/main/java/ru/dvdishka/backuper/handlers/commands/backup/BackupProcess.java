@@ -93,13 +93,7 @@ public class BackupProcess implements Runnable {
 
             {
                 Logger.getLogger().devLog("Set writable task has been started");
-                for (World world : Bukkit.getWorlds()) {
-
-                    if (!world.getWorldFolder().setWritable(true)) {
-                        Logger.getLogger().warn("Can not set folder writable!", sender);
-                    }
-                    world.setAutoSave(BackupProcessStarter.isAutoSaveEnabled.get(world.getName()));
-                }
+                BackupProcessStarter.setWritable(sender, false);
                 Logger.getLogger().devLog("Set writable task has been finished");
             }
 
@@ -279,12 +273,7 @@ public class BackupProcess implements Runnable {
 
         } catch (Exception e) {
 
-            for (World world : Bukkit.getWorlds()) {
-                if (!world.getWorldFolder().setWritable(true)) {
-                    Logger.getLogger().warn("Can not set folder writable!", sender);
-                }
-                world.setAutoSave(BackupProcessStarter.isAutoSaveEnabled.get(world.getName()));
-            }
+            BackupProcessStarter.setWritable(sender, false);
 
             Backup.isBackupBusy = false;
 
