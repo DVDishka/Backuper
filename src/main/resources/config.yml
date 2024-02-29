@@ -4,30 +4,30 @@ lastBackup: 0
 lastChange: 0
 
 
-# Automatic backup once in a specified period
+# (true/false) Automatic backup once in a specified period
 autoBackup: true
 
-# Full directory where backups will be stored
+# (Path) Full directory where backups will be stored
 backupsFolder: plugins/Backuper/Backups
 
 # (0 - 23). Backups will be made at this time every day. (backupPeriod will be automatically set to 24 hours). -1 to disable backup time fixation
 backupTime: -1
-# Backup period in MINUTES. To change this value you need to set backupTime to -1
+# (MINUTES > 0 or -1) Backup period. To change this value you need to set backupTime to -1
 backupPeriod: 1440
-# What to do after backup, (STOP, RESTART, NOTHING)
+# (STOP, RESTART, NOTHING) What to do after backup
 afterBackup: NOTHING
 
-# The backup will only occur if the world has been changed since the last backup. If the world has not been changed, this backup cycle will be skipped
+# (true/false) The backup will only occur if the world has been changed since the last backup. If the world has not been changed, this backup cycle will be skipped
 skipDuplicateBackup: true
-# Max backups in backups folder, 0 to make it unlimited
+# (>= 0) Max backups in backups folder, 0 to make it unlimited
 maxBackupsNumber: 0
-# Max backups folder weight in MB, 0 to make it unlimited
+# (MB >= 0) Max backups folder weight, 0 to make it unlimited
 maxBackupsWeight: 0
-# Should backups be packaged in a zip archive
+# (true/false) Should backups be packaged in a zip archive
 zipArchive: true
 
 # (SECONDS) A notification about server restart will be sent to all players on the server {timeToAlertBeforeRestart} seconds before the restart (if afterBackup = NOTHING, no notification will be sent). -1 to disable notifications
 alertTimeBeforeRestart: 60
 
-# Better logging (Some statistic and other information for debugging, you probably don't need it)
+# (true/false) Better logging (Some statistic and other information for debugging, you probably don't need it)
 betterLogging: false

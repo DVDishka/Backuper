@@ -138,6 +138,14 @@ public class Initialization implements Listener {
 
                             new BackupCommand(sender, args, "STOP").execute();
                         })
+
+                        .then(new LongArgument("delay")
+
+                                .executes((sender, args) -> {
+
+                                    new BackupCommand(sender, args, "STOP").execute();
+                                })
+                        )
                 )
 
                 .then(new LiteralArgument("RESTART").withPermission(Permissions.RESTART.getPermission())
@@ -146,6 +154,14 @@ public class Initialization implements Listener {
 
                             new BackupCommand(sender, args, "RESTART").execute();
                         })
+
+                        .then(new LongArgument("delay")
+
+                                .executes((sender, args) -> {
+
+                                    new BackupCommand(sender, args, "RESTART").execute();
+                                })
+                        )
                 )
         ;
         backupCommandTree.register();

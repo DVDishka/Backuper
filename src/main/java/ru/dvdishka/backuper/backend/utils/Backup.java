@@ -153,6 +153,8 @@ public class Backup {
 
     public static void sendBackupAlert(long timeSeconds) {
 
+        Logger.getLogger().log("Server will be backed up and restarted in ~" + timeSeconds + " seconds");
+
         for (Player player : Bukkit.getOnlinePlayers()) {
 
             if (!player.hasPermission(Permissions.ALERT.getPermission())) {
