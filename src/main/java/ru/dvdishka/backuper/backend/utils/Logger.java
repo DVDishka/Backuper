@@ -89,15 +89,11 @@ public class Logger {
         }
     }
 
-    public void devWarn(Object sourceClass, Exception exception) {
-        if (Config.getInstance().isBetterLogging()) {
-            Common.plugin.getLogger().warning(sourceClass.getClass().getSimpleName() + ": " + exception.getMessage() + "\n" + Arrays.toString(exception.getStackTrace()));
-        }
+    public void warn(Object sourceClass, Exception exception) {
+        Common.plugin.getLogger().warning(sourceClass.getClass().getSimpleName() + ": " + exception.getMessage() + "\n" + Arrays.toString(exception.getStackTrace()));
     }
 
-    public void devWarn(String sourceClassName, Exception exception) {
-        if (Config.getInstance().isBetterLogging()) {
-            Common.plugin.getLogger().warning(sourceClassName + ": " + exception.getMessage() + "\n" + Arrays.toString(exception.getStackTrace()));
-        }
+    public void warn(String sourceClassName, Exception exception) {
+        Common.plugin.getLogger().warning(sourceClassName + ": " + exception.getMessage() + "\n" + Arrays.toString(exception.getStackTrace()));
     }
 }

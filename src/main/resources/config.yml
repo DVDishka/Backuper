@@ -26,7 +26,7 @@ maxBackupsWeight: 0
 # (true/false) Should backups be packaged in a zip archive
 zipArchive: true
 
-# (SECONDS) A notification about server restart will be sent to all players on the server {timeToAlertBeforeRestart} seconds before the restart (if afterBackup = NOTHING, no notification will be sent). -1 to disable notifications
+# (SECONDS < backupPeriod * 60) A notification about server restart will be sent to all players on the server {timeToAlertBeforeRestart} seconds before the restart (if afterBackup = NOTHING, no notification will be sent). -1 to disable notifications
 alertTimeBeforeRestart: 60
 
 # (true/false) Better logging (Some statistic and other information for debugging, you probably don't need it)

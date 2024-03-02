@@ -10,7 +10,6 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -46,6 +45,7 @@ import java.util.ArrayList;
 import java.util.Objects;
 
 import static java.lang.Math.max;
+import static java.lang.Math.min;
 
 public class Initialization implements Listener {
 
@@ -56,38 +56,52 @@ public class Initialization implements Listener {
 
     public static void initAutoBackup() {
 
-        if (Config.getInstance().isAutoBackup()) {
+        Scheduler.getScheduler().runAsync(Common.plugin, () -> {
 
-            long delay;
+            new BackupProcessStarter("NOTHING").runDeleteOldBackupsSync();
 
-            if (Config.getInstance().isFixedBackupTime()) {
+            if (Config.getInstance().isAutoBackup()) {
 
-                if (Config.getInstance().getBackupTime() > LocalDateTime.now().getHour()) {
-                    delay = (long) Config.getInstance().getBackupTime() * 60 * 60 - (LocalDateTime.now().getHour() * 60 * 60 + LocalDateTime.now().getMinute() * 60 + LocalDateTime.now().getSecond());
+                long delay;
 
+                if (Config.getInstance().isFixedBackupTime()) {
+
+                    if (Config.getInstance().getBackupTime() > LocalDateTime.now().getHour()) {
+                        delay = (long) Config.getInstance().getBackupTime() * 60 * 60 - (LocalDateTime.now().getHour() * 60 * 60 + LocalDateTime.now().getMinute() * 60 + LocalDateTime.now().getSecond());
+
+                    } else {
+                        delay = (long) Config.getInstance().getBackupTime() * 60 * 60 + 86400 - (LocalDateTime.now().getHour() * 60 * 60 + LocalDateTime.now().getMinute() * 60 + LocalDateTime.now().getSecond());
+                    }
                 } else {
-                    delay = (long) Config.getInstance().getBackupTime() * 60 * 60 + 86400 - (LocalDateTime.now().getHour() * 60 * 60 + LocalDateTime.now().getMinute() * 60 + LocalDateTime.now().getSecond());
+                    delay = Config.getInstance().getBackupPeriod() * 60L - (LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) - Config.getInstance().getLastBackup());
                 }
-            } else {
-                delay = Config.getInstance().getBackupPeriod() * 60L - (LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) - Config.getInstance().getLastBackup());
+
+                if (delay <= 0) {
+                    delay = 1;
+                }
+
+                Logger.getLogger().devLog("Delay: " + delay);
+
+                if (Config.getInstance().getAlertTimeBeforeRestart() != -1) {
+
+                    long firstAlertDelay = max((delay - Config.getInstance().getAlertTimeBeforeRestart()) * 20, 1);
+                    long alertTime = min(Config.getInstance().getAlertTimeBeforeRestart(), delay);
+
+                    Scheduler.getScheduler().runSyncDelayed(Common.plugin, () -> {
+
+                        Backup.sendBackupAlert(alertTime, Config.getInstance().getAfterBackup());
+
+                    }, firstAlertDelay);
+
+                    long secondAlertDelay = max((delay + Config.getInstance().getBackupPeriod() * 60L - Config.getInstance().getAlertTimeBeforeRestart()) * 20, 1);
+
+                    Scheduler.getScheduler().runSyncRepeatingTask(Common.plugin, () -> {
+                        Backup.sendBackupAlert(Config.getInstance().getAlertTimeBeforeRestart(), Config.getInstance().getAfterBackup());
+                    }, secondAlertDelay, Config.getInstance().getBackupPeriod() * 60L * 20L);
+                }
+                Scheduler.getScheduler().runSyncRepeatingTask(Common.plugin, new BackupProcessStarter(Config.getInstance().getAfterBackup(), true), delay * 20, Config.getInstance().getBackupPeriod() * 60L * 20L);
             }
-
-            if (delay <= 0) {
-                delay = 1;
-            }
-
-            Logger.getLogger().devLog("Delay: " + delay);
-
-            if (Config.getInstance().getAlertTimeBeforeRestart() != -1) {
-                Scheduler.getScheduler().runSyncRepeatingTask(Common.plugin, () -> {
-
-                    Backup.sendBackupAlert(Config.getInstance().getAlertTimeBeforeRestart());
-
-                }, max((delay - Config.getInstance().getAlertTimeBeforeRestart()) * 20, 1),
-                        Config.getInstance().getBackupPeriod() * 60L * 20L);
-            }
-            Scheduler.getScheduler().runSyncRepeatingTask(Common.plugin, new BackupProcessStarter(Config.getInstance().getAfterBackup(), true), delay * 20, Config.getInstance().getBackupPeriod() * 60L * 20L);
-        }
+        });
     }
 
     public static void initConfig(File configFile, CommandSender sender) {
@@ -340,7 +354,7 @@ public class Initialization implements Listener {
         } catch (Exception e) {
 
             Logger.getLogger().warn("Failed to check Backuper updates!");
-            Logger.getLogger().devWarn("Initialization", e);
+            Logger.getLogger().warn("Initialization", e);
         }
     }
 

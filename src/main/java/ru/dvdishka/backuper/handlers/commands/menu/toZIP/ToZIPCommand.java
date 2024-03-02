@@ -93,7 +93,7 @@ public class ToZIPCommand extends Command {
 
                     backup.unlock();
                     Logger.getLogger().warn("The Convert Backup To ZIP process has been finished with an exception!", sender);
-                    Logger.getLogger().devWarn(this, e);
+                    Logger.getLogger().warn(this, e);
                 }
             });
         } catch (Exception e) {
@@ -131,7 +131,7 @@ public class ToZIPCommand extends Command {
                 } catch (Exception e) {
 
                     Logger.getLogger().warn("Something went wrong while trying to put file in ZIP! " + file.getName(), sender);
-                    Logger.getLogger().devWarn(this, e);
+                    Logger.getLogger().warn(this, e);
                     throw new RuntimeException();
                 }
             }

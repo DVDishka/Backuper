@@ -22,13 +22,13 @@ public class BackupCommand extends Command {
 
         super(sender, args);
         this.afterBackup = afterBackup;
-        this.delay = (long) args.getOrDefault("delay", 1);
+        this.delay = (long) args.getOrDefault("delay", 1L);
     }
 
     public BackupCommand(CommandSender sender, CommandArguments args) {
 
         super(sender, args);
-        this.delay = (long) args.getOrDefault("delay", 1);
+        this.delay = (long) args.getOrDefault("delay", 1L);
     }
 
     public void execute() {
@@ -43,11 +43,11 @@ public class BackupCommand extends Command {
             return;
         }
 
-        if (Config.getInstance().getAlertTimeBeforeRestart() != -1 && !afterBackup.equals("NOTHING")) {
+        if (Config.getInstance().getAlertTimeBeforeRestart() != -1) {
 
             Scheduler.getScheduler().runSyncDelayed(Common.plugin, () -> {
 
-                Backup.sendBackupAlert(min(Config.getInstance().getAlertTimeBeforeRestart(), delay));
+                Backup.sendBackupAlert(min(Config.getInstance().getAlertTimeBeforeRestart(), delay), afterBackup);
 
             }, max((delay - Config.getInstance().getAlertTimeBeforeRestart()) * 20, 1));
         }

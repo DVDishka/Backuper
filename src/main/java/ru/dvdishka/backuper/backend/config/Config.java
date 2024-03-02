@@ -43,14 +43,14 @@ public class Config {
 
     private Config() {}
 
-    private void setConfigField(String path, Object value) {
+    private synchronized void setConfigField(String path, Object value) {
 
         FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
         config.set(path, value);
         try {
             config.save(configFile);
         } catch (Exception e) {
-            Logger.getLogger().warn("Failed to set config field \"" + path + "\" to " + value);
+            Logger.getLogger().warn("Failed to save config");
         }
     }
 
@@ -165,7 +165,7 @@ public class Config {
             } catch (Exception e) {
 
                 Logger.getLogger().warn("Can not save config file!", sender);
-                Logger.getLogger().devWarn("Initialization", e);
+                Logger.getLogger().warn("Initialization", e);
                 noErrors = false;
             }
         }

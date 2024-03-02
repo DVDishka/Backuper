@@ -20,11 +20,12 @@ public class ReloadCommand extends Command {
     public void execute() {
 
         if (Backup.isBackupBusy) {
-            returnFailure("Unable to reload plugin while backup process is running!");
+            returnFailure("Unable to reload config while backup process is running!");
             return;
         }
-        Initialization.initConfig(new File("plugins/Backuper/config.yml"), sender);
         Scheduler.cancelTasks(Common.plugin);
+
+        Initialization.initConfig(new File("plugins/Backuper/config.yml"), sender);
         Initialization.initAutoBackup();
     }
 }

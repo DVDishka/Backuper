@@ -151,9 +151,18 @@ public class Backup {
         }
     }
 
-    public static void sendBackupAlert(long timeSeconds) {
+    public static void sendBackupAlert(long timeSeconds, String afterBackup) {
 
-        Logger.getLogger().log("Server will be backed up and restarted in ~" + timeSeconds + " seconds");
+        if (afterBackup.equals("STOP")) {
+            Logger.getLogger().log("Server will be backed up and stopped in ~" + timeSeconds + " second(s)");
+        }
+        if (afterBackup.equals("RESTART")) {
+            Logger.getLogger().log("Server will be backed up and restarted in ~" + timeSeconds + " second(s)");
+        }
+        if (afterBackup.equals("NOTHING")) {
+            Logger.getLogger().log("Server will be backed up in ~" + timeSeconds + " second(s)");
+            return;
+        }
 
         for (Player player : Bukkit.getOnlinePlayers()) {
 
@@ -166,7 +175,7 @@ public class Backup {
             message = message.append(Component.text("---------"))
                     .append(Component.newline());
 
-            message = message.append(Component.text("Server will be restarted in ~ " +
+            message = message.append(Component.text("Server will be restarted in ~" +
                             timeSeconds + " seconds"))
                     .append(Component.newline());
 

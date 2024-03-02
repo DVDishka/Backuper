@@ -9,6 +9,7 @@ import ru.dvdishka.backuper.backend.utils.Backup;
 import ru.dvdishka.backuper.backend.utils.Common;
 import ru.dvdishka.backuper.backend.utils.Logger;
 
+import java.io.File;
 import java.util.HashMap;
 
 public class BackupProcessStarter implements Runnable {
@@ -17,8 +18,8 @@ public class BackupProcessStarter implements Runnable {
     private CommandSender sender = null;
     private boolean isAutoBackup = false;
 
-    public static HashMap<String, Boolean> isAutoSaveEnabled = new HashMap<>();
-    public static boolean errorSetWritable = false;
+    public static volatile HashMap<String, Boolean> isAutoSaveEnabled = new HashMap<>();
+    public static volatile boolean errorSetWritable = false;
 
     @SuppressWarnings("unused")
     public BackupProcessStarter(String afterBackup) {
@@ -75,7 +76,7 @@ public class BackupProcessStarter implements Runnable {
 
             Backup.isBackupBusy = true;
 
-            setReadOnly(sender);
+            setReadOnlySync(sender);
 
             Scheduler.getScheduler().runAsync(Common.plugin, new BackupProcess(afterBackup, isAutoBackup, sender));
 
@@ -83,14 +84,24 @@ public class BackupProcessStarter implements Runnable {
 
             Backup.isBackupBusy = false;
 
-            setWritable(sender, false);
+            setWritableSync(sender, false);
 
             Logger.getLogger().warn("Backup process has been finished with an exception!", sender);
-            Logger.getLogger().devWarn(this, e);
+            Logger.getLogger().warn(this, e);
         }
     }
 
-    public static void setReadOnly(CommandSender sender) {
+    public void runDeleteOldBackupsSync() {
+
+        if (Backup.isBackupBusy) {
+            Logger.getLogger().warn("Failed to start deleteOldBackup task because the previous process is not completed");
+            return;
+        }
+
+        new BackupProcess(afterBackup, isAutoBackup, sender).deleteOldBackups(new File(Config.getInstance().getBackupsFolder()), true);
+    }
+
+    public static void setReadOnlySync(CommandSender sender) {
 
         for (World world : Bukkit.getWorlds()) {
 
@@ -105,7 +116,7 @@ public class BackupProcessStarter implements Runnable {
         }
     }
 
-    public static void setWritable(CommandSender sender, boolean forceWritable) {
+    public static void setWritableSync(CommandSender sender, boolean forceWritable) {
 
         errorSetWritable = false;
 

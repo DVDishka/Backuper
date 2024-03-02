@@ -58,7 +58,7 @@ public class Backuper extends JavaPlugin {
 
     public void onDisable() {
 
-        BackupProcessStarter.setWritable(Bukkit.getConsoleSender(), false);
+        BackupProcessStarter.setWritableSync(Bukkit.getConsoleSender(), false);
         Scheduler.cancelTasks(this);
 
         CommandAPI.onDisable();
