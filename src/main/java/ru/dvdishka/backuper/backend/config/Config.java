@@ -9,6 +9,8 @@ import ru.dvdishka.backuper.backend.utils.Logger;
 import java.io.File;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Config {
 
@@ -19,6 +21,8 @@ public class Config {
     private long lastChange = 0;
 
     private String backupsFolder = "plugins/Backuper/Backups";
+    private List<String> addDirectoryToBackup = new ArrayList<>();
+    private List<String> excludeDirectoryFromBackup = new ArrayList<>();
     private boolean fixedBackupTime = false;
     private boolean autoBackup = true;
     private int backupTime = -1;
@@ -90,6 +94,8 @@ public class Config {
         this.skipDuplicateBackup = config.getBoolean("skipDuplicateBackup", true);
         this.fixedBackupTime = this.backupTime > -1;
         this.backupsFolder = config.getString("backupsFolder", "plugins/Backuper/Backups");
+        this.addDirectoryToBackup = config.getStringList("addDirectoryToBackup");
+        this.excludeDirectoryFromBackup = config.getStringList("excludeDirectoryFromBackup");
         this.alertTimeBeforeRestart = config.getLong("alertTimeBeforeRestart", 60);
 
         boolean isConfigFileOk = configVersion.equals(this.configVersion);
@@ -133,6 +139,12 @@ public class Config {
         if (!config.contains("alertTimeBeforeRestart")) {
             isConfigFileOk = false;
         }
+        if (!config.contains("addDirectoryToBackup")) {
+            isConfigFileOk = false;
+        }
+        if (!config.contains("excludeDirectoryFromBackup")) {
+            isConfigFileOk = false;
+        }
 
         if (!isConfigFileOk) {
 
@@ -157,6 +169,8 @@ public class Config {
             newConfig.set("backupsFolder", this.backupsFolder);
             newConfig.set("skipDuplicateBackup", this.skipDuplicateBackup);
             newConfig.set("alertTimeBeforeRestart", this.alertTimeBeforeRestart);
+            newConfig.set("addDirectoryToBackup", this.addDirectoryToBackup);
+            newConfig.set("excludeDirectoryFromBackup", this.excludeDirectoryFromBackup);
 
             try {
 
@@ -228,6 +242,14 @@ public class Config {
 
     public String getBackupsFolder() {
         return backupsFolder;
+    }
+
+    public List<String> getAddDirectoryToBackup() {
+        return addDirectoryToBackup;
+    }
+
+    public List<String> getExcludeDirectoryFromBackup() {
+        return excludeDirectoryFromBackup;
     }
 
     public String getConfigVersion() {

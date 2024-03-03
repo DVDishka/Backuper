@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Objects;
@@ -62,6 +63,7 @@ class BackupProcess implements Runnable {
 
                     File worldDir = world.getWorldFolder();
 
+
                     if (worldDir.listFiles() != null) {
 
                         try {
@@ -80,6 +82,39 @@ class BackupProcess implements Runnable {
                             Logger.getLogger().warn("Something went wrong when trying to copy files!", sender);
                             Logger.getLogger().warn(this, e);
                         }
+                    }
+                }
+
+                for (String additionalDirectoryToBackup : Config.getInstance().getAddDirectoryToBackup()) {
+
+                    try {
+
+                        File additionalDirectoryToBackupFile = Paths.get(additionalDirectoryToBackup).toFile();
+                        boolean isExcludedDirectory = false;
+
+                        for (String excludeDirectoryFromBackup : Config.getInstance().getExcludeDirectoryFromBackup()) {
+                            if (additionalDirectoryToBackupFile.getCanonicalFile().equals(new File(excludeDirectoryFromBackup).getCanonicalFile())) {
+                                isExcludedDirectory = true;
+                                break;
+                            }
+                        }
+
+                        if (isExcludedDirectory) {
+                            continue;
+                        }
+
+                        if (Config.getInstance().isZipArchive()) {
+
+                            addDirToZip(zipOutputStream, additionalDirectoryToBackupFile, additionalDirectoryToBackupFile.getCanonicalFile().getParentFile().toPath());
+
+                        } else {
+
+                            copyFilesInDir(backupDir.toPath().resolve(additionalDirectoryToBackupFile.getName()).toFile(), additionalDirectoryToBackupFile);
+                        }
+
+                    } catch (Exception e) {
+                        Logger.getLogger().warn("Something went wrong when trying to backup an additional directory \"" + additionalDirectoryToBackup + "\"", sender);
+                        Logger.getLogger().warn(this, e);
                     }
                 }
 
@@ -325,7 +360,70 @@ class BackupProcess implements Runnable {
 
     private void addDirToZip(ZipOutputStream zip, File sourceDir, Path folderDir) {
 
-        for (File file : Objects.requireNonNull(sourceDir.listFiles())) {
+        if (sourceDir.isFile()) {
+
+            try {
+
+                String relativeFilePath = folderDir.toAbsolutePath().relativize(sourceDir.toPath().toAbsolutePath()).toString();
+
+                zip.putNextEntry(new ZipEntry(relativeFilePath));
+                FileInputStream fileInputStream = new FileInputStream(sourceDir);
+                byte[] buffer = new byte[4048];
+                int length;
+
+                while ((length = fileInputStream.read(buffer)) > 0) {
+
+                    zip.write(buffer, 0, length);
+                }
+                zip.closeEntry();
+                fileInputStream.close();
+
+            } catch (Exception e) {
+
+                Logger.getLogger().warn("Something went wrong while trying to put file in ZIP! " + sourceDir.getName(), sender);
+                Logger.getLogger().warn(this, e);
+            }
+        }
+
+        if (sourceDir.listFiles() == null) {
+            return;
+        }
+
+        for (File file : sourceDir.listFiles()) {
+
+            boolean isExcludedDirectory = false;
+
+            for (String excludeDirectoryFromBackup : Config.getInstance().getExcludeDirectoryFromBackup()) {
+
+                try {
+
+                    File excludeDirectoryFromBackupFile = Paths.get(excludeDirectoryFromBackup).toFile().getCanonicalFile();
+
+                    if (excludeDirectoryFromBackupFile.equals(file.getCanonicalFile())) {
+                        isExcludedDirectory = true;
+                    }
+
+                } catch (SecurityException e) {
+                    Logger.getLogger().warn("Failed to copy file \"" + file.getAbsolutePath() + "\", no access", sender);
+                    Logger.getLogger().warn("BackupTask", e);
+                } catch (Exception e) {
+                    Logger.getLogger().warn("Something went wrong while trying to copy file \"" + file.getAbsolutePath() + "\"", sender);
+                    Logger.getLogger().warn("BackupTask", e);
+                }
+            }
+
+            try {
+                if (isExcludedDirectory || file.getCanonicalFile().equals(new File("plugins/Backuper/Backups").getCanonicalFile()) ||
+                        file.getCanonicalFile().equals(new File(Config.getInstance().getBackupsFolder()).getCanonicalFile())) {
+                    continue;
+                }
+            } catch (SecurityException e) {
+                Logger.getLogger().warn("Failed to check \"excludeDirectoryFromBackup\" for file \"" + file.getAbsolutePath() + "\", no access", sender);
+                Logger.getLogger().warn("BackupTask", e);
+            } catch (Exception e) {
+                Logger.getLogger().warn("Something went wrong while trying check \"excludeDirectoryFromBackup\" for file \"" + file.getAbsolutePath() + "\"", sender);
+                Logger.getLogger().warn("BackupTask", e);
+            }
 
             if (file.isDirectory()) {
 
@@ -360,6 +458,24 @@ class BackupProcess implements Runnable {
 
     private void copyFilesInDir(File destDir, File sourceDir) {
 
+        if (sourceDir.isFile()) {
+
+            try {
+
+                Files.copy(sourceDir.toPath(), destDir.toPath());
+
+            } catch (SecurityException e) {
+
+                Logger.getLogger().warn("Backup Directory is not allowed to modify! " + sourceDir.getName(), sender);
+                Logger.getLogger().warn("BackupTask", e);
+
+            } catch (Exception e) {
+
+                Logger.getLogger().warn("Something went wrong while trying to copy file! " + sourceDir.getName(), sender);
+                Logger.getLogger().warn("BackupTask", e);
+            }
+        }
+
         if (sourceDir.listFiles() != null) {
 
             if (!destDir.mkdir()) {
@@ -368,6 +484,40 @@ class BackupProcess implements Runnable {
             }
 
             for (File file : Objects.requireNonNull(sourceDir.listFiles())) {
+
+                boolean isExcludedDirectory = false;
+
+                for (String excludeDirectoryFromBackup : Config.getInstance().getExcludeDirectoryFromBackup()) {
+
+                    try {
+
+                        File excludeDirectoryFromBackupFile = Paths.get(excludeDirectoryFromBackup).toFile().getCanonicalFile();
+
+                        if (excludeDirectoryFromBackupFile.equals(file.getCanonicalFile())) {
+                            isExcludedDirectory = true;
+                        }
+
+                    } catch (SecurityException e) {
+                        Logger.getLogger().warn("Failed to copy file \"" + file.getAbsolutePath() + "\", no access", sender);
+                        Logger.getLogger().warn("BackupTask", e);
+                    } catch (Exception e) {
+                        Logger.getLogger().warn("Something went wrong while trying to copy file \"" + file.getAbsolutePath() + "\"", sender);
+                        Logger.getLogger().warn("BackupTask", e);
+                    }
+                }
+
+                try {
+                    if (isExcludedDirectory || file.getCanonicalFile().equals(new File("plugins/Backuper/Backups").getCanonicalFile()) ||
+                            file.getCanonicalFile().equals(new File(Config.getInstance().getBackupsFolder()).getCanonicalFile())) {
+                        continue;
+                    }
+                } catch (SecurityException e) {
+                    Logger.getLogger().warn("Failed to check \"excludeDirectoryFromBackup\" for file \"" + file.getAbsolutePath() + "\", no access", sender);
+                    Logger.getLogger().warn("BackupTask", e);
+                } catch (Exception e) {
+                    Logger.getLogger().warn("Something went wrong while trying check \"excludeDirectoryFromBackup\" for file \"" + file.getAbsolutePath() + "\"", sender);
+                    Logger.getLogger().warn("BackupTask", e);
+                }
 
                 if (file.isDirectory()) {
 
