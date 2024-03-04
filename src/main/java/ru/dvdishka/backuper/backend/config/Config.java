@@ -50,7 +50,7 @@ public class Config {
 
     private Config() {}
 
-    private synchronized void setConfigField(String path, Object value) {
+    public synchronized void setConfigField(String path, Object value) {
 
         FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
         config.set(path, value);
