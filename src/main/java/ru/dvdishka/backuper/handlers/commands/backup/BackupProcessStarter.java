@@ -9,6 +9,7 @@ import ru.dvdishka.backuper.backend.utils.Backup;
 import ru.dvdishka.backuper.backend.utils.Common;
 import ru.dvdishka.backuper.backend.utils.Logger;
 
+import java.io.File;
 import java.util.HashMap;
 
 public class BackupProcessStarter implements Runnable {
@@ -16,7 +17,9 @@ public class BackupProcessStarter implements Runnable {
     private final String afterBackup;
     private CommandSender sender = null;
     private boolean isAutoBackup = false;
-    public static HashMap<String, Boolean> isAutoSaveEnabled = new HashMap<>();
+
+    public static volatile HashMap<String, Boolean> isAutoSaveEnabled = new HashMap<>();
+    public static volatile boolean errorSetWritable = false;
 
     @SuppressWarnings("unused")
     public BackupProcessStarter(String afterBackup) {
@@ -73,15 +76,7 @@ public class BackupProcessStarter implements Runnable {
 
             Backup.isBackupBusy = true;
 
-            for (World world : Bukkit.getWorlds()) {
-
-                isAutoSaveEnabled.put(world.getName(), world.isAutoSave());
-
-                world.setAutoSave(false);
-                if (!world.getWorldFolder().setReadOnly()) {
-                    Logger.getLogger().warn("Can not set folder read only!", sender);
-                }
-            }
+            setReadOnlySync(sender);
 
             Scheduler.getScheduler().runAsync(Common.plugin, new BackupProcess(afterBackup, isAutoBackup, sender));
 
@@ -89,15 +84,52 @@ public class BackupProcessStarter implements Runnable {
 
             Backup.isBackupBusy = false;
 
-            for (World world : Bukkit.getWorlds()) {
-                if (!world.getWorldFolder().setWritable(true)) {
-                    Logger.getLogger().warn("Can not set " + world.getWorldFolder().getPath() + " writable!", sender);
-                }
-                world.setAutoSave(isAutoSaveEnabled.get(world.getName()));
-            }
+            setWritableSync(sender, false);
 
             Logger.getLogger().warn("Backup process has been finished with an exception!", sender);
-            Logger.getLogger().devWarn(this, e);
+            Logger.getLogger().warn(this, e);
+        }
+    }
+
+    public void runDeleteOldBackupsSync() {
+
+        if (Backup.isBackupBusy) {
+            Logger.getLogger().warn("Failed to start deleteOldBackup task because the previous process is not completed");
+            return;
+        }
+
+        new BackupProcess(afterBackup, isAutoBackup, sender).deleteOldBackups(new File(Config.getInstance().getBackupsFolder()), true);
+    }
+
+    public static void setReadOnlySync(CommandSender sender) {
+
+        for (World world : Bukkit.getWorlds()) {
+
+            if (!errorSetWritable) {
+                isAutoSaveEnabled.put(world.getName(), world.isAutoSave());
+            }
+
+            world.setAutoSave(false);
+            if (!world.getWorldFolder().setReadOnly()) {
+                Logger.getLogger().warn("Can not set folder read only!", sender);
+            }
+        }
+    }
+
+    public static void setWritableSync(CommandSender sender, boolean forceWritable) {
+
+        errorSetWritable = false;
+
+        for (World world : Bukkit.getWorlds()) {
+
+            if (!world.getWorldFolder().setWritable(true)) {
+                Logger.getLogger().warn("Can not set " + world.getWorldFolder().getPath() + " writable!", sender);
+                errorSetWritable = true;
+            }
+
+            if (isAutoSaveEnabled.containsKey(world.getName())) {
+                world.setAutoSave(forceWritable || isAutoSaveEnabled.get(world.getName()));
+            }
         }
     }
 }

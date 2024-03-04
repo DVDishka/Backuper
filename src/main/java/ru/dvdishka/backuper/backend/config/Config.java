@@ -24,6 +24,8 @@ public class Config {
     private long lastChange = 0;
 
     private String backupsFolder = "plugins/Backuper/Backups";
+    private List<String> addDirectoryToBackup = new ArrayList<>();
+    private List<String> excludeDirectoryFromBackup = new ArrayList<>();
     private boolean fixedBackupTime = false;
     private boolean autoBackup = true;
     private int backupTime = -1;
@@ -48,14 +50,14 @@ public class Config {
 
     private Config() {}
 
-    public void setConfigField(String path, Object value) {
+    private synchronized void setConfigField(String path, Object value) {
 
         FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
         config.set(path, value);
         try {
             config.save(configFile);
         } catch (Exception e) {
-            Logger.getLogger().warn("Failed to set config field \"" + path + "\" to " + value);
+            Logger.getLogger().warn("Failed to save config");
         }
     }
 
@@ -92,13 +94,15 @@ public class Config {
         this.skipDuplicateBackup = config.getBoolean("skipDuplicateBackup", true);
         this.fixedBackupTime = this.backupTime > -1;
         this.backupsFolder = config.getString("backupsFolder", "plugins/Backuper/Backups");
+        this.addDirectoryToBackup = config.getStringList("addDirectoryToBackup");
+        this.excludeDirectoryFromBackup = config.getStringList("excludeDirectoryFromBackup");
         this.alertTimeBeforeRestart = config.getLong("alertTimeBeforeRestart", 60);
 
         boolean isConfigFileOk = Objects.equals(configVersion, this.configVersion);
 
         List<String> configFields = List.of("backupTime", "backupPeriod", "afterBackup", "maxBackupsNumber",
                 "maxBackupsWeight", "zipArchive", "betterLogging", "autoBackup", "lastBackup", "lastChange",
-                "skipDuplicateBackup", "backupsFolder", "alertTimeBeforeRestart");
+                "skipDuplicateBackup", "backupsFolder", "alertTimeBeforeRestart", "addDirectoryToBackup", "excludeDirectoryFromBackup");
 
         for (String configField : configFields) {
             isConfigFileOk = min(isConfigFileOk, config.contains(configField));
@@ -130,6 +134,8 @@ public class Config {
             newConfig.set("backupsFolder", this.backupsFolder);
             newConfig.set("skipDuplicateBackup", this.skipDuplicateBackup);
             newConfig.set("alertTimeBeforeRestart", this.alertTimeBeforeRestart);
+            newConfig.set("addDirectoryToBackup", this.addDirectoryToBackup);
+            newConfig.set("excludeDirectoryFromBackup", this.excludeDirectoryFromBackup);
 
             try {
 
@@ -138,7 +144,7 @@ public class Config {
             } catch (Exception e) {
 
                 Logger.getLogger().warn("Can not save config file!", sender);
-                Logger.getLogger().devWarn("Initialization", e);
+                Logger.getLogger().warn("Initialization", e);
                 noErrors = false;
             }
         }
@@ -201,6 +207,14 @@ public class Config {
 
     public String getBackupsFolder() {
         return backupsFolder;
+    }
+
+    public List<String> getAddDirectoryToBackup() {
+        return addDirectoryToBackup;
+    }
+
+    public List<String> getExcludeDirectoryFromBackup() {
+        return excludeDirectoryFromBackup;
     }
 
     public String getConfigVersion() {

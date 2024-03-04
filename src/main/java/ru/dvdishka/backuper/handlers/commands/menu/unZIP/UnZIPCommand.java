@@ -88,7 +88,7 @@ public class UnZIPCommand extends Command {
 
                 backup.unlock();
                 Logger.getLogger().warn("The Convert Backup To Folder process has been finished with an exception!", sender);
-                Logger.getLogger().devWarn(this, e);
+                Logger.getLogger().warn(this, e);
             }
         });
     }
@@ -136,7 +136,7 @@ public class UnZIPCommand extends Command {
 
                         backup.unlock();
                         Logger.getLogger().warn("Something went wrong while trying to unpack file", sender);
-                        Logger.getLogger().devWarn(this, e);
+                        Logger.getLogger().warn(this, e);
                         throw new RuntimeException();
                     }
                 });
@@ -151,7 +151,7 @@ public class UnZIPCommand extends Command {
         } catch (Exception e) {
 
             Logger.getLogger().warn("The Unpack task has been finished with an exception!", sender);
-            Logger.getLogger().devWarn(this, e);
+            Logger.getLogger().warn(this, e);
             throw new RuntimeException();
         }
     }
