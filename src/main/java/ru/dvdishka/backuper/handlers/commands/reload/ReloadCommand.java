@@ -2,6 +2,7 @@ package ru.dvdishka.backuper.handlers.commands.reload;
 
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
+import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.utils.Scheduler;
 import ru.dvdishka.backuper.backend.utils.Backup;
 import ru.dvdishka.backuper.backend.utils.Common;
@@ -23,6 +24,10 @@ public class ReloadCommand extends Command {
             returnFailure("Unable to reload plugin while backup process is running!");
             return;
         }
+
+        Config.getInstance().setConfigField("lastBackup", Config.getInstance().getLastBackup());
+        Config.getInstance().setConfigField("lastChange", Config.getInstance().getLastChange());
+
         Initialization.initConfig(new File("plugins/Backuper/config.yml"), sender);
         Scheduler.cancelTasks(Common.plugin);
         Initialization.initAutoBackup();

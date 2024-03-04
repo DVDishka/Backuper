@@ -9,6 +9,11 @@ import ru.dvdishka.backuper.backend.utils.Logger;
 import java.io.File;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+import static com.google.common.collect.Comparators.min;
 
 public class Config {
 
@@ -43,7 +48,7 @@ public class Config {
 
     private Config() {}
 
-    private void setConfigField(String path, Object value) {
+    public void setConfigField(String path, Object value) {
 
         FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
         config.set(path, value);
@@ -56,12 +61,10 @@ public class Config {
 
     public void updateLastChange() {
         this.lastChange = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC);
-        setConfigField("lastChange", lastChange);
     }
 
     public void updateLastBackup() {
         this.lastBackup = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC);
-        setConfigField("lastBackup", lastBackup);
     }
 
     public void load(File configFile, CommandSender sender) {
@@ -72,7 +75,6 @@ public class Config {
         boolean noErrors = true;
 
         String configVersion = config.getString("configVersion");
-        assert configVersion != null;
 
         BackwardsCompatibility.backupPeriodFromHoursToMinutes(config);
         BackwardsCompatibility.fixedBackupTimeToBackupTime(config);
@@ -92,49 +94,20 @@ public class Config {
         this.backupsFolder = config.getString("backupsFolder", "plugins/Backuper/Backups");
         this.alertTimeBeforeRestart = config.getLong("alertTimeBeforeRestart", 60);
 
-        boolean isConfigFileOk = configVersion.equals(this.configVersion);
+        boolean isConfigFileOk = Objects.equals(configVersion, this.configVersion);
 
-        if (!config.contains("backupTime")) {
-            isConfigFileOk = false;
-        }
-        if (!config.contains("backupPeriod")) {
-            isConfigFileOk = false;
-        }
-        if (!config.contains("afterBackup")) {
-            isConfigFileOk = false;
-        }
-        if (!config.contains("maxBackupsNumber")) {
-            isConfigFileOk = false;
-        }
-        if (!config.contains("maxBackupsWeight")) {
-            isConfigFileOk = false;
-        }
-        if (!config.contains("zipArchive")) {
-            isConfigFileOk = false;
-        }
-        if (!config.contains("betterLogging")) {
-            isConfigFileOk = false;
-        }
-        if (!config.contains("autoBackup")) {
-            isConfigFileOk = false;
-        }
-        if (!config.contains("lastBackup")) {
-            isConfigFileOk = false;
-        }
-        if (!config.contains("lastChange")) {
-            isConfigFileOk = false;
-        }
-        if (!config.contains("backupsFolder")) {
-            isConfigFileOk = false;
-        }
-        if (!config.contains("skipDuplicateBackup")) {
-            isConfigFileOk = false;
-        }
-        if (!config.contains("alertTimeBeforeRestart")) {
-            isConfigFileOk = false;
+        List<String> configFields = List.of("backupTime", "backupPeriod", "afterBackup", "maxBackupsNumber",
+                "maxBackupsWeight", "zipArchive", "betterLogging", "autoBackup", "lastBackup", "lastChange",
+                "skipDuplicateBackup", "backupsFolder", "alertTimeBeforeRestart");
+
+        for (String configField : configFields) {
+            isConfigFileOk = min(isConfigFileOk, config.contains(configField));
         }
 
         if (!isConfigFileOk) {
+
+            Logger.getLogger().warn("The config.yml file is damaged, repair...");
+            Logger.getLogger().warn("If the plugin has just been updated, ignore this warning");
 
             if (!configFile.delete()) {
                 Logger.getLogger().warn("Can not delete old config file!", sender);
