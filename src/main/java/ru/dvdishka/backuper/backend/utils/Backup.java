@@ -1,6 +1,9 @@
 package ru.dvdishka.backuper.backend.utils;
 
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import ru.dvdishka.backuper.backend.config.Config;
@@ -172,14 +175,24 @@ public class Backup {
 
             Component message = Component.empty();
 
-            message = message.append(Component.text("---------"))
+            message = message
+                    .append(Component.text("------------------------------------------")
+                            .decorate(TextDecoration.BOLD)
+                            .color(TextColor.color(0xE3A013)))
                     .append(Component.newline());
 
-            message = message.append(Component.text("Server will be restarted in ~" +
-                            timeSeconds + " seconds"))
+            message = message
+                    .append(Component.text("Server will be restarted in "))
+                    .append(Component.text("~" + timeSeconds)
+                            .color(NamedTextColor.RED)
+                            .decorate(TextDecoration.BOLD))
+                    .append(Component.text(" seconds"))
                     .append(Component.newline());
 
-            message = message.append(Component.text("---------"));
+            message = message
+                    .append(Component.text("------------------------------------------")
+                            .decorate(TextDecoration.BOLD)
+                            .color(TextColor.color(0xE3A013)));
 
             player.sendMessage(message);
         }

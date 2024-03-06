@@ -98,6 +98,12 @@ public class Config {
         this.excludeDirectoryFromBackup = config.getStringList("excludeDirectoryFromBackup");
         this.alertTimeBeforeRestart = config.getLong("alertTimeBeforeRestart", 60);
 
+        if (this.alertTimeBeforeRestart >= this.backupPeriod * 60L) {
+            Logger.getLogger().warn("Failed to load config value!");
+            Logger.getLogger().warn("alertTimeBeforeRestart must be < backupPeriod * 60, using backupPeriod * 60 - 1 value...");
+            this.alertTimeBeforeRestart = this.backupPeriod * 60L - 1L;
+        }
+
         boolean isConfigFileOk = Objects.equals(configVersion, this.configVersion);
 
         List<String> configFields = List.of("backupTime", "backupPeriod", "afterBackup", "maxBackupsNumber",
