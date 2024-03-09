@@ -102,6 +102,8 @@ public class UnZIPCommand extends Command implements Task {
 
     public void unPack(Backup backup, CommandSender sender) {
 
+        completedUnZIPTasks.clear();
+
         try (ZipInputStream zipInput = new ZipInputStream(Files.newInputStream(backup.getFile().toPath()))) {
 
             ZipEntry zipEntry;

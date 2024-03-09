@@ -14,6 +14,7 @@ import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.io.FileUtils;
 import org.bukkit.Bukkit;
+import org.bukkit.Utility;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.utils.*;
@@ -88,10 +89,7 @@ class BackupProcess implements Runnable, Task {
 
                             } else {
 
-                                copyFilesInDir(backupDir.toPath().resolve(world.getName()).toFile(), worldDir);
-
-                                // Waiting for all files being copied
-                                while (completedCopyTasks.size() < copyTasksCount) {}
+                                runCopyFilesInDir(backupDir.toPath().resolve(world.getName()).toFile(), worldDir);
                             }
 
                         } catch (Exception e) {
@@ -119,7 +117,7 @@ class BackupProcess implements Runnable, Task {
 
                         } else {
 
-                            copyFilesInDir(backupDir.toPath().resolve(additionalDirectoryToBackupFile.getName()).toFile(), additionalDirectoryToBackupFile);
+                            runCopyFilesInDir(backupDir.toPath().resolve(additionalDirectoryToBackupFile.getName()).toFile(), additionalDirectoryToBackupFile);
                         }
 
                     } catch (Exception e) {
@@ -163,7 +161,9 @@ class BackupProcess implements Runnable, Task {
                             Logger.getLogger().warn(this, e);
                         }
                     } else {
-                        copyFilesInDir(new File(Config.getInstance().getBackupsFolder()).toPath().resolve(backupDir.getName()).toFile(), backupDir);
+
+                        runCopyFilesInDir(new File(Config.getInstance().getBackupsFolder()).toPath().resolve(backupDir.getName()).toFile(), backupDir);
+
                         deleteDir(backupDir);
                     }
                 }
@@ -462,7 +462,19 @@ class BackupProcess implements Runnable, Task {
     private volatile ArrayList<Long> completedCopyTasks = new ArrayList<>();
     private long copyTasksCount = 0;
 
-    private void copyFilesInDir(File destDir, File sourceDir) {
+    private synchronized void runCopyFilesInDir(File destDir, File sourceDir) {
+
+        copyTasksCount = 0;
+        completedCopyTasks.clear();
+
+        unsafeCopyFilesInDir(destDir, sourceDir);
+
+        // Waiting for all files being copied
+        while (completedCopyTasks.size() < copyTasksCount) {}
+    }
+
+    @Utility
+    private void unsafeCopyFilesInDir(File destDir, File sourceDir) {
 
         if (sourceDir.isFile()) {
 
@@ -522,7 +534,7 @@ class BackupProcess implements Runnable, Task {
 
                 if (file.isDirectory()) {
 
-                    copyFilesInDir(destDir.toPath().resolve(file.getName()).toFile(), file);
+                    runCopyFilesInDir(destDir.toPath().resolve(file.getName()).toFile(), file);
 
                 } else if (!file.getName().equals("session.lock")) {
 
