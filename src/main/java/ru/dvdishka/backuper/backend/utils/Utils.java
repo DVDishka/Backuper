@@ -4,6 +4,7 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,17 +21,17 @@ import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import ru.dvdishka.backuper.backend.config.Config;
 
-public class Common {
+public class Utils {
 
     public static Plugin plugin;
     public static final Properties properties = new Properties();
 
     static {
         try {
-            properties.load(Common.class.getClassLoader().getResourceAsStream("project.properties"));
+            properties.load(Utils.class.getClassLoader().getResourceAsStream("project.properties"));
         } catch (Exception e) {
-            Logger.getLogger().devWarn("Common", "Failed to load properties!");
-            Logger.getLogger().warn("Common", e);
+            Logger.getLogger().devWarn(Utils.class, "Failed to load properties!");
+            Logger.getLogger().warn(Utils.class, e);
         }
     }
 
@@ -45,7 +46,7 @@ public class Common {
             getLatestVersionURL = new URL("https://hangar.papermc.io/api/v1/projects/Collagen/Backuper/latestrelease");
         } catch (MalformedURLException e) {
             Logger.getLogger().warn("Failed to check Backuper updates!");
-            Logger.getLogger().warn("Common", e);
+            Logger.getLogger().warn(Utils.class, e);
         }
     }
 
@@ -57,14 +58,15 @@ public class Common {
         return properties.getProperty(property);
     }
 
-    public static long getPathOrFileByteSize(File path) {
+    public static long getFolderOrFileByteSize(File path) {
 
         if (!path.isDirectory()) {
             try {
                 return Files.size(path.toPath());
             } catch (Exception e) {
-                Logger.getLogger().warn("Something went wrong while trying to calculate backup size!");
-                Logger.getLogger().warn("Common", e);
+                Logger.getLogger().warn("Something went wrong while trying to calculate file size!");
+                Logger.getLogger().warn(Utils.class, e);
+                return 0;
             }
         }
 
@@ -72,11 +74,37 @@ public class Common {
 
         if (path.isDirectory()) {
             for (File file : Objects.requireNonNull(path.listFiles())) {
-                size += getPathOrFileByteSize(file);
+                size += getFolderOrFileByteSize(file);
             }
         }
 
         return size;
+    }
+
+    public static boolean isExcludedDirectory(File path, CommandSender sender) {
+
+        boolean isExcludedDirectory = false;
+
+        for (String excludeDirectoryFromBackup : Config.getInstance().getExcludeDirectoryFromBackup()) {
+
+            try {
+
+                File excludeDirectoryFromBackupFile = Paths.get(excludeDirectoryFromBackup).toFile().getCanonicalFile();
+
+                if (excludeDirectoryFromBackupFile.equals(path.getCanonicalFile())) {
+                    isExcludedDirectory = true;
+                }
+
+            } catch (SecurityException e) {
+                Logger.getLogger().warn("Failed to copy file \"" + path.getAbsolutePath() + "\", no access", sender);
+                Logger.getLogger().warn("BackupTask", e);
+            } catch (Exception e) {
+                Logger.getLogger().warn("Something went wrong while trying to copy file \"" + path.getAbsolutePath() + "\"", sender);
+                Logger.getLogger().warn("BackupTask", e);
+            }
+        }
+
+        return isExcludedDirectory;
     }
 
     public static ArrayList<LocalDateTime> getBackups() {

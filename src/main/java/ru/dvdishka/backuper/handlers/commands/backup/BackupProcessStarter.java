@@ -6,7 +6,7 @@ import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.utils.Scheduler;
 import ru.dvdishka.backuper.backend.utils.Backup;
-import ru.dvdishka.backuper.backend.utils.Common;
+import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.backend.utils.Logger;
 
 import java.io.File;
@@ -43,11 +43,11 @@ public class BackupProcessStarter implements Runnable {
 
         try {
 
-            if (isAutoBackup && Backup.isBackupBusy) {
+            if (isAutoBackup && Backup.isLocked()) {
                 Logger.getLogger().warn("Failed to start an automatic backup because the previous process is not completed", sender);
                 return;
             }
-            if (Backup.isBackupBusy) {
+            if (Backup.isLocked()) {
                 Logger.getLogger().warn("Failed to start the backup because the previous process is not completed", sender);
                 return;
             }
@@ -59,8 +59,8 @@ public class BackupProcessStarter implements Runnable {
 
                 if (afterBackup.equals("RESTART")) {
 
-                    Scheduler.getScheduler().runSyncDelayed(Common.plugin, () -> {
-                        Scheduler.cancelTasks(Common.plugin);
+                    Scheduler.getScheduler().runSyncDelayed(Utils.plugin, () -> {
+                        Scheduler.cancelTasks(Utils.plugin);
                         Bukkit.getServer().spigot().restart();
                     }, 20);
 
@@ -74,17 +74,18 @@ public class BackupProcessStarter implements Runnable {
 
             Logger.getLogger().log("Backup process has been started", sender);
 
-            Backup.isBackupBusy = true;
+            BackupProcess backupProcess = new BackupProcess("Backup", afterBackup, isAutoBackup, sender);
+            Backup.lock(backupProcess);
 
-            setReadOnlySync(sender);
+            setWorldsReadOnlySync(sender);
 
-            Scheduler.getScheduler().runAsync(Common.plugin, new BackupProcess(afterBackup, isAutoBackup, sender));
+            Scheduler.getScheduler().runAsync(Utils.plugin, backupProcess);
 
         } catch (Exception e) {
 
-            Backup.isBackupBusy = false;
+            Backup.unlock();
 
-            setWritableSync(sender, false);
+            setWorldsWritableSync(sender, false);
 
             Logger.getLogger().warn("Backup process has been finished with an exception!", sender);
             Logger.getLogger().warn(this, e);
@@ -93,15 +94,19 @@ public class BackupProcessStarter implements Runnable {
 
     public void runDeleteOldBackupsSync() {
 
-        if (Backup.isBackupBusy) {
+        if (Backup.isLocked()) {
             Logger.getLogger().warn("Failed to start deleteOldBackup task because the previous process is not completed");
             return;
         }
 
-        new BackupProcess(afterBackup, isAutoBackup, sender).deleteOldBackups(new File(Config.getInstance().getBackupsFolder()), true);
+        new BackupProcess("DeleteOldBackups", afterBackup, isAutoBackup, sender).deleteOldBackups(new File(Config.getInstance().getBackupsFolder()), true);
     }
 
-    public static void setReadOnlySync(CommandSender sender) {
+    public static void setWorldsReadOnlySync(CommandSender sender, boolean force) {
+
+        if (Config.getInstance().isNotSetReadOnly() && !force) {
+            return;
+        }
 
         for (World world : Bukkit.getWorlds()) {
 
@@ -116,7 +121,30 @@ public class BackupProcessStarter implements Runnable {
         }
     }
 
-    public static void setWritableSync(CommandSender sender, boolean forceWritable) {
+    public static void setWorldsReadOnlySync(CommandSender sender) {
+
+        if (Config.getInstance().isNotSetReadOnly()) {
+            return;
+        }
+
+        for (World world : Bukkit.getWorlds()) {
+
+            if (!errorSetWritable) {
+                isAutoSaveEnabled.put(world.getName(), world.isAutoSave());
+            }
+
+            world.setAutoSave(false);
+            if (!world.getWorldFolder().setReadOnly()) {
+                Logger.getLogger().warn("Can not set folder read only!", sender);
+            }
+        }
+    }
+
+    public static void setWorldsWritableSync(CommandSender sender, boolean force) {
+
+        if (Config.getInstance().isNotSetReadOnly() && !force) {
+            return;
+        }
 
         errorSetWritable = false;
 
@@ -128,7 +156,7 @@ public class BackupProcessStarter implements Runnable {
             }
 
             if (isAutoSaveEnabled.containsKey(world.getName())) {
-                world.setAutoSave(forceWritable || isAutoSaveEnabled.get(world.getName()));
+                world.setAutoSave(force || isAutoSaveEnabled.get(world.getName()));
             }
         }
     }

@@ -6,7 +6,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.utils.Scheduler;
-import ru.dvdishka.backuper.backend.utils.Common;
+import ru.dvdishka.backuper.backend.utils.Task;
+import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.backend.Initialization;
 import ru.dvdishka.backuper.backend.utils.Logger;
 import ru.dvdishka.backuper.handlers.commands.backup.BackupProcessStarter;
@@ -19,7 +20,7 @@ public class Backuper extends JavaPlugin {
 
         CommandAPI.onEnable();
 
-        Common.plugin = this;
+        Utils.plugin = this;
 
         File pluginDir = new File("plugins/Backuper");
         File backupsDir = new File("plugins/Backuper/Backups");
@@ -59,7 +60,7 @@ public class Backuper extends JavaPlugin {
 
     public void onDisable() {
 
-        BackupProcessStarter.setWritableSync(Bukkit.getConsoleSender(), false);
+        BackupProcessStarter.setWorldsWritableSync(Bukkit.getConsoleSender(), false);
         Scheduler.cancelTasks(this);
 
         Config.getInstance().setConfigField("lastBackup", Config.getInstance().getLastBackup());

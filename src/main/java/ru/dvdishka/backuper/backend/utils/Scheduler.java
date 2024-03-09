@@ -12,7 +12,7 @@ public class Scheduler {
     }
 
     public void runSync(Plugin plugin, Runnable task) {
-        if (Common.isFolia) {
+        if (Utils.isFolia) {
             Bukkit.getGlobalRegionScheduler().run(plugin, (scheduledTask) -> task.run());
         } else {
             Bukkit.getScheduler().runTask(plugin, task);
@@ -20,7 +20,7 @@ public class Scheduler {
     }
 
     public void runSyncDelayed(Plugin plugin, Runnable task, long delayTicks) {
-        if (Common.isFolia) {
+        if (Utils.isFolia) {
             Bukkit.getGlobalRegionScheduler().runDelayed(plugin, (scheduledTask) -> task.run(), delayTicks);
         } else {
             Bukkit.getScheduler().runTaskLater(plugin, task, delayTicks);
@@ -28,7 +28,7 @@ public class Scheduler {
     }
 
     public void runSyncRepeatingTask(Plugin plugin, Runnable task, long delayTicks, long periodTicks) {
-        if (Common.isFolia) {
+        if (Utils.isFolia) {
             Bukkit.getGlobalRegionScheduler().runAtFixedRate(plugin, (scheduledTask) -> task.run(), delayTicks, periodTicks);
         } else {
             Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, task, delayTicks, periodTicks);
@@ -36,7 +36,7 @@ public class Scheduler {
     }
 
     public void runAsync(Plugin plugin, Runnable task) {
-        if (Common.isFolia) {
+        if (Utils.isFolia) {
             Bukkit.getAsyncScheduler().runNow(plugin, (scheduledTask) -> task.run());
         } else {
             Bukkit.getScheduler().runTaskAsynchronously(plugin, task);
@@ -45,7 +45,7 @@ public class Scheduler {
 
     @SuppressWarnings("unused")
     public void runAsyncDelayed(Plugin plugin, Runnable task, long delayTicks) {
-        if (Common.isFolia) {
+        if (Utils.isFolia) {
             Bukkit.getAsyncScheduler().runDelayed(plugin, (scheduledTask) -> task.run(), delayTicks * 20, TimeUnit.SECONDS);
         } else {
             Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, task, delayTicks);
@@ -53,7 +53,7 @@ public class Scheduler {
     }
 
     public static void cancelTasks(Plugin plugin) {
-        if (Common.isFolia) {
+        if (Utils.isFolia) {
             Bukkit.getAsyncScheduler().cancelTasks(plugin);
             Bukkit.getGlobalRegionScheduler().cancelTasks(plugin);
         } else {

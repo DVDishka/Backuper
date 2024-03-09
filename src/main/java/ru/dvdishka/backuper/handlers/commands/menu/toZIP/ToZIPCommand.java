@@ -2,11 +2,8 @@ package ru.dvdishka.backuper.handlers.commands.menu.toZIP;
 
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
+import ru.dvdishka.backuper.backend.utils.*;
 import ru.dvdishka.backuper.handlers.commands.Command;
-import ru.dvdishka.backuper.backend.utils.Scheduler;
-import ru.dvdishka.backuper.backend.utils.Backup;
-import ru.dvdishka.backuper.backend.utils.Common;
-import ru.dvdishka.backuper.backend.utils.Logger;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -17,7 +14,11 @@ import java.util.Objects;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-public class ToZIPCommand extends Command {
+public class ToZIPCommand extends Command implements Task {
+
+    private String taskName = "Convert backup to ZIP";
+    private long maxProgress = 0;
+    private volatile long currentProgress = 0;
 
     public ToZIPCommand(CommandSender sender, CommandArguments arguments) {
         super(sender, arguments);
@@ -46,19 +47,22 @@ public class ToZIPCommand extends Command {
             return;
         }
 
-        if (backup.isLocked() || Backup.isBackupBusy) {
+        if (Backup.isLocked() || Backup.isLocked()) {
             cancelButtonSound();
             returnFailure("Blocked by another operation!");
             return;
         }
 
-        backup.lock();
+        Backup.lock(this);
+
+        // Size to ZIP + size to delete (folder)
+        maxProgress = backup.getByteSize() * 2;
 
         try {
 
             ZipOutputStream zip = new ZipOutputStream(Files.newOutputStream(Paths.get(backup.getFile().getPath() + " in progress" + ".zip")));
 
-            Scheduler.getScheduler().runAsync(Common.plugin, () -> {
+            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
 
                 try {
 
@@ -80,25 +84,26 @@ public class ToZIPCommand extends Command {
                     if (!new File(backup.getFile().getPath().replace(".zip", "") + " in progress" + ".zip")
                             .renameTo(new File(backup.getFile().getPath().replace(".zip", "") + ".zip"))) {
                         Logger.getLogger().warn("The Rename \"in progress\" ZIP task has been finished with an exception!", sender);
-                        backup.unlock();
+                        Backup.unlock();
                         throw new RuntimeException();
                     }
                     Logger.getLogger().devLog("The Rename \"in progress\" Folder task has been finished");
 
-                    backup.unlock();
+                    Backup.unlock();
 
                     Logger.getLogger().success("The Convert Backup To ZIP process has been finished successfully", sender);
 
                 } catch (Exception e) {
 
-                    backup.unlock();
+                    Backup.unlock();
+
                     Logger.getLogger().warn("The Convert Backup To ZIP process has been finished with an exception!", sender);
                     Logger.getLogger().warn(this, e);
                 }
             });
         } catch (Exception e) {
 
-            backup.unlock();
+            Backup.unlock();
         }
     }
 
@@ -128,6 +133,8 @@ public class ToZIPCommand extends Command {
                     zip.closeEntry();
                     fileInputStream.close();
 
+                    incrementCurrentProgress(Utils.getFolderOrFileByteSize(file));
+
                 } catch (Exception e) {
 
                     Logger.getLogger().warn("Something went wrong while trying to put file in ZIP! " + file.getName(), sender);
@@ -150,6 +157,8 @@ public class ToZIPCommand extends Command {
 
                 } else {
 
+                    incrementCurrentProgress(Utils.getFolderOrFileByteSize(file));
+
                     if (!file.delete()) {
 
                         Logger.getLogger().warn("Can not delete file " + file.getName(), sender);
@@ -161,5 +170,19 @@ public class ToZIPCommand extends Command {
                 Logger.getLogger().warn("Can not delete directory " + dir.getName(), sender);
             }
         }
+    }
+
+    private synchronized void incrementCurrentProgress(long progress) {
+        currentProgress += progress;
+    }
+
+    @Override
+    public String getTaskName() {
+        return taskName;
+    }
+
+    @Override
+    public long getTaskProgress() {
+        return (long) (((double) currentProgress) / ((double) maxProgress) * 100.0);
     }
 }

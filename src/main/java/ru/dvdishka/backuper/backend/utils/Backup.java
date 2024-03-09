@@ -6,6 +6,7 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
 
@@ -20,7 +21,8 @@ public class Backup {
     private LocalDateTime backupLocalDateTime;
 
     public static DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
-    public static volatile boolean isBackupBusy = false;
+    private static volatile boolean isBackupBusy = false;
+    private static Task currentTask = null;
 
     public Backup(String backupName) {
 
@@ -29,6 +31,10 @@ public class Backup {
         }
         this.backupName = backupName;
         this.backupLocalDateTime = LocalDateTime.parse(backupName, dateTimeFormatter);
+    }
+
+    public static Task getCurrentTask() {
+        return currentTask;
     }
 
     public String getName() {
@@ -50,13 +56,27 @@ public class Backup {
             backupFilePath = backupsFolder.toPath().resolve(backupName).toFile().getPath() + ".zip";
         }
 
-        long backupSize = Common.getPathOrFileByteSize(new File(backupFilePath));
+        long backupSize = Utils.getFolderOrFileByteSize(new File(backupFilePath));
 
         if (backupSize != 0) {
             backupSize /= (1024 * 1024);
         }
 
         return backupSize;
+    }
+
+    public long getByteSize() {
+
+        File backupsFolder = new File(Config.getInstance().getBackupsFolder());
+        String backupFilePath;
+
+        if (backupsFolder.toPath().resolve(backupName).toFile().exists()) {
+            backupFilePath = backupsFolder.toPath().resolve(backupName).toFile().getPath();
+        } else {
+            backupFilePath = backupsFolder.toPath().resolve(backupName).toFile().getPath() + ".zip";
+        }
+
+        return Utils.getFolderOrFileByteSize(new File(backupFilePath));
     }
 
     public String zipOrFolder() {
@@ -92,18 +112,17 @@ public class Backup {
         return null;
     }
 
-    public void lock() {
-
+    public static void lock(Task task) {
         isBackupBusy = true;
+        currentTask = task;
     }
 
-    public void unlock() {
-
+    public static void unlock() {
         isBackupBusy = false;
+        currentTask = null;
     }
 
-    public boolean isLocked() {
-
+    public static boolean isLocked() {
         return isBackupBusy;
     }
 

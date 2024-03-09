@@ -29,5 +29,7 @@ permissions:
         default: op
       backuper.config:
         default: op
+      backuper.status:
+        default: op
       backuper.backup_alert:
         default: true

@@ -2,16 +2,17 @@ package ru.dvdishka.backuper.handlers.commands.menu.delete;
 
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
+import ru.dvdishka.backuper.backend.utils.*;
 import ru.dvdishka.backuper.handlers.commands.Command;
-import ru.dvdishka.backuper.backend.utils.Scheduler;
-import ru.dvdishka.backuper.backend.utils.Backup;
-import ru.dvdishka.backuper.backend.utils.Common;
-import ru.dvdishka.backuper.backend.utils.Logger;
 
 import java.io.File;
 import java.util.Objects;
 
-public class DeleteCommand extends Command {
+public class DeleteCommand extends Command implements Task {
+
+    private String taskName = "Delete backup";
+    private long maxProgress = 0;
+    private volatile long currentProgress = 0;
 
     private boolean isDeleteSuccessful = true;
 
@@ -34,7 +35,7 @@ public class DeleteCommand extends Command {
 
         Backup backup = new Backup(backupName);
 
-        if (backup.isLocked() || Backup.isBackupBusy) {
+        if (Backup.isLocked() || Backup.isLocked()) {
             cancelButtonSound();
             returnFailure("Backup is blocked by another operation!");
             return;
@@ -42,22 +43,23 @@ public class DeleteCommand extends Command {
 
         File backupFile = backup.getFile();
 
-        backup.lock();
+        Backup.lock(this);
+        maxProgress = backup.getByteSize();
 
         if (backup.zipOrFolder().equals("(ZIP)")) {
 
-            Scheduler.getScheduler().runAsync(Common.plugin, () -> {
+            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
                 if (backupFile.delete()) {
                     returnSuccess("Backup has been deleted successfully");
                 } else {
                     returnFailure("Backup " + backupName + " can not be deleted!");
                 }
-                backup.unlock();
+                Backup.unlock();
             });
 
         } else {
 
-            Scheduler.getScheduler().runAsync(Common.plugin, () -> {
+            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
                 deleteDir(backupFile);
                 if (!isDeleteSuccessful) {
                     returnFailure("Delete task has been finished with an exception!");
@@ -81,6 +83,8 @@ public class DeleteCommand extends Command {
 
                 } else {
 
+                    incrementCurrentProgress(Utils.getFolderOrFileByteSize(file));
+
                     if (!file.delete()) {
 
                         isDeleteSuccessful = false;
@@ -94,5 +98,19 @@ public class DeleteCommand extends Command {
                 Logger.getLogger().devWarn(this, "Can not delete directory " + dir.getName());
             }
         }
+    }
+
+    private synchronized void incrementCurrentProgress(long progress) {
+        currentProgress += progress;
+    }
+
+    @Override
+    public String getTaskName() {
+        return taskName;
+    }
+
+    @Override
+    public long getTaskProgress() {
+        return (long) (((double) currentProgress) / ((double) maxProgress) * 100.0);
     }
 }

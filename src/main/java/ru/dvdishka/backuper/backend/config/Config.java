@@ -3,7 +3,7 @@ package ru.dvdishka.backuper.backend.config;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import ru.dvdishka.backuper.backend.utils.Common;
+import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.backend.utils.Logger;
 
 import java.io.File;
@@ -37,6 +37,7 @@ public class Config {
     private boolean zipArchive = true;
     private long alertTimeBeforeRestart = 60;
     private boolean betterLogging = false;
+    private boolean notSetReadOnly = false;
 
     private static Config instance = null;
 
@@ -97,6 +98,7 @@ public class Config {
         this.addDirectoryToBackup = config.getStringList("addDirectoryToBackup");
         this.excludeDirectoryFromBackup = config.getStringList("excludeDirectoryFromBackup");
         this.alertTimeBeforeRestart = config.getLong("alertTimeBeforeRestart", 60);
+        this.notSetReadOnly = config.getBoolean("notSetReadOnly", false);
 
         if (this.alertTimeBeforeRestart >= this.backupPeriod * 60L) {
             Logger.getLogger().warn("Failed to load config value!");
@@ -108,7 +110,8 @@ public class Config {
 
         List<String> configFields = List.of("backupTime", "backupPeriod", "afterBackup", "maxBackupsNumber",
                 "maxBackupsWeight", "zipArchive", "betterLogging", "autoBackup", "lastBackup", "lastChange",
-                "skipDuplicateBackup", "backupsFolder", "alertTimeBeforeRestart", "addDirectoryToBackup", "excludeDirectoryFromBackup");
+                "skipDuplicateBackup", "backupsFolder", "alertTimeBeforeRestart", "addDirectoryToBackup",
+                "excludeDirectoryFromBackup", "notSetReadOnly");
 
         for (String configField : configFields) {
             isConfigFileOk = min(isConfigFileOk, config.contains(configField));
@@ -124,7 +127,7 @@ public class Config {
                 noErrors = false;
             }
 
-            Common.plugin.saveDefaultConfig();
+            Utils.plugin.saveDefaultConfig();
             FileConfiguration newConfig = YamlConfiguration.loadConfiguration(configFile);
 
             newConfig.set("backupTime", this.backupTime);
@@ -142,6 +145,7 @@ public class Config {
             newConfig.set("alertTimeBeforeRestart", this.alertTimeBeforeRestart);
             newConfig.set("addDirectoryToBackup", this.addDirectoryToBackup);
             newConfig.set("excludeDirectoryFromBackup", this.excludeDirectoryFromBackup);
+            newConfig.set("notSetReadOnly", this.notSetReadOnly);
 
             try {
 
@@ -233,5 +237,9 @@ public class Config {
 
     public FileConfiguration getFileConfiguration() {
         return YamlConfiguration.loadConfiguration(configFile);
+    }
+
+    public boolean isNotSetReadOnly() {
+        return notSetReadOnly;
     }
 }

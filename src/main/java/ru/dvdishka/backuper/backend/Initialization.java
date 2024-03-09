@@ -17,7 +17,7 @@ import org.bukkit.event.server.ServerLoadEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.utils.Backup;
-import ru.dvdishka.backuper.backend.utils.Common;
+import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.backend.utils.Logger;
 import ru.dvdishka.backuper.handlers.WorldChangeCatcher;
 import ru.dvdishka.backuper.backend.utils.Scheduler;
@@ -33,6 +33,7 @@ import ru.dvdishka.backuper.handlers.commands.Permissions;
 import ru.dvdishka.backuper.handlers.commands.backup.BackupCommand;
 import ru.dvdishka.backuper.handlers.commands.list.ListCommand;
 import ru.dvdishka.backuper.handlers.commands.backup.BackupProcessStarter;
+import ru.dvdishka.backuper.handlers.commands.status.StatusCommand;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -51,12 +52,12 @@ public class Initialization implements Listener {
 
     public static void initBStats(JavaPlugin plugin) {
         @SuppressWarnings("unused")
-        Metrics bStats = new Metrics(plugin, Common.bStatsId);
+        Metrics bStats = new Metrics(plugin, Utils.bStatsId);
     }
 
     public static void initAutoBackup() {
 
-        Scheduler.getScheduler().runAsync(Common.plugin, () -> {
+        Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
 
             new BackupProcessStarter("NOTHING").runDeleteOldBackupsSync();
 
@@ -87,7 +88,7 @@ public class Initialization implements Listener {
                     long firstAlertDelay = max((delay - Config.getInstance().getAlertTimeBeforeRestart()) * 20, 1);
                     long alertTime = min(Config.getInstance().getAlertTimeBeforeRestart(), delay);
 
-                    Scheduler.getScheduler().runSyncDelayed(Common.plugin, () -> {
+                    Scheduler.getScheduler().runSyncDelayed(Utils.plugin, () -> {
 
                         Backup.sendBackupAlert(alertTime, Config.getInstance().getAfterBackup());
 
@@ -95,11 +96,11 @@ public class Initialization implements Listener {
 
                     long secondAlertDelay = max((delay + Config.getInstance().getBackupPeriod() * 60L - Config.getInstance().getAlertTimeBeforeRestart()) * 20, 1);
 
-                    Scheduler.getScheduler().runSyncRepeatingTask(Common.plugin, () -> {
+                    Scheduler.getScheduler().runSyncRepeatingTask(Utils.plugin, () -> {
                         Backup.sendBackupAlert(Config.getInstance().getAlertTimeBeforeRestart(), Config.getInstance().getAfterBackup());
                     }, secondAlertDelay, Config.getInstance().getBackupPeriod() * 60L * 20L);
                 }
-                Scheduler.getScheduler().runSyncRepeatingTask(Common.plugin, new BackupProcessStarter(Config.getInstance().getAfterBackup(), true), delay * 20, Config.getInstance().getBackupPeriod() * 60L * 20L);
+                Scheduler.getScheduler().runSyncRepeatingTask(Utils.plugin, new BackupProcessStarter(Config.getInstance().getAfterBackup(), true), delay * 20, Config.getInstance().getBackupPeriod() * 60L * 20L);
             }
         });
     }
@@ -114,7 +115,7 @@ public class Initialization implements Listener {
 
             try {
 
-                Common.plugin.saveDefaultConfig();
+                Utils.plugin.saveDefaultConfig();
                 Config.getInstance().load(configFile, sender);
 
             } catch (Exception e) {
@@ -134,7 +135,7 @@ public class Initialization implements Listener {
             if (sender.hasPermission(Permissions.BACKUP.getPermission())) {
                 new BackupCommand(sender, args).execute();
             } else {
-                Common.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                Utils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
             }
         })
 
@@ -220,7 +221,7 @@ public class Initialization implements Listener {
 
                         .then(new TextArgument("backupName").includeSuggestions(ArgumentSuggestions.stringCollection((info) -> {
 
-                            ArrayList<LocalDateTime> backups = Common.getBackups();
+                            ArrayList<LocalDateTime> backups = Utils.getBackups();
                             ru.dvdishka.backuper.backend.utils.Backup.sortLocalDateTimeDecrease(backups);
 
                             ArrayList<String> backupSuggestions = new ArrayList<>();
@@ -245,7 +246,7 @@ public class Initialization implements Listener {
                                                         if (sender.hasPermission(Permissions.DELETE.getPermission())) {
                                                             new DeleteConfirmationCommand(sender, args).execute();
                                                         } else {
-                                                            Common.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                            Utils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                         }
                                                     }
 
@@ -253,7 +254,7 @@ public class Initialization implements Listener {
                                                         if (sender.hasPermission(Permissions.DELETE.getPermission())) {
                                                             new DeleteCommand(sender, args).execute();
                                                         } else {
-                                                            Common.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                            Utils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                         }
                                                     }
 
@@ -261,7 +262,7 @@ public class Initialization implements Listener {
                                                         if (sender.hasPermission(Permissions.TO_ZIP.getPermission())) {
                                                             new ToZIPConfirmationCommand(sender, args).execute();
                                                         } else {
-                                                            Common.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                            Utils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                         }
                                                     }
 
@@ -269,7 +270,7 @@ public class Initialization implements Listener {
                                                         if (sender.hasPermission(Permissions.TO_ZIP.getPermission())) {
                                                             new ToZIPCommand(sender, args).execute();
                                                         } else {
-                                                            Common.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                            Utils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                         }
                                                     }
 
@@ -277,7 +278,7 @@ public class Initialization implements Listener {
                                                         if (sender.hasPermission(Permissions.UNZIP.getPermission())) {
                                                             new UnZIPConfirmationCommand(sender, args).execute();
                                                         } else {
-                                                            Common.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                            Utils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                         }
                                                     }
 
@@ -285,7 +286,7 @@ public class Initialization implements Listener {
                                                         if (sender.hasPermission(Permissions.UNZIP.getPermission())) {
                                                             new UnZIPCommand(sender, args).execute();
                                                         } else {
-                                                            Common.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                            Utils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                         }
                                                     }
                                                 })
@@ -294,28 +295,41 @@ public class Initialization implements Listener {
                 )
         ;
         backupMenuCommandTree.register();
+
+        CommandTree backupStatusCommandTree = new CommandTree("backup");
+
+        backupStatusCommandTree.then(new LiteralArgument("status")
+                .withPermission(Permissions.STATUS.getPermission())
+
+                .executes((sender, args) -> {
+
+                    new StatusCommand(sender, args).execute();
+                })
+        );
+
+        backupStatusCommandTree.register();
     }
 
     public static void initEventHandlers() {
 
-        Bukkit.getPluginManager().registerEvents(new Initialization(), Common.plugin);
-        Bukkit.getPluginManager().registerEvents(new WorldChangeCatcher(), Common.plugin);
+        Bukkit.getPluginManager().registerEvents(new Initialization(), Utils.plugin);
+        Bukkit.getPluginManager().registerEvents(new WorldChangeCatcher(), Utils.plugin);
     }
 
     public static void checkDependencies() {
 
         try {
             Class.forName("io.papermc.paper.threadedregions.scheduler.EntityScheduler");
-            Common.isFolia = true;
+            Utils.isFolia = true;
             Logger.getLogger().devLog("Folia/Paper(1.20+) has been detected!");
         } catch (Exception e) {
-            Common.isFolia = false;
+            Utils.isFolia = false;
             Logger.getLogger().devLog("Folia/Paper(1.20+) has not been detected!");
         }
     }
 
     public static void checkOperatingSystem() {
-        if (Common.isWindows) {
+        if (Utils.isWindows) {
             ru.dvdishka.backuper.backend.utils.Backup.dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH;mm;ss");
         }
     }
@@ -324,7 +338,7 @@ public class Initialization implements Listener {
 
         try {
 
-            HttpURLConnection connection = (HttpURLConnection) Common.getLatestVersionURL.openConnection();
+            HttpURLConnection connection = (HttpURLConnection) Utils.getLatestVersionURL.openConnection();
             connection.setRequestMethod("GET");
 
             BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
@@ -336,15 +350,15 @@ public class Initialization implements Listener {
             }
             in.close();
 
-            if (response.toString().equals(Common.getProperty("version"))) {
-                Common.isUpdatedToLatest = true;
+            if (response.toString().equals(Utils.getProperty("version"))) {
+                Utils.isUpdatedToLatest = true;
                 Logger.getLogger().log("You are using the latest version of Backuper!");
             } else {
 
-                Common.isUpdatedToLatest = false;
+                Utils.isUpdatedToLatest = false;
 
                 String message = "You are using an outdated version of Backuper, please update it to the latest and check the changelist!";
-                for (String downloadLink : Common.downloadLinks) {
+                for (String downloadLink : Utils.downloadLinks) {
                     message = message.concat("\nDownload link: " + downloadLink);
                 }
 
@@ -361,7 +375,7 @@ public class Initialization implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
 
-        if (event.getPlayer().isOp() && !Common.isUpdatedToLatest) {
+        if (event.getPlayer().isOp() && !Utils.isUpdatedToLatest) {
 
             Component message = Component.empty();
 
@@ -377,12 +391,12 @@ public class Initialization implements Listener {
                             .color(NamedTextColor.RED));
 
             int downloadLLinkNumber = 0;
-            for (String downloadLink : Common.downloadLinks) {
+            for (String downloadLink : Utils.downloadLinks) {
 
                 message = message.append(Component.newline());
 
                 message = message
-                        .append(Component.text("Download link: " + Common.downloadLinksName.get(downloadLLinkNumber))
+                        .append(Component.text("Download link: " + Utils.downloadLinksName.get(downloadLLinkNumber))
                                 .clickEvent(ClickEvent.openUrl(downloadLink))
                                 .decorate(TextDecoration.UNDERLINED));
 

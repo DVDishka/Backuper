@@ -7,7 +7,7 @@ import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.utils.Backup;
 import ru.dvdishka.backuper.backend.utils.Logger;
 import ru.dvdishka.backuper.handlers.commands.Command;
-import ru.dvdishka.backuper.backend.utils.Common;
+import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.backend.utils.Scheduler;
 
 import static com.google.common.primitives.Longs.min;
@@ -33,7 +33,7 @@ public class BackupCommand extends Command {
 
     public void execute() {
 
-        if (ru.dvdishka.backuper.backend.utils.Backup.isBackupBusy) {
+        if (ru.dvdishka.backuper.backend.utils.Backup.isLocked()) {
             returnFailure("Blocked by another operation!");
             return;
         }
@@ -45,14 +45,14 @@ public class BackupCommand extends Command {
 
         if (Config.getInstance().getAlertTimeBeforeRestart() != -1) {
 
-            Scheduler.getScheduler().runSyncDelayed(Common.plugin, () -> {
+            Scheduler.getScheduler().runSyncDelayed(Utils.plugin, () -> {
 
                 Backup.sendBackupAlert(min(Config.getInstance().getAlertTimeBeforeRestart(), delay), afterBackup);
 
             }, max((delay - Config.getInstance().getAlertTimeBeforeRestart()) * 20, 1));
         }
 
-        Scheduler.getScheduler().runSyncDelayed(Common.plugin, new BackupProcessStarter(afterBackup, sender), delay * 20);
+        Scheduler.getScheduler().runSyncDelayed(Utils.plugin, new BackupProcessStarter(afterBackup, sender), delay * 20);
 
         if (arguments.get("delay") != null) {
             returnSuccess("Backup process will be started in " + delay + " seconds");

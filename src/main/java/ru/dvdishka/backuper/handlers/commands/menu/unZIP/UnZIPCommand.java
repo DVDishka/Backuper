@@ -2,11 +2,9 @@ package ru.dvdishka.backuper.handlers.commands.menu.unZIP;
 
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
+import ru.dvdishka.backuper.Backuper;
+import ru.dvdishka.backuper.backend.utils.*;
 import ru.dvdishka.backuper.handlers.commands.Command;
-import ru.dvdishka.backuper.backend.utils.Scheduler;
-import ru.dvdishka.backuper.backend.utils.Backup;
-import ru.dvdishka.backuper.backend.utils.Common;
-import ru.dvdishka.backuper.backend.utils.Logger;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -15,7 +13,13 @@ import java.util.ArrayList;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-public class UnZIPCommand extends Command {
+import static java.lang.Long.min;
+
+public class UnZIPCommand extends Command implements Task {
+
+    private String taskName = "Convert backup to folder";
+    private long maxProgress = 0;
+    private volatile long currentProgress = 0;
 
     private volatile ArrayList<Integer> completedUnZIPTasks = new ArrayList<>();
 
@@ -46,15 +50,16 @@ public class UnZIPCommand extends Command {
             return;
         }
 
-        if (backup.isLocked() || Backup.isBackupBusy) {
+        if (Backup.isLocked() || Backup.isLocked()) {
             cancelButtonSound();
             returnFailure("Blocked by another operation!");
             return;
         }
 
-        backup.lock();
+        Backup.lock(this);
+        maxProgress = backup.getByteSize() * 2;
 
-        Scheduler.getScheduler().runAsync(Common.plugin, () -> {
+        Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
 
             try {
 
@@ -64,9 +69,10 @@ public class UnZIPCommand extends Command {
                 unPack(backup, sender);
 
                 Logger.getLogger().devLog("The Delete Old Backup ZIP task has been started");
+                incrementCurrentProgress(maxProgress / 2);
                 if (!backup.getZIPFile().delete()) {
                     Logger.getLogger().warn("The Delete Old Backup ZIP task has been finished with an exception", sender);
-                    backup.unlock();
+                    Backup.unlock();
                     throw new RuntimeException();
                 }
                 Logger.getLogger().devLog("The Delete Old Backup ZIP task has been finished");
@@ -75,18 +81,19 @@ public class UnZIPCommand extends Command {
                 if (!new File(backup.getFile().getPath().replace(".zip", "") + " in progress")
                         .renameTo(new File(backup.getFile().getPath().replace(".zip", "")))) {
                     Logger.getLogger().warn("The Rename \"in progress\" Folder task has been finished with an exception!", sender);
-                    backup.unlock();
+                    Backup.unlock();
                     throw new RuntimeException();
                 }
                 Logger.getLogger().devLog("The Rename \"in progress\" Folder task has been finished");
 
-                backup.unlock();
+                Backup.unlock();
 
                 Logger.getLogger().success("The Convert Backup To Folder process has been finished successfully", sender);
 
             } catch (Exception e) {
 
-                backup.unlock();
+                Backup.unlock();
+
                 Logger.getLogger().warn("The Convert Backup To Folder process has been finished with an exception!", sender);
                 Logger.getLogger().warn(this, e);
             }
@@ -114,7 +121,7 @@ public class UnZIPCommand extends Command {
 
                 final int taskID = iterationNumber;
 
-                Scheduler.getScheduler().runAsync(Common.plugin, () -> {
+                Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
 
                     try {
 
@@ -125,7 +132,8 @@ public class UnZIPCommand extends Command {
 
                         FileOutputStream outputStream = new FileOutputStream(new File(backup.getFile().getPath().replace(".zip", "") + " in progress").toPath().resolve(name).toFile());
                         for (int c : content) {
-                                outputStream.write(c);
+                            outputStream.write(c);
+                            incrementCurrentProgress(1);
                         }
                         outputStream.flush();
                         outputStream.close();
@@ -134,7 +142,7 @@ public class UnZIPCommand extends Command {
 
                     } catch (Exception e) {
 
-                        backup.unlock();
+                        Backup.unlock();
                         Logger.getLogger().warn("Something went wrong while trying to unpack file", sender);
                         Logger.getLogger().warn(this, e);
                         throw new RuntimeException();
@@ -154,5 +162,19 @@ public class UnZIPCommand extends Command {
             Logger.getLogger().warn(this, e);
             throw new RuntimeException();
         }
+    }
+
+    private synchronized void incrementCurrentProgress(long progress) {
+        currentProgress += progress;
+    }
+
+    @Override
+    public String getTaskName() {
+        return taskName;
+    }
+
+    @Override
+    public long getTaskProgress() {
+        return min((long) (((double) currentProgress) / ((double) maxProgress) * 100.0), 100);
     }
 }

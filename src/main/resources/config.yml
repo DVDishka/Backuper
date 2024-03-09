@@ -37,3 +37,5 @@ alertTimeBeforeRestart: 60
 
 # (true/false) Better logging (Some statistic and other information for debugging, you probably don't need it)
 betterLogging: false
+# Backuper marks all world folders as Read Only to prevent folder changing that may cause backup crash. To disable this feature set notSetReadOnly = true
+notSetReadOnly: false

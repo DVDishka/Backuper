@@ -33,7 +33,7 @@ public class DeleteConfirmationCommand extends Command {
 
         Backup backup = new Backup(backupName);
 
-        if (backup.isLocked() || Backup.isBackupBusy) {
+        if (Backup.isLocked() || Backup.isLocked()) {
             cancelButtonSound();
             returnFailure("Backup is blocked by another operation!");
             return;

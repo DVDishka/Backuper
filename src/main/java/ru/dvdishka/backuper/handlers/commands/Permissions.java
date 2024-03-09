@@ -11,7 +11,8 @@ public enum Permissions {
     TO_ZIP("backuper.tozip"),
     UNZIP("backuper.unzip"),
     CONFIG("backuper.config"),
-    ALERT("backuper.backup_alert");
+    ALERT("backuper.backup_alert"),
+    STATUS("backuper.status");
 
     private final String permission;
 

@@ -42,7 +42,7 @@ public class ToZIPConfirmationCommand extends Command {
             return;
         }
 
-        if (backup.isLocked() || Backup.isBackupBusy) {
+        if (Backup.isLocked() || Backup.isLocked()) {
             cancelButtonSound();
             returnFailure("Backup is blocked by another operation!");
             return;

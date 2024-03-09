@@ -42,7 +42,7 @@ public class UnZIPConfirmationCommand extends Command {
             return;
         }
 
-        if (backup.isLocked() || Backup.isBackupBusy) {
+        if (backup.isLocked() || Backup.isLocked()) {
             cancelButtonSound();
             returnFailure("Backup is blocked by another operation!");
             return;

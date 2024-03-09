@@ -16,22 +16,34 @@ import org.apache.commons.io.FileUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
-import ru.dvdishka.backuper.backend.utils.Backup;
-import ru.dvdishka.backuper.backend.utils.Common;
+import ru.dvdishka.backuper.backend.utils.*;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.utils.Logger;
-import ru.dvdishka.backuper.backend.utils.Scheduler;
 
-class BackupProcess implements Runnable {
+class BackupProcess implements Runnable, Task {
 
     private final String afterBackup;
     private final CommandSender sender;
     private final boolean isAutoBackup;
+    private volatile long maxProgress = 0;
+    private volatile long currentProgress = 0;
 
-    BackupProcess(String afterBackup, boolean isAutoBackup, CommandSender sender) {
+    private final String taskName;
+
+    BackupProcess(String taskName, String afterBackup, boolean isAutoBackup, CommandSender sender) {
+        this.taskName = taskName;
         this.afterBackup = afterBackup;
         this.isAutoBackup = isAutoBackup;
         this.sender = sender;
+    }
+
+    @Override
+    public String getTaskName() {
+        return taskName;
+    }
+
+    @Override
+    public long getTaskProgress() {
+        return (long) (((double) currentProgress) / ((double) maxProgress) * 100.0);
     }
 
     public void run() {
@@ -41,6 +53,8 @@ class BackupProcess implements Runnable {
             File backupDir = new File("plugins/Backuper/Backups/" +
                     LocalDateTime.now().format(Backup.dateTimeFormatter) + " in progress");
             File backupsDir = new File(Config.getInstance().getBackupsFolder());
+
+            maxProgress = calculateMaxProgress();
 
             {
                 Logger.getLogger().devLog("Copy/Zip task has been started");
@@ -90,14 +104,7 @@ class BackupProcess implements Runnable {
                     try {
 
                         File additionalDirectoryToBackupFile = Paths.get(additionalDirectoryToBackup).toFile();
-                        boolean isExcludedDirectory = false;
-
-                        for (String excludeDirectoryFromBackup : Config.getInstance().getExcludeDirectoryFromBackup()) {
-                            if (additionalDirectoryToBackupFile.getCanonicalFile().equals(new File(excludeDirectoryFromBackup).getCanonicalFile())) {
-                                isExcludedDirectory = true;
-                                break;
-                            }
-                        }
+                        boolean isExcludedDirectory = Utils.isExcludedDirectory(additionalDirectoryToBackupFile, sender);
 
                         if (isExcludedDirectory) {
                             continue;
@@ -128,13 +135,14 @@ class BackupProcess implements Runnable {
 
             {
                 Logger.getLogger().devLog("Set writable task has been started");
-                BackupProcessStarter.setWritableSync(sender, false);
+                BackupProcessStarter.setWorldsWritableSync(sender, false);
                 Logger.getLogger().devLog("Set writable task has been finished");
             }
 
             {
                 Logger.getLogger().devLog("Move task has been started");
-                if (!Config.getInstance().getBackupsFolder().equals("plugins/Backuper/Backups")) {
+                if (!new File(Config.getInstance().getBackupsFolder()).getCanonicalFile()
+                        .equals(new File("plugins/Backuper/Backups").getCanonicalFile())) {
 
                     if (Config.getInstance().isZipArchive()) {
                         try {
@@ -187,12 +195,12 @@ class BackupProcess implements Runnable {
 
             Logger.getLogger().success("Backup process has been finished successfully!", sender);
 
-            Backup.isBackupBusy = false;
+            Backup.unlock();
 
             if (afterBackup.equals("RESTART")) {
 
-                Scheduler.getScheduler().runSyncDelayed(Common.plugin, () -> {
-                    Scheduler.cancelTasks(Common.plugin);
+                Scheduler.getScheduler().runSyncDelayed(Utils.plugin, () -> {
+                    Scheduler.cancelTasks(Utils.plugin);
                     Bukkit.getServer().spigot().restart();
                 }, 20);
 
@@ -204,9 +212,9 @@ class BackupProcess implements Runnable {
 
         } catch (Exception e) {
 
-            BackupProcessStarter.setWritableSync(sender, false);
+            BackupProcessStarter.setWorldsWritableSync(sender, false);
 
-            Backup.isBackupBusy = false;
+            Backup.unlock();
 
             Logger.getLogger().warn("The Backup process has been finished with an exception!", sender);
             Logger.getLogger().warn(this, e);
@@ -215,14 +223,14 @@ class BackupProcess implements Runnable {
 
     public void deleteOldBackups(File backupsDir, boolean onlyTask) {
 
-        Backup.isBackupBusy = true;
+        Backup.lock(this);
 
         try {
             if (Config.getInstance().getBackupsNumber() != 0 && backupsDir.listFiles() != null) {
 
                 Logger.getLogger().devLog("Delete Old Backups 1 task has been started");
 
-                ArrayList<LocalDateTime> backups = Common.getBackups();
+                ArrayList<LocalDateTime> backups = Utils.getBackups();
                 Backup.sortLocalDateTime(backups);
 
                 int backupsToDelete = backups.size() - Config.getInstance().getBackupsNumber();
@@ -274,7 +282,7 @@ class BackupProcess implements Runnable {
 
                 if (backupsFolderWeight > Config.getInstance().getBackupsWeight() && backupsDir.listFiles() != null) {
 
-                    ArrayList<LocalDateTime> backups = Common.getBackups();
+                    ArrayList<LocalDateTime> backups = Utils.getBackups();
                     Backup.sortLocalDateTime(backups);
 
                     long bytesToDelete = backupsFolderWeight - Config.getInstance().getBackupsWeight();
@@ -322,12 +330,12 @@ class BackupProcess implements Runnable {
 
             Logger.getLogger().devLog("Delete old backups 2 task has been finished");
             if (onlyTask) {
-                Backup.isBackupBusy = false;
+                Backup.unlock();
             }
         } catch (Exception e) {
 
             if (onlyTask) {
-                Backup.isBackupBusy = false;
+                Backup.unlock();
             }
             Logger.getLogger().warn(BackupProcess.class, e);
         }
@@ -372,11 +380,12 @@ class BackupProcess implements Runnable {
                 int length;
 
                 while ((length = fileInputStream.read(buffer)) > 0) {
-
                     zip.write(buffer, 0, length);
                 }
                 zip.closeEntry();
                 fileInputStream.close();
+
+                incrementBackuppedByteSize(Files.size(sourceDir.toPath()));
 
             } catch (Exception e) {
 
@@ -391,26 +400,7 @@ class BackupProcess implements Runnable {
 
         for (File file : sourceDir.listFiles()) {
 
-            boolean isExcludedDirectory = false;
-
-            for (String excludeDirectoryFromBackup : Config.getInstance().getExcludeDirectoryFromBackup()) {
-
-                try {
-
-                    File excludeDirectoryFromBackupFile = Paths.get(excludeDirectoryFromBackup).toFile().getCanonicalFile();
-
-                    if (excludeDirectoryFromBackupFile.equals(file.getCanonicalFile())) {
-                        isExcludedDirectory = true;
-                    }
-
-                } catch (SecurityException e) {
-                    Logger.getLogger().warn("Failed to copy file \"" + file.getAbsolutePath() + "\", no access", sender);
-                    Logger.getLogger().warn("BackupTask", e);
-                } catch (Exception e) {
-                    Logger.getLogger().warn("Something went wrong while trying to copy file \"" + file.getAbsolutePath() + "\"", sender);
-                    Logger.getLogger().warn("BackupTask", e);
-                }
-            }
+            boolean isExcludedDirectory = Utils.isExcludedDirectory(file, sender);
 
             try {
                 if (isExcludedDirectory || file.getCanonicalFile().equals(new File("plugins/Backuper/Backups").getCanonicalFile()) ||
@@ -441,11 +431,12 @@ class BackupProcess implements Runnable {
                     int length;
 
                     while ((length = fileInputStream.read(buffer)) > 0) {
-
                         zip.write(buffer, 0, length);
                     }
                     zip.closeEntry();
                     fileInputStream.close();
+
+                    incrementBackuppedByteSize(Files.size(file.toPath()));
 
                 } catch (Exception e) {
 
@@ -456,6 +447,10 @@ class BackupProcess implements Runnable {
         }
     }
 
+    private synchronized void incrementBackuppedByteSize(long size) {
+        currentProgress += size;
+    }
+
     private void copyFilesInDir(File destDir, File sourceDir) {
 
         if (sourceDir.isFile()) {
@@ -463,6 +458,7 @@ class BackupProcess implements Runnable {
             try {
 
                 Files.copy(sourceDir.toPath(), destDir.toPath());
+                incrementBackuppedByteSize(Files.size(sourceDir.toPath()));
 
             } catch (SecurityException e) {
 
@@ -485,26 +481,7 @@ class BackupProcess implements Runnable {
 
             for (File file : Objects.requireNonNull(sourceDir.listFiles())) {
 
-                boolean isExcludedDirectory = false;
-
-                for (String excludeDirectoryFromBackup : Config.getInstance().getExcludeDirectoryFromBackup()) {
-
-                    try {
-
-                        File excludeDirectoryFromBackupFile = Paths.get(excludeDirectoryFromBackup).toFile().getCanonicalFile();
-
-                        if (excludeDirectoryFromBackupFile.equals(file.getCanonicalFile())) {
-                            isExcludedDirectory = true;
-                        }
-
-                    } catch (SecurityException e) {
-                        Logger.getLogger().warn("Failed to copy file \"" + file.getAbsolutePath() + "\", no access", sender);
-                        Logger.getLogger().warn("BackupTask", e);
-                    } catch (Exception e) {
-                        Logger.getLogger().warn("Something went wrong while trying to copy file \"" + file.getAbsolutePath() + "\"", sender);
-                        Logger.getLogger().warn("BackupTask", e);
-                    }
-                }
+                boolean isExcludedDirectory = Utils.isExcludedDirectory(file, sender);
 
                 try {
                     if (isExcludedDirectory || file.getCanonicalFile().equals(new File("plugins/Backuper/Backups").getCanonicalFile()) ||
@@ -528,6 +505,7 @@ class BackupProcess implements Runnable {
                     try {
 
                         Files.copy(file.toPath(), destDir.toPath().resolve(file.getName()));
+                        incrementBackuppedByteSize(Files.size(file.toPath()));
 
                     } catch (SecurityException e) {
 
@@ -542,5 +520,55 @@ class BackupProcess implements Runnable {
                 }
             }
         }
+    }
+
+    private long calculateMaxProgress() {
+
+        long maxProgress = 0;
+
+        for (World world : Bukkit.getWorlds()) {
+            maxProgress += Utils.getFolderOrFileByteSize(world.getWorldFolder());
+        }
+
+        for (String addDirectoryToBackup : Config.getInstance().getAddDirectoryToBackup()) {
+
+            File addDirectoryToBackupFile = new File(addDirectoryToBackup);
+            boolean isExcludedDirectory = Utils.isExcludedDirectory(addDirectoryToBackupFile, sender);
+
+            if (!isExcludedDirectory) {
+                maxProgress += getFileFolderByteSizeExceptExcluded(addDirectoryToBackupFile);
+            }
+        }
+
+        return maxProgress;
+    }
+
+    private long getFileFolderByteSizeExceptExcluded(File path) {
+
+        boolean isExcludedDirectory = Utils.isExcludedDirectory(path, sender);
+
+        if (isExcludedDirectory) {
+            return 0;
+        }
+
+        if (!path.isDirectory()) {
+            try {
+                return Files.size(path.toPath());
+            } catch (Exception e) {
+                Logger.getLogger().warn("Something went wrong while trying to calculate backup size!");
+                Logger.getLogger().warn(BackupProcess.class, e);
+                return 0;
+            }
+        }
+
+        long size = 0;
+
+        if (path.isDirectory()) {
+            for (File file : Objects.requireNonNull(path.listFiles())) {
+                size += getFileFolderByteSizeExceptExcluded(file);
+            }
+        }
+
+        return size;
     }
 }

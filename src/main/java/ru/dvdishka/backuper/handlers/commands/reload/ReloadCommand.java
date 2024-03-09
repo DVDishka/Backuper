@@ -5,7 +5,7 @@ import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.utils.Scheduler;
 import ru.dvdishka.backuper.backend.utils.Backup;
-import ru.dvdishka.backuper.backend.utils.Common;
+import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.backend.Initialization;
 import ru.dvdishka.backuper.handlers.commands.Command;
 
@@ -20,7 +20,7 @@ public class ReloadCommand extends Command {
     @Override
     public void execute() {
 
-        if (Backup.isBackupBusy) {
+        if (Backup.isLocked()) {
             returnFailure("Unable to reload config while backup process is running!");
             return;
         }
@@ -28,7 +28,7 @@ public class ReloadCommand extends Command {
         Config.getInstance().setConfigField("lastBackup", Config.getInstance().getLastBackup());
         Config.getInstance().setConfigField("lastChange", Config.getInstance().getLastChange());
 
-        Scheduler.cancelTasks(Common.plugin);
+        Scheduler.cancelTasks(Utils.plugin);
 
         Initialization.initConfig(new File("plugins/Backuper/config.yml"), sender);
         Initialization.initAutoBackup();
