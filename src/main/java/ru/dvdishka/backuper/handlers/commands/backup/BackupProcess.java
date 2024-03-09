@@ -89,6 +89,9 @@ class BackupProcess implements Runnable, Task {
                             } else {
 
                                 copyFilesInDir(backupDir.toPath().resolve(world.getName()).toFile(), worldDir);
+
+                                // Waiting for all files being copied
+                                while (completedCopyTasks.size() < copyTasksCount) {}
                             }
 
                         } catch (Exception e) {
@@ -455,25 +458,42 @@ class BackupProcess implements Runnable, Task {
         currentProgress += size;
     }
 
+    // For async copying
+    private volatile ArrayList<Long> completedCopyTasks = new ArrayList<>();
+    private long copyTasksCount = 0;
+
     private void copyFilesInDir(File destDir, File sourceDir) {
 
         if (sourceDir.isFile()) {
 
-            try {
+            copyTasksCount++;
 
-                Files.copy(sourceDir.toPath(), destDir.toPath());
-                incrementBackuppedByteSize(Files.size(sourceDir.toPath()));
+            final long taskNumber = copyTasksCount;
 
-            } catch (SecurityException e) {
+            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
 
-                Logger.getLogger().warn("Backup Directory is not allowed to modify! " + sourceDir.getName(), sender);
-                Logger.getLogger().warn("BackupTask", e);
+                try {
 
-            } catch (Exception e) {
+                    Files.copy(sourceDir.toPath(), destDir.toPath());
+                    incrementBackuppedByteSize(Files.size(sourceDir.toPath()));
 
-                Logger.getLogger().warn("Something went wrong while trying to copy file! " + sourceDir.getName(), sender);
-                Logger.getLogger().warn("BackupTask", e);
-            }
+                    completedCopyTasks.add(taskNumber);
+
+                } catch (SecurityException e) {
+
+                    Logger.getLogger().warn("Backup Directory is not allowed to modify! " + sourceDir.getName(), sender);
+                    Logger.getLogger().warn("BackupTask", e);
+
+                    completedCopyTasks.add(taskNumber);
+
+                } catch (Exception e) {
+
+                    Logger.getLogger().warn("Something went wrong while trying to copy file! " + sourceDir.getName(), sender);
+                    Logger.getLogger().warn("BackupTask", e);
+
+                    completedCopyTasks.add(taskNumber);
+                }
+            });
         }
 
         if (sourceDir.listFiles() != null) {

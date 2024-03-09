@@ -145,6 +145,9 @@ public class UnZIPCommand extends Command implements Task {
                         Backup.unlock();
                         Logger.getLogger().warn("Something went wrong while trying to unpack file", sender);
                         Logger.getLogger().warn(this, e);
+
+                        completedUnZIPTasks.add(taskID);
+
                         throw new RuntimeException();
                     }
                 });
@@ -152,6 +155,7 @@ public class UnZIPCommand extends Command implements Task {
                 zipInput.closeEntry();
             }
 
+            // Waiting for all files being unZipped
             while (iterationNumber != completedUnZIPTasks.size()) {}
 
             Logger.getLogger().devLog("The Unpack task has been finished");
