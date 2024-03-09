@@ -147,6 +147,7 @@ class BackupProcess implements Runnable, Task {
                     if (Config.getInstance().isZipArchive()) {
                         try {
                             Files.copy(new File(backupDir.getPath() + ".zip").toPath(), new File(Config.getInstance().getBackupsFolder()).toPath().resolve(backupDir.getName() + ".zip"));
+                            incrementBackuppedByteSize(maxProgress / 2);
                             try {
                                 if (!new File(backupDir.getPath() + ".zip").delete()) {
                                     Logger.getLogger().warn("Can not delete backup in default directory", sender);
@@ -191,7 +192,10 @@ class BackupProcess implements Runnable, Task {
                 }
             }
 
-            deleteOldBackups(backupsDir, false);
+            // Delete old backups task
+            {
+                deleteOldBackups(backupsDir, false);
+            }
 
             Logger.getLogger().success("Backup process has been finished successfully!", sender);
 
@@ -526,18 +530,31 @@ class BackupProcess implements Runnable, Task {
 
         long maxProgress = 0;
 
-        for (World world : Bukkit.getWorlds()) {
-            maxProgress += Utils.getFolderOrFileByteSize(world.getWorldFolder());
-        }
+        try {
 
-        for (String addDirectoryToBackup : Config.getInstance().getAddDirectoryToBackup()) {
-
-            File addDirectoryToBackupFile = new File(addDirectoryToBackup);
-            boolean isExcludedDirectory = Utils.isExcludedDirectory(addDirectoryToBackupFile, sender);
-
-            if (!isExcludedDirectory) {
-                maxProgress += getFileFolderByteSizeExceptExcluded(addDirectoryToBackupFile);
+            for (World world : Bukkit.getWorlds()) {
+                maxProgress += Utils.getFolderOrFileByteSize(world.getWorldFolder());
             }
+
+            for (String addDirectoryToBackup : Config.getInstance().getAddDirectoryToBackup()) {
+
+                File addDirectoryToBackupFile = new File(addDirectoryToBackup);
+                boolean isExcludedDirectory = Utils.isExcludedDirectory(addDirectoryToBackupFile, sender);
+
+                if (!isExcludedDirectory) {
+                    maxProgress += getFileFolderByteSizeExceptExcluded(addDirectoryToBackupFile);
+                }
+            }
+
+            if (!new File(Config.getInstance().getBackupsFolder()).getCanonicalFile()
+                    .equals(new File("plugins/Backuper/Backups").getCanonicalFile())) {
+
+                maxProgress *= 2;
+            }
+
+        } catch (Exception e) {
+            Logger.getLogger().warn("Failed to calculate target progress in BackupProcess");
+            Logger.getLogger().warn(BackupProcess.class, e);
         }
 
         return maxProgress;

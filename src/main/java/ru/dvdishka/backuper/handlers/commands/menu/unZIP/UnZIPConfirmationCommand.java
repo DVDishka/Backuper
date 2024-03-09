@@ -9,6 +9,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.backend.utils.Backup;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 public class UnZIPConfirmationCommand extends Command {
 
@@ -72,8 +73,18 @@ public class UnZIPConfirmationCommand extends Command {
                 .append(Component.text("[CONVERT BACKUP]")
                         .clickEvent(ClickEvent.runCommand("/backup menu \"" + backupName + "\" unZIP"))
                         .color(TextColor.color(0x4974B))
-                        .decorate(TextDecoration.BOLD))
-                .append(Component.newline());
+                        .decorate(TextDecoration.BOLD));
+
+        if (sender.hasPermission(Permissions.STATUS.getPermission())) {
+            message = message
+                    .append(Component.space())
+                    .append(Component.text("[STATUS]")
+                            .clickEvent(ClickEvent.runCommand("/backup status"))
+                            .color(TextColor.color(17, 102, 212))
+                            .decorate(TextDecoration.BOLD));
+        }
+
+        message = message.append(Component.newline());
 
         message = message
                 .append(Component.text("---------------")
