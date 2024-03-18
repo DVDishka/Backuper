@@ -2,10 +2,14 @@ package ru.dvdishka.backuper.handlers.commands.status;
 
 import dev.jorel.commandapi.executors.CommandArguments;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
 import ru.dvdishka.backuper.backend.utils.Backup;
 import ru.dvdishka.backuper.handlers.commands.Command;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 public class StatusCommand extends Command {
 
@@ -17,9 +21,12 @@ public class StatusCommand extends Command {
     public void execute() {
 
         if (Backup.getCurrentTask() == null) {
+            cancelButtonSound();
             sendMessage("No tasks are currently running");
             return;
         }
+
+        normalButtonSound();
 
         Component message = Component.empty();
 
@@ -45,6 +52,54 @@ public class StatusCommand extends Command {
                 .append(Component.space())
                 .append(Component.text(progress + "%")
                         .color(color));
+
+        sender.sendMessage(message);
+    }
+
+    public static void sendTaskStartedMessage(String taskName, CommandSender sender) {
+
+        Component message = Component.empty();
+
+        if (!(sender instanceof ConsoleCommandSender) && sender.hasPermission(Permissions.STATUS.getPermission())) {
+
+            message = message
+                    .append(Component.text("------------------------------------------")
+                            .decorate(TextDecoration.BOLD)
+                            .color(TextColor.color(0xE3A013)))
+                    .append(Component.newline());
+
+            message = message
+                    .append(Component.text("The " + taskName + " task has been started, you can check the task status by clicking on "))
+                    .append(Component.text("[STATUS]")
+                            .color(TextColor.color(17, 102, 212)))
+                    .append(Component.text(" button below or using command "))
+                    .append(Component.text("/backup status")
+                            .decorate(TextDecoration.UNDERLINED)
+                            .clickEvent(ClickEvent.suggestCommand("/backup status")))
+                    .append(Component.newline());
+
+            message = message
+                    .append(Component.newline())
+                    .append(Component.text("[STATUS]")
+                            .clickEvent(ClickEvent.runCommand("/backup status"))
+                    .color(TextColor.color(17, 102, 212))
+                            .decorate(TextDecoration.BOLD))
+                    .append(Component.newline());
+
+            message = message
+                    .append(Component.text("------------------------------------------")
+                            .decorate(TextDecoration.BOLD)
+                            .color(TextColor.color(0xE3A013)))
+                    .append(Component.newline());
+        }
+        else if (sender instanceof ConsoleCommandSender) {
+
+            message = message
+                    .append(Component.text("The " + taskName + " task has been started, you can check the task status using command "))
+                    .append(Component.text("/backup status")
+                            .decorate(TextDecoration.UNDERLINED)
+                            .clickEvent(ClickEvent.suggestCommand("/backup status")));
+        }
 
         sender.sendMessage(message);
     }

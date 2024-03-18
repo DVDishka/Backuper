@@ -75,15 +75,6 @@ public class ToZIPConfirmationCommand extends Command {
                         .color(TextColor.color(0x4974B))
                         .decorate(TextDecoration.BOLD));
 
-        if (sender.hasPermission(Permissions.STATUS.getPermission())) {
-            message = message
-                    .append(Component.space())
-                    .append(Component.text("[STATUS]")
-                            .clickEvent(ClickEvent.runCommand("/backup status"))
-                            .color(TextColor.color(17, 102, 212))
-                            .decorate(TextDecoration.BOLD));
-        }
-
         message = message.append(Component.newline());
 
         message = message

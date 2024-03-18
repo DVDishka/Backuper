@@ -139,7 +139,7 @@ public class Initialization implements Listener {
             }
         })
 
-                .then(new LongArgument("delay")
+                .then(new LongArgument("delaySeconds")
 
                         .executes((sender, args) -> {
 
@@ -154,7 +154,7 @@ public class Initialization implements Listener {
                             new BackupCommand(sender, args, "STOP").execute();
                         })
 
-                        .then(new LongArgument("delay")
+                        .then(new LongArgument("delaySeconds")
 
                                 .executes((sender, args) -> {
 
@@ -170,7 +170,7 @@ public class Initialization implements Listener {
                             new BackupCommand(sender, args, "RESTART").execute();
                         })
 
-                        .then(new LongArgument("delay")
+                        .then(new LongArgument("delaySeconds")
 
                                 .executes((sender, args) -> {
 

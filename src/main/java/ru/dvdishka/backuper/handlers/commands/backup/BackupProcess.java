@@ -333,9 +333,9 @@ class BackupProcess implements Runnable, Task {
                         }
                     }
                 }
+                Logger.getLogger().devLog("Delete old backups 2 task has been finished");
             }
 
-            Logger.getLogger().devLog("Delete old backups 2 task has been finished");
             if (onlyTask) {
                 Backup.unlock();
             }

@@ -4,6 +4,7 @@ import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.utils.*;
 import ru.dvdishka.backuper.handlers.commands.Command;
+import ru.dvdishka.backuper.handlers.commands.status.StatusCommand;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -57,6 +58,8 @@ public class ToZIPCommand extends Command implements Task {
 
         // Size to ZIP + size to delete (folder)
         maxProgress = backup.getByteSize() * 2;
+
+        StatusCommand.sendTaskStartedMessage("ToZIP", sender);
 
         try {
 

@@ -132,7 +132,7 @@ public class Utils {
 
     public static void returnSuccess(String message, CommandSender sender) {
         try {
-            sender.sendMessage(Component.text(message).color(NamedTextColor.GREEN));
+            sender.sendMessage(Component.text(message));
         } catch (Exception ignored) {}
     }
 

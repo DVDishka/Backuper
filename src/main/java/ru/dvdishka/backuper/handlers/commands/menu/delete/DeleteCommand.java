@@ -4,6 +4,7 @@ import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.utils.*;
 import ru.dvdishka.backuper.handlers.commands.Command;
+import ru.dvdishka.backuper.handlers.commands.status.StatusCommand;
 
 import java.io.File;
 import java.util.Objects;
@@ -45,6 +46,8 @@ public class DeleteCommand extends Command implements Task {
 
         Backup.lock(this);
         maxProgress = backup.getByteSize();
+
+        StatusCommand.sendTaskStartedMessage("Delete", sender);
 
         if (backup.zipOrFolder().equals("(ZIP)")) {
 

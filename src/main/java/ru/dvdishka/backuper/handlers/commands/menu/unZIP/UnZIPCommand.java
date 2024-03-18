@@ -1,10 +1,17 @@
 package ru.dvdishka.backuper.handlers.commands.menu.unZIP;
 
 import dev.jorel.commandapi.executors.CommandArguments;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.utils.*;
 import ru.dvdishka.backuper.handlers.commands.Command;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
+import ru.dvdishka.backuper.handlers.commands.status.StatusCommand;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -40,8 +47,6 @@ public class UnZIPCommand extends Command implements Task {
 
         assert backupName != null;
 
-        normalButtonSound();
-
         Backup backup = new Backup(backupName);
 
         if (backup.zipOrFolder().equals("(Folder)")) {
@@ -56,8 +61,12 @@ public class UnZIPCommand extends Command implements Task {
             return;
         }
 
+        normalButtonSound();
+
         Backup.lock(this);
         maxProgress = backup.getByteSize() * 2;
+
+        StatusCommand.sendTaskStartedMessage("UnZIP", sender);
 
         Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
 

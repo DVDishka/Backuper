@@ -9,6 +9,7 @@ import ru.dvdishka.backuper.backend.utils.Logger;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.backend.utils.Scheduler;
+import ru.dvdishka.backuper.handlers.commands.status.StatusCommand;
 
 import static com.google.common.primitives.Longs.min;
 import static java.lang.Math.max;
@@ -28,7 +29,7 @@ public class BackupCommand extends Command {
     public BackupCommand(CommandSender sender, CommandArguments args) {
 
         super(sender, args);
-        this.delay = (long) args.getOrDefault("delay", 1L);
+        this.delay = (long) args.getOrDefault("delaySeconds", 1L);
     }
 
     public void execute() {
@@ -42,6 +43,8 @@ public class BackupCommand extends Command {
             returnFailure("Delay must be > 0!");
             return;
         }
+
+        StatusCommand.sendTaskStartedMessage("Backup", sender);
 
         if (Config.getInstance().getAlertTimeBeforeRestart() != -1) {
 
