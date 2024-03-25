@@ -21,6 +21,9 @@ public class ToZIPCommand extends Command implements Task {
     private long maxProgress = 0;
     private volatile long currentProgress = 0;
 
+    private final long zipProgressMultiplier = 5;
+    private final long deleteProgressMultiplier = 1;
+
     public ToZIPCommand(CommandSender sender, CommandArguments arguments) {
         super(sender, arguments);
     }
@@ -56,8 +59,10 @@ public class ToZIPCommand extends Command implements Task {
 
         Backup.lock(this);
 
-        // Size to ZIP + size to delete (folder)
-        maxProgress = backup.getByteSize() * 2;
+        long backupFolderByteSize = backup.getByteSize();
+
+        maxProgress = backupFolderByteSize * zipProgressMultiplier;
+        maxProgress += backupFolderByteSize * deleteProgressMultiplier;
 
         StatusCommand.sendTaskStartedMessage("ToZIP", sender);
 
@@ -69,7 +74,7 @@ public class ToZIPCommand extends Command implements Task {
 
                 try {
 
-                    Logger.getLogger().log("The Convert Backup To ZIP process has been started, it may take a some time...", sender);
+                    Logger.getLogger().log("The Convert Backup To ZIP process has been started, it may take some time...", sender);
 
                     Logger.getLogger().devLog("The Pack To Zip task has been started");
                     for (File file : backup.getFile().listFiles()) {
@@ -112,37 +117,66 @@ public class ToZIPCommand extends Command implements Task {
 
     public void packToZIP(File sourceDir, ZipOutputStream zip, Path folderPath, CommandSender sender) {
 
-        for (File file : Objects.requireNonNull(sourceDir.listFiles())) {
+        if (sourceDir.isFile()) {
 
-            if (file.isDirectory()) {
+            try {
 
-                packToZIP(file, zip, folderPath, sender);
+                String relativeFilePath = folderPath.toAbsolutePath().relativize(sourceDir.toPath().toAbsolutePath()).toString();
 
-            } else if (!file.getName().equals("session.lock")) {
+                zip.putNextEntry(new ZipEntry(relativeFilePath));
+                FileInputStream fileInputStream = new FileInputStream(sourceDir);
+                byte[] buffer = new byte[4048];
+                int length;
 
-                try {
+                while ((length = fileInputStream.read(buffer)) > 0) {
+                    zip.write(buffer, 0, length);
+                }
+                zip.closeEntry();
+                fileInputStream.close();
 
-                    String relativeFilePath = folderPath.toAbsolutePath().relativize(file.toPath().toAbsolutePath()).toString();
+                incrementCurrentProgress(Utils.getFolderOrFileByteSize(sourceDir) * zipProgressMultiplier);
 
-                    zip.putNextEntry(new ZipEntry(relativeFilePath));
-                    FileInputStream fileInputStream = new FileInputStream(file);
-                    byte[] buffer = new byte[4048];
-                    int length;
+            } catch (Exception e) {
 
-                    while ((length = fileInputStream.read(buffer)) > 0) {
+                Logger.getLogger().warn("Something went wrong while trying to put file in ZIP! " + sourceDir.getName(), sender);
+                Logger.getLogger().warn(this, e);
+            }
+        }
 
-                        zip.write(buffer, 0, length);
+
+        if (sourceDir.isDirectory()) {
+
+            for (File file : Objects.requireNonNull(sourceDir.listFiles())) {
+
+                if (file.isDirectory()) {
+
+                    packToZIP(file, zip, folderPath, sender);
+
+                } else if (!file.getName().equals("session.lock")) {
+
+                    try {
+
+                        String relativeFilePath = folderPath.toAbsolutePath().relativize(file.toPath().toAbsolutePath()).toString();
+
+                        zip.putNextEntry(new ZipEntry(relativeFilePath));
+                        FileInputStream fileInputStream = new FileInputStream(file);
+                        byte[] buffer = new byte[4048];
+                        int length;
+
+                        while ((length = fileInputStream.read(buffer)) > 0) {
+
+                            zip.write(buffer, 0, length);
+                        }
+                        zip.closeEntry();
+                        fileInputStream.close();
+
+                        incrementCurrentProgress(Utils.getFolderOrFileByteSize(file) * zipProgressMultiplier);
+
+                    } catch (Exception e) {
+
+                        Logger.getLogger().warn("Something went wrong while trying to put file in ZIP! " + file.getName(), sender);
+                        Logger.getLogger().warn(this, e);
                     }
-                    zip.closeEntry();
-                    fileInputStream.close();
-
-                    incrementCurrentProgress(Utils.getFolderOrFileByteSize(file));
-
-                } catch (Exception e) {
-
-                    Logger.getLogger().warn("Something went wrong while trying to put file in ZIP! " + file.getName(), sender);
-                    Logger.getLogger().warn(this, e);
-                    throw new RuntimeException();
                 }
             }
         }
@@ -160,7 +194,7 @@ public class ToZIPCommand extends Command implements Task {
 
                 } else {
 
-                    incrementCurrentProgress(Utils.getFolderOrFileByteSize(file));
+                    incrementCurrentProgress(Utils.getFolderOrFileByteSize(file) * deleteProgressMultiplier);
 
                     if (!file.delete()) {
 

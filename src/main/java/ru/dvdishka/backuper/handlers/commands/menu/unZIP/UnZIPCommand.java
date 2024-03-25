@@ -30,6 +30,9 @@ public class UnZIPCommand extends Command implements Task {
 
     private volatile ArrayList<Integer> completedUnZIPTasks = new ArrayList<>();
 
+    private final long unZIPProgressMultiplier = 10;
+    private final long deleteProgressMultiplier = 1;
+
     public UnZIPCommand(CommandSender sender, CommandArguments arguments) {
         super(sender, arguments);
     }
@@ -64,7 +67,11 @@ public class UnZIPCommand extends Command implements Task {
         normalButtonSound();
 
         Backup.lock(this);
-        maxProgress = backup.getByteSize() * 2;
+
+        long backupZIPByteSize = backup.getByteSize();
+
+        maxProgress = backupZIPByteSize * unZIPProgressMultiplier;
+        maxProgress += backupZIPByteSize * deleteProgressMultiplier;
 
         StatusCommand.sendTaskStartedMessage("UnZIP", sender);
 
@@ -72,18 +79,19 @@ public class UnZIPCommand extends Command implements Task {
 
             try {
 
-                Logger.getLogger().log("The Convert Backup To Folder process has been started, it may take a some time...", sender);
+                Logger.getLogger().log("The Convert Backup To Folder process has been started, it may take some time...", sender);
 
                 Logger.getLogger().devLog("The Unpack task has been started");
                 unPack(backup, sender);
 
                 Logger.getLogger().devLog("The Delete Old Backup ZIP task has been started");
-                incrementCurrentProgress(maxProgress / 2);
                 if (!backup.getZIPFile().delete()) {
                     Logger.getLogger().warn("The Delete Old Backup ZIP task has been finished with an exception", sender);
                     Backup.unlock();
                     throw new RuntimeException();
                 }
+                incrementCurrentProgress(backupZIPByteSize * deleteProgressMultiplier);
+
                 Logger.getLogger().devLog("The Delete Old Backup ZIP task has been finished");
 
                 Logger.getLogger().devLog("The Rename \"in progress\" Folder task has been started");
@@ -136,15 +144,14 @@ public class UnZIPCommand extends Command implements Task {
 
                     try {
 
-                        if (!new File(backup.getFile().getPath().replace(".zip", "") + " in progress").toPath().resolve(name).getParent().toFile().exists() &&
-                                !new File(backup.getFile().getPath().replace(".zip", "") + " in progress").toPath().resolve(name).getParent().toFile().mkdirs()) {
-                            Logger.getLogger().warn("Can not create directory " + new File(backup.getFile().getPath().replace(".zip", "") + " in progress").toPath().resolve(name).getParent(), sender);
+                        if (!new File(backup.getFile().getPath().replace(".zip", "") + " in progress").toPath().resolve(name).getParent().toFile().exists()) {
+                            new File(backup.getFile().getPath().replace(".zip", "") + " in progress").toPath().resolve(name).getParent().toFile().mkdirs();
                         }
 
                         FileOutputStream outputStream = new FileOutputStream(new File(backup.getFile().getPath().replace(".zip", "") + " in progress").toPath().resolve(name).toFile());
                         for (int c : content) {
                             outputStream.write(c);
-                            incrementCurrentProgress(1);
+                            incrementCurrentProgress(unZIPProgressMultiplier);
                         }
                         outputStream.flush();
                         outputStream.close();

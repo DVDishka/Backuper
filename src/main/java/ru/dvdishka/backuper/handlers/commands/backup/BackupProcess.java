@@ -30,6 +30,10 @@ class BackupProcess implements Runnable, Task {
 
     private final String taskName;
 
+    private final long deleteProgressMultiplier = 1;
+    private final long copyProgressMultiplier = 5;
+    private final long zipProgressMultiplier = 5;
+
     BackupProcess(String taskName, String afterBackup, boolean isAutoBackup, CommandSender sender) {
         this.taskName = taskName;
         this.afterBackup = afterBackup;
@@ -148,11 +152,16 @@ class BackupProcess implements Runnable, Task {
                     if (Config.getInstance().isZipArchive()) {
                         try {
                             Files.copy(new File(backupDir.getPath() + ".zip").toPath(), new File(Config.getInstance().getBackupsFolder()).toPath().resolve(backupDir.getName() + ".zip"));
-                            incrementBackuppedByteSize(maxProgress / 2);
+
+                            long backupSize = Files.size(new File(backupDir.getPath() + ".zip").toPath());
+                            incrementCurrentProgress(backupSize * copyProgressMultiplier);
+
                             try {
                                 if (!new File(backupDir.getPath() + ".zip").delete()) {
                                     Logger.getLogger().warn("Can not delete backup in default directory", sender);
                                 }
+                                incrementCurrentProgress(backupSize * deleteProgressMultiplier);
+
                             } catch (Exception e) {
                                 Logger.getLogger().warn("Can not delete backup in default directory", sender);
                             }
@@ -360,10 +369,21 @@ class BackupProcess implements Runnable, Task {
 
                 } else {
 
+                    long fileByteSize = 0;
+
+                    try {
+                        fileByteSize = Files.size(file.toPath());
+                    } catch (Exception e) {
+                        Logger.getLogger().warn("Failed to get file size before deletion", sender);
+                        Logger.getLogger().warn(BackupProcess.class, e);
+                    }
+
                     if (!file.delete()) {
 
                         Logger.getLogger().warn("Can not delete file " + file.getName(), sender);
                     }
+
+                    incrementCurrentProgress(fileByteSize * deleteProgressMultiplier);
                 }
             }
             if (!dir.delete()) {
@@ -392,7 +412,7 @@ class BackupProcess implements Runnable, Task {
                 zip.closeEntry();
                 fileInputStream.close();
 
-                incrementBackuppedByteSize(Files.size(sourceDir.toPath()));
+                incrementCurrentProgress(Files.size(sourceDir.toPath()) * zipProgressMultiplier);
 
             } catch (Exception e) {
 
@@ -443,7 +463,7 @@ class BackupProcess implements Runnable, Task {
                     zip.closeEntry();
                     fileInputStream.close();
 
-                    incrementBackuppedByteSize(Files.size(file.toPath()));
+                    incrementCurrentProgress(Files.size(file.toPath()) * zipProgressMultiplier);
 
                 } catch (Exception e) {
 
@@ -454,8 +474,8 @@ class BackupProcess implements Runnable, Task {
         }
     }
 
-    private synchronized void incrementBackuppedByteSize(long size) {
-        currentProgress += size;
+    private synchronized void incrementCurrentProgress(long progress) {
+        currentProgress += progress;
     }
 
     // For async copying
@@ -487,7 +507,7 @@ class BackupProcess implements Runnable, Task {
                 try {
 
                     Files.copy(sourceDir.toPath(), destDir.toPath());
-                    incrementBackuppedByteSize(Files.size(sourceDir.toPath()));
+                    incrementCurrentProgress(Files.size(sourceDir.toPath()) * copyProgressMultiplier);
 
                     completedCopyTasks.add(taskNumber);
 
@@ -541,7 +561,7 @@ class BackupProcess implements Runnable, Task {
                     try {
 
                         Files.copy(file.toPath(), destDir.toPath().resolve(file.getName()));
-                        incrementBackuppedByteSize(Files.size(file.toPath()));
+                        incrementCurrentProgress(Files.size(file.toPath()) * copyProgressMultiplier);
 
                     } catch (SecurityException e) {
 
@@ -564,8 +584,19 @@ class BackupProcess implements Runnable, Task {
 
         try {
 
+            long fullByteSizeToBackup = 0;
+
             for (World world : Bukkit.getWorlds()) {
-                maxProgress += Utils.getFolderOrFileByteSize(world.getWorldFolder());
+
+                long worldByteSize = Utils.getFolderOrFileByteSize(world.getWorldFolder());
+                fullByteSizeToBackup += worldByteSize;
+
+                if (Config.getInstance().isZipArchive()) {
+                    maxProgress += worldByteSize * zipProgressMultiplier;
+                }
+                else {
+                    maxProgress += worldByteSize * copyProgressMultiplier;
+                }
             }
 
             for (String addDirectoryToBackup : Config.getInstance().getAddDirectoryToBackup()) {
@@ -574,14 +605,23 @@ class BackupProcess implements Runnable, Task {
                 boolean isExcludedDirectory = Utils.isExcludedDirectory(addDirectoryToBackupFile, sender);
 
                 if (!isExcludedDirectory) {
-                    maxProgress += getFileFolderByteSizeExceptExcluded(addDirectoryToBackupFile);
+
+                    long addDirectoryToBackupByteSize = getFileFolderByteSizeExceptExcluded(addDirectoryToBackupFile);
+                    fullByteSizeToBackup += addDirectoryToBackupByteSize;
+
+                    if (Config.getInstance().isZipArchive()) {
+                        maxProgress += addDirectoryToBackupByteSize * zipProgressMultiplier;
+                    }
+                    else {
+                        maxProgress += addDirectoryToBackupByteSize * copyProgressMultiplier;
+                    }
                 }
             }
 
             if (!new File(Config.getInstance().getBackupsFolder()).getCanonicalFile()
                     .equals(new File("plugins/Backuper/Backups").getCanonicalFile())) {
 
-                maxProgress *= 2;
+                maxProgress += fullByteSizeToBackup * deleteProgressMultiplier;
             }
 
         } catch (Exception e) {
