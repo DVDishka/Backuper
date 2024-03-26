@@ -16,6 +16,7 @@ import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
@@ -172,6 +173,30 @@ public class Utils {
         try {
             Class.forName("net.kyori.adventure.sound.Sound").getMethod("sound");
             sender.playSound(Sound.sound(Sound.sound(Key.key("ui.button.click"), Sound.Source.NEUTRAL, 50, 1)).build());
+        } catch (Exception ignored) {}
+    }
+
+    public static void sendFramedMessage(Component message, CommandSender sender) {
+        try {
+
+            Component framedMessage = Component.empty();
+
+            framedMessage = framedMessage
+                    .append(Component.text("------------------------------------------")
+                            .decorate(TextDecoration.BOLD)
+                            .color(TextColor.color(0xE3A013)))
+                    .append(Component.newline());
+
+            framedMessage = framedMessage.append(message);
+
+            framedMessage = framedMessage
+                    .append(Component.newline())
+                    .append(Component.text("------------------------------------------")
+                            .decorate(TextDecoration.BOLD)
+                            .color(TextColor.color(0xE3A013)));
+
+            sender.sendMessage(framedMessage);
+
         } catch (Exception ignored) {}
     }
 }

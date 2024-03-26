@@ -8,6 +8,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import ru.dvdishka.backuper.backend.utils.Backup;
+import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
 
@@ -46,14 +47,16 @@ public class StatusCommand extends Command {
         message = message
                 .append(Component.text("Current task:"))
                 .append(Component.space())
-                .append(Component.text(Backup.getCurrentTask().getTaskName()))
+                .append(Component.text(Backup.getCurrentTask().getTaskName())
+                        .decorate(TextDecoration.BOLD))
                 .append(Component.newline())
                 .append(Component.text("Task progress:"))
                 .append(Component.space())
                 .append(Component.text(progress + "%")
+                        .decorate(TextDecoration.BOLD)
                         .color(color));
 
-        sender.sendMessage(message);
+        sendFramedMessage(message);
     }
 
     public static void sendTaskStartedMessage(String taskName, CommandSender sender) {
@@ -61,12 +64,6 @@ public class StatusCommand extends Command {
         Component message = Component.empty();
 
         if (!(sender instanceof ConsoleCommandSender) && sender.hasPermission(Permissions.STATUS.getPermission())) {
-
-            message = message
-                    .append(Component.text("------------------------------------------")
-                            .decorate(TextDecoration.BOLD)
-                            .color(TextColor.color(0xE3A013)))
-                    .append(Component.newline());
 
             message = message
                     .append(Component.text("The " + taskName + " task has been started, you can check the task status by clicking on "))
@@ -85,12 +82,6 @@ public class StatusCommand extends Command {
                     .color(TextColor.color(17, 102, 212))
                             .decorate(TextDecoration.BOLD))
                     .append(Component.newline());
-
-            message = message
-                    .append(Component.text("------------------------------------------")
-                            .decorate(TextDecoration.BOLD)
-                            .color(TextColor.color(0xE3A013)))
-                    .append(Component.newline());
         }
         else if (sender instanceof ConsoleCommandSender) {
 
@@ -101,6 +92,6 @@ public class StatusCommand extends Command {
                             .clickEvent(ClickEvent.suggestCommand("/backup status")));
         }
 
-        sender.sendMessage(message);
+        Utils.sendFramedMessage(message, sender);
     }
 }

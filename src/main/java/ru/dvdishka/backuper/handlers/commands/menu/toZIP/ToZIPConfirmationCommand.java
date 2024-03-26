@@ -52,12 +52,6 @@ public class ToZIPConfirmationCommand extends Command {
         Component message = net.kyori.adventure.text.Component.empty();
 
         message = message
-                .append(Component.text("---------------")
-                        .decorate(TextDecoration.BOLD)
-                        .color(TextColor.color(0xE3A013)))
-                .append(Component.newline());
-
-        message = message
                 .append(Component.text("Are you sure")
                         .append(Component.newline())
                         .append(Component.text("You want to convert this backup to ZIP?"))
@@ -77,11 +71,6 @@ public class ToZIPConfirmationCommand extends Command {
 
         message = message.append(Component.newline());
 
-        message = message
-                .append(Component.text("---------------")
-                        .decorate(TextDecoration.BOLD)
-                        .color(TextColor.color(0xE3A013)));
-
-        sender.sendMessage(message);
+        sendFramedMessage(message);
     }
 }

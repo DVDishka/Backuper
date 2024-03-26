@@ -1,6 +1,7 @@
 package ru.dvdishka.backuper.handlers.commands;
 
 import dev.jorel.commandapi.executors.CommandArguments;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.utils.Utils;
@@ -53,5 +54,9 @@ public abstract class Command {
 
     protected void normalButtonSound() {
         Utils.normalButtonSound(sender);
+    }
+
+    protected void sendFramedMessage(Component message) {
+        Utils.sendFramedMessage(message, sender);
     }
 }

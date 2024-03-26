@@ -46,12 +46,6 @@ public class DeleteConfirmationCommand extends Command {
         Component message = net.kyori.adventure.text.Component.empty();
 
         message = message
-                .append(Component.text("---------------")
-                        .decorate(TextDecoration.BOLD)
-                        .color(TextColor.color(0xE3A013)))
-                .append(Component.newline());
-
-        message = message
                 .append(Component.text("Are you sure")
                         .append(Component.newline())
                         .append(Component.text("You want to delete the backup?"))
@@ -69,13 +63,6 @@ public class DeleteConfirmationCommand extends Command {
                         .color(TextColor.color(0xB02100))
                         .decorate(TextDecoration.BOLD));
 
-        message = message.append(Component.newline());
-
-        message = message
-                .append(Component.text("---------------")
-                        .decorate(TextDecoration.BOLD)
-                        .color(TextColor.color(0xE3A013)));
-
-        sender.sendMessage(message);
+        sendFramedMessage(message);
     }
 }

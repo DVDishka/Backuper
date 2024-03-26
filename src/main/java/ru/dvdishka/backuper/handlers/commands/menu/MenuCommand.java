@@ -42,12 +42,6 @@ public class MenuCommand extends Command {
         if (!(sender instanceof ConsoleCommandSender)) {
 
             message = message
-                    .append(Component.text("---------------")
-                            .decorate(TextDecoration.BOLD)
-                            .color(TextColor.color(0xE3A013)))
-                    .append(Component.newline());
-
-            message = message
                     .append(Component.text(backupName)
                             .hoverEvent(HoverEvent.showText(Component.text(zipOrFolder + " " + backupSize + " MB"))))
                     .append(Component.newline());
@@ -72,11 +66,6 @@ public class MenuCommand extends Command {
                             .decorate(TextDecoration.BOLD)
                             .color(TextColor.color(0xB02100)))
                     .append(Component.newline());
-
-            message = message
-                    .append(Component.text("---------------")
-                            .decorate(TextDecoration.BOLD)
-                            .color(TextColor.color(0xE3A013)));
 
         } else {
 
