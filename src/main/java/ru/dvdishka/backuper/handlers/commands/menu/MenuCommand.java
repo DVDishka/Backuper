@@ -46,19 +46,23 @@ public class MenuCommand extends Command {
                             .hoverEvent(HoverEvent.showText(Component.text(zipOrFolder + " " + backupSize + " MB"))))
                     .append(Component.newline());
 
-            message = message
-                    .append(Component.text("[TO ZIP]")
-                            .clickEvent(ClickEvent.runCommand("/backup menu \"" + backupName + "\"" + " toZIPConfirmation"))
-                            .decorate(TextDecoration.BOLD)
-                            .color(TextColor.color(0x4974B)))
-                    .append(Component.space());
+            if (backup.zipOrFolder().equals("Folder")) {
+                message = message
+                        .append(Component.text("[TO ZIP]")
+                                .clickEvent(ClickEvent.runCommand("/backup menu \"" + backupName + "\"" + " toZIPConfirmation"))
+                                .decorate(TextDecoration.BOLD)
+                                .color(TextColor.color(0x4974B)))
+                        .append(Component.space());
+            }
 
-            message = message
-                    .append(Component.text("[UNZIP]")
-                            .clickEvent(ClickEvent.runCommand("/backup menu \"" + backupName + "\"" + " unZIPConfirmation"))
-                            .decorate(TextDecoration.BOLD)
-                            .color(TextColor.color(0xB8A500)))
-                    .append(Component.space());
+            if (backup.zipOrFolder().equals("ZIP")) {
+                message = message
+                        .append(Component.text("[UNZIP]")
+                                .clickEvent(ClickEvent.runCommand("/backup menu \"" + backupName + "\"" + " unZIPConfirmation"))
+                                .decorate(TextDecoration.BOLD)
+                                .color(TextColor.color(0xB8A500)))
+                        .append(Component.space());
+            }
 
             message = message
                     .append(Component.text("[DELETE]")
@@ -71,10 +75,6 @@ public class MenuCommand extends Command {
 
             message = message
                     .append(Component.newline())
-                    .append(Component.text("--------------------------------"));
-
-            message = message
-                    .append(Component.newline())
                     .append(Component.text(backupName))
                     .append(Component.space())
                     .append(Component.text(zipOrFolder))
@@ -82,20 +82,8 @@ public class MenuCommand extends Command {
                     .append(Component.text(backupSize))
                     .append(Component.space())
                     .append(Component.text(" MB"));
-
-            message = message
-                    .append(Component.newline())
-                    .append(Component.text("[TO ZIP]"))
-                    .append(Component.space())
-                    .append(Component.text("[UNZIP]"))
-                    .append(Component.space())
-                    .append(Component.text("[DELETE]"));
-
-            message = message
-                    .append(Component.newline())
-                    .append(Component.text("--------------------------------"));
         }
 
-        sender.sendMessage(message);
+        sendFramedMessage(message);
     }
 }

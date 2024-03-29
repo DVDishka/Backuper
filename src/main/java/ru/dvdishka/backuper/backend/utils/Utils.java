@@ -18,6 +18,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import ru.dvdishka.backuper.backend.config.Config;
@@ -181,10 +182,15 @@ public class Utils {
 
             Component framedMessage = Component.empty();
 
+            if (sender instanceof ConsoleCommandSender) {
+                framedMessage = framedMessage
+                        .append(Component.newline());
+            }
+
             framedMessage = framedMessage
                     .append(Component.text("------------------------------------------")
                             .decorate(TextDecoration.BOLD)
-                            .color(TextColor.color(0xE3A013)))
+                            .color(TextColor.color(0x143E77)))
                     .append(Component.newline());
 
             framedMessage = framedMessage.append(message);
@@ -193,7 +199,7 @@ public class Utils {
                     .append(Component.newline())
                     .append(Component.text("------------------------------------------")
                             .decorate(TextDecoration.BOLD)
-                            .color(TextColor.color(0xE3A013)));
+                            .color(TextColor.color(0x143E77)));
 
             sender.sendMessage(framedMessage);
 

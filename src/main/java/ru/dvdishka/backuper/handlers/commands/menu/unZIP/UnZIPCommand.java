@@ -70,7 +70,7 @@ public class UnZIPCommand extends Command implements Task {
 
         long backupZIPByteSize = backup.getByteSize();
 
-        maxProgress = backupZIPByteSize * unZIPProgressMultiplier;
+        maxProgress = (long) (backupZIPByteSize * Backup.zipCompressValue) * unZIPProgressMultiplier;
         maxProgress += backupZIPByteSize * deleteProgressMultiplier;
 
         StatusCommand.sendTaskStartedMessage("UnZIP", sender);

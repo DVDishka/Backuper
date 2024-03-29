@@ -110,12 +110,26 @@ public class ListCommand extends Command {
 
             message = message
                     .append(Component.text("---------------")
-                            .color(TextColor.color(0xE3A013))
+                            .color(TextColor.color(0x143E77))
                             .decorate(TextDecoration.BOLD)
                             .append(Component.newline()));
 
+            message = message
+                    .append(Component.text("<<<<<<<<")
+                            .decorate(TextDecoration.BOLD)
+                            .color(TextColor.fromHexString("#129c9b"))
+                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backup list " + (pageNumber - 1))))
+                    .append(Component.text(String.valueOf(pageNumber))
+                            .decorate(TextDecoration.BOLD))
+                    .append(Component.text(">>>>>>>>")
+                            .decorate(TextDecoration.BOLD)
+                            .color(TextColor.fromHexString("#129c9b"))
+                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backup list " + (pageNumber + 1))))
+                    .append(Component.newline());
+
             for (TextComponent backupComponent : pages.get(pageNumber - 1)) {
                 message = message
+                        .append(Component.space())
                         .append(backupComponent)
                         .append(Component.newline());
             }
@@ -123,17 +137,19 @@ public class ListCommand extends Command {
             message = message
                     .append(Component.text("<<<<<<<<")
                             .decorate(TextDecoration.BOLD)
+                            .color(TextColor.fromHexString("#129c9b"))
                             .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backup list " + (pageNumber - 1))))
                     .append(Component.text(String.valueOf(pageNumber))
                             .decorate(TextDecoration.BOLD))
                     .append(Component.text(">>>>>>>>")
                             .decorate(TextDecoration.BOLD)
+                            .color(TextColor.fromHexString("#129c9b"))
                             .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backup list " + (pageNumber + 1))))
                     .append(Component.newline());
 
             message = message
                     .append(Component.text("---------------")
-                            .color(TextColor.color(0xE3A013))
+                            .color(TextColor.color(0x143E77))
                             .decorate(TextDecoration.BOLD));
 
         } else {

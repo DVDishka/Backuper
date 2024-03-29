@@ -6,7 +6,6 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
 
@@ -23,6 +22,8 @@ public class Backup {
     public static DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
     private static volatile boolean isBackupBusy = false;
     private static Task currentTask = null;
+
+    public static final double zipCompressValue = 2;
 
     public Backup(String backupName) {
 
