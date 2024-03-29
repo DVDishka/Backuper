@@ -37,6 +37,12 @@ public class MenuCommand extends Command {
         long backupSize = backup.getMBSize();
         String zipOrFolder = backup.zipOrFolder();
 
+        Component header = Component.empty();
+
+        header = header
+                .append(Component.text("Backup Menu")
+                        .decorate(TextDecoration.BOLD));
+
         Component message = Component.empty();
 
         if (!(sender instanceof ConsoleCommandSender)) {
@@ -44,9 +50,10 @@ public class MenuCommand extends Command {
             message = message
                     .append(Component.text(backupName)
                             .hoverEvent(HoverEvent.showText(Component.text(zipOrFolder + " " + backupSize + " MB"))))
+                    .append(Component.newline())
                     .append(Component.newline());
 
-            if (backup.zipOrFolder().equals("Folder")) {
+            if (backup.zipOrFolder().equals("(Folder)")) {
                 message = message
                         .append(Component.text("[TO ZIP]")
                                 .clickEvent(ClickEvent.runCommand("/backup menu \"" + backupName + "\"" + " toZIPConfirmation"))
@@ -55,12 +62,12 @@ public class MenuCommand extends Command {
                         .append(Component.space());
             }
 
-            if (backup.zipOrFolder().equals("ZIP")) {
+            if (backup.zipOrFolder().equals("(ZIP)")) {
                 message = message
                         .append(Component.text("[UNZIP]")
                                 .clickEvent(ClickEvent.runCommand("/backup menu \"" + backupName + "\"" + " unZIPConfirmation"))
                                 .decorate(TextDecoration.BOLD)
-                                .color(TextColor.color(0xB8A500)))
+                                .color(TextColor.color(0x4974B)))
                         .append(Component.space());
             }
 
@@ -68,13 +75,13 @@ public class MenuCommand extends Command {
                     .append(Component.text("[DELETE]")
                             .clickEvent(ClickEvent.runCommand("/backup menu \"" + backupName + "\"" + " deleteConfirmation"))
                             .decorate(TextDecoration.BOLD)
-                            .color(TextColor.color(0xB02100)))
-                    .append(Component.newline());
+                            .color(TextColor.color(0xB02100)));
+
+            sendFramedMessage(header, message, 15);
 
         } else {
 
             message = message
-                    .append(Component.newline())
                     .append(Component.text(backupName))
                     .append(Component.space())
                     .append(Component.text(zipOrFolder))
@@ -82,8 +89,8 @@ public class MenuCommand extends Command {
                     .append(Component.text(backupSize))
                     .append(Component.space())
                     .append(Component.text(" MB"));
-        }
 
-        sendFramedMessage(message);
+            sendFramedMessage(header, message);
+        }
     }
 }

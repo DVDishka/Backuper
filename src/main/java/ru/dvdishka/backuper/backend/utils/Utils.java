@@ -205,4 +205,111 @@ public class Utils {
 
         } catch (Exception ignored) {}
     }
+
+    public static void sendFramedMessage(Component message, int dashNumber, CommandSender sender) {
+        try {
+
+            Component framedMessage = Component.empty();
+
+            if (sender instanceof ConsoleCommandSender) {
+                framedMessage = framedMessage
+                        .append(Component.newline());
+            }
+
+            framedMessage = framedMessage
+                    .append(Component.text("-".repeat(dashNumber))
+                            .decorate(TextDecoration.BOLD)
+                            .color(TextColor.color(0x143E77)))
+                    .append(Component.newline());
+
+            framedMessage = framedMessage.append(message);
+
+            framedMessage = framedMessage
+                    .append(Component.newline())
+                    .append(Component.text("-".repeat(dashNumber))
+                            .decorate(TextDecoration.BOLD)
+                            .color(TextColor.color(0x143E77)));
+
+            sender.sendMessage(framedMessage);
+
+        } catch (Exception ignored) {}
+    }
+
+    public static void sendFramedMessage(Component header, Component message, CommandSender sender) {
+        try {
+
+            Component framedMessage = Component.empty();
+
+            if (sender instanceof ConsoleCommandSender) {
+                framedMessage = framedMessage
+                        .append(Component.newline());
+            }
+
+            framedMessage = framedMessage
+                    .append(Component.text("------------------------------------------")
+                            .decorate(TextDecoration.BOLD)
+                            .color(TextColor.color(0x143E77)))
+                    .append(Component.newline());
+
+            framedMessage = framedMessage
+                    .append(header)
+                    .append(Component.newline());
+
+            framedMessage = framedMessage
+                    .append(Component.text("------------------------------------------")
+                            .decorate(TextDecoration.BOLD)
+                            .color(TextColor.fromHexString("#129c9b")))
+                    .append(Component.newline());
+
+            framedMessage = framedMessage.append(message);
+
+            framedMessage = framedMessage
+                    .append(Component.newline())
+                    .append(Component.text("------------------------------------------")
+                            .decorate(TextDecoration.BOLD)
+                            .color(TextColor.color(0x143E77)));
+
+            sender.sendMessage(framedMessage);
+
+        } catch (Exception ignored) {}
+    }
+
+    public static void sendFramedMessage(Component header, Component message, int dashNumber, CommandSender sender) {
+        try {
+
+            Component framedMessage = Component.empty();
+
+            if (sender instanceof ConsoleCommandSender) {
+                framedMessage = framedMessage
+                        .append(Component.newline());
+            }
+
+            framedMessage = framedMessage
+                    .append(Component.text("-".repeat(dashNumber))
+                            .decorate(TextDecoration.BOLD)
+                            .color(TextColor.color(0x143E77)))
+                    .append(Component.newline());
+
+            framedMessage = framedMessage
+                    .append(header)
+                    .append(Component.newline());
+
+            framedMessage = framedMessage
+                    .append(Component.text("-".repeat(dashNumber))
+                            .decorate(TextDecoration.BOLD)
+                            .color(TextColor.fromHexString("#129c9b")))
+                    .append(Component.newline());
+
+            framedMessage = framedMessage.append(message);
+
+            framedMessage = framedMessage
+                    .append(Component.newline())
+                    .append(Component.text("-".repeat(dashNumber))
+                            .decorate(TextDecoration.BOLD)
+                            .color(TextColor.color(0x143E77)));
+
+            sender.sendMessage(framedMessage);
+
+        } catch (Exception ignored) {}
+    }
 }

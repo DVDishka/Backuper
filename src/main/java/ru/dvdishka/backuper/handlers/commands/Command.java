@@ -59,4 +59,16 @@ public abstract class Command {
     protected void sendFramedMessage(Component message) {
         Utils.sendFramedMessage(message, sender);
     }
+
+    protected void sendFramedMessage(Component message, int dashNumber) {
+        Utils.sendFramedMessage(message, dashNumber, sender);
+    }
+
+    protected void sendFramedMessage(Component header, Component message) {
+        Utils.sendFramedMessage(header, message, sender);
+    }
+
+    protected void sendFramedMessage(Component header, Component message, int dashNumber) {
+        Utils.sendFramedMessage(header, message, dashNumber, sender);
+    }
 }

@@ -54,7 +54,18 @@ public class ListCommand extends Command {
 
         updateListPages();
 
-        sender.sendMessage(createListMessage(pageNumber));
+        Component header = Component.empty();
+
+        header = header
+                .append(Component.text("Backup List")
+                        .decorate(TextDecoration.BOLD));
+
+        if (!(sender instanceof ConsoleCommandSender)) {
+            sendFramedMessage(header, createListMessage(pageNumber), 15);
+        }
+        else {
+            sendFramedMessage(header, createListMessage(pageNumber));
+        }
     }
 
     public static void updateListPages() {
@@ -108,25 +119,6 @@ public class ListCommand extends Command {
 
         if (!(sender instanceof ConsoleCommandSender)) {
 
-            message = message
-                    .append(Component.text("---------------")
-                            .color(TextColor.color(0x143E77))
-                            .decorate(TextDecoration.BOLD)
-                            .append(Component.newline()));
-
-            message = message
-                    .append(Component.text("<<<<<<<<")
-                            .decorate(TextDecoration.BOLD)
-                            .color(TextColor.fromHexString("#129c9b"))
-                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backup list " + (pageNumber - 1))))
-                    .append(Component.text(String.valueOf(pageNumber))
-                            .decorate(TextDecoration.BOLD))
-                    .append(Component.text(">>>>>>>>")
-                            .decorate(TextDecoration.BOLD)
-                            .color(TextColor.fromHexString("#129c9b"))
-                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backup list " + (pageNumber + 1))))
-                    .append(Component.newline());
-
             for (TextComponent backupComponent : pages.get(pageNumber - 1)) {
                 message = message
                         .append(Component.space())
@@ -144,23 +136,20 @@ public class ListCommand extends Command {
                     .append(Component.text(">>>>>>>>")
                             .decorate(TextDecoration.BOLD)
                             .color(TextColor.fromHexString("#129c9b"))
-                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backup list " + (pageNumber + 1))))
-                    .append(Component.newline());
-
-            message = message
-                    .append(Component.text("---------------")
-                            .color(TextColor.color(0x143E77))
-                            .decorate(TextDecoration.BOLD));
+                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backup list " + (pageNumber + 1))));
 
         } else {
 
-            message = message
-                    .append(Component.newline())
-                    .append(Component.text("--------------------------------"));
+            int backupIndex = 1;
 
             for (TextComponent backupComponent : pages.get(pageNumber - 1)) {
+
+                if (backupIndex > 1) {
+                    message = message
+                            .append(Component.newline());
+                }
+
                 message = message
-                        .append(Component.newline())
                         .append(Component.text(backupComponent.content()))
                         .append(Component.space())
                         .append(Component.text(new Backup(backupComponent.content()).zipOrFolder()))
@@ -168,12 +157,9 @@ public class ListCommand extends Command {
                         .append(Component.text(new Backup(backupComponent.content()).getMBSize()))
                         .append(Component.space())
                         .append(Component.text(" MB"));
+
+                backupIndex++;
             }
-
-            message = message
-                    .append(Component.newline())
-                    .append(Component.text("--------------------------------"));
-
         }
         return message;
     }

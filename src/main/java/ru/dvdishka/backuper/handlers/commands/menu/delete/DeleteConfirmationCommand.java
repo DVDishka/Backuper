@@ -43,18 +43,19 @@ public class DeleteConfirmationCommand extends Command {
         long backupSize = backup.getMBSize();
         String zipFolderBackup = backup.zipOrFolder();
 
-        Component message = net.kyori.adventure.text.Component.empty();
+        Component header = Component.empty();
 
-        message = message
-                .append(Component.text("Are you sure")
-                        .append(Component.newline())
-                        .append(Component.text("You want to delete the backup?"))
-                        .color(TextColor.color(0xB02100)))
-                .append(Component.newline());
+        header = header
+                .append(Component.text("Confirm Deletion")
+                        .decorate(TextDecoration.BOLD)
+                        .color(TextColor.color(0xB02100)));
+
+        Component message = net.kyori.adventure.text.Component.empty();
 
         message = message
                 .append(Component.text(backupName)
                         .hoverEvent(HoverEvent.showText(Component.text(zipFolderBackup + " " + backupSize + " MB"))))
+                .append(Component.newline())
                 .append(Component.newline());
 
         message = message
@@ -63,6 +64,6 @@ public class DeleteConfirmationCommand extends Command {
                         .color(TextColor.color(0xB02100))
                         .decorate(TextDecoration.BOLD));
 
-        sendFramedMessage(message);
+        sendFramedMessage(header, message, 15);
     }
 }

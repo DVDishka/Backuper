@@ -49,28 +49,27 @@ public class ToZIPConfirmationCommand extends Command {
             return;
         }
 
-        Component message = net.kyori.adventure.text.Component.empty();
+        Component header = Component.empty();
 
-        message = message
-                .append(Component.text("Are you sure")
-                        .append(Component.newline())
-                        .append(Component.text("You want to convert this backup to ZIP?"))
-                        .color(TextColor.color(0xB02100)))
-                .append(Component.newline());
+        header = header
+                .append(Component.text("Confirm ToZIP")
+                        .decorate(TextDecoration.BOLD)
+                        .color(TextColor.color(0xB02100)));
+
+        Component message = net.kyori.adventure.text.Component.empty();
 
         message = message
                 .append(Component.text(backupName)
                         .hoverEvent(HoverEvent.showText(Component.text(zipFolderBackup + " " + backupSize + " MB"))))
+                .append(Component.newline())
                 .append(Component.newline());
 
         message = message
                 .append(Component.text("[CONVERT BACKUP]")
                         .clickEvent(ClickEvent.runCommand("/backup menu \"" + backupName + "\" toZIP"))
-                        .color(TextColor.color(0x4974B))
+                        .color(TextColor.color(0xB02100))
                         .decorate(TextDecoration.BOLD));
 
-        message = message.append(Component.newline());
-
-        sendFramedMessage(message);
+        sendFramedMessage(header, message, 15);
     }
 }

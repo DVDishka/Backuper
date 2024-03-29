@@ -38,7 +38,7 @@ public class DeleteCommand extends Command implements Task {
 
         if (Backup.isLocked() || Backup.isLocked()) {
             cancelButtonSound();
-            returnFailure("Backup is blocked by another operation!");
+            returnFailure("Blocked by another operation!");
             return;
         }
 
