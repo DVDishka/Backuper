@@ -32,7 +32,7 @@ class BackupProcess implements Runnable, Task {
 
     private final long deleteProgressMultiplier = 1;
     private final long copyProgressMultiplier = 5;
-    private final long zipProgressMultiplier = 5;
+    private final long zipProgressMultiplier = 10;
 
     BackupProcess(String taskName, String afterBackup, boolean isAutoBackup, CommandSender sender) {
         this.taskName = taskName;

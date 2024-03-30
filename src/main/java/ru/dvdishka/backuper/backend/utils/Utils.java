@@ -87,13 +87,27 @@ public class Utils {
 
         boolean isExcludedDirectory = false;
 
+        try {
+
+            if (path.getCanonicalPath().startsWith(new File("plugins/Backuper/Backups").getCanonicalPath())) {
+                return true;
+            }
+
+        } catch (SecurityException e) {
+            Logger.getLogger().warn("Failed to copy file \"" + path.getAbsolutePath() + "\", no access", sender);
+            Logger.getLogger().warn("BackupTask", e);
+        } catch (Exception e) {
+            Logger.getLogger().warn("Something went wrong while trying to copy file \"" + path.getAbsolutePath() + "\"", sender);
+            Logger.getLogger().warn("BackupTask", e);
+        }
+
         for (String excludeDirectoryFromBackup : Config.getInstance().getExcludeDirectoryFromBackup()) {
 
             try {
 
                 File excludeDirectoryFromBackupFile = Paths.get(excludeDirectoryFromBackup).toFile().getCanonicalFile();
 
-                if (excludeDirectoryFromBackupFile.equals(path.getCanonicalFile())) {
+                if (path.getCanonicalPath().startsWith(excludeDirectoryFromBackupFile.getCanonicalPath())) {
                     isExcludedDirectory = true;
                 }
 

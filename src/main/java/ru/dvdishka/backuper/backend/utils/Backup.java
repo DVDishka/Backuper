@@ -23,7 +23,7 @@ public class Backup {
     private static volatile boolean isBackupBusy = false;
     private static Task currentTask = null;
 
-    public static final double zipCompressValue = 2;
+    public static final double zipCompressValue = 1.5;
 
     public Backup(String backupName) {
 
