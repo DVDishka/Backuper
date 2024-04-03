@@ -72,4 +72,7 @@ public class WorldChangeCatcher implements Listener {
     public static void onPlayerJoin(PlayerJoinEvent event) {
         Config.getInstance().updateLastChange();
     }
+    public static void onItemPickUp(InventoryPickupItemEvent event) {
+        Config.getInstance().updateLastChange();
+    }
 }

@@ -314,6 +314,20 @@ public class Initialization implements Listener {
 
         Bukkit.getPluginManager().registerEvents(new Initialization(), Utils.plugin);
         Bukkit.getPluginManager().registerEvents(new WorldChangeCatcher(), Utils.plugin);
+        Bukkit.getPluginManager().registerEvents(new Initialization(), Common.plugin);
+        Bukkit.getPluginManager().registerEvents(new WorldChangeCatcher(), Common.plugin);
+
+        boolean areWorldChangeEventsExists = true;
+        for (String eventName : WorldChangeCatcherNew.eventNames) {
+            try {
+                Class.forName(eventName);
+            } catch (Exception e) {
+                areWorldChangeEventsExists = false;
+            }
+        }
+        if (areWorldChangeEventsExists) {
+            Bukkit.getPluginManager().registerEvents(new WorldChangeCatcherNew(), Common.plugin);
+        }
     }
 
     public static void checkDependencies() {
