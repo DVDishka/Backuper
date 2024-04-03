@@ -34,6 +34,7 @@ import ru.dvdishka.backuper.handlers.commands.backup.BackupCommand;
 import ru.dvdishka.backuper.handlers.commands.list.ListCommand;
 import ru.dvdishka.backuper.handlers.commands.backup.BackupProcessStarter;
 import ru.dvdishka.backuper.handlers.commands.status.StatusCommand;
+import ru.dvdishka.backuper.handlers.worldchangecatch.WorldChangeCatcherNew;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -314,8 +315,8 @@ public class Initialization implements Listener {
 
         Bukkit.getPluginManager().registerEvents(new Initialization(), Utils.plugin);
         Bukkit.getPluginManager().registerEvents(new WorldChangeCatcher(), Utils.plugin);
-        Bukkit.getPluginManager().registerEvents(new Initialization(), Common.plugin);
-        Bukkit.getPluginManager().registerEvents(new WorldChangeCatcher(), Common.plugin);
+        Bukkit.getPluginManager().registerEvents(new Initialization(), Utils.plugin);
+        Bukkit.getPluginManager().registerEvents(new WorldChangeCatcher(), Utils.plugin);
 
         boolean areWorldChangeEventsExists = true;
         for (String eventName : WorldChangeCatcherNew.eventNames) {
@@ -326,7 +327,7 @@ public class Initialization implements Listener {
             }
         }
         if (areWorldChangeEventsExists) {
-            Bukkit.getPluginManager().registerEvents(new WorldChangeCatcherNew(), Common.plugin);
+            Bukkit.getPluginManager().registerEvents(new WorldChangeCatcherNew(), Utils.plugin);
         }
     }
 
@@ -404,17 +405,17 @@ public class Initialization implements Listener {
                             .decorate(TextDecoration.BOLD)
                             .color(NamedTextColor.RED));
 
-            int downloadLLinkNumber = 0;
+            int downloadLinkNumber = 0;
             for (String downloadLink : Utils.downloadLinks) {
 
                 message = message.append(Component.newline());
 
                 message = message
-                        .append(Component.text("Download link: " + Utils.downloadLinksName.get(downloadLLinkNumber))
+                        .append(Component.text("Download link: " + Utils.downloadLinksName.get(downloadLinkNumber))
                                 .clickEvent(ClickEvent.openUrl(downloadLink))
                                 .decorate(TextDecoration.UNDERLINED));
 
-                downloadLLinkNumber++;
+                downloadLinkNumber++;
             }
 
             message = message
