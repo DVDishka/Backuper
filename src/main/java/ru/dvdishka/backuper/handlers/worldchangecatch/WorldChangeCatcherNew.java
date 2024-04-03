@@ -4,7 +4,7 @@ import io.papermc.paper.event.player.PlayerInventorySlotChangeEvent;
 import io.papermc.paper.event.player.PlayerPickItemEvent;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import ru.dvdishka.backuper.back.config.Config;
+import ru.dvdishka.backuper.backend.config.Config;
 
 import java.util.List;
 

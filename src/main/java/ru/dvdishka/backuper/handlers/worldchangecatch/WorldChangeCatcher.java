@@ -1,4 +1,4 @@
-package ru.dvdishka.backuper.handlers;
+package ru.dvdishka.backuper.handlers.worldchangecatch;
 
 import io.papermc.paper.event.player.PlayerPickItemEvent;
 import org.bukkit.event.EventHandler;
@@ -44,16 +44,6 @@ public class WorldChangeCatcher implements Listener {
     }
 
     @EventHandler
-    public static void onItemPickUp(InventoryPickupItemEvent event) {
-        Config.getInstance().updateLastChange();
-    }
-
-    @EventHandler
-    public static void onItemPickUp(PlayerPickItemEvent event) {
-        Config.getInstance().updateLastChange();
-    }
-
-    @EventHandler
     public static void onItemDrop(PlayerDropItemEvent event) {
         Config.getInstance().updateLastChange();
     }
@@ -70,9 +60,6 @@ public class WorldChangeCatcher implements Listener {
 
     @EventHandler
     public static void onPlayerJoin(PlayerJoinEvent event) {
-        Config.getInstance().updateLastChange();
-    }
-    public static void onItemPickUp(InventoryPickupItemEvent event) {
         Config.getInstance().updateLastChange();
     }
 }

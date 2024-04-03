@@ -19,7 +19,6 @@ import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.utils.Backup;
 import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.backend.utils.Logger;
-import ru.dvdishka.backuper.handlers.WorldChangeCatcher;
 import ru.dvdishka.backuper.backend.utils.Scheduler;
 import ru.dvdishka.backuper.handlers.commands.menu.MenuCommand;
 import ru.dvdishka.backuper.handlers.commands.menu.delete.DeleteCommand;
@@ -34,6 +33,7 @@ import ru.dvdishka.backuper.handlers.commands.backup.BackupCommand;
 import ru.dvdishka.backuper.handlers.commands.list.ListCommand;
 import ru.dvdishka.backuper.handlers.commands.backup.BackupProcessStarter;
 import ru.dvdishka.backuper.handlers.commands.status.StatusCommand;
+import ru.dvdishka.backuper.handlers.worldchangecatch.WorldChangeCatcher;
 import ru.dvdishka.backuper.handlers.worldchangecatch.WorldChangeCatcherNew;
 
 import java.io.BufferedReader;
@@ -313,8 +313,6 @@ public class Initialization implements Listener {
 
     public static void initEventHandlers() {
 
-        Bukkit.getPluginManager().registerEvents(new Initialization(), Utils.plugin);
-        Bukkit.getPluginManager().registerEvents(new WorldChangeCatcher(), Utils.plugin);
         Bukkit.getPluginManager().registerEvents(new Initialization(), Utils.plugin);
         Bukkit.getPluginManager().registerEvents(new WorldChangeCatcher(), Utils.plugin);
 
