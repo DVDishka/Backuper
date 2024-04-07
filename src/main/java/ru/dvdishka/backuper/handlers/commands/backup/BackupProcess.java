@@ -634,6 +634,10 @@ class BackupProcess implements Runnable, Task {
 
     private long getFileFolderByteSizeExceptExcluded(File path) {
 
+        if (!path.exists()) {
+            return 0;
+        }
+
         boolean isExcludedDirectory = Utils.isExcludedDirectory(path, sender);
 
         if (isExcludedDirectory) {

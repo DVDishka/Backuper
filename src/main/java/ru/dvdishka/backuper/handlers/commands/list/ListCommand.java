@@ -42,7 +42,7 @@ public class ListCommand extends Command {
             return;
         }
 
-        int pageNumber = (Integer) arguments.getOptional("pageNumber").orElse(1);
+        int pageNumber = (Integer) arguments.getOrDefault("pageNumber", 1);
 
         // PAGE DOES NOT EXIST
         if (pageNumber < 1 || pageNumber > ListCommand.getListPageCount()) {
@@ -61,10 +61,10 @@ public class ListCommand extends Command {
                         .decorate(TextDecoration.BOLD));
 
         if (!(sender instanceof ConsoleCommandSender)) {
-            sendFramedMessage(header, createListMessage(pageNumber), 15);
+            sendFramedMessage(header, createListMessage(pageNumber, true), 15);
         }
         else {
-            sendFramedMessage(header, createListMessage(pageNumber));
+            sendFramedMessage(header, createListMessage(pageNumber, arguments.get("pageNumber") != null), 41);
         }
     }
 
@@ -113,11 +113,24 @@ public class ListCommand extends Command {
         ListCommand.pages = pages;
     }
 
-    public Component createListMessage(int pageNumber) {
+    public Component createListMessage(int pageNumber, boolean pagedListMessage) {
 
         Component message = Component.empty();
 
         if (!(sender instanceof ConsoleCommandSender)) {
+
+            message = message
+                    .append(Component.text("<<<<<<<<")
+                            .decorate(TextDecoration.BOLD)
+                            .color(TextColor.fromHexString("#129c9b"))
+                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backup list " + (pageNumber - 1))))
+                    .append(Component.text(String.valueOf(pageNumber))
+                            .decorate(TextDecoration.BOLD))
+                    .append(Component.text(">>>>>>>>")
+                            .decorate(TextDecoration.BOLD)
+                            .color(TextColor.fromHexString("#129c9b"))
+                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backup list " + (pageNumber + 1))))
+                    .append(Component.newline());
 
             for (TextComponent backupComponent : pages.get(pageNumber - 1)) {
                 message = message
@@ -142,23 +155,68 @@ public class ListCommand extends Command {
 
             int backupIndex = 1;
 
-            for (TextComponent backupComponent : pages.get(pageNumber - 1)) {
+            if (pagedListMessage) {
 
-                if (backupIndex > 1) {
+                message = message
+                        .append(Component.text("<".repeat(20))
+                                .decorate(TextDecoration.BOLD)
+                                .color(TextColor.fromHexString("#129c9b")))
+                        .append(Component.text(pageNumber))
+                        .append(Component.text(">".repeat(20))
+                                .decorate(TextDecoration.BOLD)
+                                .color(TextColor.fromHexString("#129c9b")))
+                        .append(Component.newline());
+
+                for (TextComponent backupComponent : pages.get(pageNumber - 1)) {
+
+                    if (backupIndex > 1) {
+                        message = message
+                                .append(Component.newline());
+                    }
+
                     message = message
-                            .append(Component.newline());
+                            .append(Component.text(backupComponent.content()))
+                            .append(Component.space())
+                            .append(Component.text(new Backup(backupComponent.content()).zipOrFolder()))
+                            .append(Component.space())
+                            .append(Component.text(new Backup(backupComponent.content()).getMBSize()))
+                            .append(Component.space())
+                            .append(Component.text(" MB"));
+
+                    backupIndex++;
                 }
 
                 message = message
-                        .append(Component.text(backupComponent.content()))
-                        .append(Component.space())
-                        .append(Component.text(new Backup(backupComponent.content()).zipOrFolder()))
-                        .append(Component.space())
-                        .append(Component.text(new Backup(backupComponent.content()).getMBSize()))
-                        .append(Component.space())
-                        .append(Component.text(" MB"));
+                        .append(Component.newline())
+                        .append(Component.text("<".repeat(20))
+                                .decorate(TextDecoration.BOLD)
+                                .color(TextColor.fromHexString("#129c9b")))
+                        .append(Component.text(pageNumber))
+                        .append(Component.text(">".repeat(20))
+                                .decorate(TextDecoration.BOLD)
+                                .color(TextColor.fromHexString("#129c9b")));
+            }
+            else {
+                for (ArrayList<TextComponent> page : pages) {
+                    for (TextComponent backupComponent : page) {
 
-                backupIndex++;
+                        if (backupIndex > 1) {
+                            message = message
+                                    .append(Component.newline());
+                        }
+
+                        message = message
+                                .append(Component.text(backupComponent.content()))
+                                .append(Component.space())
+                                .append(Component.text(new Backup(backupComponent.content()).zipOrFolder()))
+                                .append(Component.space())
+                                .append(Component.text(new Backup(backupComponent.content()).getMBSize()))
+                                .append(Component.space())
+                                .append(Component.text(" MB"));
+
+                        backupIndex++;
+                    }
+                }
             }
         }
         return message;
