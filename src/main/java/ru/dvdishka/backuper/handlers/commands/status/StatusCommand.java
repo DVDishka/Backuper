@@ -75,18 +75,18 @@ public class StatusCommand extends Command {
                     .append(Component.text("[STATUS]")
                             .color(TextColor.color(17, 102, 212)))
                     .append(Component.text(" button below or using command "))
-                    .append(Component.text("/backup status")
+                    .append(Component.text("/backuper status")
                             .decorate(TextDecoration.UNDERLINED)
-                            .clickEvent(ClickEvent.suggestCommand("/backup status"))
+                            .clickEvent(ClickEvent.suggestCommand("/backuper status"))
                             .hoverEvent(HoverEvent.showText(Component
-                                    .text("/backup status")
+                                    .text("/backuper status")
                                             .decorate(TextDecoration.ITALIC))))
                     .append(Component.newline());
 
             message = message
                     .append(Component.newline())
                     .append(Component.text("[STATUS]")
-                            .clickEvent(ClickEvent.runCommand("/backup status"))
+                            .clickEvent(ClickEvent.runCommand("/backuper status"))
                             .color(TextColor.color(17, 102, 212))
                             .decorate(TextDecoration.BOLD));
         }
@@ -101,9 +101,9 @@ public class StatusCommand extends Command {
                     .append(Component.newline())
                     .append(Component.text("you can check the task status using command"))
                     .append(Component.newline())
-                    .append(Component.text("/backup status")
+                    .append(Component.text("/backuper status")
                             .decorate(TextDecoration.UNDERLINED)
-                            .clickEvent(ClickEvent.suggestCommand("/backup status")));
+                            .clickEvent(ClickEvent.suggestCommand("/backuper status")));
         }
 
         Utils.sendFramedMessage(message, sender);

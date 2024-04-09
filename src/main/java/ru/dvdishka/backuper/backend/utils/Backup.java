@@ -176,22 +176,22 @@ public class Backup {
 
     public static void sendBackupAlert(long timeSeconds, String afterBackup) {
 
-        String action = "backed up";
+        String action = "backed\nup ";
         boolean restart = false;
 
         if (afterBackup.equals("STOP")) {
             Logger.getLogger().log("Server will be backed up and stopped in " + timeSeconds + " second(s)");
-            action = "backed up and restarted";
+            action = "backed\nup and restarted\n";
             restart = true;
         }
         if (afterBackup.equals("RESTART")) {
             Logger.getLogger().log("Server will be backed up and restarted in " + timeSeconds + " second(s)");
-            action = "backed up and restarted";
+            action = "backed\nup and restarted\n";
             restart = true;
         }
         if (afterBackup.equals("NOTHING")) {
             Logger.getLogger().log("Server will be backed up in " + timeSeconds + " second(s)");
-            action = "backed up";
+            action = "backed\nup ";
         }
 
         for (Player player : Bukkit.getOnlinePlayers()) {
@@ -202,16 +202,22 @@ public class Backup {
 
             if (restart || !Config.getInstance().isAlertOnlyServerRestart()) {
 
+                Component header = Component.empty();
+
+                header = header
+                        .append(Component.text("Alert")
+                                .decorate(TextDecoration.BOLD));
+
                 Component message = Component.empty();
 
                 message = message
-                        .append(Component.text("Server will be " + action + " in "))
+                        .append(Component.text("Server will be " + action + "in "))
                         .append(Component.text(timeSeconds)
                                 .color(NamedTextColor.RED)
                                 .decorate(TextDecoration.BOLD))
-                        .append(Component.text(" seconds"));
+                        .append(Component.text(" second(s)"));
 
-                Utils.sendFramedMessage(message, player);
+                Utils.sendFramedMessage(header, message, 15, player);
             }
         }
     }

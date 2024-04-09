@@ -102,7 +102,7 @@ public class ListCommand extends Command {
 
             HoverEvent<net.kyori.adventure.text.Component> hoverEvent = HoverEvent
                     .showText(net.kyori.adventure.text.Component.text(backupFileType + " " + backupSize + " MB"));
-            ClickEvent clickEvent = ClickEvent.runCommand("/backup menu \"" + backupName + "\"");
+            ClickEvent clickEvent = ClickEvent.runCommand("/backuper menu \"" + backupName + "\"");
 
             pages.get((i - 1) / 10)
                     .add(net.kyori.adventure.text.Component.text(backupName)
@@ -123,13 +123,13 @@ public class ListCommand extends Command {
                     .append(Component.text("<<<<<<<<")
                             .decorate(TextDecoration.BOLD)
                             .color(TextColor.fromHexString("#129c9b"))
-                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backup list " + (pageNumber - 1))))
+                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list " + (pageNumber - 1))))
                     .append(Component.text(String.valueOf(pageNumber))
                             .decorate(TextDecoration.BOLD))
                     .append(Component.text(">>>>>>>>")
                             .decorate(TextDecoration.BOLD)
                             .color(TextColor.fromHexString("#129c9b"))
-                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backup list " + (pageNumber + 1))))
+                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list " + (pageNumber + 1))))
                     .append(Component.newline());
 
             for (TextComponent backupComponent : pages.get(pageNumber - 1)) {
@@ -143,13 +143,13 @@ public class ListCommand extends Command {
                     .append(Component.text("<<<<<<<<")
                             .decorate(TextDecoration.BOLD)
                             .color(TextColor.fromHexString("#129c9b"))
-                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backup list " + (pageNumber - 1))))
+                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list " + (pageNumber - 1))))
                     .append(Component.text(String.valueOf(pageNumber))
                             .decorate(TextDecoration.BOLD))
                     .append(Component.text(">>>>>>>>")
                             .decorate(TextDecoration.BOLD)
                             .color(TextColor.fromHexString("#129c9b"))
-                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backup list " + (pageNumber + 1))));
+                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list " + (pageNumber + 1))));
 
         } else {
 

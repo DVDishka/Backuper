@@ -66,7 +66,7 @@ public class UnZIPConfirmationCommand extends Command {
 
         message = message
                 .append(Component.text("[CONVERT BACKUP]")
-                        .clickEvent(ClickEvent.runCommand("/backup menu \"" + backupName + "\" unZIP"))
+                        .clickEvent(ClickEvent.runCommand("/backuper menu \"" + backupName + "\" unZIP"))
                         .color(TextColor.color(0xB02100))
                         .decorate(TextDecoration.BOLD));
 

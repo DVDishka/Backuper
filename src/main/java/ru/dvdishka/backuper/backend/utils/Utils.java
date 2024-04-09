@@ -160,7 +160,7 @@ public class Utils {
 
     public static void returnWarning(String message, CommandSender sender) {
         try {
-            sender.sendMessage(Component.text(message).color(TextColor.color(211, 145, 0)));
+            sender.sendMessage(Component.text(message).color(NamedTextColor.RED));
         } catch (Exception ignored) {}
     }
 

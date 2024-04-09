@@ -66,7 +66,7 @@ public class ToZIPConfirmationCommand extends Command {
 
         message = message
                 .append(Component.text("[CONVERT BACKUP]")
-                        .clickEvent(ClickEvent.runCommand("/backup menu \"" + backupName + "\" toZIP"))
+                        .clickEvent(ClickEvent.runCommand("/backuper menu \"" + backupName + "\" toZIP"))
                         .color(TextColor.color(0xB02100))
                         .decorate(TextDecoration.BOLD));
 

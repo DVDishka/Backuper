@@ -60,7 +60,7 @@ public class DeleteConfirmationCommand extends Command {
 
         message = message
                 .append(Component.text("[DELETE BACKUP]")
-                        .clickEvent(ClickEvent.runCommand("/backup menu \"" + backupName + "\" delete"))
+                        .clickEvent(ClickEvent.runCommand("/backuper menu \"" + backupName + "\" delete"))
                         .color(TextColor.color(0xB02100))
                         .decorate(TextDecoration.BOLD));
 
