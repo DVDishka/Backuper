@@ -38,6 +38,7 @@ public class Config {
     private long alertTimeBeforeRestart = 60;
     private boolean betterLogging = false;
     private boolean notSetReadOnly = false;
+    private boolean alertOnlyServerRestart = false;
 
     private static Config instance = null;
 
@@ -99,6 +100,7 @@ public class Config {
         this.excludeDirectoryFromBackup = config.getStringList("excludeDirectoryFromBackup");
         this.alertTimeBeforeRestart = config.getLong("alertTimeBeforeRestart", 60);
         this.notSetReadOnly = config.getBoolean("notSetReadOnly", false);
+        this.alertOnlyServerRestart = config.getBoolean("alertOnlyServerRestart", false);
 
         if (this.alertTimeBeforeRestart >= this.backupPeriod * 60L) {
             Logger.getLogger().warn("Failed to load config value!");
@@ -111,7 +113,7 @@ public class Config {
         List<String> configFields = List.of("backupTime", "backupPeriod", "afterBackup", "maxBackupsNumber",
                 "maxBackupsWeight", "zipArchive", "betterLogging", "autoBackup", "lastBackup", "lastChange",
                 "skipDuplicateBackup", "backupsFolder", "alertTimeBeforeRestart", "addDirectoryToBackup",
-                "excludeDirectoryFromBackup", "notSetReadOnly");
+                "excludeDirectoryFromBackup", "notSetReadOnly", "alertOnlyServerRestart");
 
         for (String configField : configFields) {
             isConfigFileOk = min(isConfigFileOk, config.contains(configField));
@@ -146,6 +148,7 @@ public class Config {
             newConfig.set("addDirectoryToBackup", this.addDirectoryToBackup);
             newConfig.set("excludeDirectoryFromBackup", this.excludeDirectoryFromBackup);
             newConfig.set("notSetReadOnly", this.notSetReadOnly);
+            newConfig.set("alertOnlyServerRestart", this.alertOnlyServerRestart);
 
             try {
 
@@ -241,5 +244,9 @@ public class Config {
 
     public boolean isNotSetReadOnly() {
         return notSetReadOnly;
+    }
+
+    public boolean isAlertOnlyServerRestart() {
+        return alertOnlyServerRestart;
     }
 }

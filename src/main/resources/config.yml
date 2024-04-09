@@ -34,6 +34,8 @@ zipArchive: true
 
 # (SECONDS < backupPeriod * 60) A notification about server restart will be sent to all players on the server {timeToAlertBeforeRestart} seconds before the restart (if afterBackup = NOTHING, no notification will be sent). -1 to disable notifications
 alertTimeBeforeRestart: 60
+# (true/false) the notification will be sent only if the server is restarted after the backup
+alertOnlyServerRestart: false
 
 # (true/false) Better logging (Some statistic and other information for debugging, you probably don't need it)
 betterLogging: false

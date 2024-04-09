@@ -23,7 +23,7 @@ public class BackupCommand extends Command {
 
         super(sender, args);
         this.afterBackup = afterBackup;
-        this.delay = (long) args.getOrDefault("delay", 1L);
+        this.delay = (long) args.getOrDefault("delaySeconds", 1L);
     }
 
     public BackupCommand(CommandSender sender, CommandArguments args) {
@@ -44,8 +44,6 @@ public class BackupCommand extends Command {
             return;
         }
 
-        StatusCommand.sendTaskStartedMessage("Backup", sender);
-
         if (Config.getInstance().getAlertTimeBeforeRestart() != -1) {
 
             Scheduler.getScheduler().runSyncDelayed(Utils.plugin, () -> {
@@ -55,9 +53,14 @@ public class BackupCommand extends Command {
             }, max((delay - Config.getInstance().getAlertTimeBeforeRestart()) * 20, 1));
         }
 
-        Scheduler.getScheduler().runSyncDelayed(Utils.plugin, new BackupProcessStarter(afterBackup, sender), delay * 20);
+        Scheduler.getScheduler().runSyncDelayed(Utils.plugin, () -> {
 
-        if (arguments.get("delay") != null) {
+            StatusCommand.sendTaskStartedMessage("Backup", sender);
+            new BackupProcessStarter(afterBackup, sender).run();
+
+        }, delay * 20);
+
+        if (arguments.get("delaySeconds") != null) {
             returnSuccess("Backup process will be started in " + delay + " seconds");
 
             if (!(sender instanceof ConsoleCommandSender)) {

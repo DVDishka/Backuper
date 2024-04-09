@@ -176,15 +176,22 @@ public class Backup {
 
     public static void sendBackupAlert(long timeSeconds, String afterBackup) {
 
+        String action = "backed up";
+        boolean restart = false;
+
         if (afterBackup.equals("STOP")) {
-            Logger.getLogger().log("Server will be backed up and stopped in ~" + timeSeconds + " second(s)");
+            Logger.getLogger().log("Server will be backed up and stopped in " + timeSeconds + " second(s)");
+            action = "backed up and restarted";
+            restart = true;
         }
         if (afterBackup.equals("RESTART")) {
-            Logger.getLogger().log("Server will be backed up and restarted in ~" + timeSeconds + " second(s)");
+            Logger.getLogger().log("Server will be backed up and restarted in " + timeSeconds + " second(s)");
+            action = "backed up and restarted";
+            restart = true;
         }
         if (afterBackup.equals("NOTHING")) {
-            Logger.getLogger().log("Server will be backed up in ~" + timeSeconds + " second(s)");
-            return;
+            Logger.getLogger().log("Server will be backed up in " + timeSeconds + " second(s)");
+            action = "backed up";
         }
 
         for (Player player : Bukkit.getOnlinePlayers()) {
@@ -193,28 +200,19 @@ public class Backup {
                 continue;
             }
 
-            Component message = Component.empty();
+            if (restart || !Config.getInstance().isAlertOnlyServerRestart()) {
 
-            message = message
-                    .append(Component.text("------------------------------------------")
-                            .decorate(TextDecoration.BOLD)
-                            .color(TextColor.color(0xE3A013)))
-                    .append(Component.newline());
+                Component message = Component.empty();
 
-            message = message
-                    .append(Component.text("Server will be restarted in "))
-                    .append(Component.text("~" + timeSeconds)
-                            .color(NamedTextColor.RED)
-                            .decorate(TextDecoration.BOLD))
-                    .append(Component.text(" seconds"))
-                    .append(Component.newline());
+                message = message
+                        .append(Component.text("Server will be " + action + " in "))
+                        .append(Component.text(timeSeconds)
+                                .color(NamedTextColor.RED)
+                                .decorate(TextDecoration.BOLD))
+                        .append(Component.text(" seconds"));
 
-            message = message
-                    .append(Component.text("------------------------------------------")
-                            .decorate(TextDecoration.BOLD)
-                            .color(TextColor.color(0xE3A013)));
-
-            player.sendMessage(message);
+                Utils.sendFramedMessage(message, player);
+            }
         }
     }
 }

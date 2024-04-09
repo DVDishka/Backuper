@@ -395,6 +395,10 @@ class BackupProcess implements Runnable, Task {
 
     private void addDirToZip(ZipOutputStream zip, File sourceDir, Path folderDir) {
 
+        if (!sourceDir.exists()) {
+            return;
+        }
+
         if (sourceDir.isFile()) {
 
             try {
@@ -495,6 +499,10 @@ class BackupProcess implements Runnable, Task {
 
     @Utility
     private void unsafeCopyFilesInDir(File destDir, File sourceDir) {
+
+        if (!sourceDir.exists()) {
+            return;
+        }
 
         if (sourceDir.isFile()) {
 
