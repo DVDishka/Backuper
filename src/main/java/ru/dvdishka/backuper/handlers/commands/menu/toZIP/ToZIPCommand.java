@@ -17,7 +17,7 @@ import java.util.zip.ZipOutputStream;
 
 public class ToZIPCommand extends Command implements Task {
 
-    private String taskName = "Convert backup to ZIP";
+    private String taskName = "ToZIP";
     private long maxProgress = 0;
     private volatile long currentProgress = 0;
 

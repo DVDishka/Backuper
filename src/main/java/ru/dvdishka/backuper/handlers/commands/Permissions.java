@@ -2,16 +2,22 @@ package ru.dvdishka.backuper.handlers.commands;
 
 public enum Permissions {
 
+    BACKUPER("backuper"),
+
     BACKUP("backuper.backup"),
-    STOP("backuper.stop"),
-    RESTART("backuper.restart"),
+    STOP("backuper.backup.stop"),
+    RESTART("backuper.backup.restart"),
+
+    TO_ZIP("backuper.list.tozip"),
+    UNZIP("backuper.list.unzip"),
     LIST("backuper.list"),
-    RELOAD("backuper.reload"),
-    DELETE("backuper.delete"),
-    TO_ZIP("backuper.tozip"),
-    UNZIP("backuper.unzip"),
+    DELETE("backuper.list.delete"),
+
     CONFIG("backuper.config"),
+    RELOAD("backuper.config.reload"),
+
     ALERT("backuper.backup_alert"),
+
     STATUS("backuper.status");
 
     private final String permission;

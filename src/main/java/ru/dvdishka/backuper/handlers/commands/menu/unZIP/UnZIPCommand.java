@@ -24,7 +24,7 @@ import static java.lang.Long.min;
 
 public class UnZIPCommand extends Command implements Task {
 
-    private String taskName = "Convert backup to folder";
+    private String taskName = "UnZIP";
     private long maxProgress = 0;
     private volatile long currentProgress = 0;
 

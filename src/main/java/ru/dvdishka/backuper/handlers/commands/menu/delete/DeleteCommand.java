@@ -11,7 +11,7 @@ import java.util.Objects;
 
 public class DeleteCommand extends Command implements Task {
 
-    private String taskName = "Delete backup";
+    private String taskName = "DeleteBackup";
     private long maxProgress = 0;
     private volatile long currentProgress = 0;
 
@@ -49,13 +49,15 @@ public class DeleteCommand extends Command implements Task {
 
         StatusCommand.sendTaskStartedMessage("Delete", sender);
 
+        Logger.getLogger().log("The Delete Backup process has been started, it may take some time...", sender);
+
         if (backup.zipOrFolder().equals("(ZIP)")) {
 
             Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
                 if (backupFile.delete()) {
-                    returnSuccess("Backup has been deleted successfully");
+                    Logger.getLogger().log("The Delete Backup process has been finished successfully", sender);
                 } else {
-                    returnFailure("Backup " + backupName + " can not be deleted!");
+                    Logger.getLogger().warn("Backup " + backupName + " can not be deleted!", sender);
                 }
                 Backup.unlock();
             });
@@ -65,9 +67,9 @@ public class DeleteCommand extends Command implements Task {
             Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
                 deleteDir(backupFile);
                 if (!isDeleteSuccessful) {
-                    returnFailure("Delete task has been finished with an exception!");
+                    Logger.getLogger().warn("The Delete Backup process has been finished with an exception!", sender);
                 } else {
-                    returnSuccess("Backup has been deleted successfully");
+                    Logger.getLogger().log("The Delete Backup process has been finished successfully", sender);
                 }
                 backup.unlock();
             });
@@ -91,14 +93,14 @@ public class DeleteCommand extends Command implements Task {
                     if (!file.delete()) {
 
                         isDeleteSuccessful = false;
-                        Logger.getLogger().devWarn(this, "Can not delete file " + file.getName());
+                        Logger.getLogger().warn("Can not delete file " + file.getName(), sender);
                     }
                 }
             }
             if (!dir.delete()) {
 
                 isDeleteSuccessful = false;
-                Logger.getLogger().devWarn(this, "Can not delete directory " + dir.getName());
+                Logger.getLogger().warn("Can not delete directory " + dir.getName(), sender);
             }
         }
     }

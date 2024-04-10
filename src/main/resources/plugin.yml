@@ -4,32 +4,47 @@ main: ru.dvdishka.backuper.Backuper
 api-version: 1.16
 prefix: Backuper
 authors: [ dvdishka ]
-description: Backuper plugin for spigot
-website: mc.dvdcraft.ru
+description: Simple backup plugin for Paper/Folia servers
 folia-supported: true
 permissions:
   backuper.*:
-    default: op
+    default: false
     children:
-      backuper.backup:
-        default: op
-      backuper.stop:
-        default: op
-      backuper.restart:
-        default: op
-      backuper.list:
-        default: op
-      backuper.reload:
-        default: op
-      backuper.delete:
-        default: op
-      backuper.tozip:
-        default: op
-      backuper.unzip:
-        default: op
-      backuper.config:
-        default: op
+      backuper:
+        default: true
+
+      backuper.backup.*:
+        default: false
+        children:
+          backuper.backup:
+            default: op
+          backuper.backup.stop:
+            default: op
+          backuper.backup.restart:
+            default: op
+
+      backuper.list.*:
+        default: false
+        children:
+          backuper.list:
+            default: op
+          backuper.list.delete:
+            default: op
+          backuper.list.tozip:
+            default: op
+          backuper.list.unzip:
+            default: op
+
+      backuper.config.*:
+        default: false
+        children:
+          backuper.config:
+            default: op
+          backuper.config.reload:
+            default: op
+
       backuper.status:
         default: op
+
       backuper.backup_alert:
         default: true

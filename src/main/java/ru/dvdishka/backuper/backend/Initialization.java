@@ -129,7 +129,7 @@ public class Initialization implements Listener {
 
     public static void initCommands() {
 
-        CommandTree backupCommandTree = new CommandTree("backuper");
+        CommandTree backupCommandTree = new CommandTree("backuper").withPermission(Permissions.BACKUPER.getPermission());
 
         backupCommandTree
 
@@ -180,7 +180,7 @@ public class Initialization implements Listener {
         ;
         backupCommandTree.register();
 
-        CommandTree backupListCommandTree = new CommandTree("backuper").withPermission(Permissions.LIST.getPermission());
+        CommandTree backupListCommandTree = new CommandTree("backuper").withPermission(Permissions.BACKUPER.getPermission());
         backupListCommandTree
 
                 .then(new LiteralArgument("list").withPermission(Permissions.LIST.getPermission())
@@ -190,7 +190,7 @@ public class Initialization implements Listener {
                             new ListCommand(sender, args).execute();
                         })
 
-                        .then(new IntegerArgument("pageNumber").withPermission(Permissions.LIST.getPermission())
+                        .then(new IntegerArgument("pageNumber")
 
                                 .executes((sender, args) -> {
 
@@ -201,19 +201,21 @@ public class Initialization implements Listener {
         ;
         backupListCommandTree.register();
 
-        CommandTree backupReloadCommandTree = new CommandTree("backuper");
+        CommandTree backupReloadCommandTree = new CommandTree("backuper").withPermission(Permissions.BACKUPER.getPermission());
         backupReloadCommandTree
-                .then(new LiteralArgument("reload").withPermission(Permissions.RELOAD.getPermission())
+                .then(new LiteralArgument("config").withPermission(Permissions.CONFIG.getPermission())
+                        .then(new LiteralArgument("reload").withPermission(Permissions.RELOAD.getPermission())
 
-                        .executes((sender, args) -> {
+                                .executes((sender, args) -> {
 
-                            new ReloadCommand(sender, args).execute();
-                        })
+                                    new ReloadCommand(sender, args).execute();
+                                })
+                        )
                 )
         ;
         backupReloadCommandTree.register();
 
-        CommandTree backupMenuCommandTree = new CommandTree("backuper");
+        CommandTree backupMenuCommandTree = new CommandTree("backuper").withPermission(Permissions.BACKUPER.getPermission());
         backupMenuCommandTree
 
                 .then(new LiteralArgument("menu").withPermission(Permissions.LIST.getPermission())
@@ -295,16 +297,17 @@ public class Initialization implements Listener {
         ;
         backupMenuCommandTree.register();
 
-        CommandTree backupStatusCommandTree = new CommandTree("backuper");
+        CommandTree backupStatusCommandTree = new CommandTree("backuper").withPermission(Permissions.BACKUPER.getPermission());
 
-        backupStatusCommandTree.then(new LiteralArgument("status")
-                .withPermission(Permissions.STATUS.getPermission())
+        backupStatusCommandTree
 
-                .executes((sender, args) -> {
+                .then(new LiteralArgument("status").withPermission(Permissions.STATUS.getPermission())
 
-                    new StatusCommand(sender, args).execute();
-                })
-        );
+                        .executes((sender, args) -> {
+
+                            new StatusCommand(sender, args).execute();
+                        })
+                );
 
         backupStatusCommandTree.register();
     }

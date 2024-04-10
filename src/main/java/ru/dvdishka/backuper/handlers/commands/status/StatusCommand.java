@@ -8,6 +8,7 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
+import org.bukkit.entity.Player;
 import ru.dvdishka.backuper.backend.utils.Backup;
 import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.handlers.commands.Command;
@@ -49,7 +50,8 @@ public class StatusCommand extends Command {
                 .append(Component.text("Current task:"))
                 .append(Component.space())
                 .append(Component.text(Backup.getCurrentTask().getTaskName())
-                        .decorate(TextDecoration.BOLD))
+                        .decorate(TextDecoration.BOLD)
+                        .color(TextColor.fromHexString("#129c9b")))
                 .append(Component.newline())
                 .append(Component.text("Task progress:"))
                 .append(Component.space())
@@ -57,14 +59,23 @@ public class StatusCommand extends Command {
                         .decorate(TextDecoration.BOLD)
                         .color(color));
 
-        sendFramedMessage(message);
+        if (!(sender instanceof ConsoleCommandSender)) {
+            sendFramedMessage(message, 15);
+        }
+        else {
+            sendFramedMessage(message);
+        }
     }
 
     public static void sendTaskStartedMessage(String taskName, CommandSender sender) {
 
+        if (!sender.hasPermission(Permissions.STATUS.getPermission())) {
+            return;
+        }
+
         Component message = Component.empty();
 
-        if (!(sender instanceof ConsoleCommandSender) && sender.hasPermission(Permissions.STATUS.getPermission())) {
+        if (!(sender instanceof ConsoleCommandSender)) {
 
             message = message
                     .append(Component.text("The "))
@@ -90,7 +101,7 @@ public class StatusCommand extends Command {
                             .color(TextColor.color(17, 102, 212))
                             .decorate(TextDecoration.BOLD));
         }
-        else if (sender instanceof ConsoleCommandSender) {
+        else {
 
             message = message
                     .append(Component.text("The "))
