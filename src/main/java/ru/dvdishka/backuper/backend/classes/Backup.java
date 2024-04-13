@@ -1,18 +1,21 @@
-package ru.dvdishka.backuper.backend.utils;
+package ru.dvdishka.backuper.backend.classes;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.backend.utils.UIUtils;
+import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Objects;
 
 public class Backup {
 
@@ -36,6 +39,17 @@ public class Backup {
 
     public static Task getCurrentTask() {
         return currentTask;
+    }
+
+    public static ArrayList<LocalDateTime> getBackups() {
+
+        ArrayList<LocalDateTime> backups = new ArrayList<>();
+        for (File file : Objects.requireNonNull(new File(Config.getInstance().getBackupsFolder()).listFiles())) {
+            try {
+                backups.add(LocalDateTime.parse(file.getName().replace(".zip", ""), dateTimeFormatter));
+            } catch (Exception ignored) {}
+        }
+        return backups;
     }
 
     public String getName() {
@@ -127,7 +141,7 @@ public class Backup {
         return isBackupBusy;
     }
 
-    @SuppressWarnings({"BooleanMethodIsAlwaysInverted", "ResultOfMethodCallIgnored"})
+    @SuppressWarnings({"BooleanMethodIsAlwaysInverted"})
     public static boolean checkBackupExistenceByName(String backupName) {
 
         try {
@@ -140,38 +154,6 @@ public class Backup {
 
         return backupsFolder.toPath().resolve(backupName).toFile().exists() ||
                 backupsFolder.toPath().resolve(backupName + ".zip").toFile().exists();
-    }
-
-    public static void sortLocalDateTime(ArrayList<LocalDateTime> backups) {
-        for (int firstBackupsIndex = 0; firstBackupsIndex < backups.size(); firstBackupsIndex++) {
-
-            for (int secondBackupsIndex = firstBackupsIndex; secondBackupsIndex < backups.size(); secondBackupsIndex++) {
-
-                if (backups.get(firstBackupsIndex).isAfter(backups.get(secondBackupsIndex))) {
-
-                    LocalDateTime saveDate = backups.get(firstBackupsIndex);
-
-                    backups.set(firstBackupsIndex, backups.get(secondBackupsIndex));
-                    backups.set(secondBackupsIndex, saveDate);
-                }
-            }
-        }
-    }
-
-    public static void sortLocalDateTimeDecrease(ArrayList<LocalDateTime> backups) {
-        for (int firstBackupsIndex = 0; firstBackupsIndex < backups.size(); firstBackupsIndex++) {
-
-            for (int secondBackupsIndex = firstBackupsIndex; secondBackupsIndex < backups.size(); secondBackupsIndex++) {
-
-                if (backups.get(firstBackupsIndex).isBefore(backups.get(secondBackupsIndex))) {
-
-                    LocalDateTime saveDate = backups.get(firstBackupsIndex);
-
-                    backups.set(firstBackupsIndex, backups.get(secondBackupsIndex));
-                    backups.set(secondBackupsIndex, saveDate);
-                }
-            }
-        }
     }
 
     public static void sendBackupAlert(long timeSeconds, String afterBackup) {
@@ -217,7 +199,8 @@ public class Backup {
                                 .decorate(TextDecoration.BOLD))
                         .append(Component.text(" second(s)"));
 
-                Utils.sendFramedMessage(header, message, 15, player);
+                UIUtils.sendFramedMessage(header, message, 15, player);
+                UIUtils.notificationSound(player);
             }
         }
     }

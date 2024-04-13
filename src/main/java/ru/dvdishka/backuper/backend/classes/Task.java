@@ -1,4 +1,4 @@
-package ru.dvdishka.backuper.backend.utils;
+package ru.dvdishka.backuper.backend.classes;
 
 public interface Task {
 

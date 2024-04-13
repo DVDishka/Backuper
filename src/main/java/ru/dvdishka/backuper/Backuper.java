@@ -5,11 +5,10 @@ import dev.jorel.commandapi.CommandAPIBukkitConfig;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.utils.Scheduler;
-import ru.dvdishka.backuper.backend.utils.Task;
+import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.backend.Initialization;
-import ru.dvdishka.backuper.backend.utils.Logger;
+import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.handlers.commands.backup.BackupProcessStarter;
 
 import java.io.File;

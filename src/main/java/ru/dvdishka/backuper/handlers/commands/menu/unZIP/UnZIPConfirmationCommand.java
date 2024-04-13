@@ -8,8 +8,7 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.handlers.commands.Command;
-import ru.dvdishka.backuper.backend.utils.Backup;
-import ru.dvdishka.backuper.handlers.commands.Permissions;
+import ru.dvdishka.backuper.backend.classes.Backup;
 
 public class UnZIPConfirmationCommand extends Command {
 
@@ -23,14 +22,12 @@ public class UnZIPConfirmationCommand extends Command {
         String backupName = (String) arguments.get("backupName");
 
         if (!Backup.checkBackupExistenceByName(backupName)) {
-            cancelButtonSound();
+            cancelSound();
             returnFailure("Backup does not exist!");
             return;
         }
 
         assert backupName != null;
-
-        normalButtonSound();
 
         Backup backup = new Backup(backupName);
 
@@ -38,16 +35,18 @@ public class UnZIPConfirmationCommand extends Command {
         String zipFolderBackup = backup.zipOrFolder();
 
         if (zipFolderBackup.equals("(Folder)")) {
-            cancelButtonSound();
+            cancelSound();
             returnFailure("Backup is already Folder!");
             return;
         }
 
         if (backup.isLocked() || Backup.isLocked()) {
-            cancelButtonSound();
+            cancelSound();
             returnFailure("Backup is blocked by another operation!");
             return;
         }
+
+        buttonSound();
 
         Component header = Component.empty();
 

@@ -4,11 +4,11 @@ import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.utils.Backup;
-import ru.dvdishka.backuper.backend.utils.Logger;
+import ru.dvdishka.backuper.backend.classes.Backup;
+import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.backend.utils.Utils;
-import ru.dvdishka.backuper.backend.utils.Scheduler;
+import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.handlers.commands.status.StatusCommand;
 
 import static com.google.common.primitives.Longs.min;
@@ -34,15 +34,19 @@ public class BackupCommand extends Command {
 
     public void execute() {
 
-        if (ru.dvdishka.backuper.backend.utils.Backup.isLocked()) {
+        if (Backup.isLocked()) {
+            cancelSound();
             returnFailure("Blocked by another operation!");
             return;
         }
 
         if (delay < 1) {
+            cancelSound();
             returnFailure("Delay must be > 0!");
             return;
         }
+
+        buttonSound();
 
         if (Config.getInstance().getAlertTimeBeforeRestart() != -1) {
 
@@ -61,6 +65,7 @@ public class BackupCommand extends Command {
         }, delay * 20);
 
         if (arguments.get("delaySeconds") != null) {
+
             returnSuccess("Backup process will be started in " + delay + " seconds");
 
             if (!(sender instanceof ConsoleCommandSender)) {

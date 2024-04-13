@@ -4,7 +4,7 @@ import dev.jorel.commandapi.executors.CommandArguments;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.command.CommandSender;
-import ru.dvdishka.backuper.backend.utils.Utils;
+import ru.dvdishka.backuper.backend.utils.UIUtils;
 
 public abstract class Command {
 
@@ -19,56 +19,60 @@ public abstract class Command {
     protected abstract void execute();
 
     protected void returnSuccess(String message) {
-        Utils.returnSuccess(message, sender);
+        UIUtils.returnSuccess(message, sender);
     }
 
     @SuppressWarnings("unused")
     protected void returnSuccess(String message, TextColor color) {
-        Utils.returnSuccess(message, sender, color);
+        UIUtils.returnSuccess(message, sender, color);
     }
 
     protected void returnFailure(String message) {
-        Utils.returnFailure(message, sender);
+        UIUtils.returnFailure(message, sender);
     }
 
     @SuppressWarnings("unused")
     protected void returnFailure(String message, TextColor color) {
-        Utils.returnFailure(message, sender, color);
+        UIUtils.returnFailure(message, sender, color);
     }
 
     protected void returnWarning(String message, TextColor color) {
-        Utils.returnWarning(message, sender, color);
+        UIUtils.returnWarning(message, sender, color);
     }
 
     protected void returnWarning(String message) {
-        Utils.returnWarning(message, sender);
+        UIUtils.returnWarning(message, sender);
     }
 
     protected void sendMessage(String message) {
-        Utils.sendMessage(message, sender);
+        UIUtils.sendMessage(message, sender);
     }
 
-    protected void cancelButtonSound() {
-        Utils.cancelButtonSound(sender);
+    protected void cancelSound() {
+        UIUtils.cancelSound(sender);
     }
 
-    protected void normalButtonSound() {
-        Utils.normalButtonSound(sender);
+    protected void buttonSound() {
+        UIUtils.normalSound(sender);
     }
+
+    protected void successSound() {UIUtils.successSound(sender);}
+
+    protected void notificationSound() {UIUtils.notificationSound(sender);}
 
     protected void sendFramedMessage(Component message) {
-        Utils.sendFramedMessage(message, sender);
+        UIUtils.sendFramedMessage(message, sender);
     }
 
     protected void sendFramedMessage(Component message, int dashNumber) {
-        Utils.sendFramedMessage(message, dashNumber, sender);
+        UIUtils.sendFramedMessage(message, dashNumber, sender);
     }
 
     protected void sendFramedMessage(Component header, Component message) {
-        Utils.sendFramedMessage(header, message, sender);
+        UIUtils.sendFramedMessage(header, message, sender);
     }
 
     protected void sendFramedMessage(Component header, Component message, int dashNumber) {
-        Utils.sendFramedMessage(header, message, dashNumber, sender);
+        UIUtils.sendFramedMessage(header, message, dashNumber, sender);
     }
 }

@@ -9,10 +9,11 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
+import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.handlers.commands.Command;
-import ru.dvdishka.backuper.backend.utils.Backup;
+import ru.dvdishka.backuper.backend.classes.Backup;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.utils.Logger;
+import ru.dvdishka.backuper.backend.common.Logger;
 
 import java.io.File;
 import java.time.LocalDateTime;
@@ -34,11 +35,13 @@ public class ListCommand extends Command {
 
         if (backupsFolder.listFiles() == null) {
             returnFailure("Wrong backups folder in config.yml!");
+            cancelSound();
             return;
         }
 
         if (ListCommand.getListPageCount() == 0) {
             returnFailure("There are no backups yet!");
+            cancelSound();
             return;
         }
 
@@ -46,11 +49,9 @@ public class ListCommand extends Command {
 
         // PAGE DOES NOT EXIST
         if (pageNumber < 1 || pageNumber > ListCommand.getListPageCount()) {
-            cancelButtonSound();
+            cancelSound();
             return;
         }
-
-        normalButtonSound();
 
         updateListPages();
 
@@ -66,6 +67,7 @@ public class ListCommand extends Command {
         else {
             sendFramedMessage(header, createListMessage(pageNumber, arguments.get("pageNumber") != null), 41);
         }
+        buttonSound();
     }
 
     public static void updateListPages() {
@@ -86,7 +88,7 @@ public class ListCommand extends Command {
             } catch (Exception ignored) {}
         }
 
-        Backup.sortLocalDateTimeDecrease(backups);
+        Utils.sortLocalDateTimeDecrease(backups);
         ArrayList<ArrayList<TextComponent>> pages = new ArrayList<>();
 
         for (int i = 1; i <= backups.size(); i++) {

@@ -17,6 +17,10 @@ import org.bukkit.Bukkit;
 import org.bukkit.Utility;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
+import ru.dvdishka.backuper.backend.classes.Backup;
+import ru.dvdishka.backuper.backend.classes.Task;
+import ru.dvdishka.backuper.backend.common.Logger;
+import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.utils.*;
 import ru.dvdishka.backuper.backend.config.Config;
 
@@ -210,6 +214,7 @@ class BackupProcess implements Runnable, Task {
             }
 
             Logger.getLogger().success("Backup process has been finished successfully!", sender);
+            UIUtils.successSound(sender);
 
             Backup.unlock();
 
@@ -234,6 +239,7 @@ class BackupProcess implements Runnable, Task {
 
             Logger.getLogger().warn("The Backup process has been finished with an exception!", sender);
             Logger.getLogger().warn(this, e);
+            UIUtils.cancelSound(sender);
         }
     }
 
@@ -246,8 +252,8 @@ class BackupProcess implements Runnable, Task {
 
                 Logger.getLogger().devLog("Delete Old Backups 1 task has been started");
 
-                ArrayList<LocalDateTime> backups = Utils.getBackups();
-                Backup.sortLocalDateTime(backups);
+                ArrayList<LocalDateTime> backups = Backup.getBackups();
+                Utils.sortLocalDateTime(backups);
 
                 int backupsToDelete = backups.size() - Config.getInstance().getBackupsNumber();
 
@@ -298,8 +304,8 @@ class BackupProcess implements Runnable, Task {
 
                 if (backupsFolderWeight > Config.getInstance().getBackupsWeight() && backupsDir.listFiles() != null) {
 
-                    ArrayList<LocalDateTime> backups = Utils.getBackups();
-                    Backup.sortLocalDateTime(backups);
+                    ArrayList<LocalDateTime> backups = Backup.getBackups();
+                    Utils.sortLocalDateTime(backups);
 
                     long bytesToDelete = backupsFolderWeight - Config.getInstance().getBackupsWeight();
 
@@ -347,11 +353,13 @@ class BackupProcess implements Runnable, Task {
 
             if (onlyTask) {
                 Backup.unlock();
+                UIUtils.successSound(sender);
             }
         } catch (Exception e) {
 
             if (onlyTask) {
                 Backup.unlock();
+                UIUtils.cancelSound(sender);
             }
             Logger.getLogger().warn(BackupProcess.class, e);
         }
@@ -359,7 +367,31 @@ class BackupProcess implements Runnable, Task {
 
     private void deleteDir(File dir) {
 
-        if (dir != null && dir.listFiles() != null) {
+        if (!dir.exists()) {
+            Logger.getLogger().warn("Directory " + dir.getAbsolutePath() + " does not exist");
+            return;
+        }
+
+        if (dir.isFile()) {
+
+            long fileByteSize = 0;
+
+            try {
+                fileByteSize = Files.size(dir.toPath());
+            } catch (Exception e) {
+                Logger.getLogger().warn("Failed to get file size before deletion", sender);
+                Logger.getLogger().warn(BackupProcess.class, e);
+            }
+
+            if (!dir.delete()) {
+
+                Logger.getLogger().warn("Can not delete file " + dir.getName(), sender);
+            }
+
+            incrementCurrentProgress(fileByteSize * deleteProgressMultiplier);
+        }
+
+        else if (dir.isDirectory()) {
 
             for (File file : Objects.requireNonNull(dir.listFiles())) {
 
@@ -396,6 +428,7 @@ class BackupProcess implements Runnable, Task {
     private void addDirToZip(ZipOutputStream zip, File sourceDir, Path folderDir) {
 
         if (!sourceDir.exists()) {
+            Logger.getLogger().warn("Directory " + sourceDir.getAbsolutePath() + " does not exist");
             return;
         }
 
@@ -501,6 +534,7 @@ class BackupProcess implements Runnable, Task {
     private void unsafeCopyFilesInDir(File destDir, File sourceDir) {
 
         if (!sourceDir.exists()) {
+            Logger.getLogger().warn("Directory " + sourceDir.getAbsolutePath() + " does not exist", sender);
             return;
         }
 
@@ -515,9 +549,10 @@ class BackupProcess implements Runnable, Task {
                 try {
 
                     Files.copy(sourceDir.toPath(), destDir.toPath());
-                    incrementCurrentProgress(Files.size(sourceDir.toPath()) * copyProgressMultiplier);
 
                     completedCopyTasks.add(taskNumber);
+
+                    incrementCurrentProgress(Files.size(sourceDir.toPath()) * copyProgressMultiplier);
 
                 } catch (SecurityException e) {
 
@@ -643,6 +678,7 @@ class BackupProcess implements Runnable, Task {
     private long getFileFolderByteSizeExceptExcluded(File path) {
 
         if (!path.exists()) {
+            Logger.getLogger().warn("Directory " + path.getAbsolutePath() + " does not exist");
             return 0;
         }
 

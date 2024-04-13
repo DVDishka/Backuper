@@ -9,19 +9,25 @@ autoBackup: true
 
 # (Path) Full directory where backups will be stored
 backupsFolder: plugins/Backuper/Backups
+# (Path list) (An example of how to set a list is below) Full directory paths to backup (Worlds will be backed up automatically, so you do not need to specify world folders there) (For example you can specify "plugins", "config")
+# addDirectoryToBackup:
+# - path1
+# - path2
+# - ...
+addDirectoryToBackup:
+# (Path list) (An example of how to set a list is below) Full directory paths to exclude from backup. If you want to backup everything from the folder1 except some folder1/file1 you can specify folder1 in addDirectoryToBackup and folder1/file1 in excludeDirectoryFromBackup. (The backupsFolder directory will be excluded automatically to prevent the loop)
+# excludeDirectoryFromBackup:
+# - path1
+# - path2
+# - ...
+excludeDirectoryFromBackup:
 
-# (Path list "," to separate paths) Full additional directory to backup (Worlds will be backed up automatically, so you do not need to specify world folders there) (For example you can specify "plugins, config")
-addDirectoryToBackup: []
-
-# (Path list ',' to separate paths) Full directory to exclude from backup. If you want to backup everything from folder1 except some folder2/file2 you can specify folder1 in addDirectoryToBackup and folder2/file2 in excludeDirectoryFromBackup. (backupsFolder will be excluded automatically to prevent the loop)
-excludeDirectoryFromBackup: []
-
-# (0 - 23). Backups will be made at this time every day. (backupPeriod will be automatically set to 24 hours). -1 to disable backup time fixation
-backupTime: -1
-# (MINUTES > 0 or -1) Backup period. To change this value you need to set backupTime to -1
-backupPeriod: 1440
-# (STOP, RESTART, NOTHING) What to do after backup
+# (STOP, RESTART, NOTHING) What to do after an automatic backup
 afterBackup: NOTHING
+# (0 - 23). Automatic backups will be made at this time every day. (backupPeriod will be automatically set to 24 hours). -1 to disable backup time fixation
+backupTime: -1
+# (MINUTES > 0 or -1) Backup period. To change this value you need to set backupTime to -1 and autoBackup to true
+backupPeriod: 1440
 
 # (true/false) The backup will only occur if the world has been changed since the last backup. If the world has not been changed, this backup cycle will be skipped
 skipDuplicateBackup: true
@@ -32,9 +38,9 @@ maxBackupsWeight: 0
 # (true/false) Should backups be packaged in a zip archive
 zipArchive: true
 
-# (SECONDS < backupPeriod * 60 or -1*-) A notification about server restart will be sent to all players on the server {timeToAlertBeforeRestart} seconds before the restart (if afterBackup = NOTHING, no notification will be sent). -1 to disable notifications
+# (SECONDS < backupPeriod * 60 or -1) A notification about the server restart will be sent to all players on the server {alertTimeBeforeRestart} seconds before the restart. -1 to disable notifications
 alertTimeBeforeRestart: 60
-# (true/false) the notification will be sent only if the server is restarted after the backup
+# (true/false) Notifications will be sent only if the server will be restarted or stopped after the backup
 alertOnlyServerRestart: true
 
 # (true/false) Better logging (Some statistic and other information for debugging, you probably don't need it)

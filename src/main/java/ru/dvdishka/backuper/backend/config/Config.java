@@ -4,7 +4,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import ru.dvdishka.backuper.backend.utils.Utils;
-import ru.dvdishka.backuper.backend.utils.Logger;
+import ru.dvdishka.backuper.backend.common.Logger;
 
 import java.io.File;
 import java.time.LocalDateTime;

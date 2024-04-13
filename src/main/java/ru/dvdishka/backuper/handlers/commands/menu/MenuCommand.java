@@ -9,7 +9,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import ru.dvdishka.backuper.handlers.commands.Command;
-import ru.dvdishka.backuper.backend.utils.Backup;
+import ru.dvdishka.backuper.backend.classes.Backup;
 
 public class MenuCommand extends Command {
 
@@ -23,14 +23,14 @@ public class MenuCommand extends Command {
         String backupName = (String) arguments.get("backupName");
 
         if (!Backup.checkBackupExistenceByName(backupName)) {
-            cancelButtonSound();
+            cancelSound();
             returnFailure("Backup does not exist!");
             return;
         }
 
         assert backupName != null;
 
-        normalButtonSound();
+        buttonSound();
 
         Backup backup = new Backup(backupName);
 

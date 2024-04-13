@@ -11,16 +11,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 
-import net.kyori.adventure.key.Key;
-import net.kyori.adventure.sound.Sound;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.plugin.Plugin;
-import org.jetbrains.annotations.NotNull;
+import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
 
 public class Utils {
@@ -62,6 +55,10 @@ public class Utils {
 
     public static long getFolderOrFileByteSize(File path) {
 
+        if (!path.exists()) {
+            return 0;
+        }
+
         if (!path.isDirectory()) {
             try {
                 return Files.size(path.toPath());
@@ -84,6 +81,10 @@ public class Utils {
     }
 
     public static boolean isExcludedDirectory(File path, CommandSender sender) {
+
+        if (!path.exists()) {
+            return true;
+        }
 
         boolean isExcludedDirectory = false;
 
@@ -123,207 +124,35 @@ public class Utils {
         return isExcludedDirectory;
     }
 
-    public static ArrayList<LocalDateTime> getBackups() {
+    public static void sortLocalDateTime(ArrayList<LocalDateTime> backups) {
+        for (int firstBackupsIndex = 0; firstBackupsIndex < backups.size(); firstBackupsIndex++) {
 
-        ArrayList<LocalDateTime> backups = new ArrayList<>();
-        for (File file : Objects.requireNonNull(new File(Config.getInstance().getBackupsFolder()).listFiles())) {
-            try {
-                backups.add(LocalDateTime.parse(file.getName().replace(".zip", ""), ru.dvdishka.backuper.backend.utils.Backup.dateTimeFormatter));
-            } catch (Exception ignored) {}
+            for (int secondBackupsIndex = firstBackupsIndex; secondBackupsIndex < backups.size(); secondBackupsIndex++) {
+
+                if (backups.get(firstBackupsIndex).isAfter(backups.get(secondBackupsIndex))) {
+
+                    LocalDateTime saveDate = backups.get(firstBackupsIndex);
+
+                    backups.set(firstBackupsIndex, backups.get(secondBackupsIndex));
+                    backups.set(secondBackupsIndex, saveDate);
+                }
+            }
         }
-        return backups;
     }
 
-    public static void returnFailure(String message, CommandSender sender) {
-        try {
-            sender.sendMessage(Component.text(message).color(NamedTextColor.RED));
-        } catch (Exception ignored) {}
-    }
+    public static void sortLocalDateTimeDecrease(ArrayList<LocalDateTime> backups) {
+        for (int firstBackupsIndex = 0; firstBackupsIndex < backups.size(); firstBackupsIndex++) {
 
-    public static void returnFailure(String message, CommandSender sender, TextColor color) {
-        try {
-            sender.sendMessage(Component.text(message).color(color));
-        } catch (Exception ignored) {}
-    }
+            for (int secondBackupsIndex = firstBackupsIndex; secondBackupsIndex < backups.size(); secondBackupsIndex++) {
 
-    public static void returnSuccess(String message, CommandSender sender) {
-        try {
-            sender.sendMessage(Component.text(message));
-        } catch (Exception ignored) {}
-    }
+                if (backups.get(firstBackupsIndex).isBefore(backups.get(secondBackupsIndex))) {
 
-    public static void returnSuccess(String message, CommandSender sender, TextColor color) {
-        try {
-            sender.sendMessage(color + message);
-        } catch (Exception ignored) {}
-    }
+                    LocalDateTime saveDate = backups.get(firstBackupsIndex);
 
-    public static void returnWarning(String message, CommandSender sender) {
-        try {
-            sender.sendMessage(Component.text(message).color(NamedTextColor.RED));
-        } catch (Exception ignored) {}
-    }
-
-
-    public static void returnWarning(String message, CommandSender sender, TextColor color) {
-        try {
-            sender.sendMessage(color + message);
-        } catch (Exception ignored) {}
-    }
-
-    public static void sendMessage(String message, @NotNull CommandSender sender) {
-        try {
-            sender.sendMessage(message);
-        } catch (Exception ignored) {}
-    }
-
-    public static void cancelButtonSound(CommandSender sender) {
-        try {
-            Class.forName("net.kyori.adventure.sound.Sound").getMethod("sound");
-            sender.playSound(Sound.sound(Sound.sound(Key.key("block.anvil.place"), Sound.Source.NEUTRAL, 50, 1)).build());
-        } catch (Exception ignored) {}
-    }
-
-    public static void normalButtonSound(CommandSender sender) {
-        try {
-            Class.forName("net.kyori.adventure.sound.Sound").getMethod("sound");
-            sender.playSound(Sound.sound(Sound.sound(Key.key("ui.button.click"), Sound.Source.NEUTRAL, 50, 1)).build());
-        } catch (Exception ignored) {}
-    }
-
-    public static void sendFramedMessage(Component message, CommandSender sender) {
-        try {
-
-            Component framedMessage = Component.empty();
-
-            if (sender instanceof ConsoleCommandSender) {
-                framedMessage = framedMessage
-                        .append(Component.newline());
+                    backups.set(firstBackupsIndex, backups.get(secondBackupsIndex));
+                    backups.set(secondBackupsIndex, saveDate);
+                }
             }
-
-            framedMessage = framedMessage
-                    .append(Component.text("------------------------------------------")
-                            .decorate(TextDecoration.BOLD)
-                            .color(TextColor.color(0x143E77)))
-                    .append(Component.newline());
-
-            framedMessage = framedMessage.append(message);
-
-            framedMessage = framedMessage
-                    .append(Component.newline())
-                    .append(Component.text("------------------------------------------")
-                            .decorate(TextDecoration.BOLD)
-                            .color(TextColor.color(0x143E77)));
-
-            sender.sendMessage(framedMessage);
-
-        } catch (Exception ignored) {}
-    }
-
-    public static void sendFramedMessage(Component message, int dashNumber, CommandSender sender) {
-        try {
-
-            Component framedMessage = Component.empty();
-
-            if (sender instanceof ConsoleCommandSender) {
-                framedMessage = framedMessage
-                        .append(Component.newline());
-            }
-
-            framedMessage = framedMessage
-                    .append(Component.text("-".repeat(dashNumber))
-                            .decorate(TextDecoration.BOLD)
-                            .color(TextColor.color(0x143E77)))
-                    .append(Component.newline());
-
-            framedMessage = framedMessage.append(message);
-
-            framedMessage = framedMessage
-                    .append(Component.newline())
-                    .append(Component.text("-".repeat(dashNumber))
-                            .decorate(TextDecoration.BOLD)
-                            .color(TextColor.color(0x143E77)));
-
-            sender.sendMessage(framedMessage);
-
-        } catch (Exception ignored) {}
-    }
-
-    public static void sendFramedMessage(Component header, Component message, CommandSender sender) {
-        try {
-
-            Component framedMessage = Component.empty();
-
-            if (sender instanceof ConsoleCommandSender) {
-                framedMessage = framedMessage
-                        .append(Component.newline());
-            }
-
-            framedMessage = framedMessage
-                    .append(Component.text("------------------------------------------")
-                            .decorate(TextDecoration.BOLD)
-                            .color(TextColor.color(0x143E77)))
-                    .append(Component.newline());
-
-            framedMessage = framedMessage
-                    .append(header)
-                    .append(Component.newline());
-
-            framedMessage = framedMessage
-                    .append(Component.text("------------------------------------------")
-                            .decorate(TextDecoration.BOLD)
-                            .color(TextColor.fromHexString("#129c9b")))
-                    .append(Component.newline());
-
-            framedMessage = framedMessage.append(message);
-
-            framedMessage = framedMessage
-                    .append(Component.newline())
-                    .append(Component.text("------------------------------------------")
-                            .decorate(TextDecoration.BOLD)
-                            .color(TextColor.color(0x143E77)));
-
-            sender.sendMessage(framedMessage);
-
-        } catch (Exception ignored) {}
-    }
-
-    public static void sendFramedMessage(Component header, Component message, int dashNumber, CommandSender sender) {
-        try {
-
-            Component framedMessage = Component.empty();
-
-            if (sender instanceof ConsoleCommandSender) {
-                framedMessage = framedMessage
-                        .append(Component.newline());
-            }
-
-            framedMessage = framedMessage
-                    .append(Component.text("-".repeat(dashNumber))
-                            .decorate(TextDecoration.BOLD)
-                            .color(TextColor.color(0x143E77)))
-                    .append(Component.newline());
-
-            framedMessage = framedMessage
-                    .append(header)
-                    .append(Component.newline());
-
-            framedMessage = framedMessage
-                    .append(Component.text("-".repeat(dashNumber))
-                            .decorate(TextDecoration.BOLD)
-                            .color(TextColor.fromHexString("#129c9b")))
-                    .append(Component.newline());
-
-            framedMessage = framedMessage.append(message);
-
-            framedMessage = framedMessage
-                    .append(Component.newline())
-                    .append(Component.text("-".repeat(dashNumber))
-                            .decorate(TextDecoration.BOLD)
-                            .color(TextColor.color(0x143E77)));
-
-            sender.sendMessage(framedMessage);
-
-        } catch (Exception ignored) {}
+        }
     }
 }

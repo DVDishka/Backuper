@@ -1,16 +1,13 @@
 package ru.dvdishka.backuper.handlers.commands.menu.unZIP;
 
 import dev.jorel.commandapi.executors.CommandArguments;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.event.ClickEvent;
-import net.kyori.adventure.text.format.TextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.ConsoleCommandSender;
-import ru.dvdishka.backuper.Backuper;
+import ru.dvdishka.backuper.backend.classes.Backup;
+import ru.dvdishka.backuper.backend.classes.Task;
+import ru.dvdishka.backuper.backend.common.Logger;
+import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.utils.*;
 import ru.dvdishka.backuper.handlers.commands.Command;
-import ru.dvdishka.backuper.handlers.commands.Permissions;
 import ru.dvdishka.backuper.handlers.commands.status.StatusCommand;
 
 import java.io.File;
@@ -43,7 +40,7 @@ public class UnZIPCommand extends Command implements Task {
         String backupName = (String) arguments.get("backupName");
 
         if (!Backup.checkBackupExistenceByName(backupName)) {
-            cancelButtonSound();
+            cancelSound();
             returnFailure("Backup does not exist!");
             return;
         }
@@ -53,18 +50,18 @@ public class UnZIPCommand extends Command implements Task {
         Backup backup = new Backup(backupName);
 
         if (backup.zipOrFolder().equals("(Folder)")) {
-            cancelButtonSound();
+            cancelSound();
             returnFailure("Backup is already Folder!");
             return;
         }
 
         if (Backup.isLocked() || Backup.isLocked()) {
-            cancelButtonSound();
+            cancelSound();
             returnFailure("Blocked by another operation!");
             return;
         }
 
-        normalButtonSound();
+        buttonSound();
 
         Backup.lock(this);
 
@@ -107,12 +104,16 @@ public class UnZIPCommand extends Command implements Task {
 
                 Logger.getLogger().success("The Convert Backup To Folder process has been finished successfully", sender);
 
+                successSound();
+
             } catch (Exception e) {
 
                 Backup.unlock();
 
                 Logger.getLogger().warn("The Convert Backup To Folder process has been finished with an exception!", sender);
                 Logger.getLogger().warn(this, e);
+
+                cancelSound();
             }
         });
     }

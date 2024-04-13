@@ -16,10 +16,11 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.server.ServerLoadEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.utils.Backup;
+import ru.dvdishka.backuper.backend.classes.Backup;
+import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
-import ru.dvdishka.backuper.backend.utils.Logger;
-import ru.dvdishka.backuper.backend.utils.Scheduler;
+import ru.dvdishka.backuper.backend.common.Logger;
+import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.handlers.commands.menu.MenuCommand;
 import ru.dvdishka.backuper.handlers.commands.menu.delete.DeleteCommand;
 import ru.dvdishka.backuper.handlers.commands.menu.delete.DeleteConfirmationCommand;
@@ -139,7 +140,7 @@ public class Initialization implements Listener {
                             if (sender.hasPermission(Permissions.BACKUP.getPermission())) {
                                 new BackupCommand(sender, args).execute();
                             } else {
-                                Utils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                             }
                         })
 
@@ -222,13 +223,13 @@ public class Initialization implements Listener {
 
                         .then(new TextArgument("backupName").includeSuggestions(ArgumentSuggestions.stringCollection((info) -> {
 
-                            ArrayList<LocalDateTime> backups = Utils.getBackups();
-                            ru.dvdishka.backuper.backend.utils.Backup.sortLocalDateTimeDecrease(backups);
+                            ArrayList<LocalDateTime> backups = Backup.getBackups();
+                            Utils.sortLocalDateTimeDecrease(backups);
 
                             ArrayList<String> backupSuggestions = new ArrayList<>();
 
                             for (LocalDateTime backupName : backups) {
-                                backupSuggestions.add("\"" + backupName.format(ru.dvdishka.backuper.backend.utils.Backup.dateTimeFormatter) + "\"");
+                                backupSuggestions.add("\"" + backupName.format(Backup.dateTimeFormatter) + "\"");
                             }
                             return backupSuggestions;
                         }))
@@ -247,7 +248,7 @@ public class Initialization implements Listener {
                                                         if (sender.hasPermission(Permissions.DELETE.getPermission())) {
                                                             new DeleteConfirmationCommand(sender, args).execute();
                                                         } else {
-                                                            Utils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                         }
                                                     }
 
@@ -255,7 +256,7 @@ public class Initialization implements Listener {
                                                         if (sender.hasPermission(Permissions.DELETE.getPermission())) {
                                                             new DeleteCommand(sender, args).execute();
                                                         } else {
-                                                            Utils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                         }
                                                     }
 
@@ -263,7 +264,7 @@ public class Initialization implements Listener {
                                                         if (sender.hasPermission(Permissions.TO_ZIP.getPermission())) {
                                                             new ToZIPConfirmationCommand(sender, args).execute();
                                                         } else {
-                                                            Utils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                         }
                                                     }
 
@@ -271,7 +272,7 @@ public class Initialization implements Listener {
                                                         if (sender.hasPermission(Permissions.TO_ZIP.getPermission())) {
                                                             new ToZIPCommand(sender, args).execute();
                                                         } else {
-                                                            Utils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                         }
                                                     }
 
@@ -279,7 +280,7 @@ public class Initialization implements Listener {
                                                         if (sender.hasPermission(Permissions.UNZIP.getPermission())) {
                                                             new UnZIPConfirmationCommand(sender, args).execute();
                                                         } else {
-                                                            Utils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                         }
                                                     }
 
@@ -287,7 +288,7 @@ public class Initialization implements Listener {
                                                         if (sender.hasPermission(Permissions.UNZIP.getPermission())) {
                                                             new UnZIPCommand(sender, args).execute();
                                                         } else {
-                                                            Utils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                         }
                                                     }
                                                 })
@@ -344,7 +345,7 @@ public class Initialization implements Listener {
 
     public static void checkOperatingSystem() {
         if (Utils.isWindows) {
-            ru.dvdishka.backuper.backend.utils.Backup.dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH;mm;ss");
+            Backup.dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH;mm;ss");
         }
     }
 

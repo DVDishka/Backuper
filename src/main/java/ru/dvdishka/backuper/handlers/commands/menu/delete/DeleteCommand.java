@@ -2,6 +2,10 @@ package ru.dvdishka.backuper.handlers.commands.menu.delete;
 
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
+import ru.dvdishka.backuper.backend.classes.Backup;
+import ru.dvdishka.backuper.backend.classes.Task;
+import ru.dvdishka.backuper.backend.common.Logger;
+import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.utils.*;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.handlers.commands.status.StatusCommand;
@@ -27,20 +31,20 @@ public class DeleteCommand extends Command implements Task {
         String backupName = (String) arguments.get("backupName");
 
         if (!Backup.checkBackupExistenceByName(backupName)) {
-            cancelButtonSound();
+            cancelSound();
             returnFailure("Backup does not exist!");
             return;
         }
 
-        normalButtonSound();
-
         Backup backup = new Backup(backupName);
 
         if (Backup.isLocked() || Backup.isLocked()) {
-            cancelButtonSound();
+            cancelSound();
             returnFailure("Blocked by another operation!");
             return;
         }
+
+        buttonSound();
 
         File backupFile = backup.getFile();
 
@@ -56,8 +60,10 @@ public class DeleteCommand extends Command implements Task {
             Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
                 if (backupFile.delete()) {
                     Logger.getLogger().log("The Delete Backup process has been finished successfully", sender);
+                    successSound();
                 } else {
                     Logger.getLogger().warn("Backup " + backupName + " can not be deleted!", sender);
+                    cancelSound();
                 }
                 Backup.unlock();
             });
@@ -68,10 +74,12 @@ public class DeleteCommand extends Command implements Task {
                 deleteDir(backupFile);
                 if (!isDeleteSuccessful) {
                     Logger.getLogger().warn("The Delete Backup process has been finished with an exception!", sender);
+                    cancelSound();
                 } else {
                     Logger.getLogger().log("The Delete Backup process has been finished successfully", sender);
+                    successSound();
                 }
-                backup.unlock();
+                Backup.unlock();
             });
         }
     }

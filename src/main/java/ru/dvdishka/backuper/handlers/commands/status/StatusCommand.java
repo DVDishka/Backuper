@@ -8,9 +8,8 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
-import org.bukkit.entity.Player;
-import ru.dvdishka.backuper.backend.utils.Backup;
-import ru.dvdishka.backuper.backend.utils.Utils;
+import ru.dvdishka.backuper.backend.classes.Backup;
+import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
 
@@ -24,12 +23,12 @@ public class StatusCommand extends Command {
     public void execute() {
 
         if (Backup.getCurrentTask() == null) {
-            cancelButtonSound();
+            cancelSound();
             returnFailure("No tasks are currently running");
             return;
         }
 
-        normalButtonSound();
+        buttonSound();
 
         Component message = Component.empty();
 
@@ -117,6 +116,6 @@ public class StatusCommand extends Command {
                             .clickEvent(ClickEvent.suggestCommand("/backuper status")));
         }
 
-        Utils.sendFramedMessage(message, sender);
+        UIUtils.sendFramedMessage(message, sender);
     }
 }

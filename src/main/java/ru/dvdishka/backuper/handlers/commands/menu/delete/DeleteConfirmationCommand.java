@@ -8,8 +8,7 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.handlers.commands.Command;
-import ru.dvdishka.backuper.backend.utils.Backup;
-import ru.dvdishka.backuper.handlers.commands.Permissions;
+import ru.dvdishka.backuper.backend.classes.Backup;
 
 public class DeleteConfirmationCommand extends Command {
 
@@ -23,22 +22,22 @@ public class DeleteConfirmationCommand extends Command {
         String backupName = (String) arguments.get("backupName");
 
         if (!Backup.checkBackupExistenceByName(backupName)) {
-            cancelButtonSound();
+            cancelSound();
             returnFailure("Backup does not exist!");
             return;
         }
 
         assert backupName != null;
 
-        normalButtonSound();
-
         Backup backup = new Backup(backupName);
 
         if (Backup.isLocked() || Backup.isLocked()) {
-            cancelButtonSound();
+            cancelSound();
             returnFailure("Backup is blocked by another operation!");
             return;
         }
+
+        buttonSound();
 
         long backupSize = backup.getMBSize();
         String zipFolderBackup = backup.zipOrFolder();

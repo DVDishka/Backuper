@@ -4,10 +4,10 @@ import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.utils.Scheduler;
-import ru.dvdishka.backuper.backend.utils.Backup;
+import ru.dvdishka.backuper.backend.common.Scheduler;
+import ru.dvdishka.backuper.backend.classes.Backup;
 import ru.dvdishka.backuper.backend.utils.Utils;
-import ru.dvdishka.backuper.backend.utils.Logger;
+import ru.dvdishka.backuper.backend.common.Logger;
 
 import java.io.File;
 import java.util.HashMap;

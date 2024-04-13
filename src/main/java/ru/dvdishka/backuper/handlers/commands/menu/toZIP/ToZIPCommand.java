@@ -2,6 +2,10 @@ package ru.dvdishka.backuper.handlers.commands.menu.toZIP;
 
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
+import ru.dvdishka.backuper.backend.classes.Backup;
+import ru.dvdishka.backuper.backend.classes.Task;
+import ru.dvdishka.backuper.backend.common.Logger;
+import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.utils.*;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.handlers.commands.status.StatusCommand;
@@ -34,28 +38,28 @@ public class ToZIPCommand extends Command implements Task {
         String backupName = (String) arguments.get("backupName");
 
         if (!Backup.checkBackupExistenceByName(backupName)) {
-            cancelButtonSound();
+            cancelSound();
             returnFailure("Backup does not exist!");
             return;
         }
 
         assert backupName != null;
 
-        normalButtonSound();
-
         Backup backup = new Backup(backupName);
 
         if (backup.zipOrFolder().equals("(ZIP)")) {
-            cancelButtonSound();
+            cancelSound();
             returnFailure("Backup is already ZIP!");
             return;
         }
 
         if (Backup.isLocked() || Backup.isLocked()) {
-            cancelButtonSound();
+            cancelSound();
             returnFailure("Blocked by another operation!");
             return;
         }
+
+        buttonSound();
 
         Backup.lock(this);
 
@@ -101,16 +105,20 @@ public class ToZIPCommand extends Command implements Task {
 
                     Logger.getLogger().success("The Convert Backup To ZIP process has been finished successfully", sender);
 
+                    successSound();
+
                 } catch (Exception e) {
 
                     Backup.unlock();
 
+                    cancelSound();
                     Logger.getLogger().warn("The Convert Backup To ZIP process has been finished with an exception!", sender);
                     Logger.getLogger().warn(this, e);
                 }
             });
         } catch (Exception e) {
 
+            cancelSound();
             Backup.unlock();
         }
     }
@@ -194,12 +202,11 @@ public class ToZIPCommand extends Command implements Task {
 
                 } else {
 
-                    incrementCurrentProgress(Utils.getFolderOrFileByteSize(file) * deleteProgressMultiplier);
-
                     if (!file.delete()) {
 
                         Logger.getLogger().warn("Can not delete file " + file.getName(), sender);
                     }
+                    incrementCurrentProgress(Utils.getFolderOrFileByteSize(file) * deleteProgressMultiplier);
                 }
             }
             if (!dir.delete()) {
