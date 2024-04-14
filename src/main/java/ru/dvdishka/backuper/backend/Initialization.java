@@ -367,15 +367,19 @@ public class Initialization implements Listener {
 
             if (response.toString().equals(Utils.getProperty("version"))) {
                 Utils.isUpdatedToLatest = true;
-                Logger.getLogger().log("You are using the latest version of Backuper!");
+                Logger.getLogger().log("You are using the latest version of the BACKUPER!");
             } else {
 
                 Utils.isUpdatedToLatest = false;
 
-                String message = "You are using an outdated version of Backuper, please update it to the latest and check the changelist!";
+                String message =  "\n" + "-".repeat(75) + "\n";
+
+                message += "You are using an outdated version of Backuper\nPlease update it to the latest and check the changelist!";
                 for (String downloadLink : Utils.downloadLinks) {
                     message = message.concat("\nDownload link: " + downloadLink);
                 }
+
+                message +=  "\n" + "-".repeat(75);
 
                 Logger.getLogger().warn(message);
             }
@@ -385,6 +389,15 @@ public class Initialization implements Listener {
             Logger.getLogger().warn("Failed to check Backuper updates!");
             Logger.getLogger().warn("Initialization", e);
         }
+    }
+
+    public static void sendIssueToGitHub() {
+
+        String message =  "\n" + "-".repeat(75) + "\n";
+        message += "Please, if you find any issues related to the BACKUPER\nCreate an issue using the link: https://github.com/DVDishka/Backuper/issues\n";
+        message += "-".repeat(75);
+
+        Logger.getLogger().log(message);
     }
 
     @EventHandler
