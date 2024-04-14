@@ -13,8 +13,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import static com.google.common.collect.Comparators.min;
-
 public class Config {
 
     private File configFile = null;
@@ -38,7 +36,7 @@ public class Config {
     private long alertTimeBeforeRestart = 60;
     private boolean betterLogging = false;
     private boolean notSetReadOnly = false;
-    private boolean alertOnlyServerRestart = false;
+    private boolean alertOnlyServerRestart = true;
 
     private static Config instance = null;
 
@@ -100,7 +98,7 @@ public class Config {
         this.excludeDirectoryFromBackup = config.getStringList("excludeDirectoryFromBackup");
         this.alertTimeBeforeRestart = config.getLong("alertTimeBeforeRestart", 60);
         this.notSetReadOnly = config.getBoolean("notSetReadOnly", false);
-        this.alertOnlyServerRestart = config.getBoolean("alertOnlyServerRestart", false);
+        this.alertOnlyServerRestart = config.getBoolean("alertOnlyServerRestart", true);
 
         if (this.alertTimeBeforeRestart >= this.backupPeriod * 60L) {
             Logger.getLogger().warn("Failed to load config value!");
@@ -116,7 +114,9 @@ public class Config {
                 "excludeDirectoryFromBackup", "notSetReadOnly", "alertOnlyServerRestart");
 
         for (String configField : configFields) {
-            isConfigFileOk = min(isConfigFileOk, config.contains(configField));
+            if (isConfigFileOk && !config.contains(configField)) {
+                isConfigFileOk = false;
+            }
         }
 
         if (!isConfigFileOk) {

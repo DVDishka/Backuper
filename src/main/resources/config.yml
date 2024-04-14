@@ -14,13 +14,13 @@ backupsFolder: plugins/Backuper/Backups
 # - path1
 # - path2
 # - ...
-addDirectoryToBackup:
+addDirectoryToBackup: []
 # (Path list) (An example of how to set a list is below) Full directory paths to exclude from backup. If you want to backup everything from the folder1 except some folder1/file1 you can specify folder1 in addDirectoryToBackup and folder1/file1 in excludeDirectoryFromBackup. (The backupsFolder directory will be excluded automatically to prevent the loop)
 # excludeDirectoryFromBackup:
 # - path1
 # - path2
 # - ...
-excludeDirectoryFromBackup:
+excludeDirectoryFromBackup: []
 
 # (STOP, RESTART, NOTHING) What to do after an automatic backup
 afterBackup: NOTHING
