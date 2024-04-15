@@ -84,7 +84,7 @@ public class Config {
         this.backupTime = config.getInt("backupTime", -1);
         this.backupPeriod = config.getInt("backupPeriod", 1440);
         this.afterBackup = config.getString("afterBackup", "NOTHING").toUpperCase();
-        this.backupsNumber = config.getInt("maxBackupsNumber", 7);
+        this.backupsNumber = config.getInt("maxBackupsNumber", 0);
         this.backupsWeight = config.getLong("maxBackupsWeight", 0) * 1_048_576L;
         this.zipArchive = config.getBoolean("zipArchive", true);
         this.betterLogging = config.getBoolean("betterLogging", false);
@@ -100,10 +100,34 @@ public class Config {
         this.notSetReadOnly = config.getBoolean("notSetReadOnly", false);
         this.alertOnlyServerRestart = config.getBoolean("alertOnlyServerRestart", true);
 
+        if (this.backupTime < -1) {
+            Logger.getLogger().warn("Failed to load config value!");
+            Logger.getLogger().warn("backupTime must be >= -1, using default -1 value...");
+            this.backupTime = -1;
+        }
+
         if (this.alertTimeBeforeRestart >= this.backupPeriod * 60L) {
             Logger.getLogger().warn("Failed to load config value!");
             Logger.getLogger().warn("alertTimeBeforeRestart must be < backupPeriod * 60, using backupPeriod * 60 - 1 value...");
             this.alertTimeBeforeRestart = this.backupPeriod * 60L - 1L;
+        }
+
+        if (this.backupPeriod <= 0) {
+            Logger.getLogger().warn("Failed to load config value!");
+            Logger.getLogger().warn("Backup period must be > 0, using default 1440 value...");
+            this.backupPeriod = 1440;
+        }
+
+        if (this.backupsNumber < 0) {
+            Logger.getLogger().warn("Failed to load config value!");
+            Logger.getLogger().warn("Backups number must be >= 0, using default 0 value...");
+            this.backupsNumber = 0;
+        }
+
+        if (this.backupsWeight < 0) {
+            Logger.getLogger().warn("Failed to load config value!");
+            Logger.getLogger().warn("Backups weight must be >= 0, using default 0 value...");
+            this.backupsWeight = 0;
         }
 
         boolean isConfigFileOk = Objects.equals(configVersion, this.configVersion);

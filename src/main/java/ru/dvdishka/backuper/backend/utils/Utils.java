@@ -108,16 +108,18 @@ public class Utils {
 
                 File excludeDirectoryFromBackupFile = Paths.get(excludeDirectoryFromBackup).toFile().getCanonicalFile();
 
-                if (path.getCanonicalPath().startsWith(excludeDirectoryFromBackupFile.getCanonicalPath())) {
+                if (path.getCanonicalPath().equals(excludeDirectoryFromBackupFile.getCanonicalPath()) || path.getCanonicalPath().startsWith(excludeDirectoryFromBackupFile.getCanonicalPath() + "/")) {
                     isExcludedDirectory = true;
                 }
 
             } catch (SecurityException e) {
                 Logger.getLogger().warn("Failed to copy file \"" + path.getAbsolutePath() + "\", no access", sender);
-                Logger.getLogger().warn("BackupTask", e);
+                Logger.getLogger().warn("Utils", e);
+                return true;
             } catch (Exception e) {
                 Logger.getLogger().warn("Something went wrong while trying to copy file \"" + path.getAbsolutePath() + "\"", sender);
-                Logger.getLogger().warn("BackupTask", e);
+                Logger.getLogger().warn("Utils", e);
+                return true;
             }
         }
 

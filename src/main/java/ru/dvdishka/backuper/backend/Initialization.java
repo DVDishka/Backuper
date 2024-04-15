@@ -102,7 +102,15 @@ public class Initialization implements Listener {
                         Backup.sendBackupAlert(Config.getInstance().getAlertTimeBeforeRestart(), Config.getInstance().getAfterBackup());
                     }, secondAlertDelay, Config.getInstance().getBackupPeriod() * 60L * 20L);
                 }
-                Scheduler.getScheduler().runSyncRepeatingTask(Utils.plugin, new BackupProcessStarter(Config.getInstance().getAfterBackup(), true), delay * 20, Config.getInstance().getBackupPeriod() * 60L * 20L);
+
+                if (!Config.getInstance().isFixedBackupTime()) {
+
+                    Scheduler.getScheduler().runSyncRepeatingTask(Utils.plugin, new BackupProcessStarter(Config.getInstance().getAfterBackup(), true), delay * 20, Config.getInstance().getBackupPeriod() * 60L * 20L);
+
+                } else {
+
+                    Scheduler.getScheduler().runSyncRepeatingTask(Utils.plugin, new BackupProcessStarter(Config.getInstance().getAfterBackup(), true), delay * 20, 1440L * 60L * 20L);
+                }
             }
         });
     }

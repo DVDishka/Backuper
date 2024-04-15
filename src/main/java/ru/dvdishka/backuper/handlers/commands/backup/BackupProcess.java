@@ -115,6 +115,11 @@ class BackupProcess implements Runnable, Task {
                         File additionalDirectoryToBackupFile = Paths.get(additionalDirectoryToBackup).toFile();
                         boolean isExcludedDirectory = Utils.isExcludedDirectory(additionalDirectoryToBackupFile, sender);
 
+                        if (!additionalDirectoryToBackupFile.exists()) {
+                            Logger.getLogger().warn("addDirectoryToBackup \"" + additionalDirectoryToBackupFile.getPath() + "\" does not exist!");
+                            continue;
+                        }
+
                         if (isExcludedDirectory) {
                             continue;
                         }
