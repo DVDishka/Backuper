@@ -118,6 +118,10 @@
 
 * `/backuper config reload` - Command to reload the config file
 
+
+
+* `/backuper status` - Command to get the current progress of a task
+
 ---
 
 ## Permissions
@@ -136,6 +140,10 @@
 
 
 * `backuper.config.reload` - Permission to use `/backuper config reload` command (`backuper.config` permission required)
+
+
+
+* `backuper.status` - Permission to use `/backuper status` command
 
 ---
 
