@@ -2,7 +2,7 @@
 name: Feature request
 about: Suggest an idea for Backuper
 title: "[IDEA]"
-labels: ''
+labels: enhancement
 assignees: DVDishka
 
 ---
