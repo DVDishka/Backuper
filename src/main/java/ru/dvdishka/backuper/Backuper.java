@@ -2,14 +2,13 @@ package ru.dvdishka.backuper;
 
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPIBukkitConfig;
-import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.common.Scheduler;
+import ru.dvdishka.backuper.backend.tasks.backup.SetWorldsWritableTask;
 import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.backend.Initialization;
 import ru.dvdishka.backuper.backend.common.Logger;
-import ru.dvdishka.backuper.handlers.commands.backup.BackupProcessStarter;
 
 import java.io.File;
 
@@ -60,7 +59,8 @@ public class Backuper extends JavaPlugin {
 
     public void onDisable() {
 
-        BackupProcessStarter.setWorldsWritableSync(Bukkit.getConsoleSender(), false);
+        new SetWorldsWritableTask(false, null).run();
+
         Scheduler.cancelTasks(this);
 
         Config.getInstance().setConfigField("lastBackup", Config.getInstance().getLastBackup());

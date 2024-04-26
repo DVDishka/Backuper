@@ -17,6 +17,8 @@ import org.bukkit.event.server.ServerLoadEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.classes.Backup;
+import ru.dvdishka.backuper.backend.tasks.backup.BackupTask;
+import ru.dvdishka.backuper.backend.tasks.backup.DeleteOldBackupsTask;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.backend.common.Logger;
@@ -32,7 +34,6 @@ import ru.dvdishka.backuper.handlers.commands.reload.ReloadCommand;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
 import ru.dvdishka.backuper.handlers.commands.backup.BackupCommand;
 import ru.dvdishka.backuper.handlers.commands.list.ListCommand;
-import ru.dvdishka.backuper.handlers.commands.backup.BackupProcessStarter;
 import ru.dvdishka.backuper.handlers.commands.status.StatusCommand;
 import ru.dvdishka.backuper.handlers.worldchangecatch.WorldChangeCatcher;
 import ru.dvdishka.backuper.handlers.worldchangecatch.WorldChangeCatcherNew;
@@ -61,7 +62,7 @@ public class Initialization implements Listener {
 
         Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
 
-            new BackupProcessStarter("NOTHING").runDeleteOldBackupsSync();
+            new DeleteOldBackupsTask(false, null).run();
 
             if (Config.getInstance().isAutoBackup()) {
 
@@ -105,11 +106,19 @@ public class Initialization implements Listener {
 
                 if (!Config.getInstance().isFixedBackupTime()) {
 
-                    Scheduler.getScheduler().runSyncRepeatingTask(Utils.plugin, new BackupProcessStarter(Config.getInstance().getAfterBackup(), true), delay * 20, Config.getInstance().getBackupPeriod() * 60L * 20L);
+                    Scheduler.getScheduler().runSyncRepeatingTask(Utils.plugin, () -> {
+                        Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                            new BackupTask(Config.getInstance().getAfterBackup(), true, true, null).run();
+                        });
+                    }, delay * 20, Config.getInstance().getBackupPeriod() * 60L * 20L);
 
                 } else {
 
-                    Scheduler.getScheduler().runSyncRepeatingTask(Utils.plugin, new BackupProcessStarter(Config.getInstance().getAfterBackup(), true), delay * 20, 1440L * 60L * 20L);
+                    Scheduler.getScheduler().runSyncRepeatingTask(Utils.plugin, () -> {
+                        Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                            new BackupTask(Config.getInstance().getAfterBackup(), true, true, null).run();
+                        });
+                    }, delay * 20, 1440L * 60L * 20L);
                 }
             }
         });

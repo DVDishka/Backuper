@@ -32,7 +32,7 @@ public class StatusCommand extends Command {
 
         Component message = Component.empty();
 
-        long progress = Backup.getCurrentTask().getTaskProgress();
+        long progress = Backup.getCurrentTask().getTaskPercentProgress();
         TextColor color;
 
         if (progress < 25) {

@@ -6,10 +6,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Properties;
+import java.util.*;
 
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
@@ -20,6 +17,9 @@ public class Utils {
 
     public static Plugin plugin;
     public static final Properties properties = new Properties();
+
+    public static boolean errorSetWritable = false;
+    public static volatile HashMap<String, Boolean> isAutoSaveEnabled = new HashMap<>();
 
     static {
         try {
@@ -80,6 +80,40 @@ public class Utils {
         return size;
     }
 
+    public static long getFileFolderByteSizeExceptExcluded(File path) {
+
+        if (!path.exists()) {
+            Logger.getLogger().warn("Directory " + path.getAbsolutePath() + " does not exist");
+            return 0;
+        }
+
+        boolean isExcludedDirectory = Utils.isExcludedDirectory(path, null);
+
+        if (isExcludedDirectory) {
+            return 0;
+        }
+
+        if (!path.isDirectory()) {
+            try {
+                return Files.size(path.toPath());
+            } catch (Exception e) {
+                Logger.getLogger().warn("Something went wrong while trying to calculate backup size!");
+                Logger.getLogger().warn(Utils.class, e);
+                return 0;
+            }
+        }
+
+        long size = 0;
+
+        if (path.isDirectory()) {
+            for (File file : Objects.requireNonNull(path.listFiles())) {
+                size += getFileFolderByteSizeExceptExcluded(file);
+            }
+        }
+
+        return size;
+    }
+
     public static boolean isExcludedDirectory(File path, CommandSender sender) {
 
         if (!path.exists()) {
@@ -90,7 +124,8 @@ public class Utils {
 
         try {
 
-            if (path.getCanonicalPath().startsWith(new File("plugins/Backuper/Backups").getCanonicalPath())) {
+            if (path.toPath().startsWith(new File(Config.getInstance().getBackupsFolder()).toPath()) ||
+                    path.toPath().startsWith(new File("plugins/Backuper/Backups/").toPath())) {
                 return true;
             }
 
@@ -108,7 +143,7 @@ public class Utils {
 
                 File excludeDirectoryFromBackupFile = Paths.get(excludeDirectoryFromBackup).toFile().getCanonicalFile();
 
-                if (path.getCanonicalPath().equals(excludeDirectoryFromBackupFile.getCanonicalPath()) || path.getCanonicalPath().startsWith(excludeDirectoryFromBackupFile.getCanonicalPath() + "/")) {
+                if (path.toPath().startsWith(excludeDirectoryFromBackupFile.toPath())) {
                     isExcludedDirectory = true;
                 }
 

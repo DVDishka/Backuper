@@ -6,6 +6,7 @@ import org.bukkit.command.ConsoleCommandSender;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.classes.Backup;
 import ru.dvdishka.backuper.backend.common.Logger;
+import ru.dvdishka.backuper.backend.tasks.backup.BackupTask;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.backend.common.Scheduler;
@@ -60,7 +61,10 @@ public class BackupCommand extends Command {
         Scheduler.getScheduler().runSyncDelayed(Utils.plugin, () -> {
 
             StatusCommand.sendTaskStartedMessage("Backup", sender);
-            new BackupProcessStarter(afterBackup, sender).run();
+
+            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                new BackupTask(afterBackup, false, true, sender).run();
+            });
 
         }, delay * 20);
 
