@@ -17,7 +17,7 @@ public class Config {
 
     private File configFile = null;
 
-    private final String configVersion = "6.0";
+    private final String configVersion = "7.0";
     private long lastBackup = 0;
     private long lastChange = 0;
 
@@ -35,7 +35,7 @@ public class Config {
     private boolean zipArchive = true;
     private long alertTimeBeforeRestart = 60;
     private boolean betterLogging = false;
-    private boolean notSetReadOnly = false;
+    private boolean setWorldsReadOnly = false;
     private boolean alertOnlyServerRestart = true;
 
     private static Config instance = null;
@@ -97,7 +97,7 @@ public class Config {
         this.addDirectoryToBackup = config.getStringList("addDirectoryToBackup");
         this.excludeDirectoryFromBackup = config.getStringList("excludeDirectoryFromBackup");
         this.alertTimeBeforeRestart = config.getLong("alertTimeBeforeRestart", 60);
-        this.notSetReadOnly = config.getBoolean("notSetReadOnly", false);
+        this.setWorldsReadOnly = config.getBoolean("setWorldsReadOnly", false);
         this.alertOnlyServerRestart = config.getBoolean("alertOnlyServerRestart", true);
 
         if (this.backupTime < -1) {
@@ -135,7 +135,7 @@ public class Config {
         List<String> configFields = List.of("backupTime", "backupPeriod", "afterBackup", "maxBackupsNumber",
                 "maxBackupsWeight", "zipArchive", "betterLogging", "autoBackup", "lastBackup", "lastChange",
                 "skipDuplicateBackup", "backupsFolder", "alertTimeBeforeRestart", "addDirectoryToBackup",
-                "excludeDirectoryFromBackup", "notSetReadOnly", "alertOnlyServerRestart");
+                "excludeDirectoryFromBackup", "setWorldsReadOnly", "alertOnlyServerRestart");
 
         for (String configField : configFields) {
             if (isConfigFileOk && !config.contains(configField)) {
@@ -171,7 +171,7 @@ public class Config {
             newConfig.set("alertTimeBeforeRestart", this.alertTimeBeforeRestart);
             newConfig.set("addDirectoryToBackup", this.addDirectoryToBackup);
             newConfig.set("excludeDirectoryFromBackup", this.excludeDirectoryFromBackup);
-            newConfig.set("notSetReadOnly", this.notSetReadOnly);
+            newConfig.set("setWorldsReadOnly", this.setWorldsReadOnly);
             newConfig.set("alertOnlyServerRestart", this.alertOnlyServerRestart);
 
             try {
@@ -266,8 +266,8 @@ public class Config {
         return YamlConfiguration.loadConfiguration(configFile);
     }
 
-    public boolean isNotSetReadOnly() {
-        return notSetReadOnly;
+    public boolean isSetWorldsReadOnly() {
+        return setWorldsReadOnly;
     }
 
     public boolean isAlertOnlyServerRestart() {

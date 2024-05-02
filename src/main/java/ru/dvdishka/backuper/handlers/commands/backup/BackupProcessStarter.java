@@ -104,7 +104,7 @@ public class BackupProcessStarter implements Runnable {
 
     public static void setWorldsReadOnlySync(CommandSender sender, boolean force) {
 
-        if (Config.getInstance().isNotSetReadOnly() && !force) {
+        if (!Config.getInstance().isSetWorldsReadOnly() && !force) {
             return;
         }
 
@@ -123,7 +123,7 @@ public class BackupProcessStarter implements Runnable {
 
     public static void setWorldsReadOnlySync(CommandSender sender) {
 
-        if (Config.getInstance().isNotSetReadOnly()) {
+        if (!Config.getInstance().isSetWorldsReadOnly()) {
             return;
         }
 
@@ -142,7 +142,7 @@ public class BackupProcessStarter implements Runnable {
 
     public static void setWorldsWritableSync(CommandSender sender, boolean force) {
 
-        if (Config.getInstance().isNotSetReadOnly() && !force) {
+        if (!Config.getInstance().isSetWorldsReadOnly() && !force) {
             return;
         }
 
