@@ -73,8 +73,8 @@
 
 
 * `Backups folder` - **(Path)** - Full path to folder, where backups will be stored
-* `Add directory to backup` - **(List of paths)** - Full directory paths to backup (Worlds will be backed up automatically, so you do not need to specify world folders there) (For example you can specify "plugins", "config")
-* `Exclude Directory From Backup` - **(List of paths)** - Full directory paths to exclude from backup. If you want to backup everything from the **folder1** except some **folder1/file1** you can specify **folder1** in `addDirectoryToBackup` and **folder1/file1** in `excludeDirectoryFromBackup`. (The `backupsFolder` directory will be excluded automatically to prevent the loop)
+* `Add directory to backup` - **(List of paths)** - Full directory paths to folders/files that you want to be backed up. World folders will be backed up automatically, so you do not need to specify world folders there (For example you can specify "plugins", "config")
+* `Exclude Directory From Backup` - **(List of paths)** - Full directory paths to folders/files that you want to be excluded from backup. If you want to backup everything from the **folder1** except some **folder1/file1** you can specify **folder1** in `addDirectoryToBackup` and **folder1/file1** in `excludeDirectoryFromBackup`. (The `backupsFolder` directory will be excluded automatically to prevent the loop)
 
 
 
@@ -97,7 +97,7 @@
 
 
 * `Better logging` - **(true/false)** - Enable logging of additional information **(used for debugging, you probably don't need it)**
-* `Not set read only` - **(true/false)** - The backuper marks all world folders as **Read Only** to prevent folder changing that may cause the backup crash. To disable this feature set this option to **true**
+* `Set worlds read only` - **(true/false)** - **(True recommended)** The backuper will mark all world folders as **Read Only** to prevent folder changing that may cause the backup crash. **True** value may cause **access denied** errors during the backup **(you should just ignore that)**
 
 ---
 
