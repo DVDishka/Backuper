@@ -171,6 +171,8 @@ public class BackupTask extends Task {
                     Logger.getLogger().warn("Can not create " + backupDir.getPath() + " dir!", sender);
                 }
 
+                tasks.add(new SetWorldsReadOnlyTask(false, sender));
+
                 if (Config.getInstance().isZipArchive()) {
                     targetZipOutputStream = new ZipOutputStream(new FileOutputStream(backupDir.getPath() + ".zip"));
                 }
