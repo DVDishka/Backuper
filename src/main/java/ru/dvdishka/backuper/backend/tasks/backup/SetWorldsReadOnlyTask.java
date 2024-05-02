@@ -27,7 +27,7 @@ public class SetWorldsReadOnlyTask extends Task {
     @Override
     public void run() {
 
-        if (Config.getInstance().isNotSetReadOnly() && !force) {
+        if (!Config.getInstance().isSetWorldsReadOnly() && !force) {
             return;
         }
 
