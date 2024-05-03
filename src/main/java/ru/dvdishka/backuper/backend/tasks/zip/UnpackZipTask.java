@@ -22,7 +22,7 @@ public class UnpackZipTask extends Task {
     private final File sourceZipDir;
     private final File targetFolderDir;
 
-    private final ArrayList<Integer> completedUnZIPTasks = new ArrayList<>();
+    private volatile long completedUnZIPTasksCount = 0;
 
     public UnpackZipTask(File targetFolderDir, File sourceZipDir, boolean setLocked, CommandSender sender) {
 
@@ -48,11 +48,11 @@ public class UnpackZipTask extends Task {
 
             ZipEntry zipEntry;
 
-            int iterationNumber = 0;
+            int unZIPTasksCount = 0;
 
             while ((zipEntry = zipInput.getNextEntry()) != null) {
 
-                iterationNumber++;
+                unZIPTasksCount++;
 
                 String name = zipEntry.getName();
                 ArrayList<Integer> content = new ArrayList<>();
@@ -60,8 +60,6 @@ public class UnpackZipTask extends Task {
                 for (int c = zipInput.read(); c != -1; c = zipInput.read()) {
                     content.add(c);
                 }
-
-                final int taskID = iterationNumber;
 
                 Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
 
@@ -81,14 +79,14 @@ public class UnpackZipTask extends Task {
                         outputStream.flush();
                         outputStream.close();
 
-                        completedUnZIPTasks.add(taskID);
+                        taskCompleted();
 
                     } catch (Exception e) {
 
                         Logger.getLogger().warn("Something went wrong while trying to unpack file", sender);
                         Logger.getLogger().warn(this, e);
 
-                        completedUnZIPTasks.add(taskID);
+                        taskCompleted();
                     }
                 });
 
@@ -96,7 +94,7 @@ public class UnpackZipTask extends Task {
             }
 
             // Waiting for all files being unZipped
-            while (iterationNumber != completedUnZIPTasks.size()) {}
+            while (unZIPTasksCount != completedUnZIPTasksCount) {}
 
             Logger.getLogger().devLog("UnpackZip task has been finished");
 
@@ -115,6 +113,10 @@ public class UnpackZipTask extends Task {
             Logger.getLogger().warn("Something went wrong while running UnpackZip task", sender);
             Logger.getLogger().warn(this, e);
         }
+    }
+
+    private synchronized void taskCompleted() {
+        completedUnZIPTasksCount++;
     }
 
     @Override

@@ -48,6 +48,12 @@ public class BackupTask extends Task {
     public void run() {
 
         if (setLocked) {
+
+            if (Backup.isLocked()) {
+                Logger.getLogger().warn("Failed to start Backup task because it is blocked by another operation", sender);
+                return;
+            }
+
             Backup.lock(this);
         }
 
@@ -82,7 +88,7 @@ public class BackupTask extends Task {
                 return;
             }
 
-            Logger.getLogger().devLog("BackupTask has been started");
+            Logger.getLogger().devLog("Backup task has been started");
 
             for (Task task : tasks) {
                 task.run();
@@ -192,7 +198,7 @@ public class BackupTask extends Task {
 
                         } else {
 
-                            Task task = new CopyFilesToDirTask(worldDir, backupDir.toPath().resolve(worldDir.getName()).toFile(), false, sender);
+                            Task task = new CopyFilesToDirTask(worldDir, backupDir, false, sender);
                             task.prepareTask();
 
                             tasks.add(task);
@@ -232,7 +238,7 @@ public class BackupTask extends Task {
 
                             Task task;
                             if (additionalDirectoryToBackupFile.isDirectory()) {
-                                task = new CopyFilesToDirTask(additionalDirectoryToBackupFile, backupDir.toPath().resolve(additionalDirectoryToBackupFile.getName()).toFile(), false, sender);
+                                task = new CopyFilesToDirTask(additionalDirectoryToBackupFile, backupDir, false, sender);
                             } else {
                                 task = new CopyFilesToDirTask(additionalDirectoryToBackupFile, backupDir, false, sender);
                             }
