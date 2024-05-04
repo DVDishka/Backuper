@@ -24,7 +24,7 @@ public class UnpackZipTask extends Task {
 
     private volatile long completedUnZIPTasksCount = 0;
 
-    public UnpackZipTask(File targetFolderDir, File sourceZipDir, boolean setLocked, CommandSender sender) {
+    public UnpackZipTask(File sourceZipDir, File targetFolderDir, boolean setLocked, CommandSender sender) {
 
         super(taskName, setLocked, sender);
         this.sourceZipDir = sourceZipDir;
@@ -54,8 +54,8 @@ public class UnpackZipTask extends Task {
 
                 unZIPTasksCount++;
 
-                String name = zipEntry.getName();
-                ArrayList<Integer> content = new ArrayList<>();
+                final String name = zipEntry.getName();
+                final ArrayList<Integer> content = new ArrayList<>();
 
                 for (int c = zipInput.read(); c != -1; c = zipInput.read()) {
                     content.add(c);

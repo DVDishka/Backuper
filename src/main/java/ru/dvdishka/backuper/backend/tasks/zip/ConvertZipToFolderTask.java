@@ -9,7 +9,7 @@ import ru.dvdishka.backuper.backend.utils.UIUtils;
 
 import java.io.File;
 
-public class ZipToFolderTask extends Task {
+public class ConvertZipToFolderTask extends Task {
 
     private static final String taskName = "UnZip";
 
@@ -21,7 +21,7 @@ public class ZipToFolderTask extends Task {
     private final long deleteProgressMultiplier = 1;
     private final long unZipProgressMultiplier = 50;
 
-    public ZipToFolderTask(File sourceZipFileDir, boolean setLocked, CommandSender sender) {
+    public ConvertZipToFolderTask(File sourceZipFileDir, boolean setLocked, CommandSender sender) {
 
         super(taskName, setLocked, sender);
         this.sourceZipFileDir = sourceZipFileDir;

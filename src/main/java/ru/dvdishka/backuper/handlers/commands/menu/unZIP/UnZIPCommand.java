@@ -5,7 +5,7 @@ import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.classes.Backup;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.common.Scheduler;
-import ru.dvdishka.backuper.backend.tasks.zip.ZipToFolderTask;
+import ru.dvdishka.backuper.backend.tasks.zip.ConvertZipToFolderTask;
 import ru.dvdishka.backuper.backend.utils.*;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.handlers.commands.status.StatusCommand;
@@ -51,7 +51,7 @@ public class UnZIPCommand extends Command {
 
             try {
 
-                new ZipToFolderTask(backup.getZIPFile(), true, sender);
+                new ConvertZipToFolderTask(backup.getZIPFile(), true, sender).run();
 
             } catch (Exception e) {
 

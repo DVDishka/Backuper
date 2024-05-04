@@ -4,7 +4,7 @@ import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.classes.Backup;
 import ru.dvdishka.backuper.backend.common.Scheduler;
-import ru.dvdishka.backuper.backend.tasks.zip.DirToZipTask;
+import ru.dvdishka.backuper.backend.tasks.zip.ConvertFolderToZipTask;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.handlers.commands.Command;
@@ -50,7 +50,7 @@ public class ToZIPCommand extends Command {
         Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
             try {
 
-                new DirToZipTask(backup.getFile(), true, sender).run();
+                new ConvertFolderToZipTask(backup.getFile(), true, sender).run();
 
             } catch (Exception e) {
 

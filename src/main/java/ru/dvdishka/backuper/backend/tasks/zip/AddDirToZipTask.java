@@ -23,23 +23,26 @@ public class AddDirToZipTask extends Task {
     private final File sourceDirToAdd;
 
     private boolean forceExcludedDirs = false;
+    private boolean createRootFolderInZIP = true;
 
-    public AddDirToZipTask(File sourceDirToAdd, File targetZipFileDir, boolean forceExcludedDirs, boolean setLocked, CommandSender sender) {
+    public AddDirToZipTask(File sourceDirToAdd, File targetZipFileDir, boolean createRootFolderInZIP, boolean forceExcludedDirs, boolean setLocked, CommandSender sender) {
 
         super(taskName, setLocked, sender);
         this.targetZipFileDir = targetZipFileDir;
         this.sourceDirToAdd = sourceDirToAdd;
         this.sender = sender;
         this.forceExcludedDirs = forceExcludedDirs;
+        this.createRootFolderInZIP = createRootFolderInZIP;
     }
 
-    public AddDirToZipTask(File sourceDirToAdd, ZipOutputStream targetZipOutputStream, boolean forceExcludedDirs, boolean setLocked, CommandSender sender) {
+    public AddDirToZipTask(File sourceDirToAdd, ZipOutputStream targetZipOutputStream, boolean createRootFolderInZIP, boolean forceExcludedDirs, boolean setLocked, CommandSender sender) {
 
         super(taskName, setLocked, sender);
         this.targetZipOutputStream = targetZipOutputStream;
         this.sourceDirToAdd = sourceDirToAdd;
         this.sender = sender;
         this.forceExcludedDirs = forceExcludedDirs;
+        this.createRootFolderInZIP = createRootFolderInZIP;
     }
 
     @Override
@@ -66,7 +69,11 @@ public class AddDirToZipTask extends Task {
 
                 try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(targetZipFileDir))) {
 
-                    addDirToZip(zipOutputStream, sourceDirToAdd, sourceDirToAdd.getCanonicalFile().getParentFile().toPath());
+                    if (createRootFolderInZIP) {
+                        addDirToZip(zipOutputStream, sourceDirToAdd, sourceDirToAdd.getParentFile().toPath());
+                    } else {
+                        addDirToZip(zipOutputStream, sourceDirToAdd, sourceDirToAdd.toPath());
+                    }
 
                 } catch (Exception e) {
                     Logger.getLogger().warn(this, e);
@@ -78,7 +85,11 @@ public class AddDirToZipTask extends Task {
 
                 try {
 
-                    addDirToZip(targetZipOutputStream, sourceDirToAdd, sourceDirToAdd.getCanonicalFile().getParentFile().toPath());
+                    if (createRootFolderInZIP) {
+                        addDirToZip(targetZipOutputStream, sourceDirToAdd, sourceDirToAdd.getParentFile().toPath());
+                    } else {
+                        addDirToZip(targetZipOutputStream, sourceDirToAdd, sourceDirToAdd.toPath());
+                    }
 
                 } catch (Exception e) {
                     Logger.getLogger().warn(this, e);
@@ -104,7 +115,7 @@ public class AddDirToZipTask extends Task {
         }
     }
 
-    private void addDirToZip(ZipOutputStream zip, File sourceDir, Path folderDir) {
+    private void addDirToZip(ZipOutputStream zip, File sourceDir, Path relativeDirPath) {
 
         if (!sourceDir.exists()) {
             Logger.getLogger().warn("Directory " + sourceDir.getAbsolutePath() + " does not exist");
@@ -119,7 +130,7 @@ public class AddDirToZipTask extends Task {
 
             try {
 
-                String relativeFilePath = folderDir.toAbsolutePath().relativize(sourceDir.toPath().toAbsolutePath()).toString();
+                String relativeFilePath = relativeDirPath.toAbsolutePath().relativize(sourceDir.toPath().toAbsolutePath()).toString();
 
                 zip.putNextEntry(new ZipEntry(relativeFilePath));
                 FileInputStream fileInputStream = new FileInputStream(sourceDir);
@@ -155,7 +166,7 @@ public class AddDirToZipTask extends Task {
 
             if (!file.getName().equals("session.lock")) {
 
-                addDirToZip(zip, file, folderDir);
+                addDirToZip(zip, file, relativeDirPath);
             }
         }
     }

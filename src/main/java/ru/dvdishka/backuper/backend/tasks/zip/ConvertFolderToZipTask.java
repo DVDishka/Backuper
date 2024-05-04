@@ -9,7 +9,7 @@ import ru.dvdishka.backuper.backend.utils.UIUtils;
 
 import java.io.File;
 
-public class DirToZipTask extends Task {
+public class ConvertFolderToZipTask extends Task {
 
     private static final String taskName = "ToZip";
 
@@ -21,7 +21,7 @@ public class DirToZipTask extends Task {
     private final long deleteProgressMultiplier = 1;
     private final long zipProgressMultiplier = 10;
 
-    public DirToZipTask(File sourceFolderDir, boolean setLocked, CommandSender sender) {
+    public ConvertFolderToZipTask(File sourceFolderDir, boolean setLocked, CommandSender sender) {
 
         super(taskName, setLocked, sender);
         this.sourceFolderDir = sourceFolderDir;
@@ -36,7 +36,7 @@ public class DirToZipTask extends Task {
 
         try {
 
-            Logger.getLogger().devLog("DirToZipTask has been started");
+            Logger.getLogger().devLog("FolderToZip task has been started");
 
             if (!isTaskPrepared) {
                 prepareTask();
@@ -50,7 +50,7 @@ public class DirToZipTask extends Task {
             deleteDirTask.run();
             Logger.getLogger().devLog("Delete Folder task has been finished");
 
-            Logger.getLogger().devLog("DirToZipTask has been finished");
+            Logger.getLogger().devLog("FolderToZip task has been finished");
 
             if (setLocked) {
                 UIUtils.successSound(sender);
@@ -64,7 +64,7 @@ public class DirToZipTask extends Task {
                 Backup.unlock();
             }
 
-            Logger.getLogger().warn("Something went wrong while running DirToZip task", sender);
+            Logger.getLogger().warn("Something went wrong while running FolderToZip task", sender);
             Logger.getLogger().warn(this, e);
         }
     }
@@ -74,7 +74,7 @@ public class DirToZipTask extends Task {
 
         this.isTaskPrepared = true;
 
-        addDirToZipTask = new AddDirToZipTask(sourceFolderDir, new File(sourceFolderDir.getPath() + ".zip"), false, false, sender);
+        addDirToZipTask = new AddDirToZipTask(sourceFolderDir, new File(sourceFolderDir.getPath() + ".zip"), false, true, false, sender);
         addDirToZipTask.prepareTask();
 
         deleteDirTask = new DeleteDirTask(sourceFolderDir, false, sender);

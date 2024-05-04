@@ -191,7 +191,7 @@ public class BackupTask extends Task {
 
                         if (Config.getInstance().isZipArchive()) {
 
-                            Task task = new AddDirToZipTask(worldDir, targetZipOutputStream, false, false, sender);
+                            Task task = new AddDirToZipTask(worldDir, targetZipOutputStream, true, false, false, sender);
                             task.prepareTask();
 
                             tasks.add(task);
@@ -229,7 +229,7 @@ public class BackupTask extends Task {
 
                         if (Config.getInstance().isZipArchive()) {
 
-                            Task task = new AddDirToZipTask(additionalDirectoryToBackupFile, targetZipOutputStream, false, false, sender);
+                            Task task = new AddDirToZipTask(additionalDirectoryToBackupFile, targetZipOutputStream, true, false, false, sender);
                             task.prepareTask();
 
                             tasks.add(task);
