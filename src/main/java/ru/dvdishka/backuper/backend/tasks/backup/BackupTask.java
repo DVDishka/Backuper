@@ -7,9 +7,9 @@ import ru.dvdishka.backuper.backend.classes.Backup;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.tasks.folder.CopyFilesToDirTask;
+import ru.dvdishka.backuper.backend.tasks.folder.CopyFilesToFolderTask;
 import ru.dvdishka.backuper.backend.tasks.Task;
-import ru.dvdishka.backuper.backend.tasks.zip.AddDirToZipTask;
+import ru.dvdishka.backuper.backend.tasks.zip.tozip.AddDirToZipTask;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
 
@@ -198,7 +198,7 @@ public class BackupTask extends Task {
 
                         } else {
 
-                            Task task = new CopyFilesToDirTask(worldDir, backupDir, false, sender);
+                            Task task = new CopyFilesToFolderTask(worldDir, backupDir, true, false, false, sender);
                             task.prepareTask();
 
                             tasks.add(task);
@@ -236,12 +236,7 @@ public class BackupTask extends Task {
 
                         } else {
 
-                            Task task;
-                            if (additionalDirectoryToBackupFile.isDirectory()) {
-                                task = new CopyFilesToDirTask(additionalDirectoryToBackupFile, backupDir, false, sender);
-                            } else {
-                                task = new CopyFilesToDirTask(additionalDirectoryToBackupFile, backupDir, false, sender);
-                            }
+                            Task task = new CopyFilesToFolderTask(additionalDirectoryToBackupFile, backupDir, true, false, false, sender);
                             task.prepareTask();
 
                             tasks.add(task);
@@ -292,7 +287,7 @@ public class BackupTask extends Task {
             if (task instanceof DeleteOldBackupsTask) {
                 taskProgressMultiplier = deleteProgressMultiplier;
             }
-            if (task instanceof CopyFilesToDirTask) {
+            if (task instanceof CopyFilesToFolderTask) {
                 taskProgressMultiplier = copyProgressMultiplier;
             }
             if (task instanceof AddDirToZipTask) {
@@ -318,7 +313,7 @@ public class BackupTask extends Task {
             if (task instanceof DeleteOldBackupsTask) {
                 taskProgressMultiplier = deleteProgressMultiplier;
             }
-            if (task instanceof CopyFilesToDirTask) {
+            if (task instanceof CopyFilesToFolderTask) {
                 taskProgressMultiplier = copyProgressMultiplier;
             }
             if (task instanceof AddDirToZipTask) {

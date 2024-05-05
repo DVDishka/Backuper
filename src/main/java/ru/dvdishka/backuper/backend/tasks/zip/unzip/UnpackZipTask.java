@@ -1,4 +1,4 @@
-package ru.dvdishka.backuper.backend.tasks.zip;
+package ru.dvdishka.backuper.backend.tasks.zip.unzip;
 
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.classes.Backup;
@@ -124,6 +124,6 @@ public class UnpackZipTask extends Task {
 
         this.isTaskPrepared = true;
 
-        maxProgress = (long) ((double) Utils.getFolderOrFileByteSize(sourceZipDir) * Backup.zipCompressValue);
+        maxProgress = (long) ((double) Utils.getFileFolderByteSize(sourceZipDir) * Backup.zipCompressValue);
     }
 }

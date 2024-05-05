@@ -43,20 +43,16 @@ public class DeleteCommand extends Command {
 
         StatusCommand.sendTaskStartedMessage("Delete", sender);
 
-        Logger.getLogger().log("The Delete Backup process has been started, it may take some time...", sender);
-
         Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
 
             try {
 
                 new DeleteDirTask(backupFile, true, sender).run();
-
-                Logger.getLogger().log("The DeleteDir process has been finished", sender);
                 successSound();
 
             } catch (Exception e) {
 
-                Logger.getLogger().warn("The Delete Backup process has been finished with an exception!", sender);
+                Logger.getLogger().warn("Delete task has been finished with an exception!", sender);
                 cancelSound();
             }
         });

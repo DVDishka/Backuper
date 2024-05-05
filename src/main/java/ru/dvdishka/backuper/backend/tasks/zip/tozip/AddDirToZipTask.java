@@ -1,4 +1,4 @@
-package ru.dvdishka.backuper.backend.tasks.zip;
+package ru.dvdishka.backuper.backend.tasks.zip.tozip;
 
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.classes.Backup;
@@ -23,26 +23,26 @@ public class AddDirToZipTask extends Task {
     private final File sourceDirToAdd;
 
     private boolean forceExcludedDirs = false;
-    private boolean createRootFolderInZIP = true;
+    private boolean createRootDirInTargetZIP = true;
 
-    public AddDirToZipTask(File sourceDirToAdd, File targetZipFileDir, boolean createRootFolderInZIP, boolean forceExcludedDirs, boolean setLocked, CommandSender sender) {
+    public AddDirToZipTask(File sourceDirToAdd, File targetZipFileDir, boolean createRootDirInTargetZIP, boolean forceExcludedDirs, boolean setLocked, CommandSender sender) {
 
         super(taskName, setLocked, sender);
         this.targetZipFileDir = targetZipFileDir;
         this.sourceDirToAdd = sourceDirToAdd;
         this.sender = sender;
         this.forceExcludedDirs = forceExcludedDirs;
-        this.createRootFolderInZIP = createRootFolderInZIP;
+        this.createRootDirInTargetZIP = createRootDirInTargetZIP;
     }
 
-    public AddDirToZipTask(File sourceDirToAdd, ZipOutputStream targetZipOutputStream, boolean createRootFolderInZIP, boolean forceExcludedDirs, boolean setLocked, CommandSender sender) {
+    public AddDirToZipTask(File sourceDirToAdd, ZipOutputStream targetZipOutputStream, boolean createRootDirInTargetZIP, boolean forceExcludedDirs, boolean setLocked, CommandSender sender) {
 
         super(taskName, setLocked, sender);
         this.targetZipOutputStream = targetZipOutputStream;
         this.sourceDirToAdd = sourceDirToAdd;
         this.sender = sender;
         this.forceExcludedDirs = forceExcludedDirs;
-        this.createRootFolderInZIP = createRootFolderInZIP;
+        this.createRootDirInTargetZIP = createRootDirInTargetZIP;
     }
 
     @Override
@@ -69,7 +69,7 @@ public class AddDirToZipTask extends Task {
 
                 try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(targetZipFileDir))) {
 
-                    if (createRootFolderInZIP) {
+                    if (createRootDirInTargetZIP) {
                         addDirToZip(zipOutputStream, sourceDirToAdd, sourceDirToAdd.getParentFile().toPath());
                     } else {
                         addDirToZip(zipOutputStream, sourceDirToAdd, sourceDirToAdd.toPath());
@@ -85,8 +85,8 @@ public class AddDirToZipTask extends Task {
 
                 try {
 
-                    if (createRootFolderInZIP) {
-                        addDirToZip(targetZipOutputStream, sourceDirToAdd, sourceDirToAdd.getParentFile().toPath());
+                    if (createRootDirInTargetZIP) {
+                        addDirToZip(targetZipOutputStream, sourceDirToAdd, sourceDirToAdd.getCanonicalFile().getParentFile().toPath());
                     } else {
                         addDirToZip(targetZipOutputStream, sourceDirToAdd, sourceDirToAdd.toPath());
                     }
@@ -99,7 +99,7 @@ public class AddDirToZipTask extends Task {
                 }
             }
 
-            Logger.getLogger().devLog("AddDirToZip task has been finished", sender);
+            Logger.getLogger().devLog("AddDirToZip task has been finished");
 
             if (setLocked) {
                 Backup.unlock();
@@ -110,7 +110,7 @@ public class AddDirToZipTask extends Task {
                 Backup.unlock();
             }
 
-            Logger.getLogger().warn("Something went wrong while running AddDirToZIP task");
+            Logger.getLogger().warn("Something went wrong while running AddDirToZIP task", sender);
             Logger.getLogger().warn(this, e);
         }
     }
@@ -118,7 +118,8 @@ public class AddDirToZipTask extends Task {
     private void addDirToZip(ZipOutputStream zip, File sourceDir, Path relativeDirPath) {
 
         if (!sourceDir.exists()) {
-            Logger.getLogger().warn("Directory " + sourceDir.getAbsolutePath() + " does not exist");
+            Logger.getLogger().warn("Something went wrong while running AddDirToZIP task", sender);
+            Logger.getLogger().warn("Directory " + sourceDir.getAbsolutePath() + " does not exist", sender);
             return;
         }
 
@@ -147,6 +148,7 @@ public class AddDirToZipTask extends Task {
 
             } catch (Exception e) {
 
+                Logger.getLogger().warn("Something went wrong while running AddDirToZIP task", sender);
                 Logger.getLogger().warn("Something went wrong while trying to put file in ZIP! " + sourceDir.getName(), sender);
                 Logger.getLogger().warn(this, e);
             }
@@ -174,6 +176,10 @@ public class AddDirToZipTask extends Task {
     @Override
     public void prepareTask() {
         this.isTaskPrepared = true;
-        this.maxProgress = Utils.getFolderOrFileByteSize(sourceDirToAdd);
+        if (!forceExcludedDirs) {
+            this.maxProgress = Utils.getFileFolderByteSizeExceptExcluded(sourceDirToAdd);
+        } else {
+            this.maxProgress = Utils.getFileFolderByteSize(sourceDirToAdd);
+        }
     }
 }

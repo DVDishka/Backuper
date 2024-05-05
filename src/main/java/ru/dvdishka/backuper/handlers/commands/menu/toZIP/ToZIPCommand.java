@@ -4,7 +4,7 @@ import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.classes.Backup;
 import ru.dvdishka.backuper.backend.common.Scheduler;
-import ru.dvdishka.backuper.backend.tasks.zip.ConvertFolderToZipTask;
+import ru.dvdishka.backuper.backend.tasks.zip.tozip.ConvertFolderToZipTask;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.handlers.commands.Command;

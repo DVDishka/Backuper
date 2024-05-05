@@ -5,7 +5,7 @@ import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.classes.Backup;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.common.Scheduler;
-import ru.dvdishka.backuper.backend.tasks.zip.ConvertZipToFolderTask;
+import ru.dvdishka.backuper.backend.tasks.zip.unzip.ConvertZipToFolderTask;
 import ru.dvdishka.backuper.backend.utils.*;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.handlers.commands.status.StatusCommand;

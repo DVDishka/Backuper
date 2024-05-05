@@ -72,7 +72,7 @@ public class Backup {
             backupFilePath = backupsFolder.toPath().resolve(backupName).toFile().getPath() + ".zip";
         }
 
-        long backupSize = Utils.getFolderOrFileByteSize(new File(backupFilePath));
+        long backupSize = Utils.getFileFolderByteSize(new File(backupFilePath));
 
         if (backupSize != 0) {
             backupSize /= (1024 * 1024);
@@ -92,7 +92,7 @@ public class Backup {
             backupFilePath = backupsFolder.toPath().resolve(backupName).toFile().getPath() + ".zip";
         }
 
-        return Utils.getFolderOrFileByteSize(new File(backupFilePath));
+        return Utils.getFileFolderByteSize(new File(backupFilePath));
     }
 
     public String zipOrFolder() {

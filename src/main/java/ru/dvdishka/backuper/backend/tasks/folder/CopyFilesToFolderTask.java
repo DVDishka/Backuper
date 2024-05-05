@@ -11,7 +11,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.util.Objects;
 
-public class CopyFilesToDirTask extends Task {
+public class CopyFilesToFolderTask extends Task {
 
     private static String taskName = "CopyFiles";
 
@@ -22,20 +22,15 @@ public class CopyFilesToDirTask extends Task {
     private volatile long completedCopyTasksCount = 0;
     // Doesn't have to be synchronized because all increasings come from the thread staring each copy thread, and this thread is only one
     private long copyTasksCount = 0;
+    private boolean createRootDirInTargetDir = true;
 
-    public CopyFilesToDirTask(File sourceDirToCopy, File targetDir, boolean setLocked, CommandSender sender) {
-
-        super(taskName, setLocked, sender);
-        this.sourceDirToCopy = sourceDirToCopy;
-        this.targetDir = targetDir;
-    }
-
-    public CopyFilesToDirTask(File sourceDirToCopy, File targetDir, boolean forceExcludedDirs, boolean setLocked, CommandSender sender) {
+    public CopyFilesToFolderTask(File sourceDirToCopy, File targetDir, boolean createRootDirInTargetDir, boolean forceExcludedDirs, boolean setLocked, CommandSender sender) {
 
         super(taskName, setLocked, sender);
         this.sourceDirToCopy = sourceDirToCopy;
         this.targetDir = targetDir;
         this.forceExcludedDirs = forceExcludedDirs;
+        this.createRootDirInTargetDir = createRootDirInTargetDir;
     }
 
     @Override
@@ -55,7 +50,11 @@ public class CopyFilesToDirTask extends Task {
             copyTasksCount = 0;
             completedCopyTasksCount = 0;
 
-            unsafeCopyFilesInDir(targetDir.toPath().resolve(sourceDirToCopy.getName()).toFile(), sourceDirToCopy);
+            if (createRootDirInTargetDir) {
+                unsafeCopyFilesInDir(targetDir.toPath().resolve(sourceDirToCopy.getName()).toFile(), sourceDirToCopy);
+            } else {
+                unsafeCopyFilesInDir(targetDir, sourceDirToCopy);
+            }
 
             // Waiting for all files being copied
             while (completedCopyTasksCount < copyTasksCount) {}
@@ -149,7 +148,7 @@ public class CopyFilesToDirTask extends Task {
         isTaskPrepared = true;
 
         if (forceExcludedDirs) {
-            this.maxProgress = Utils.getFolderOrFileByteSize(sourceDirToCopy);
+            this.maxProgress = Utils.getFileFolderByteSize(sourceDirToCopy);
         } else {
             this.maxProgress = Utils.getFileFolderByteSizeExceptExcluded(sourceDirToCopy);
         }

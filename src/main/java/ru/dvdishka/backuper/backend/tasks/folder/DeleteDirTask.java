@@ -98,6 +98,6 @@ public class DeleteDirTask extends Task {
     @Override
     public void prepareTask() {
         isTaskPrepared = true;
-        maxProgress = Utils.getFolderOrFileByteSize(dirToDelete);
+        maxProgress = Utils.getFileFolderByteSize(dirToDelete);
     }
 }

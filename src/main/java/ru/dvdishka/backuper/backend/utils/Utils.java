@@ -53,7 +53,7 @@ public class Utils {
         return properties.getProperty(property);
     }
 
-    public static long getFolderOrFileByteSize(File path) {
+    public static long getFileFolderByteSize(File path) {
 
         if (!path.exists()) {
             return 0;
@@ -73,7 +73,7 @@ public class Utils {
 
         if (path.isDirectory()) {
             for (File file : Objects.requireNonNull(path.listFiles())) {
-                size += getFolderOrFileByteSize(file);
+                size += getFileFolderByteSize(file);
             }
         }
 
