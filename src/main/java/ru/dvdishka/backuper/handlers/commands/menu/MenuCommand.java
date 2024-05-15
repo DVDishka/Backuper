@@ -8,8 +8,8 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
+import ru.dvdishka.backuper.backend.classes.LocalBackup;
 import ru.dvdishka.backuper.handlers.commands.Command;
-import ru.dvdishka.backuper.backend.classes.Backup;
 
 public class MenuCommand extends Command {
 
@@ -22,7 +22,7 @@ public class MenuCommand extends Command {
 
         String backupName = (String) arguments.get("backupName");
 
-        if (!Backup.checkBackupExistenceByName(backupName)) {
+        if (!LocalBackup.checkBackupExistenceByName(backupName)) {
             cancelSound();
             returnFailure("Backup does not exist!");
             return;
@@ -32,10 +32,10 @@ public class MenuCommand extends Command {
 
         buttonSound();
 
-        Backup backup = new Backup(backupName);
+        LocalBackup localBackup = LocalBackup.getInstance(backupName);
 
-        long backupSize = backup.getMBSize();
-        String zipOrFolder = backup.zipOrFolder();
+        long backupSize = localBackup.getMBSize();
+        String zipOrFolder = localBackup.zipOrFolder();
 
         Component header = Component.empty();
 
@@ -53,7 +53,7 @@ public class MenuCommand extends Command {
                     .append(Component.newline())
                     .append(Component.newline());
 
-            if (backup.zipOrFolder().equals("(Folder)")) {
+            if (localBackup.zipOrFolder().equals("(Folder)")) {
                 message = message
                         .append(Component.text("[TO ZIP]")
                                 .clickEvent(ClickEvent.runCommand("/backuper menu \"" + backupName + "\"" + " toZIPConfirmation"))
@@ -62,7 +62,7 @@ public class MenuCommand extends Command {
                         .append(Component.space());
             }
 
-            if (backup.zipOrFolder().equals("(ZIP)")) {
+            if (localBackup.zipOrFolder().equals("(ZIP)")) {
                 message = message
                         .append(Component.text("[UNZIP]")
                                 .clickEvent(ClickEvent.runCommand("/backuper menu \"" + backupName + "\"" + " unZIPConfirmation"))

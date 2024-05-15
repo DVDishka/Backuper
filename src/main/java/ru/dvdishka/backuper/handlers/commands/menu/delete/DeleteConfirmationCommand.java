@@ -7,13 +7,20 @@ import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
-import ru.dvdishka.backuper.handlers.commands.Command;
+import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.classes.Backup;
+import ru.dvdishka.backuper.backend.classes.LocalBackup;
+import ru.dvdishka.backuper.backend.classes.SftpBackup;
+import ru.dvdishka.backuper.handlers.commands.Command;
 
 public class DeleteConfirmationCommand extends Command {
 
-    public DeleteConfirmationCommand(CommandSender sender, CommandArguments arguments) {
+    private String storage = "";
+
+    public DeleteConfirmationCommand(String storage, CommandSender sender, CommandArguments arguments) {
         super(sender, arguments);
+
+        this.storage = storage;
     }
 
     @Override
@@ -21,7 +28,8 @@ public class DeleteConfirmationCommand extends Command {
 
         String backupName = (String) arguments.get("backupName");
 
-        if (!Backup.checkBackupExistenceByName(backupName)) {
+        if (storage.equals("local") && !LocalBackup.checkBackupExistenceByName(backupName) ||
+                storage.equals("sftp") && !SftpBackup.checkBackupExistenceByName(backupName)) {
             cancelSound();
             returnFailure("Backup does not exist!");
             return;
@@ -29,9 +37,16 @@ public class DeleteConfirmationCommand extends Command {
 
         assert backupName != null;
 
-        Backup backup = new Backup(backupName);
+        Backup backup = null;
 
-        if (Backup.isLocked() || Backup.isLocked()) {
+        if (storage.equals("local")) {
+            backup = LocalBackup.getInstance(backupName);
+        }
+        if (storage.equals("backup")) {
+            backup = SftpBackup.getInstance(backupName);
+        }
+
+        if (Backuper.isLocked() || Backuper.isLocked()) {
             cancelSound();
             returnFailure("Backup is blocked by another operation!");
             return;
@@ -39,8 +54,12 @@ public class DeleteConfirmationCommand extends Command {
 
         buttonSound();
 
-        long backupSize = backup.getMBSize();
-        String zipFolderBackup = backup.zipOrFolder();
+        long backupSize = backup.getByteSize(sender) / 1024;
+
+        String zipFolderBackup = "(Folder)";
+        if (backup instanceof LocalBackup) {
+            zipFolderBackup = ((LocalBackup) backup).zipOrFolder();
+        }
 
         Component header = Component.empty();
 
@@ -59,7 +78,7 @@ public class DeleteConfirmationCommand extends Command {
 
         message = message
                 .append(Component.text("[DELETE BACKUP]")
-                        .clickEvent(ClickEvent.runCommand("/backuper menu \"" + backupName + "\" delete"))
+                        .clickEvent(ClickEvent.runCommand("/backuper menu " + storage + " \"" + backupName + "\" delete"))
                         .color(TextColor.color(0xB02100))
                         .decorate(TextDecoration.BOLD));
 

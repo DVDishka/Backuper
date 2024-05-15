@@ -7,8 +7,9 @@ import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
+import ru.dvdishka.backuper.Backuper;
+import ru.dvdishka.backuper.backend.classes.LocalBackup;
 import ru.dvdishka.backuper.handlers.commands.Command;
-import ru.dvdishka.backuper.backend.classes.Backup;
 
 public class UnZIPConfirmationCommand extends Command {
 
@@ -21,7 +22,7 @@ public class UnZIPConfirmationCommand extends Command {
 
         String backupName = (String) arguments.get("backupName");
 
-        if (!Backup.checkBackupExistenceByName(backupName)) {
+        if (!LocalBackup.checkBackupExistenceByName(backupName)) {
             cancelSound();
             returnFailure("Backup does not exist!");
             return;
@@ -29,10 +30,10 @@ public class UnZIPConfirmationCommand extends Command {
 
         assert backupName != null;
 
-        Backup backup = new Backup(backupName);
+        LocalBackup localBackup = LocalBackup.getInstance(backupName);
 
-        long backupSize = backup.getMBSize();
-        String zipFolderBackup = backup.zipOrFolder();
+        long backupSize = localBackup.getMBSize();
+        String zipFolderBackup = localBackup.zipOrFolder();
 
         if (zipFolderBackup.equals("(Folder)")) {
             cancelSound();
@@ -40,7 +41,7 @@ public class UnZIPConfirmationCommand extends Command {
             return;
         }
 
-        if (backup.isLocked() || Backup.isLocked()) {
+        if (Backuper.isLocked() || Backuper.isLocked()) {
             cancelSound();
             returnFailure("Backup is blocked by another operation!");
             return;

@@ -1,9 +1,9 @@
-package ru.dvdishka.backuper.backend.tasks.zip.unzip;
+package ru.dvdishka.backuper.backend.tasks.local.zip.unzip;
 
 import org.bukkit.command.CommandSender;
-import ru.dvdishka.backuper.backend.classes.Backup;
+import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.common.Logger;
-import ru.dvdishka.backuper.backend.tasks.folder.DeleteDirTask;
+import ru.dvdishka.backuper.backend.tasks.local.folder.DeleteDirTask;
 import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
 
@@ -32,7 +32,7 @@ public class ConvertZipToFolderTask extends Task {
     public void run() {
 
         if (setLocked) {
-            Backup.lock(this);
+            Backuper.lock(this);
         }
 
         try {
@@ -51,18 +51,24 @@ public class ConvertZipToFolderTask extends Task {
             deleteDirTask.run();
             Logger.getLogger().devLog("DeleteDir task has been started");
 
+            Logger.getLogger().devLog("The Rename \"in progress\" Folder/ZIP local task has been started");
+            if (!new File(sourceZipFileDir.getPath().replace(".zip", "") + " in progress").renameTo(new File(sourceZipFileDir.getPath().replace(".zip", "")))) {
+                Logger.getLogger().warn("The Rename \"in progress\" ZIP local task has been finished with an exception!", sender);
+            }
+            Logger.getLogger().devLog("The Rename \"in progress\" Folder/ZIP local task has been finished");
+
             Logger.getLogger().devLog("ZipToFolder task has been finished");
 
             if (setLocked) {
                 UIUtils.successSound(sender);
-                Backup.unlock();
+                Backuper.unlock();
             }
 
         } catch (Exception e) {
 
             if (setLocked) {
                 UIUtils.cancelSound(sender);
-                Backup.unlock();
+                Backuper.unlock();
             }
 
             Logger.getLogger().warn("Something went wrong while running ZipToFolder task", sender);
@@ -75,7 +81,7 @@ public class ConvertZipToFolderTask extends Task {
 
         this.isTaskPrepared = true;
 
-        unpackZipTask = new UnpackZipTask(sourceZipFileDir, new File(sourceZipFileDir.getPath().replace(".zip", "")), false, sender);
+        unpackZipTask = new UnpackZipTask(sourceZipFileDir, new File(sourceZipFileDir.getPath().replace(".zip", "") + " in progress"), false, sender);
         deleteDirTask = new DeleteDirTask(sourceZipFileDir, false, sender);
     }
 

@@ -2,8 +2,12 @@ package ru.dvdishka.backuper.handlers.commands.menu.delete;
 
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
+import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.classes.Backup;
-import ru.dvdishka.backuper.backend.tasks.folder.DeleteDirTask;
+import ru.dvdishka.backuper.backend.classes.LocalBackup;
+import ru.dvdishka.backuper.backend.classes.SftpBackup;
+import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.backend.tasks.local.folder.DeleteDirTask;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.utils.*;
@@ -14,8 +18,12 @@ import java.io.File;
 
 public class DeleteCommand extends Command {
 
-    public DeleteCommand(CommandSender sender, CommandArguments arguments) {
+    private String storage= "";
+
+    public DeleteCommand(String storage, CommandSender sender, CommandArguments arguments) {
         super(sender, arguments);
+
+        this.storage = storage;
     }
 
     @Override
@@ -23,15 +31,23 @@ public class DeleteCommand extends Command {
 
         String backupName = (String) arguments.get("backupName");
 
-        if (!Backup.checkBackupExistenceByName(backupName)) {
+        if (storage.equals("local") && !LocalBackup.checkBackupExistenceByName(backupName) ||
+                storage.equals("sftp") && !SftpBackup.checkBackupExistenceByName(backupName)) {
             cancelSound();
             returnFailure("Backup does not exist!");
             return;
         }
 
-        Backup backup = new Backup(backupName);
+        Backup backup = null;
 
-        if (Backup.isLocked()) {
+        if (storage.equals("local")) {
+            backup = LocalBackup.getInstance(backupName);
+        }
+        if (storage.equals("sftp")) {
+            backup = SftpBackup.getInstance(backupName);
+        }
+
+        if (Backuper.isLocked()) {
             cancelSound();
             returnFailure("Blocked by another operation!");
             return;
@@ -39,16 +55,17 @@ public class DeleteCommand extends Command {
 
         buttonSound();
 
-        File backupFile = backup.getFile();
-
         StatusCommand.sendTaskStartedMessage("Delete", sender);
+
+        final Backup finalBackup = backup;
 
         Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
 
             try {
 
-                new DeleteDirTask(backupFile, true, sender).run();
+                finalBackup.delete(true, sender);
                 successSound();
+                sendMessage("Delete task completed");
 
             } catch (Exception e) {
 

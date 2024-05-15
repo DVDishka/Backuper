@@ -111,3 +111,7 @@ buildNumber.properties
 
 # Common working directory
 run/
+
+test/
+Dockerfile
+Makefile

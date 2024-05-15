@@ -1,7 +1,7 @@
-package ru.dvdishka.backuper.backend.tasks.folder;
+package ru.dvdishka.backuper.backend.tasks.local.folder;
 
 import org.bukkit.command.CommandSender;
-import ru.dvdishka.backuper.backend.classes.Backup;
+import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.tasks.Task;
@@ -37,7 +37,7 @@ public class CopyFilesToFolderTask extends Task {
     public void run() {
 
         if (setLocked) {
-            Backup.lock(this);
+            Backuper.lock(this);
         }
 
         try {
@@ -62,7 +62,7 @@ public class CopyFilesToFolderTask extends Task {
         } catch (Exception e) {
 
             if (setLocked) {
-                Backup.unlock();
+                Backuper.unlock();
             }
 
             Logger.getLogger().warn("Something went wrong while running CopyFiles task");
@@ -77,17 +77,20 @@ public class CopyFilesToFolderTask extends Task {
     private void unsafeCopyFilesInDir(File destDir, File sourceDir) {
 
         if (!sourceDir.exists()) {
+            Logger.getLogger().warn("Something went wrong while copying files from " + sourceDir.getAbsolutePath());
             Logger.getLogger().warn("Directory " + sourceDir.getAbsolutePath() + " does not exist", sender);
             return;
         }
 
-        if (sourceDir.isFile() && !sourceDir.getName().equals("session.lock")) {
-
+        {
             boolean isExcludedDirectory = Utils.isExcludedDirectory(sourceDir, sender);
 
             if (isExcludedDirectory && !forceExcludedDirs) {
                 return;
             }
+        }
+
+        if (sourceDir.isFile() && !sourceDir.getName().equals("session.lock")) {
 
             copyTasksCount++;
 
@@ -128,16 +131,7 @@ public class CopyFilesToFolderTask extends Task {
 
             for (File file : Objects.requireNonNull(sourceDir.listFiles())) {
 
-                boolean isExcludedDirectory = Utils.isExcludedDirectory(file, sender);
-
-                if (isExcludedDirectory && !forceExcludedDirs) {
-                    continue;
-                }
-
-                if (!file.getName().equals("session.lock")) {
-
-                    unsafeCopyFilesInDir(destDir.toPath().resolve(file.getName()).toFile(), file);
-                }
+                unsafeCopyFilesInDir(destDir.toPath().resolve(file.getName()).toFile(), file);
             }
         }
     }

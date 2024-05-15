@@ -1,7 +1,7 @@
-package ru.dvdishka.backuper.backend.tasks.zip.tozip;
+package ru.dvdishka.backuper.backend.tasks.local.zip.tozip;
 
 import org.bukkit.command.CommandSender;
-import ru.dvdishka.backuper.backend.classes.Backup;
+import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.utils.Utils;
@@ -49,7 +49,7 @@ public class AddDirToZipTask extends Task {
     public void run() {
 
         if (setLocked) {
-            Backup.lock(this);
+            Backuper.lock(this);
         }
 
         try {
@@ -79,7 +79,7 @@ public class AddDirToZipTask extends Task {
                     Logger.getLogger().warn(this, e);
                     Logger.getLogger().warn("AddDirToZip task failed", sender);
 
-                    Backup.unlock();
+                    Backuper.unlock();
                 }
             } else {
 
@@ -95,19 +95,19 @@ public class AddDirToZipTask extends Task {
                     Logger.getLogger().warn(this, e);
                     Logger.getLogger().warn("AddDirToZip task failed", sender);
 
-                    Backup.unlock();
+                    Backuper.unlock();
                 }
             }
 
             Logger.getLogger().devLog("AddDirToZip task has been finished");
 
             if (setLocked) {
-                Backup.unlock();
+                Backuper.unlock();
             }
         } catch (Exception e) {
 
             if (setLocked) {
-                Backup.unlock();
+                Backuper.unlock();
             }
 
             Logger.getLogger().warn("Something went wrong while running AddDirToZIP task", sender);
@@ -123,8 +123,12 @@ public class AddDirToZipTask extends Task {
             return;
         }
 
-        if (Utils.isExcludedDirectory(sourceDir, sender) && !forceExcludedDirs) {
-            return;
+        {
+            boolean isExcludedDirectory = Utils.isExcludedDirectory(sourceDir, sender);
+
+            if (isExcludedDirectory && !forceExcludedDirs) {
+                return;
+            }
         }
 
         if (sourceDir.isFile()) {
@@ -159,12 +163,6 @@ public class AddDirToZipTask extends Task {
         }
 
         for (File file : sourceDir.listFiles()) {
-
-            boolean isExcludedDirectory = Utils.isExcludedDirectory(file, sender);
-
-            if (isExcludedDirectory && !forceExcludedDirs) {
-                continue;
-            }
 
             if (!file.getName().equals("session.lock")) {
 

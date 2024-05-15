@@ -2,10 +2,11 @@ package ru.dvdishka.backuper.handlers.commands.menu.unZIP;
 
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
-import ru.dvdishka.backuper.backend.classes.Backup;
+import ru.dvdishka.backuper.Backuper;
+import ru.dvdishka.backuper.backend.classes.LocalBackup;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.common.Scheduler;
-import ru.dvdishka.backuper.backend.tasks.zip.unzip.ConvertZipToFolderTask;
+import ru.dvdishka.backuper.backend.tasks.local.zip.unzip.ConvertZipToFolderTask;
 import ru.dvdishka.backuper.backend.utils.*;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.handlers.commands.status.StatusCommand;
@@ -21,7 +22,7 @@ public class UnZIPCommand extends Command {
 
         String backupName = (String) arguments.get("backupName");
 
-        if (!Backup.checkBackupExistenceByName(backupName)) {
+        if (!LocalBackup.checkBackupExistenceByName(backupName)) {
             cancelSound();
             returnFailure("Backup does not exist!");
             return;
@@ -29,15 +30,15 @@ public class UnZIPCommand extends Command {
 
         assert backupName != null;
 
-        Backup backup = new Backup(backupName);
+        LocalBackup localBackup = LocalBackup.getInstance(backupName);
 
-        if (backup.zipOrFolder().equals("(Folder)")) {
+        if (localBackup.zipOrFolder().equals("(Folder)")) {
             cancelSound();
             returnFailure("Backup is already Folder!");
             return;
         }
 
-        if (Backup.isLocked() || Backup.isLocked()) {
+        if (Backuper.isLocked() || Backuper.isLocked()) {
             cancelSound();
             returnFailure("Blocked by another operation!");
             return;
@@ -51,11 +52,13 @@ public class UnZIPCommand extends Command {
 
             try {
 
-                new ConvertZipToFolderTask(backup.getZIPFile(), true, sender).run();
+                new ConvertZipToFolderTask(localBackup.getZIPFile(), true, sender).run();
+
+                sendMessage("UnZIP task completed");
 
             } catch (Exception e) {
 
-                Backup.unlock();
+                Backuper.unlock();
 
                 Logger.getLogger().warn("The UnZIP task has been finished with an exception!", sender);
                 Logger.getLogger().warn(this, e);

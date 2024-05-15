@@ -2,6 +2,8 @@ package ru.dvdishka.backuper.backend.tasks;
 
 import org.bukkit.command.CommandSender;
 
+import static com.google.common.primitives.Doubles.min;
+
 public abstract class Task {
 
     protected CommandSender sender;
@@ -27,7 +29,7 @@ public abstract class Task {
         if (getTaskMaxProgress() == 0) {
             return 0;
         }
-        return (long) (((double) getTaskCurrentProgress()) / ((double) getTaskMaxProgress()) * 100.0);
+        return (long) min((((double) getTaskCurrentProgress()) / ((double) getTaskMaxProgress()) * 100.0), 100.0);
     }
 
     public long getTaskCurrentProgress() {

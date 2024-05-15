@@ -5,6 +5,7 @@ import dev.jorel.commandapi.CommandAPIBukkitConfig;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.common.Scheduler;
+import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.tasks.backup.SetWorldsWritableTask;
 import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.backend.Initialization;
@@ -13,6 +14,27 @@ import ru.dvdishka.backuper.backend.common.Logger;
 import java.io.File;
 
 public class Backuper extends JavaPlugin {
+
+    private static volatile boolean isBackupBusy = false;
+    private static Task currentTask = null;
+
+    public static Task getCurrentTask() {
+        return currentTask;
+    }
+
+    public static void lock(Task task) {
+        isBackupBusy = true;
+        currentTask = task;
+    }
+
+    public static void unlock() {
+        isBackupBusy = false;
+        currentTask = null;
+    }
+
+    public static boolean isLocked() {
+        return isBackupBusy;
+    }
 
     public void onEnable() {
 

@@ -1,49 +1,73 @@
 # DO NOT CHANGE
-configVersion: 7.0
+configVersion: 8.0
 lastBackup: 0
 lastChange: 0
 
+backup:
+  # (true/false) Automatic backup once in a specified period
+  autoBackup: true
+  # (Path list) (An example of how to set a list is below) Full directory paths to folders/files that you want to be backed up. Worlds will be backed up automatically, so you do not need to specify world folders there (For example you can specify "plugins", "config")
+  # addDirectoryToBackup:
+  # - path1
+  # - path2
+  # - ...
+  addDirectoryToBackup: []
+  # (Path list) (An example of how to set a list is below) Full directory paths to folders/files that you want to be excluded from backup. If you want to backup everything from the folder1 except some folder1/file1 you can specify folder1 in addDirectoryToBackup and folder1/file1 in excludeDirectoryFromBackup. (The backupsFolder directory will be excluded automatically to prevent the loop)
+  # excludeDirectoryFromBackup:
+  # - path1
+  # - path2
+  # - ...
+  excludeDirectoryFromBackup: []
 
-# (true/false) Automatic backup once in a specified period
-autoBackup: true
+  # (MINUTES > 0 or -1) Backup period. To change this value you need to set backupTime to -1 and autoBackup to true
+  backupPeriod: 1440
+  # (0 - 23). Automatic backups will be made at this time every day. (backupPeriod will be automatically set to 24 hours). -1 to disable backup time fixation
+  backupTime: -1
 
-# (Path) Full directory where backups will be stored
-backupsFolder: plugins/Backuper/Backups
-# (Path list) (An example of how to set a list is below) Full directory paths to folders/files that you want to be backed up. Worlds will be backed up automatically, so you do not need to specify world folders there (For example you can specify "plugins", "config")
-# addDirectoryToBackup:
-# - path1
-# - path2
-# - ...
-addDirectoryToBackup: []
-# (Path list) (An example of how to set a list is below) Full directory paths to folders/files that you want to be excluded from backup. If you want to backup everything from the folder1 except some folder1/file1 you can specify folder1 in addDirectoryToBackup and folder1/file1 in excludeDirectoryFromBackup. (The backupsFolder directory will be excluded automatically to prevent the loop)
-# excludeDirectoryFromBackup:
-# - path1
-# - path2
-# - ...
-excludeDirectoryFromBackup: []
+  # (true/false) The backup will only occur if the world has been changed since the last backup. If the world has not been changed, this backup cycle will be skipped
+  skipDuplicateBackup: true
+  # (STOP, RESTART, NOTHING) What to do after an automatic backup
+  afterBackup: NOTHING
 
-# (STOP, RESTART, NOTHING) What to do after an automatic backup
-afterBackup: NOTHING
-# (0 - 23). Automatic backups will be made at this time every day. (backupPeriod will be automatically set to 24 hours). -1 to disable backup time fixation
-backupTime: -1
-# (MINUTES > 0 or -1) Backup period. To change this value you need to set backupTime to -1 and autoBackup to true
-backupPeriod: 1440
+  # (true/false) (True recommended) The backuper will mark all world folders as Read Only to prevent folder changing that may cause the backup crash. True value may cause access denied errors during the backup (you should just ignore that)
+  setWorldsReadOnly: false
 
-# (true/false) The backup will only occur if the world has been changed since the last backup. If the world has not been changed, this backup cycle will be skipped
-skipDuplicateBackup: true
-# (>= 0) Max backups in backups folder, 0 to make it unlimited
-maxBackupsNumber: 0
-# (MB >= 0) Max backups folder weight, 0 to make it unlimited
-maxBackupsWeight: 0
-# (true/false) Should backups be packaged in a zip archive
-zipArchive: true
+local:
+  # (true/false) Enable backup to local directory
+  enabled: true
 
-# (SECONDS < backupPeriod * 60 or -1) A notification about the server restart will be sent to all players on the server {alertTimeBeforeRestart} seconds before the restart. -1 to disable notifications
-alertTimeBeforeRestart: 60
-# (true/false) Notifications will be sent only if the server will be restarted or stopped after the backup
-alertOnlyServerRestart: true
+  # (Path) Full directory where backups will be stored
+  backupsFolder: plugins/Backuper/Backups
 
-# (true/false) Better logging (Some statistic and other information for debugging, you probably don't need it)
-betterLogging: false
-# (true/false) (True recommended) The backuper will mark all world folders as Read Only to prevent folder changing that may cause the backup crash. True value may cause access denied errors during the backup (you should just ignore that)
-setWorldsReadOnly: false
+  # (>= 0) Max backups in backups folder, 0 to make it unlimited
+  maxBackupsNumber: 0
+  # (MB >= 0) Max backups folder weight, 0 to make it unlimited
+  maxBackupsWeight: 0
+
+  # (true/false) Should backups be packaged in a zip archive
+  zipArchive: true
+
+sftp:
+  enabled: true
+
+  backupsFolder:
+  pathSeparatorSymbol: /
+
+  authType: password
+  username:
+  password:
+  keyFilePath:
+  address:
+  port: 22
+
+  useKnownHostsFile: false
+  knownHostsFilePath:
+
+server:
+  # (SECONDS < backupPeriod * 60 or -1) A notification about the server restart will be sent to all players on the server {alertTimeBeforeRestart} seconds before the restart. -1 to disable notifications
+  alertTimeBeforeRestart: 60
+  # (true/false) Notifications will be sent only if the server will be restarted or stopped after the backup
+  alertOnlyServerRestart: true
+
+  # (true/false) Better logging (Some statistic and other information for debugging, you probably don't need it)
+  betterLogging: false

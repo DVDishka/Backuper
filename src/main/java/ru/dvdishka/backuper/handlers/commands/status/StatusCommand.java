@@ -8,7 +8,7 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
-import ru.dvdishka.backuper.backend.classes.Backup;
+import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
@@ -22,7 +22,7 @@ public class StatusCommand extends Command {
     @Override
     public void execute() {
 
-        if (Backup.getCurrentTask() == null) {
+        if (Backuper.getCurrentTask() == null) {
             cancelSound();
             returnFailure("No tasks are currently running");
             return;
@@ -32,7 +32,7 @@ public class StatusCommand extends Command {
 
         Component message = Component.empty();
 
-        long progress = Backup.getCurrentTask().getTaskPercentProgress();
+        long progress = Backuper.getCurrentTask().getTaskPercentProgress();
         TextColor color;
 
         if (progress < 25) {
@@ -48,7 +48,7 @@ public class StatusCommand extends Command {
         message = message
                 .append(Component.text("Current task:"))
                 .append(Component.space())
-                .append(Component.text(Backup.getCurrentTask().getTaskName())
+                .append(Component.text(Backuper.getCurrentTask().getTaskName())
                         .decorate(TextDecoration.BOLD)
                         .color(TextColor.fromHexString("#129c9b")))
                 .append(Component.newline())

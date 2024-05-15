@@ -9,37 +9,48 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
+import ru.dvdishka.backuper.backend.classes.LocalBackup;
+import ru.dvdishka.backuper.backend.classes.SftpBackup;
+import ru.dvdishka.backuper.backend.utils.SftpUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.handlers.commands.Command;
-import ru.dvdishka.backuper.backend.classes.Backup;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.common.Logger;
 
 import java.io.File;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Objects;
 
 public class ListCommand extends Command {
 
     public static ArrayList<ArrayList<TextComponent>> pages;
+    private String storage;
 
-    public ListCommand(CommandSender sender, CommandArguments arguments) {
+    private HashMap<String, Long> backupNameMbSize = new HashMap<>();
+    private HashMap<String, String> backupNameFileType = new HashMap<>();
+
+    public ListCommand(String storage, CommandSender sender, CommandArguments arguments) {
         super(sender, arguments);
+
+        this.storage = storage;
     }
 
     @Override
     public void execute() {
 
-        File backupsFolder = new File(Config.getInstance().getBackupsFolder());
+        File backupsFolder = new File(Config.getInstance().getLocalConfig().getBackupsFolder());
 
-        if (backupsFolder.listFiles() == null) {
-            returnFailure("Wrong backups folder in config.yml!");
-            cancelSound();
-            return;
+        if (storage.equals("local")) {
+            if (backupsFolder.listFiles() == null) {
+                returnFailure("Wrong local backups folder in config.yml!");
+                cancelSound();
+                return;
+            }
         }
 
-        if (ListCommand.getListPageCount() == 0) {
+        if (getListPageCount() == 0) {
             returnFailure("There are no backups yet!");
             cancelSound();
             return;
@@ -48,7 +59,8 @@ public class ListCommand extends Command {
         int pageNumber = (Integer) arguments.getOrDefault("pageNumber", 1);
 
         // PAGE DOES NOT EXIST
-        if (pageNumber < 1 || pageNumber > ListCommand.getListPageCount()) {
+        if (pageNumber < 1 || pageNumber > getListPageCount()) {
+            returnFailure("Invalid page number!");
             cancelSound();
             return;
         }
@@ -70,25 +82,22 @@ public class ListCommand extends Command {
         buttonSound();
     }
 
-    public static void updateListPages() {
+    private void updateListPages() {
 
-        File backupsFolder = new File(Config.getInstance().getBackupsFolder());
-        ArrayList<LocalDateTime> backups = new ArrayList<>();
+        ArrayList<LocalDateTime> backups = null;
 
-        if (backupsFolder.listFiles() == null) {
-            Logger.getLogger().warn("Wrong backupsFolder path!");
+        if (storage.equals("local")) {
+            backups = getLocalBackupList();
+        }
+        if (storage.equals("sftp")) {
+            backups = getSftpBackupList();
+        }
+
+        if (backups == null) {
+            Logger.getLogger().warn("Something went wrong while trying to get backup list!", sender);
             return;
         }
 
-        for (File file : Objects.requireNonNull(backupsFolder.listFiles())) {
-
-            try {
-                backups.add(LocalDateTime.parse(file.getName().replace(".zip", ""),
-                        Backup.dateTimeFormatter));
-            } catch (Exception ignored) {}
-        }
-
-        Utils.sortLocalDateTimeDecrease(backups);
         ArrayList<ArrayList<TextComponent>> pages = new ArrayList<>();
 
         for (int i = 1; i <= backups.size(); i++) {
@@ -97,13 +106,27 @@ public class ListCommand extends Command {
                 pages.add(new ArrayList<>());
             }
 
-            String backupName = backups.get(i - 1).format(Backup.dateTimeFormatter);
-            Backup backup = new Backup(backupName);
-            String backupFileType = backup.zipOrFolder();
-            long backupSize = backup.getMBSize();
+            String backupName = backups.get(i - 1).format(LocalBackup.dateTimeFormatter);
+
+            String backupFileType = "(Folder)";
+            long backupMbSize = 0;
+
+            if (storage.equals("local")) {
+                LocalBackup localBackup = LocalBackup.getInstance(backupName);
+                backupFileType = localBackup.zipOrFolder();
+                backupMbSize = localBackup.getMBSize();
+            }
+
+            if (storage.equals("sftp")) {
+                backupFileType = "(Folder)";
+                backupMbSize = SftpBackup.getInstance(backupName).getByteSize(sender) / 1024;
+            }
+
+            backupNameMbSize.put(backupName, backupMbSize);
+            backupNameFileType.put(backupName, backupFileType);
 
             HoverEvent<net.kyori.adventure.text.Component> hoverEvent = HoverEvent
-                    .showText(net.kyori.adventure.text.Component.text(backupFileType + " " + backupSize + " MB"));
+                    .showText(net.kyori.adventure.text.Component.text(backupFileType + " " + backupMbSize + " MB"));
             ClickEvent clickEvent = ClickEvent.runCommand("/backuper menu \"" + backupName + "\"");
 
             pages.get((i - 1) / 10)
@@ -115,7 +138,7 @@ public class ListCommand extends Command {
         ListCommand.pages = pages;
     }
 
-    public Component createListMessage(int pageNumber, boolean pagedListMessage) {
+    private Component createListMessage(int pageNumber, boolean pagedListMessage) {
 
         Component message = Component.empty();
 
@@ -125,13 +148,13 @@ public class ListCommand extends Command {
                     .append(Component.text("<<<<<<<<")
                             .decorate(TextDecoration.BOLD)
                             .color(TextColor.fromHexString("#129c9b"))
-                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list " + (pageNumber - 1))))
+                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list " + storage + " " + (pageNumber - 1))))
                     .append(Component.text(String.valueOf(pageNumber))
                             .decorate(TextDecoration.BOLD))
                     .append(Component.text(">>>>>>>>")
                             .decorate(TextDecoration.BOLD)
                             .color(TextColor.fromHexString("#129c9b"))
-                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list " + (pageNumber + 1))))
+                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list " + storage + " " + (pageNumber + 1))))
                     .append(Component.newline());
 
             for (TextComponent backupComponent : pages.get(pageNumber - 1)) {
@@ -145,13 +168,13 @@ public class ListCommand extends Command {
                     .append(Component.text("<<<<<<<<")
                             .decorate(TextDecoration.BOLD)
                             .color(TextColor.fromHexString("#129c9b"))
-                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list " + (pageNumber - 1))))
+                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list " + storage + " " + (pageNumber - 1))))
                     .append(Component.text(String.valueOf(pageNumber))
                             .decorate(TextDecoration.BOLD))
                     .append(Component.text(">>>>>>>>")
                             .decorate(TextDecoration.BOLD)
                             .color(TextColor.fromHexString("#129c9b"))
-                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list " + (pageNumber + 1))));
+                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list " + storage + " " + (pageNumber + 1))));
 
         } else {
 
@@ -176,12 +199,14 @@ public class ListCommand extends Command {
                                 .append(Component.newline());
                     }
 
+                    String backupName = backupComponent.content();
+
                     message = message
-                            .append(Component.text(backupComponent.content()))
+                            .append(Component.text(backupName))
                             .append(Component.space())
-                            .append(Component.text(new Backup(backupComponent.content()).zipOrFolder()))
+                            .append(Component.text(backupNameFileType.get(backupName)))
                             .append(Component.space())
-                            .append(Component.text(new Backup(backupComponent.content()).getMBSize()))
+                            .append(Component.text(backupNameMbSize.get(backupName)))
                             .append(Component.space())
                             .append(Component.text(" MB"));
 
@@ -207,12 +232,14 @@ public class ListCommand extends Command {
                                     .append(Component.newline());
                         }
 
+                        String backupName = backupComponent.content();
+
                         message = message
                                 .append(Component.text(backupComponent.content()))
                                 .append(Component.space())
-                                .append(Component.text(new Backup(backupComponent.content()).zipOrFolder()))
+                                .append(Component.text(backupNameFileType.get(backupName)))
                                 .append(Component.space())
-                                .append(Component.text(new Backup(backupComponent.content()).getMBSize()))
+                                .append(Component.text(backupNameMbSize.get(backupName)))
                                 .append(Component.space())
                                 .append(Component.text(" MB"));
 
@@ -224,9 +251,58 @@ public class ListCommand extends Command {
         return message;
     }
 
-    public static int getListPageCount() {
+    private int getListPageCount() {
 
         updateListPages();
         return pages.size();
+    }
+
+    private ArrayList<LocalDateTime> getLocalBackupList() {
+
+        File backupsFolder = new File(Config.getInstance().getLocalConfig().getBackupsFolder());
+        ArrayList<LocalDateTime> backups = new ArrayList<>();
+
+        if (backupsFolder.listFiles() == null) {
+            Logger.getLogger().warn("Wrong backupsFolder path!", sender);
+            return null;
+        }
+
+        for (File file : Objects.requireNonNull(backupsFolder.listFiles())) {
+
+            try {
+                backups.add(LocalDateTime.parse(file.getName().replace(".zip", ""),
+                        LocalBackup.dateTimeFormatter));
+            } catch (Exception ignored) {}
+        }
+
+        Utils.sortLocalDateTimeDecrease(backups);
+
+        return backups;
+    }
+
+    private ArrayList<LocalDateTime> getSftpBackupList() {
+
+        try {
+            ArrayList<LocalDateTime> backups = new ArrayList<>();
+
+            ArrayList<String> backupFileList = SftpUtils.ls(Config.getInstance().getSftpConfig().getBackupsFolder(), sender);
+
+            for (String file : backupFileList) {
+
+                try {
+                    backups.add(LocalDateTime.parse(file.replace(".zip", ""), LocalBackup.dateTimeFormatter));
+                } catch (Exception ignored) {
+                }
+            }
+
+            Utils.sortLocalDateTimeDecrease(backups);
+
+            return backups;
+        } catch (Exception e) {
+
+            Logger.getLogger().warn("Something went wrong while trying to get SFTP backup list", sender);
+            Logger.getLogger().warn(this, e);
+            return null;
+        }
     }
 }

@@ -1,7 +1,8 @@
-package ru.dvdishka.backuper.backend.tasks.zip.unzip;
+package ru.dvdishka.backuper.backend.tasks.local.zip.unzip;
 
 import org.bukkit.command.CommandSender;
-import ru.dvdishka.backuper.backend.classes.Backup;
+import ru.dvdishka.backuper.Backuper;
+import ru.dvdishka.backuper.backend.classes.LocalBackup;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.tasks.Task;
@@ -35,7 +36,7 @@ public class UnpackZipTask extends Task {
     public void run() {
 
         if (setLocked) {
-            Backup.lock(this);
+            Backuper.lock(this);
         }
 
         try (ZipInputStream zipInput = new ZipInputStream(Files.newInputStream(sourceZipDir.toPath()))) {
@@ -100,14 +101,14 @@ public class UnpackZipTask extends Task {
 
             if (setLocked) {
                 UIUtils.successSound(sender);
-                Backup.unlock();
+                Backuper.unlock();
             }
 
         } catch (Exception e) {
 
             if (setLocked) {
                 UIUtils.cancelSound(sender);
-                Backup.unlock();
+                Backuper.unlock();
             }
 
             Logger.getLogger().warn("Something went wrong while running UnpackZip task", sender);
@@ -124,6 +125,6 @@ public class UnpackZipTask extends Task {
 
         this.isTaskPrepared = true;
 
-        maxProgress = (long) ((double) Utils.getFileFolderByteSize(sourceZipDir) * Backup.zipCompressValue);
+        maxProgress = (long) ((double) Utils.getFileFolderByteSize(sourceZipDir) * LocalBackup.zipCompressValue);
     }
 }

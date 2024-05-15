@@ -1,7 +1,7 @@
-package ru.dvdishka.backuper.backend.tasks.folder;
+package ru.dvdishka.backuper.backend.tasks.local.folder;
 
 import org.bukkit.command.CommandSender;
-import ru.dvdishka.backuper.backend.classes.Backup;
+import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.utils.Utils;
@@ -26,7 +26,7 @@ public class DeleteDirTask extends Task {
     public void run() {
 
         if (setLocked) {
-            Backup.lock(this);
+            Backuper.lock(this);
         }
 
         try {
@@ -42,13 +42,13 @@ public class DeleteDirTask extends Task {
             Logger.getLogger().devLog("DeleteDir task has been finished");
 
             if (setLocked) {
-                Backup.unlock();
+                Backuper.unlock();
             }
 
         } catch (Exception e) {
 
             if (setLocked) {
-                Backup.unlock();
+                Backuper.unlock();
             }
 
             Logger.getLogger().warn("Something went wrong while running DeleteDirTask", sender);

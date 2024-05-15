@@ -2,9 +2,9 @@ package ru.dvdishka.backuper.handlers.commands.reload;
 
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
+import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.common.Scheduler;
-import ru.dvdishka.backuper.backend.classes.Backup;
 import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.backend.Initialization;
 import ru.dvdishka.backuper.handlers.commands.Command;
@@ -20,7 +20,7 @@ public class ReloadCommand extends Command {
     @Override
     public void execute() {
 
-        if (Backup.isLocked()) {
+        if (Backuper.isLocked()) {
             returnFailure("Unable to reload config while backup process is running!");
             cancelSound();
             return;

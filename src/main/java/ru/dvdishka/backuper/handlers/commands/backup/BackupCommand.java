@@ -3,8 +3,9 @@ package ru.dvdishka.backuper.handlers.commands.backup;
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
+import ru.dvdishka.backuper.Backuper;
+import ru.dvdishka.backuper.backend.classes.LocalBackup;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.classes.Backup;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.tasks.backup.BackupTask;
 import ru.dvdishka.backuper.handlers.commands.Command;
@@ -35,7 +36,7 @@ public class BackupCommand extends Command {
 
     public void execute() {
 
-        if (Backup.isLocked()) {
+        if (Backuper.isLocked()) {
             cancelSound();
             returnFailure("Blocked by another operation!");
             return;
@@ -53,7 +54,7 @@ public class BackupCommand extends Command {
 
             Scheduler.getScheduler().runSyncDelayed(Utils.plugin, () -> {
 
-                Backup.sendBackupAlert(min(Config.getInstance().getAlertTimeBeforeRestart(), delay), afterBackup);
+                LocalBackup.sendBackupAlert(min(Config.getInstance().getAlertTimeBeforeRestart(), delay), afterBackup);
 
             }, max((delay - Config.getInstance().getAlertTimeBeforeRestart()) * 20, 1));
         }
@@ -64,6 +65,7 @@ public class BackupCommand extends Command {
 
             Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
                 new BackupTask(afterBackup, false, true, sender).run();
+                sendMessage("Backup task completed");
             });
 
         }, delay * 20);

@@ -2,11 +2,13 @@ package ru.dvdishka.backuper.backend.tasks.backup;
 
 import org.apache.commons.io.FileUtils;
 import org.bukkit.command.CommandSender;
+import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.classes.Backup;
+import ru.dvdishka.backuper.backend.classes.LocalBackup;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.Task;
-import ru.dvdishka.backuper.backend.tasks.folder.DeleteDirTask;
+import ru.dvdishka.backuper.backend.tasks.local.folder.DeleteDirTask;
 import ru.dvdishka.backuper.backend.utils.Utils;
 
 import java.io.File;
@@ -29,7 +31,7 @@ public class DeleteOldBackupsTask extends Task {
     public void run() {
 
         if (setLocked) {
-            Backup.lock(this);
+            Backuper.lock(this);
         }
 
         try {
@@ -46,12 +48,12 @@ public class DeleteOldBackupsTask extends Task {
             Logger.getLogger().devLog("DeleteOldBackupsTask has been finished");
 
             if (setLocked) {
-                Backup.unlock();
+                Backuper.unlock();
             }
         } catch (Exception e) {
 
             if (setLocked) {
-                Backup.unlock();
+                Backuper.unlock();
             }
 
             Logger.getLogger().warn("Something went wrong while running DeleteOldBackups task", sender);
@@ -66,18 +68,24 @@ public class DeleteOldBackupsTask extends Task {
 
         try {
 
-            File backupsDir = new File(Config.getInstance().getBackupsFolder());
+            File backupsDir = new File(Config.getInstance().getLocalConfig().getBackupsFolder());
             HashSet<LocalDateTime> backupsToDeleteList = new HashSet<>();
             long backupsFolderWeight = FileUtils.sizeOf(backupsDir);
 
-            if (Config.getInstance().getBackupsNumber() != 0 && backupsDir.listFiles() != null) {
+            if (Config.getInstance().getLocalConfig().getBackupsNumber() != 0 && backupsDir.listFiles() != null) {
 
-                ArrayList<LocalDateTime> backups = Backup.getBackups();
-                Utils.sortLocalDateTime(backups);
+                ArrayList<LocalBackup> backups = LocalBackup.getBackups();
+                ArrayList<LocalDateTime> backupDateTimes = new ArrayList<>();
 
-                int backupsToDelete = backups.size() - Config.getInstance().getBackupsNumber();
+                for (LocalBackup backup : backups) {
+                    backupDateTimes.add(backup.getLocalDateTime());
+                }
 
-                for (LocalDateTime fileName : backups) {
+                Utils.sortLocalDateTime(backupDateTimes);
+
+                int backupsToDelete = backups.size() - Config.getInstance().getLocalConfig().getBackupsNumber();
+
+                for (LocalDateTime fileName : backupDateTimes) {
 
                     if (backupsToDelete <= 0) {
                         break;
@@ -97,7 +105,7 @@ public class DeleteOldBackupsTask extends Task {
                         }
 
                         try {
-                            if (LocalDateTime.parse(backupFileName, Backup.dateTimeFormatter).equals(fileName)) {
+                            if (LocalDateTime.parse(backupFileName, LocalBackup.dateTimeFormatter).equals(fileName)) {
 
                                 DeleteDirTask deleteDirTask = new DeleteDirTask(backup, false, sender);
                                 deleteDirTask.prepareTask();
@@ -111,16 +119,22 @@ public class DeleteOldBackupsTask extends Task {
                 }
             }
 
-            if (Config.getInstance().getBackupsWeight() != 0) {
+            if (Config.getInstance().getLocalConfig().getBackupsWeight() != 0) {
 
-                if (backupsFolderWeight > Config.getInstance().getBackupsWeight() && backupsDir.listFiles() != null) {
+                if (backupsFolderWeight > Config.getInstance().getLocalConfig().getBackupsWeight() && backupsDir.listFiles() != null) {
 
-                    ArrayList<LocalDateTime> backups = Backup.getBackups();
-                    Utils.sortLocalDateTime(backups);
+                    ArrayList<LocalBackup> backups = LocalBackup.getBackups();
+                    ArrayList<LocalDateTime> backupDateTimes = new ArrayList<>();
 
-                    long bytesToDelete = backupsFolderWeight - Config.getInstance().getBackupsWeight();
+                    for (LocalBackup backup : backups) {
+                        backupDateTimes.add(backup.getLocalDateTime());
+                    }
 
-                    for (LocalDateTime fileName : backups) {
+                    Utils.sortLocalDateTime(backupDateTimes);
+
+                    long bytesToDelete = backupsFolderWeight - Config.getInstance().getLocalConfig().getBackupsWeight();
+
+                    for (LocalDateTime fileName : backupDateTimes) {
 
                         if (bytesToDelete <= 0) {
                             break;
@@ -140,7 +154,7 @@ public class DeleteOldBackupsTask extends Task {
                             String backupFileName = backup.getName().replace(".zip", "");
 
                             try {
-                                if (LocalDateTime.parse(backupFileName, Backup.dateTimeFormatter).equals(fileName)) {
+                                if (LocalDateTime.parse(backupFileName, LocalBackup.dateTimeFormatter).equals(fileName)) {
 
                                     bytesToDelete -= FileUtils.sizeOf(backup);
                                     DeleteDirTask deleteDirTask = new DeleteDirTask(backup, false, sender);
