@@ -314,12 +314,7 @@ public class BackupTask extends Task {
 
                 try {
                     Task task = new SftpSendFileFolderTask(worldDir, SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(),
-                            backupName), Config.getInstance().getSftpConfig().getPathSeparatorSymbol(), true,
-                            false, Config.getInstance().getSftpConfig().getAuthType(),
-                            Config.getInstance().getSftpConfig().getUsername(), Config.getInstance().getSftpConfig().getAddress(),
-                            Config.getInstance().getSftpConfig().getPort(), Config.getInstance().getSftpConfig().getPassword(),
-                            Config.getInstance().getSftpConfig().getKeyFilePath(), Config.getInstance().getSftpConfig().getUseKnownHostsFile(),
-                            Config.getInstance().getSftpConfig().getKnownHostsFilePath(), false, sender);
+                            backupName), true, false, false, sender);
                     task.prepareTask();
 
                     tasks.add(task);

@@ -13,6 +13,7 @@ import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.utils.SftpUtils;
+import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
 
 import java.io.File;
@@ -42,10 +43,8 @@ public class SftpSendFileFolderTask extends Task {
     private ArrayList<SftpProgressMonitor> progressMonitors = null;
     private long dirSize = 0;
 
-    public SftpSendFileFolderTask(File localDirToSend, String remoteTargetDir, String pathSeparatorSymbol, boolean createRootDirInTargetDir,
-                                  boolean forceExcludedDirs, String authType, String username, String address, int port,
-                                  String password, String keyFilePath, String useKnownHostsFile, String knownHostsFilePath,
-                                  boolean setLocked, CommandSender sender) {
+    public SftpSendFileFolderTask(File localDirToSend, String remoteTargetDir, boolean createRootDirInTargetDir,
+                                  boolean forceExcludedDirs, boolean setLocked, CommandSender sender) {
         super(taskName, setLocked, sender);
 
         this.localDirToSend = localDirToSend;
@@ -96,6 +95,7 @@ public class SftpSendFileFolderTask extends Task {
             sshSession.disconnect();
 
             if (setLocked) {
+                UIUtils.successSound(sender);
                 Backuper.unlock();
             }
 
@@ -110,10 +110,11 @@ public class SftpSendFileFolderTask extends Task {
             } catch (Exception ignored) {}
 
             if (setLocked) {
+                UIUtils.cancelSound(sender);
                 Backuper.unlock();
             }
 
-            Logger.getLogger().warn("Something went wrong when connecting to the SFTP channel", sender);
+            Logger.getLogger().warn("Something went wrong when trying to send file/folder through the SFTP channel", sender);
             Logger.getLogger().warn(this, e);
         }
     }
@@ -154,7 +155,7 @@ public class SftpSendFileFolderTask extends Task {
                 progressMonitors.add(progressMonitor);
 
             } catch (Exception e) {
-                Logger.getLogger().warn("Something went wrong when sending file to the SFTP channel", e);
+                Logger.getLogger().warn("Something went wrong while sending file to the SFTP channel", e);
                 Logger.getLogger().warn(this, e);
             }
         }
@@ -186,15 +187,6 @@ public class SftpSendFileFolderTask extends Task {
 
     @Override
     public long getTaskMaxProgress() {
-        if (progressMonitors == null) {
-            return dirSize;
-        }
-        long maxProgress = 0;
-
-        for (SftpProgressMonitor progressMonitor : progressMonitors) {
-            maxProgress += progressMonitor.getMaxProgress();
-        }
-
-        return maxProgress;
+        return dirSize;
     }
 }

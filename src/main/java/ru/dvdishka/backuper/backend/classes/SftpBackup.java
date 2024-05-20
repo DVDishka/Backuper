@@ -43,7 +43,7 @@ public class SftpBackup implements Backup {
         }
 
         for (String fileName : SftpUtils.ls(Config.getInstance().getSftpConfig().getBackupsFolder(), null)) {
-            if (fileName.equals(backupName)) {
+            if (fileName.equals(backupName) || fileName.equals(backupName + ".zip")) {
                 return true;
             }
         }
@@ -55,7 +55,7 @@ public class SftpBackup implements Backup {
         ArrayList<SftpBackup> backups = new ArrayList<>();
         for (String fileName : SftpUtils.ls(Config.getInstance().getSftpConfig().getBackupsFolder(), null)) {
             try {
-                SftpBackup backup = SftpBackup.getInstance(fileName);
+                SftpBackup backup = SftpBackup.getInstance(fileName.replace(".zip", ""));
 
                 if (backup != null) {
                     backups.add(backup);
@@ -69,9 +69,25 @@ public class SftpBackup implements Backup {
         return backupName;
     }
 
+    public String getFileName() {
+        if (getFileType().equals("(ZIP)")) {
+            return backupName + ".zip";
+        }
+        else {
+            return backupName;
+        }
+    }
+
+    public String getFileType() {
+        if (SftpUtils.ls(Config.getInstance().getSftpConfig().getBackupsFolder(), null).contains(backupName + ".zip")) {
+            return "(ZIP)";
+        }
+        return "(Folder)";
+    }
+
     public void delete(boolean setLocked, CommandSender sender) {
 
-        new SftpDeleteDirTask(SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), backupName), setLocked, sender).run();
+        new SftpDeleteDirTask(SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), getFileName()), setLocked, sender).run();
     }
 
     public LocalDateTime getLocalDateTime() {
@@ -79,6 +95,14 @@ public class SftpBackup implements Backup {
     }
 
     public long getByteSize(CommandSender sender) {
-        return SftpUtils.getDirByteSize(SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), backupName), sender);
+        return SftpUtils.getDirByteSize(SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), getFileName()), sender);
+    }
+
+    public long getMbSize(CommandSender sender) {
+        return getByteSize(sender) / 1024 / 1024;
+    }
+
+    public String getPath() {
+        return SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), getFileName());
     }
 }

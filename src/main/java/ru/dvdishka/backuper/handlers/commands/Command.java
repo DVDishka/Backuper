@@ -16,7 +16,7 @@ public abstract class Command {
         this.arguments = arguments;
     }
 
-    protected abstract void execute();
+    public abstract void execute();
 
     protected void returnSuccess(String message) {
         UIUtils.returnSuccess(message, sender);

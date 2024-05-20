@@ -5,6 +5,7 @@ import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.tasks.Task;
+import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
 
 import java.io.File;
@@ -59,9 +60,15 @@ public class CopyFilesToFolderTask extends Task {
             // Waiting for all files being copied
             while (completedCopyTasksCount < copyTasksCount) {}
 
+            if (setLocked) {
+                UIUtils.successSound(sender);
+                Backuper.unlock();
+            }
+
         } catch (Exception e) {
 
             if (setLocked) {
+                UIUtils.cancelSound(sender);
                 Backuper.unlock();
             }
 

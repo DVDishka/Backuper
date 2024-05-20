@@ -8,7 +8,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.config.LocalConfig;
 import ru.dvdishka.backuper.backend.tasks.local.folder.DeleteDirTask;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
@@ -19,7 +18,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Objects;
 
 public class LocalBackup implements Backup {
@@ -75,24 +73,9 @@ public class LocalBackup implements Backup {
         return backupLocalDateTime;
     }
 
-    public long getMBSize() {
+    public long getMbSize(CommandSender sender) {
 
-        File backupsFolder = new File(Config.getInstance().getLocalConfig() .getBackupsFolder());
-        String backupFilePath;
-
-        if (backupsFolder.toPath().resolve(backupName).toFile().exists()) {
-            backupFilePath = backupsFolder.toPath().resolve(backupName).toFile().getPath();
-        } else {
-            backupFilePath = backupsFolder.toPath().resolve(backupName).toFile().getPath() + ".zip";
-        }
-
-        long backupSize = Utils.getFileFolderByteSize(new File(backupFilePath));
-
-        if (backupSize != 0) {
-            backupSize /= (1024 * 1024);
-        }
-
-        return backupSize;
+        return getByteSize(sender) / 1024 / 1024;
     }
 
     public long getByteSize(CommandSender sender) {
@@ -109,7 +92,7 @@ public class LocalBackup implements Backup {
         return Utils.getFileFolderByteSize(new File(backupFilePath));
     }
 
-    public String zipOrFolder() {
+    public String getFileType() {
 
         File backupsFolder = new File(Config.getInstance().getLocalConfig().getBackupsFolder());
         String zipOrFolder = "(ZIP)";
@@ -125,7 +108,7 @@ public class LocalBackup implements Backup {
 
         File backupsFolder = new File(Config.getInstance().getLocalConfig().getBackupsFolder());
 
-        if (this.zipOrFolder().equals("(ZIP)")) {
+        if (this.getFileType().equals("(ZIP)")) {
             return backupsFolder.toPath().resolve(backupName + ".zip").toFile();
         } else {
             return backupsFolder.toPath().resolve(backupName).toFile();

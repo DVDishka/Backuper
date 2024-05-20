@@ -32,7 +32,7 @@ public class UnZIPCommand extends Command {
 
         LocalBackup localBackup = LocalBackup.getInstance(backupName);
 
-        if (localBackup.zipOrFolder().equals("(Folder)")) {
+        if (localBackup.getFileType().equals("(Folder)")) {
             cancelSound();
             returnFailure("Backup is already Folder!");
             return;

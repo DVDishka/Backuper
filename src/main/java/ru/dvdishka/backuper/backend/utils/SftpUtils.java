@@ -1,5 +1,6 @@
 package ru.dvdishka.backuper.backend.utils;
 
+import com.jcraft.jsch.*;
 import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
@@ -227,7 +228,7 @@ public class SftpUtils {
         try {
             sftpChannel.connect(10000);
 
-            long size = sftpChannel.stat(remoteFilePath).getSize();
+            long size = getFileFolderByteSize(sftpChannel, remoteFilePath, sender);
 
             sftpChannel.exit();
             session.disconnect();
@@ -244,10 +245,34 @@ public class SftpUtils {
                 sftpChannel.exit();
             } catch (Exception ignored) {}
 
-            Logger.getLogger().warn("Failed to get file size \"" + remoteFilePath + "\"", sender);
-            Logger.getLogger().warn("SftpUtils; getFileSize", e);
+            Logger.getLogger().warn("Failed to get dir size \"" + remoteFilePath + "\"", sender);
+            Logger.getLogger().warn("SftpUtils; getDirByteSize", e);
 
             return 0;
         }
+    }
+
+    private static long getFileFolderByteSize(ChannelSftp sftpChannel, String remoteFilePath, CommandSender sender) {
+
+        long dirSize = 0;
+
+        try {
+            if (!sftpChannel.stat(remoteFilePath).isDir()) {
+                dirSize += sftpChannel.stat(remoteFilePath).getSize();
+
+            } else {
+
+                for (ChannelSftp.LsEntry entry : sftpChannel.ls(remoteFilePath)) {
+                    if (entry.getFilename().equals(".") || entry.getFilename().equals("..")) {
+                        continue;
+                    }
+                    dirSize += getFileFolderByteSize(sftpChannel, SftpUtils.resolve(remoteFilePath, entry.getFilename()), sender);
+                }
+            }
+        } catch (com.jcraft.jsch.SftpException e) {
+            Logger.getLogger().warn("Failed to get dir size \"" + remoteFilePath + "\"", sender);
+            Logger.getLogger().warn("SftpUtils; getFileFolderByteSize", e);
+        }
+        return dirSize;
     }
 }

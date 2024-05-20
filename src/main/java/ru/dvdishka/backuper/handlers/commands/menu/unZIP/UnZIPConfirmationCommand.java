@@ -32,8 +32,8 @@ public class UnZIPConfirmationCommand extends Command {
 
         LocalBackup localBackup = LocalBackup.getInstance(backupName);
 
-        long backupSize = localBackup.getMBSize();
-        String zipFolderBackup = localBackup.zipOrFolder();
+        long backupSize = localBackup.getMbSize(sender);
+        String zipFolderBackup = localBackup.getFileType();
 
         if (zipFolderBackup.equals("(Folder)")) {
             cancelSound();

@@ -8,13 +8,21 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
+import ru.dvdishka.backuper.backend.classes.Backup;
 import ru.dvdishka.backuper.backend.classes.LocalBackup;
+import ru.dvdishka.backuper.backend.classes.SftpBackup;
+import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.handlers.commands.Command;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 public class MenuCommand extends Command {
 
-    public MenuCommand(CommandSender sender, CommandArguments arguments) {
+    private String storage = "";
+
+    public MenuCommand(String storage, CommandSender sender, CommandArguments arguments) {
         super(sender, arguments);
+
+        this.storage = storage;
     }
 
     @Override
@@ -22,7 +30,8 @@ public class MenuCommand extends Command {
 
         String backupName = (String) arguments.get("backupName");
 
-        if (!LocalBackup.checkBackupExistenceByName(backupName)) {
+        if (storage.equals("local") && !LocalBackup.checkBackupExistenceByName(backupName) ||
+                storage.equals("sftp") && !SftpBackup.checkBackupExistenceByName(backupName)) {
             cancelSound();
             returnFailure("Backup does not exist!");
             return;
@@ -32,10 +41,16 @@ public class MenuCommand extends Command {
 
         buttonSound();
 
-        LocalBackup localBackup = LocalBackup.getInstance(backupName);
+        Backup backup = null;
+        if (storage.equals("local")) {
+            backup = LocalBackup.getInstance(backupName);
+        }
+        if (storage.equals("sftp")) {
+            backup = SftpBackup.getInstance(backupName);
+        }
 
-        long backupSize = localBackup.getMBSize();
-        String zipOrFolder = localBackup.zipOrFolder();
+        long backupMbSize = backup.getMbSize(sender);
+        String zipOrFolder = backup.getFileType();
 
         Component header = Component.empty();
 
@@ -49,31 +64,40 @@ public class MenuCommand extends Command {
 
             message = message
                     .append(Component.text(backupName)
-                            .hoverEvent(HoverEvent.showText(Component.text(zipOrFolder + " " + backupSize + " MB"))))
+                            .hoverEvent(HoverEvent.showText(Component.text(zipOrFolder + " " + backupMbSize + " MB"))))
                     .append(Component.newline())
                     .append(Component.newline());
 
-            if (localBackup.zipOrFolder().equals("(Folder)")) {
+            if (storage.equals("local") && backup.getFileType().equals("(Folder)")) {
                 message = message
                         .append(Component.text("[TO ZIP]")
-                                .clickEvent(ClickEvent.runCommand("/backuper menu \"" + backupName + "\"" + " toZIPConfirmation"))
+                                .clickEvent(ClickEvent.runCommand("/backuper menu " + storage + " \"" + backupName + "\"" + " toZIPConfirmation"))
                                 .decorate(TextDecoration.BOLD)
                                 .color(TextColor.color(0x4974B)))
                         .append(Component.space());
             }
 
-            if (localBackup.zipOrFolder().equals("(ZIP)")) {
+            if (storage.equals("local") && backup.getFileType().equals("(ZIP)")) {
                 message = message
                         .append(Component.text("[UNZIP]")
-                                .clickEvent(ClickEvent.runCommand("/backuper menu \"" + backupName + "\"" + " unZIPConfirmation"))
+                                .clickEvent(ClickEvent.runCommand("/backuper menu " + storage + " \"" + backupName + "\"" + " unZIPConfirmation"))
                                 .decorate(TextDecoration.BOLD)
                                 .color(TextColor.color(0x4974B)))
+                        .append(Component.space());
+            }
+
+            if (storage.equals("local") && Config.getInstance().getSftpConfig().isEnabled()) {
+                message = message
+                        .append(Component.text("[COPY TO SFTP]")
+                                .clickEvent(ClickEvent.runCommand("/backuper menu " + storage + " \"" + backupName + "\"" + " copyToSftpConfirmation"))
+                                .decorate(TextDecoration.BOLD)
+                                .color(TextColor.color(17, 102, 212)))
                         .append(Component.space());
             }
 
             message = message
                     .append(Component.text("[DELETE]")
-                            .clickEvent(ClickEvent.runCommand("/backuper menu \"" + backupName + "\"" + " deleteConfirmation"))
+                            .clickEvent(ClickEvent.runCommand("/backuper menu " + storage + " \"" + backupName + "\"" + " deleteConfirmation"))
                             .decorate(TextDecoration.BOLD)
                             .color(TextColor.color(0xB02100)));
 
@@ -86,7 +110,7 @@ public class MenuCommand extends Command {
                     .append(Component.space())
                     .append(Component.text(zipOrFolder))
                     .append(Component.space())
-                    .append(Component.text(backupSize))
+                    .append(Component.text(backupMbSize))
                     .append(Component.space())
                     .append(Component.text(" MB"));
 

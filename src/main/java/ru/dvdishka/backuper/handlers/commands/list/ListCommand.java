@@ -9,6 +9,7 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
+import ru.dvdishka.backuper.backend.classes.Backup;
 import ru.dvdishka.backuper.backend.classes.LocalBackup;
 import ru.dvdishka.backuper.backend.classes.SftpBackup;
 import ru.dvdishka.backuper.backend.utils.SftpUtils;
@@ -108,19 +109,17 @@ public class ListCommand extends Command {
 
             String backupName = backups.get(i - 1).format(LocalBackup.dateTimeFormatter);
 
-            String backupFileType = "(Folder)";
-            long backupMbSize = 0;
-
+            Backup backup = null;
             if (storage.equals("local")) {
-                LocalBackup localBackup = LocalBackup.getInstance(backupName);
-                backupFileType = localBackup.zipOrFolder();
-                backupMbSize = localBackup.getMBSize();
+                backup = LocalBackup.getInstance(backupName);
             }
 
             if (storage.equals("sftp")) {
-                backupFileType = "(Folder)";
-                backupMbSize = SftpBackup.getInstance(backupName).getByteSize(sender) / 1024;
+                backup = SftpBackup.getInstance(backupName);
             }
+
+            String backupFileType = backup.getFileType();
+            long backupMbSize = backup.getMbSize(sender);
 
             backupNameMbSize.put(backupName, backupMbSize);
             backupNameFileType.put(backupName, backupFileType);

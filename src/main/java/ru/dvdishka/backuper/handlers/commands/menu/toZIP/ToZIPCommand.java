@@ -32,7 +32,7 @@ public class ToZIPCommand extends Command {
 
         LocalBackup localBackup = LocalBackup.getInstance(backupName);
 
-        if (localBackup.zipOrFolder().equals("(ZIP)")) {
+        if (localBackup.getFileType().equals("(ZIP)")) {
             cancelSound();
             returnFailure("Backup is already ZIP!");
             return;

@@ -5,12 +5,12 @@ import com.jcraft.jsch.Session;
 import com.jcraft.jsch.SftpATTRS;
 import it.unimi.dsi.fastutil.Pair;
 import org.bukkit.command.CommandSender;
-import ru.dvdishka.backuper.backend.classes.SftpProgressMonitor;
+import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.utils.SftpUtils;
+import ru.dvdishka.backuper.backend.utils.UIUtils;
 
-import java.util.ArrayList;
 import java.util.Vector;
 
 public class SftpDeleteDirTask extends Task {
@@ -36,6 +36,10 @@ public class SftpDeleteDirTask extends Task {
                 prepareTask();
             }
 
+            if (setLocked) {
+                Backuper.lock(this);
+            }
+
             Pair<Session, ChannelSftp> sessionChannelSftpPair = SftpUtils.createSftpChannel(sender);
             session = sessionChannelSftpPair.first();
             channelSftp = sessionChannelSftpPair.second();
@@ -44,7 +48,18 @@ public class SftpDeleteDirTask extends Task {
 
             deleteDir(remoteDirToDelete);
 
+            UIUtils.successSound(sender);
+
+            if (setLocked) {
+                Backuper.unlock();
+                UIUtils.successSound(sender);
+            }
+
         } catch (Exception e) {
+            if (setLocked) {
+                Backuper.unlock();
+                UIUtils.cancelSound(sender);
+            }
             Logger.getLogger().warn("Something went wrong when trying to execute SftpDeleteDir task", sender);
             Logger.getLogger().warn(this, e);
         } finally {

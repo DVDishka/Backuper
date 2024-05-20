@@ -1,4 +1,4 @@
-package ru.dvdishka.backuper.handlers.commands.menu.delete;
+package ru.dvdishka.backuper.handlers.commands.menu.copyToSftp;
 
 import dev.jorel.commandapi.executors.CommandArguments;
 import net.kyori.adventure.text.Component;
@@ -8,19 +8,13 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.backend.classes.Backup;
 import ru.dvdishka.backuper.backend.classes.LocalBackup;
-import ru.dvdishka.backuper.backend.classes.SftpBackup;
 import ru.dvdishka.backuper.handlers.commands.Command;
 
-public class DeleteConfirmationCommand extends Command {
+public class CopyToSftpConfirmationCommand extends Command {
 
-    private String storage = "";
-
-    public DeleteConfirmationCommand(String storage, CommandSender sender, CommandArguments arguments) {
+    public CopyToSftpConfirmationCommand(CommandSender sender, CommandArguments arguments) {
         super(sender, arguments);
-
-        this.storage = storage;
     }
 
     @Override
@@ -28,8 +22,7 @@ public class DeleteConfirmationCommand extends Command {
 
         String backupName = (String) arguments.get("backupName");
 
-        if (storage.equals("local") && !LocalBackup.checkBackupExistenceByName(backupName) ||
-                storage.equals("sftp") && !SftpBackup.checkBackupExistenceByName(backupName)) {
+        if (!LocalBackup.checkBackupExistenceByName(backupName)) {
             cancelSound();
             returnFailure("Backup does not exist!");
             return;
@@ -37,14 +30,7 @@ public class DeleteConfirmationCommand extends Command {
 
         assert backupName != null;
 
-        Backup backup = null;
-
-        if (storage.equals("local")) {
-            backup = LocalBackup.getInstance(backupName);
-        }
-        if (storage.equals("sftp")) {
-            backup = SftpBackup.getInstance(backupName);
-        }
+        LocalBackup backup = LocalBackup.getInstance(backupName);
 
         if (Backuper.isLocked()) {
             cancelSound();
@@ -60,7 +46,7 @@ public class DeleteConfirmationCommand extends Command {
         Component header = Component.empty();
 
         header = header
-                .append(Component.text("Confirm Deletion")
+                .append(Component.text("Confirm sftp sending")
                         .decorate(TextDecoration.BOLD)
                         .color(TextColor.color(0xB02100)));
 
@@ -73,8 +59,8 @@ public class DeleteConfirmationCommand extends Command {
                 .append(Component.newline());
 
         message = message
-                .append(Component.text("[DELETE BACKUP]")
-                        .clickEvent(ClickEvent.runCommand("/backuper menu " + storage + " \"" + backupName + "\" delete"))
+                .append(Component.text("[COPY TO SFTP]")
+                        .clickEvent(ClickEvent.runCommand("/backuper menu local " + " \"" + backupName + "\" copyToSftp"))
                         .color(TextColor.color(0xB02100))
                         .decorate(TextDecoration.BOLD));
 

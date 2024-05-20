@@ -4,6 +4,7 @@ import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.tasks.Task;
+import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
 
 import java.io.File;
@@ -42,12 +43,14 @@ public class DeleteDirTask extends Task {
             Logger.getLogger().devLog("DeleteDir task has been finished");
 
             if (setLocked) {
+                UIUtils.successSound(sender);
                 Backuper.unlock();
             }
 
         } catch (Exception e) {
 
             if (setLocked) {
+                UIUtils.cancelSound(sender);
                 Backuper.unlock();
             }
 

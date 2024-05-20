@@ -9,6 +9,7 @@ import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.tasks.local.folder.DeleteDirTask;
+import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
 
 import java.io.File;
@@ -48,11 +49,13 @@ public class DeleteOldBackupsTask extends Task {
             Logger.getLogger().devLog("DeleteOldBackupsTask has been finished");
 
             if (setLocked) {
+                UIUtils.successSound(sender);
                 Backuper.unlock();
             }
         } catch (Exception e) {
 
             if (setLocked) {
+                UIUtils.cancelSound(sender);
                 Backuper.unlock();
             }
 
