@@ -42,12 +42,9 @@ public class SftpBackup implements Backup {
             return false;
         }
 
-        for (String fileName : SftpUtils.ls(Config.getInstance().getSftpConfig().getBackupsFolder(), null)) {
-            if (fileName.equals(backupName) || fileName.equals(backupName + ".zip")) {
-                return true;
-            }
-        }
-        return false;
+        ArrayList<String> backupFileNames = SftpUtils.ls(Config.getInstance().getSftpConfig().getBackupsFolder(), null);
+
+        return backupFileNames.contains(backupName) || backupFileNames.contains(backupName + ".zip");
     }
 
     public static ArrayList<SftpBackup> getBackups() {

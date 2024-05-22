@@ -120,8 +120,8 @@ public class SftpGetFileFolderTask extends Task {
 
                 localPath.createNewFile();
                 SftpProgressMonitor progressMonitor = new SftpProgressMonitor();
-                sftpChannel.get(remotePath, localPath.getCanonicalPath(), progressMonitor);
                 progressMonitors.add(progressMonitor);
+                sftpChannel.get(remotePath, localPath.getCanonicalPath(), progressMonitor);
 
             } else {
 

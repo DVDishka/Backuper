@@ -68,7 +68,7 @@ public class DeleteConfirmationCommand extends Command {
 
         message = message
                 .append(Component.text(backupName)
-                        .hoverEvent(HoverEvent.showText(Component.text(zipFolderBackup + " " + backupSize + " MB"))))
+                        .hoverEvent(HoverEvent.showText(Component.text("(" + storage + ") " + zipFolderBackup + " " + backupSize + " MB"))))
                 .append(Component.newline())
                 .append(Component.newline());
 

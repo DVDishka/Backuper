@@ -41,7 +41,7 @@ public class ToZIPConfirmationCommand extends Command {
             return;
         }
 
-        if (Backuper.isLocked() || Backuper.isLocked()) {
+        if (Backuper.isLocked()) {
             cancelSound();
             returnFailure("Backup is blocked by another operation!");
             return;
@@ -60,13 +60,13 @@ public class ToZIPConfirmationCommand extends Command {
 
         message = message
                 .append(Component.text(backupName)
-                        .hoverEvent(HoverEvent.showText(Component.text(zipFolderBackup + " " + backupSize + " MB"))))
+                        .hoverEvent(HoverEvent.showText(Component.text("(local) " + zipFolderBackup + " " + backupSize + " MB"))))
                 .append(Component.newline())
                 .append(Component.newline());
 
         message = message
                 .append(Component.text("[CONVERT BACKUP]")
-                        .clickEvent(ClickEvent.runCommand("/backuper menu \"" + backupName + "\" toZIP"))
+                        .clickEvent(ClickEvent.runCommand("/backuper menu local \"" + backupName + "\" toZIP"))
                         .color(TextColor.color(0xB02100))
                         .decorate(TextDecoration.BOLD));
 

@@ -60,13 +60,13 @@ public class UnZIPConfirmationCommand extends Command {
 
         message = message
                 .append(Component.text(backupName)
-                        .hoverEvent(HoverEvent.showText(Component.text(zipFolderBackup + " " + backupSize + " MB"))))
+                        .hoverEvent(HoverEvent.showText(Component.text("(local) " + zipFolderBackup + " " + backupSize + " MB"))))
                 .append(Component.newline())
                 .append(Component.newline());
 
         message = message
                 .append(Component.text("[CONVERT BACKUP]")
-                        .clickEvent(ClickEvent.runCommand("/backuper menu \"" + backupName + "\" unZIP"))
+                        .clickEvent(ClickEvent.runCommand("/backuper menu local \"" + backupName + "\" unZIP"))
                         .color(TextColor.color(0xB02100))
                         .decorate(TextDecoration.BOLD));
 

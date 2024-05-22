@@ -211,7 +211,9 @@ public class Initialization implements Listener {
 
                 .then(new LiteralArgument("list").withPermission(Permissions.LIST.getPermission())
 
-                        .then(new LiteralArgument("local")
+                        .then(new LiteralArgument("local").withRequirement((sender) -> {
+                            return Config.getInstance().getLocalConfig().isEnabled();
+                        })
 
                                 .executes((sender, args) -> {
 
@@ -231,7 +233,9 @@ public class Initialization implements Listener {
                                 )
                         )
 
-                        .then(new LiteralArgument("sftp")
+                        .then(new LiteralArgument("sftp").withRequirement((sender) -> {
+                            return Config.getInstance().getSftpConfig().isEnabled();
+                        })
 
                                 .executes((sender, args) -> {
 
@@ -398,11 +402,6 @@ public class Initialization implements Listener {
                             return Config.getInstance().getSftpConfig().isEnabled();
                         })
 
-                                .executes((sender, args) -> {
-
-                                    new MenuCommand("sftp", sender, args).execute();
-                                })
-
                                 .then(new TextArgument("backupName").includeSuggestions(ArgumentSuggestions.stringCollection((info) -> {
 
                                     ArrayList<SftpBackup> backups = SftpBackup.getBackups();
@@ -421,6 +420,11 @@ public class Initialization implements Listener {
                                     }
                                     return backupSuggestions;
                                 }))
+
+                                        .executes((sender, args) -> {
+
+                                            new MenuCommand("sftp", sender, args).execute();
+                                        })
 
                                         .then(new StringArgument("action")
                                                 .replaceSuggestions(ArgumentSuggestions.strings("delete", "copyToLocal"))

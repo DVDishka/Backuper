@@ -55,8 +55,12 @@ public class MenuCommand extends Command {
         Component header = Component.empty();
 
         header = header
-                .append(Component.text("Backup Menu")
-                        .decorate(TextDecoration.BOLD));
+                .append(Component.text("Backup menu")
+                        .decorate(TextDecoration.BOLD))
+                .append(Component.space())
+                .append(Component.text("(" + storage + ")")
+                        .color(TextColor.fromHexString("#129c9b"))
+                        .decorate(TextDecoration.BOLD));;
 
         Component message = Component.empty();
 
@@ -64,7 +68,7 @@ public class MenuCommand extends Command {
 
             message = message
                     .append(Component.text(backupName)
-                            .hoverEvent(HoverEvent.showText(Component.text(zipOrFolder + " " + backupMbSize + " MB"))))
+                            .hoverEvent(HoverEvent.showText(Component.text("(" + storage + ") " + zipOrFolder + " " + backupMbSize + " MB"))))
                     .append(Component.newline())
                     .append(Component.newline());
 
@@ -95,6 +99,15 @@ public class MenuCommand extends Command {
                         .append(Component.space());
             }
 
+            if (storage.equals("sftp") && Config.getInstance().getLocalConfig().isEnabled()) {
+                message = message
+                        .append(Component.text("[COPY TO LOCAL]")
+                                .clickEvent(ClickEvent.runCommand("/backuper menu " + storage + " \"" + backupName + "\"" + " copyToLocalConfirmation"))
+                                .decorate(TextDecoration.BOLD)
+                                .color(TextColor.color(17, 102, 212)))
+                        .append(Component.space());
+            }
+
             message = message
                     .append(Component.text("[DELETE]")
                             .clickEvent(ClickEvent.runCommand("/backuper menu " + storage + " \"" + backupName + "\"" + " deleteConfirmation"))
@@ -107,6 +120,8 @@ public class MenuCommand extends Command {
 
             message = message
                     .append(Component.text(backupName))
+                    .append(Component.space())
+                    .append(Component.text("(" + storage + ")"))
                     .append(Component.space())
                     .append(Component.text(zipOrFolder))
                     .append(Component.space())

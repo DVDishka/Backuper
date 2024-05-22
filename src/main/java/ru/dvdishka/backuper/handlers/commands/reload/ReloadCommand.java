@@ -21,7 +21,7 @@ public class ReloadCommand extends Command {
     public void execute() {
 
         if (Backuper.isLocked()) {
-            returnFailure("Unable to reload config while backup process is running!");
+            returnFailure("Blocked by another operation!");
             cancelSound();
             return;
         }

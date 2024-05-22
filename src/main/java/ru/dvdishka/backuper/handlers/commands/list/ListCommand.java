@@ -51,7 +51,13 @@ public class ListCommand extends Command {
             }
         }
 
-        if (getListPageCount() == 0) {
+        sendMessage("Creating a list of backups may take some time...");
+        buttonSound();
+
+        // PAGE UPDATING HAPPENS THERE
+        int listPageCount = getListPageCount();
+
+        if (listPageCount == 0) {
             returnFailure("There are no backups yet!");
             cancelSound();
             return;
@@ -59,19 +65,20 @@ public class ListCommand extends Command {
 
         int pageNumber = (Integer) arguments.getOrDefault("pageNumber", 1);
 
-        // PAGE DOES NOT EXIST
-        if (pageNumber < 1 || pageNumber > getListPageCount()) {
+        if (pageNumber < 1 || pageNumber > listPageCount) {
             returnFailure("Invalid page number!");
             cancelSound();
             return;
         }
 
-        updateListPages();
-
         Component header = Component.empty();
 
         header = header
-                .append(Component.text("Backup List")
+                .append(Component.text("Backup list")
+                        .decorate(TextDecoration.BOLD))
+                .append(Component.space())
+                .append(Component.text("(" + storage + ")")
+                        .color(TextColor.fromHexString("#129c9b"))
                         .decorate(TextDecoration.BOLD));
 
         if (!(sender instanceof ConsoleCommandSender)) {
@@ -125,8 +132,8 @@ public class ListCommand extends Command {
             backupNameFileType.put(backupName, backupFileType);
 
             HoverEvent<net.kyori.adventure.text.Component> hoverEvent = HoverEvent
-                    .showText(net.kyori.adventure.text.Component.text(backupFileType + " " + backupMbSize + " MB"));
-            ClickEvent clickEvent = ClickEvent.runCommand("/backuper menu \"" + backupName + "\"");
+                    .showText(net.kyori.adventure.text.Component.text("(" + storage + ") " + backupFileType + " " + backupMbSize + " MB"));
+            ClickEvent clickEvent = ClickEvent.runCommand("/backuper menu " + storage + " \"" + backupName + "\"");
 
             pages.get((i - 1) / 10)
                     .add(net.kyori.adventure.text.Component.text(backupName)
@@ -203,6 +210,8 @@ public class ListCommand extends Command {
                     message = message
                             .append(Component.text(backupName))
                             .append(Component.space())
+                            .append(Component.text(storage))
+                            .append(Component.space())
                             .append(Component.text(backupNameFileType.get(backupName)))
                             .append(Component.space())
                             .append(Component.text(backupNameMbSize.get(backupName)))
@@ -235,6 +244,8 @@ public class ListCommand extends Command {
 
                         message = message
                                 .append(Component.text(backupComponent.content()))
+                                .append(Component.space())
+                                .append(Component.text(storage))
                                 .append(Component.space())
                                 .append(Component.text(backupNameFileType.get(backupName)))
                                 .append(Component.space())

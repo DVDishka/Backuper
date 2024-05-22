@@ -151,8 +151,8 @@ public class SftpSendFileFolderTask extends Task {
                 String localPath = localDirToSend.getCanonicalPath();
 
                 SftpProgressMonitor progressMonitor = new SftpProgressMonitor();
-                sftpChannel.put(localPath, remotePath, progressMonitor);
                 progressMonitors.add(progressMonitor);
+                sftpChannel.put(localPath, remotePath, progressMonitor);
 
             } catch (Exception e) {
                 Logger.getLogger().warn("Something went wrong while sending file to the SFTP channel", e);

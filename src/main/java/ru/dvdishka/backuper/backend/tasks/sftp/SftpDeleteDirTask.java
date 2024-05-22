@@ -103,7 +103,7 @@ public class SftpDeleteDirTask extends Task {
 
     @Override
     public long getTaskCurrentProgress() {
-        return 100;
+        return 0;
     }
 
     @Override

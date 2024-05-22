@@ -46,7 +46,7 @@ public class CopyToSftpConfirmationCommand extends Command {
         Component header = Component.empty();
 
         header = header
-                .append(Component.text("Confirm sftp sending")
+                .append(Component.text("Confirm copying to sftp")
                         .decorate(TextDecoration.BOLD)
                         .color(TextColor.color(0xB02100)));
 
@@ -54,13 +54,13 @@ public class CopyToSftpConfirmationCommand extends Command {
 
         message = message
                 .append(Component.text(backupName)
-                        .hoverEvent(HoverEvent.showText(Component.text(zipFolderBackup + " " + backupSize + " MB"))))
+                        .hoverEvent(HoverEvent.showText(Component.text("(local) " + zipFolderBackup + " " + backupSize + " MB"))))
                 .append(Component.newline())
                 .append(Component.newline());
 
         message = message
                 .append(Component.text("[COPY TO SFTP]")
-                        .clickEvent(ClickEvent.runCommand("/backuper menu local " + " \"" + backupName + "\" copyToSftp"))
+                        .clickEvent(ClickEvent.runCommand("/backuper menu local " + "\"" + backupName + "\" copyToSftp"))
                         .color(TextColor.color(0xB02100))
                         .decorate(TextDecoration.BOLD));
 

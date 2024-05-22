@@ -90,12 +90,20 @@ public class ConvertFolderToZipTask extends Task {
     @Override
     public long getTaskCurrentProgress() {
 
+        if (addDirToZipTask == null || deleteDirTask == null) {
+            return 0;
+        }
+
         return addDirToZipTask.getTaskCurrentProgress() * zipProgressMultiplier +
                 deleteDirTask.getTaskCurrentProgress() * deleteProgressMultiplier;
     }
 
     @Override
     public long getTaskMaxProgress() {
+
+        if (addDirToZipTask == null || deleteDirTask == null) {
+            return 100;
+        }
 
         return addDirToZipTask.getTaskMaxProgress() * zipProgressMultiplier +
                 deleteDirTask.getTaskMaxProgress() * deleteProgressMultiplier;

@@ -42,6 +42,8 @@ public class CopyToSftpCommand extends Command {
             }
         }
 
+        buttonSound();
+
         StatusCommand.sendTaskStartedMessage("CopyToSftp", sender);
 
         Scheduler.getScheduler().runAsync(Utils.plugin, () -> {

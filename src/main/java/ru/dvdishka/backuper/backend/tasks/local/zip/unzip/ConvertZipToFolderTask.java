@@ -87,11 +87,17 @@ public class ConvertZipToFolderTask extends Task {
 
     @Override
     public long getTaskCurrentProgress() {
+        if (unpackZipTask == null || deleteDirTask == null) {
+            return 0;
+        }
         return unpackZipTask.getTaskCurrentProgress() * unZipProgressMultiplier + deleteDirTask.getTaskCurrentProgress() * deleteProgressMultiplier;
     }
 
     @Override
     public long getTaskMaxProgress() {
+        if (unpackZipTask == null || deleteDirTask == null) {
+            return 100;
+        }
         return unpackZipTask.getTaskMaxProgress() * unZipProgressMultiplier + deleteDirTask.getTaskMaxProgress() * deleteProgressMultiplier;
     }
 }

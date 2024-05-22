@@ -44,6 +44,8 @@ public class CopyToLocalCommand extends Command {
             }
         }
 
+        buttonSound();
+
         StatusCommand.sendTaskStartedMessage("CopyToLocal", sender);
 
         Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
