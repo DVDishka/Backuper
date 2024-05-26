@@ -6,6 +6,7 @@ import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.classes.LocalBackup;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.common.Scheduler;
+import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.local.zip.unzip.ConvertZipToFolderTask;
 import ru.dvdishka.backuper.backend.utils.*;
 import ru.dvdishka.backuper.handlers.commands.Command;
@@ -21,6 +22,12 @@ public class UnZIPCommand extends Command {
     public void execute() {
 
         String backupName = (String) arguments.get("backupName");
+
+        if (!Config.getInstance().getLocalConfig().isEnabled()) {
+            cancelSound();
+            returnFailure("local storage is disabled!");
+            return;
+        }
 
         if (!LocalBackup.checkBackupExistenceByName(backupName)) {
             cancelSound();

@@ -1,17 +1,9 @@
 package ru.dvdishka.backuper.backend.classes;
 
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
-import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
-import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.local.folder.DeleteDirTask;
-import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
-import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.io.File;
 import java.time.LocalDateTime;
@@ -26,8 +18,6 @@ public class LocalBackup implements Backup {
     private LocalDateTime backupLocalDateTime;
 
     public static DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
-
-    public static final double zipCompressValue = 1.5;
 
     private static HashMap<String, LocalBackup> backups = new HashMap();
 
@@ -51,6 +41,10 @@ public class LocalBackup implements Backup {
     }
 
     public static ArrayList<LocalBackup> getBackups() {
+
+        if (!Config.getInstance().getLocalConfig().isEnabled()) {
+            return new ArrayList<>();
+        }
 
         ArrayList<LocalBackup> backups = new ArrayList<>();
         for (File file : Objects.requireNonNull(new File(Config.getInstance().getLocalConfig().getBackupsFolder()).listFiles())) {
@@ -128,6 +122,10 @@ public class LocalBackup implements Backup {
     @SuppressWarnings({"BooleanMethodIsAlwaysInverted"})
     public static boolean checkBackupExistenceByName(String backupName) {
 
+        if (!Config.getInstance().getLocalConfig().isEnabled()) {
+            return false;
+        }
+
         try {
             LocalDateTime.parse(backupName, dateTimeFormatter);
         } catch (Exception e) {
@@ -138,55 +136,6 @@ public class LocalBackup implements Backup {
 
         return backupsFolder.toPath().resolve(backupName).toFile().exists() ||
                 backupsFolder.toPath().resolve(backupName + ".zip").toFile().exists();
-    }
-
-    public static void sendBackupAlert(long timeSeconds, String afterBackup) {
-
-        String action = "backed\nup ";
-        boolean restart = false;
-
-        if (afterBackup.equals("STOP")) {
-            Logger.getLogger().log("Server will be backed up and stopped in " + timeSeconds + " second(s)");
-            action = "backed\nup and restarted\n";
-            restart = true;
-        }
-        if (afterBackup.equals("RESTART")) {
-            Logger.getLogger().log("Server will be backed up and restarted in " + timeSeconds + " second(s)");
-            action = "backed\nup and restarted\n";
-            restart = true;
-        }
-        if (afterBackup.equals("NOTHING")) {
-            Logger.getLogger().log("Server will be backed up in " + timeSeconds + " second(s)");
-            action = "backed\nup ";
-        }
-
-        for (Player player : Bukkit.getOnlinePlayers()) {
-
-            if (!player.hasPermission(Permissions.ALERT.getPermission())) {
-                continue;
-            }
-
-            if (restart || !Config.getInstance().isAlertOnlyServerRestart()) {
-
-                Component header = Component.empty();
-
-                header = header
-                        .append(Component.text("Alert")
-                                .decorate(TextDecoration.BOLD));
-
-                Component message = Component.empty();
-
-                message = message
-                        .append(Component.text("Server will be " + action + "in "))
-                        .append(Component.text(timeSeconds)
-                                .color(NamedTextColor.RED)
-                                .decorate(TextDecoration.BOLD))
-                        .append(Component.text(" second(s)"));
-
-                UIUtils.sendFramedMessage(header, message, 15, player);
-                UIUtils.notificationSound(player);
-            }
-        }
     }
 
     public void delete(boolean setLocked, CommandSender sender) {

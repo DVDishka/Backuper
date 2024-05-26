@@ -41,9 +41,15 @@ public class ListCommand extends Command {
     @Override
     public void execute() {
 
-        File backupsFolder = new File(Config.getInstance().getLocalConfig().getBackupsFolder());
+        if (storage.equals("local") && !Config.getInstance().getLocalConfig().isEnabled() ||
+                storage.equals("sftp") && !Config.getInstance().getSftpConfig().isEnabled()) {
+            cancelSound();
+            returnFailure(storage + " storage is disabled!");
+            return;
+        }
 
         if (storage.equals("local")) {
+            File backupsFolder = new File(Config.getInstance().getLocalConfig().getBackupsFolder());
             if (backupsFolder.listFiles() == null) {
                 returnFailure("Wrong local backups folder in config.yml!");
                 cancelSound();

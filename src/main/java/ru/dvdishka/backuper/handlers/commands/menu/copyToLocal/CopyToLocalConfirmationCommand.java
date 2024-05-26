@@ -9,6 +9,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.classes.SftpBackup;
+import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.handlers.commands.Command;
 
 public class CopyToLocalConfirmationCommand extends Command {
@@ -21,6 +22,12 @@ public class CopyToLocalConfirmationCommand extends Command {
     public void execute() {
 
         String backupName = (String) arguments.get("backupName");
+
+        if (!Config.getInstance().getLocalConfig().isEnabled()) {
+            cancelSound();
+            returnFailure("Local storage is disabled");
+            return;
+        }
 
         if (!SftpBackup.checkBackupExistenceByName(backupName)) {
             cancelSound();

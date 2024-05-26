@@ -2,7 +2,6 @@ package ru.dvdishka.backuper.backend.tasks.local.zip.unzip;
 
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.backend.classes.LocalBackup;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.tasks.Task;
@@ -13,7 +12,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
 public class UnpackZipTask extends Task {
@@ -124,7 +125,25 @@ public class UnpackZipTask extends Task {
     public void prepareTask() {
 
         this.isTaskPrepared = true;
+        maxProgress = 0;
 
-        maxProgress = (long) ((double) Utils.getFileFolderByteSize(sourceZipDir) * LocalBackup.zipCompressValue);
+        try (ZipFile zipFile = new ZipFile(sourceZipDir)) {
+
+            Enumeration<? extends ZipEntry> zipEntries = zipFile.entries();
+
+            while (zipEntries.hasMoreElements()) {
+                ZipEntry zipEntry = zipEntries.nextElement();
+                maxProgress += zipEntry.getSize();
+            }
+
+        } catch (Exception e) {
+
+            Logger.getLogger().warn("Something went wrong while calculating UnpackZip task maxProgress", sender);
+            Logger.getLogger().warn(this, e);
+        }
+
+        if (maxProgress <= 0) {
+            maxProgress = (long) (((double) Utils.getFileFolderByteSize(sourceZipDir)) * 1.6);
+        }
     }
 }

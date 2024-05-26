@@ -6,9 +6,14 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
+import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
+import ru.dvdishka.backuper.backend.common.Logger;
+import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 public class UIUtils {
     public static void returnFailure(String message, CommandSender sender) {
@@ -215,5 +220,54 @@ public class UIUtils {
             sender.sendMessage(framedMessage);
 
         } catch (Exception ignored) {}
+    }
+
+    public static void sendBackupAlert(long timeSeconds, String afterBackup) {
+
+        String action = "backed\nup ";
+        boolean restart = false;
+
+        if (afterBackup.equals("STOP")) {
+            Logger.getLogger().log("Server will be backed up and stopped in " + timeSeconds + " second(s)");
+            action = "backed\nup and restarted\n";
+            restart = true;
+        }
+        if (afterBackup.equals("RESTART")) {
+            Logger.getLogger().log("Server will be backed up and restarted in " + timeSeconds + " second(s)");
+            action = "backed\nup and restarted\n";
+            restart = true;
+        }
+        if (afterBackup.equals("NOTHING")) {
+            Logger.getLogger().log("Server will be backed up in " + timeSeconds + " second(s)");
+            action = "backed\nup ";
+        }
+
+        for (Player player : Bukkit.getOnlinePlayers()) {
+
+            if (!player.hasPermission(Permissions.ALERT.getPermission())) {
+                continue;
+            }
+
+            if (restart || !Config.getInstance().isAlertOnlyServerRestart()) {
+
+                Component header = Component.empty();
+
+                header = header
+                        .append(Component.text("Alert")
+                                .decorate(TextDecoration.BOLD));
+
+                Component message = Component.empty();
+
+                message = message
+                        .append(Component.text("Server will be " + action + "in "))
+                        .append(Component.text(timeSeconds)
+                                .color(NamedTextColor.RED)
+                                .decorate(TextDecoration.BOLD))
+                        .append(Component.text(" second(s)"));
+
+                sendFramedMessage(header, message, 15, player);
+                notificationSound(player);
+            }
+        }
     }
 }

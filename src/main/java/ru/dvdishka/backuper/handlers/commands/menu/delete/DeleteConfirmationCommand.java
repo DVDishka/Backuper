@@ -11,6 +11,7 @@ import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.classes.Backup;
 import ru.dvdishka.backuper.backend.classes.LocalBackup;
 import ru.dvdishka.backuper.backend.classes.SftpBackup;
+import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.handlers.commands.Command;
 
 public class DeleteConfirmationCommand extends Command {
@@ -27,6 +28,14 @@ public class DeleteConfirmationCommand extends Command {
     public void execute() {
 
         String backupName = (String) arguments.get("backupName");
+
+        if (storage.equals("local") && !Config.getInstance().getLocalConfig().isEnabled() ||
+                storage.equals("sftp") && !Config.getInstance().getSftpConfig().isEnabled()) {
+            cancelSound();
+            returnFailure(storage + " storage is disabled!");
+            return;
+        }
+
 
         if (storage.equals("local") && !LocalBackup.checkBackupExistenceByName(backupName) ||
                 storage.equals("sftp") && !SftpBackup.checkBackupExistenceByName(backupName)) {

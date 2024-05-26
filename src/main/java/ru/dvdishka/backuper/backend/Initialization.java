@@ -99,14 +99,14 @@ public class Initialization implements Listener {
 
                     Scheduler.getScheduler().runSyncDelayed(Utils.plugin, () -> {
 
-                        LocalBackup.sendBackupAlert(alertTime, Config.getInstance().getAfterBackup());
+                        UIUtils.sendBackupAlert(alertTime, Config.getInstance().getAfterBackup());
 
                     }, firstAlertDelay);
 
                     long secondAlertDelay = max((delay + Config.getInstance().getBackupPeriod() * 60L - Config.getInstance().getAlertTimeBeforeRestart()) * 20, 1);
 
                     Scheduler.getScheduler().runSyncRepeatingTask(Utils.plugin, () -> {
-                        LocalBackup.sendBackupAlert(Config.getInstance().getAlertTimeBeforeRestart(), Config.getInstance().getAfterBackup());
+                        UIUtils.sendBackupAlert(Config.getInstance().getAlertTimeBeforeRestart(), Config.getInstance().getAfterBackup());
                     }, secondAlertDelay, Config.getInstance().getBackupPeriod() * 60L * 20L);
                 }
 
@@ -209,11 +209,9 @@ public class Initialization implements Listener {
         CommandTree backupListCommandTree = new CommandTree("backuper").withPermission(Permissions.BACKUPER.getPermission());
         backupListCommandTree
 
-                .then(new LiteralArgument("list").withPermission(Permissions.LIST.getPermission())
+                .then(new LiteralArgument("list").withPermission(Permissions.LOCAL_LIST.getPermission())
 
-                        .then(new LiteralArgument("local").withRequirement((sender) -> {
-                            return Config.getInstance().getLocalConfig().isEnabled();
-                        })
+                        .then(new LiteralArgument("local")
 
                                 .executes((sender, args) -> {
 
@@ -233,9 +231,7 @@ public class Initialization implements Listener {
                                 )
                         )
 
-                        .then(new LiteralArgument("sftp").withRequirement((sender) -> {
-                            return Config.getInstance().getSftpConfig().isEnabled();
-                        })
+                        .then(new LiteralArgument("sftp")
 
                                 .executes((sender, args) -> {
 
@@ -275,11 +271,9 @@ public class Initialization implements Listener {
         CommandTree backupMenuCommandTree = new CommandTree("backuper").withPermission(Permissions.BACKUPER.getPermission());
         backupMenuCommandTree
 
-                .then(new LiteralArgument("menu").withPermission(Permissions.LIST.getPermission())
+                .then(new LiteralArgument("menu").withPermission(Permissions.LOCAL_LIST.getPermission())
 
-                        .then(new LiteralArgument("local").withRequirement((sender) -> {
-                            return Config.getInstance().getLocalConfig().isEnabled();
-                        })
+                        .then(new LiteralArgument("local")
 
                                 .then(new TextArgument("backupName").includeSuggestions(ArgumentSuggestions.stringCollection((info) -> {
 
@@ -332,7 +326,7 @@ public class Initialization implements Listener {
                                                         .executes((sender, args) -> {
 
                                                             if (Objects.equals(args.get("action"), "deleteConfirmation")) {
-                                                                if (sender.hasPermission(Permissions.DELETE.getPermission())) {
+                                                                if (sender.hasPermission(Permissions.LOCAL_DELETE.getPermission())) {
                                                                     new DeleteConfirmationCommand("local", sender, args).execute();
                                                                 } else {
                                                                     UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
@@ -340,7 +334,7 @@ public class Initialization implements Listener {
                                                             }
 
                                                             if (Objects.equals(args.get("action"), "delete")) {
-                                                                if (sender.hasPermission(Permissions.DELETE.getPermission())) {
+                                                                if (sender.hasPermission(Permissions.LOCAL_DELETE.getPermission())) {
                                                                     new DeleteCommand("local", sender, args).execute();
                                                                 } else {
                                                                     UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
@@ -348,7 +342,7 @@ public class Initialization implements Listener {
                                                             }
 
                                                             if (Objects.equals(args.get("action"), "toZIPConfirmation")) {
-                                                                if (sender.hasPermission(Permissions.TO_ZIP.getPermission())) {
+                                                                if (sender.hasPermission(Permissions.LOCAL_TO_ZIP.getPermission())) {
                                                                     new ToZIPConfirmationCommand(sender, args).execute();
                                                                 } else {
                                                                     UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
@@ -356,7 +350,7 @@ public class Initialization implements Listener {
                                                             }
 
                                                             if (Objects.equals(args.get("action"), "toZIP")) {
-                                                                if (sender.hasPermission(Permissions.TO_ZIP.getPermission())) {
+                                                                if (sender.hasPermission(Permissions.LOCAL_TO_ZIP.getPermission())) {
                                                                     new ToZIPCommand(sender, args).execute();
                                                                 } else {
                                                                     UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
@@ -364,7 +358,7 @@ public class Initialization implements Listener {
                                                             }
 
                                                             if (Objects.equals(args.get("action"), "unZIPConfirmation")) {
-                                                                if (sender.hasPermission(Permissions.UNZIP.getPermission())) {
+                                                                if (sender.hasPermission(Permissions.LOCAL_UNZIP.getPermission())) {
                                                                     new UnZIPConfirmationCommand(sender, args).execute();
                                                                 } else {
                                                                     UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
@@ -372,7 +366,7 @@ public class Initialization implements Listener {
                                                             }
 
                                                             if (Objects.equals(args.get("action"), "unZIP")) {
-                                                                if (sender.hasPermission(Permissions.UNZIP.getPermission())) {
+                                                                if (sender.hasPermission(Permissions.LOCAL_UNZIP.getPermission())) {
                                                                     new UnZIPCommand(sender, args).execute();
                                                                 } else {
                                                                     UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
@@ -380,7 +374,7 @@ public class Initialization implements Listener {
                                                             }
 
                                                             if (Objects.equals(args.get("action"), "copyToSftpConfirmation")) {
-                                                                if (sender.hasPermission(Permissions.UNZIP.getPermission())) {
+                                                                if (sender.hasPermission(Permissions.LOCAL_COPY_TO_SFTP.getPermission())) {
                                                                     new CopyToSftpConfirmationCommand(sender, args).execute();
                                                                 } else {
                                                                     UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
@@ -388,7 +382,7 @@ public class Initialization implements Listener {
                                                             }
 
                                                             if (Objects.equals(args.get("action"), "copyToSftp")) {
-                                                                if (sender.hasPermission(Permissions.UNZIP.getPermission())) {
+                                                                if (sender.hasPermission(Permissions.LOCAL_COPY_TO_SFTP.getPermission())) {
                                                                     new CopyToSftpCommand(sender, args).execute();
                                                                 } else {
                                                                     UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
@@ -398,9 +392,7 @@ public class Initialization implements Listener {
                                 )
                         )
 
-                        .then(new LiteralArgument("sftp").withRequirement((sender) -> {
-                            return Config.getInstance().getSftpConfig().isEnabled();
-                        })
+                        .then(new LiteralArgument("sftp")
 
                                 .then(new TextArgument("backupName").includeSuggestions(ArgumentSuggestions.stringCollection((info) -> {
 
@@ -432,7 +424,7 @@ public class Initialization implements Listener {
                                                 .executes((sender, args) -> {
 
                                                     if (Objects.equals(args.get("action"), "deleteConfirmation")) {
-                                                        if (sender.hasPermission(Permissions.DELETE.getPermission())) {
+                                                        if (sender.hasPermission(Permissions.SFTP_DELETE.getPermission())) {
                                                             new DeleteConfirmationCommand("sftp", sender, args).execute();
                                                         } else {
                                                             UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
@@ -440,7 +432,7 @@ public class Initialization implements Listener {
                                                     }
 
                                                     if (Objects.equals(args.get("action"), "delete")) {
-                                                        if (sender.hasPermission(Permissions.DELETE.getPermission())) {
+                                                        if (sender.hasPermission(Permissions.SFTP_DELETE.getPermission())) {
                                                             new DeleteCommand("sftp", sender, args).execute();
                                                         } else {
                                                             UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
@@ -448,7 +440,7 @@ public class Initialization implements Listener {
                                                     }
 
                                                     if (Objects.equals(args.get("action"), "copyToLocalConfirmation")) {
-                                                        if (sender.hasPermission(Permissions.DELETE.getPermission())) {
+                                                        if (sender.hasPermission(Permissions.SFTP_COPY_TO_LOCAL.getPermission())) {
                                                             new CopyToLocalConfirmationCommand(sender, args).execute();
                                                         } else {
                                                             UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
@@ -456,7 +448,7 @@ public class Initialization implements Listener {
                                                     }
 
                                                     if (Objects.equals(args.get("action"), "copyToLocal")) {
-                                                        if (sender.hasPermission(Permissions.DELETE.getPermission())) {
+                                                        if (sender.hasPermission(Permissions.SFTP_COPY_TO_LOCAL.getPermission())) {
                                                             new CopyToLocalCommand(sender, args).execute();
                                                         } else {
                                                             UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);

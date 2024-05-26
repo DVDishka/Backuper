@@ -3,6 +3,7 @@ package ru.dvdishka.backuper.backend.tasks.local.zip.tozip;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.common.Logger;
+import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
@@ -140,7 +141,13 @@ public class AddDirToZipTask extends Task {
 
                 String relativeFilePath = relativeDirPath.toAbsolutePath().relativize(sourceDir.toPath().toAbsolutePath()).toString();
 
-                zip.putNextEntry(new ZipEntry(relativeFilePath));
+                long notCompressedByteSize = Files.size(sourceDir.toPath());
+
+                zip.setLevel(Config.getInstance().getLocalConfig().getZipCompressionLevel());
+
+                ZipEntry zipEntry = new ZipEntry(relativeFilePath);
+
+                zip.putNextEntry(zipEntry);
                 FileInputStream fileInputStream = new FileInputStream(sourceDir);
                 byte[] buffer = new byte[4048];
                 int length;
@@ -151,7 +158,7 @@ public class AddDirToZipTask extends Task {
                 zip.closeEntry();
                 fileInputStream.close();
 
-                incrementCurrentProgress(Files.size(sourceDir.toPath()));
+                incrementCurrentProgress(notCompressedByteSize);
 
             } catch (Exception e) {
 

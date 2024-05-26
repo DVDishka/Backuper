@@ -23,17 +23,35 @@ permissions:
           backuper.backup.restart:
             default: op
 
-      backuper.list.*:
+      backuper.local.*:
         default: false
         children:
-          backuper.list:
-            default: op
-          backuper.list.delete:
-            default: op
-          backuper.list.tozip:
-            default: op
-          backuper.list.unzip:
-            default: op
+          backuper.local.list.*:
+            default: false
+            children:
+              backuper.local.list:
+                default: op
+              backuper.local.list.delete:
+                default: op
+              backuper.local.list.tozip:
+                default: op
+              backuper.local.list.unzip:
+                default: op
+              backuper.local.list.copytosftp:
+                default: op
+
+      backuper.sftp.*:
+        default: false
+        children:
+          backuper.sftp.list.*:
+            default: false
+            children:
+              backuper.sftp.list:
+                default: op
+              backuper.sftp.list.delete:
+                default: op
+              backuper.sftp.list.copytolocal:
+                default: op
 
       backuper.config.*:
         default: false

@@ -36,6 +36,10 @@ public class SftpBackup implements Backup {
 
     public static boolean checkBackupExistenceByName(String backupName) {
 
+        if (!Config.getInstance().getSftpConfig().isEnabled()) {
+            return false;
+        }
+
         try {
             LocalDateTime.parse(backupName, dateTimeFormatter);
         } catch (Exception e) {
@@ -48,6 +52,10 @@ public class SftpBackup implements Backup {
     }
 
     public static ArrayList<SftpBackup> getBackups() {
+
+        if (!Config.getInstance().getSftpConfig().isEnabled()) {
+            return new ArrayList<>();
+        }
 
         ArrayList<SftpBackup> backups = new ArrayList<>();
         for (String fileName : SftpUtils.ls(Config.getInstance().getSftpConfig().getBackupsFolder(), null)) {

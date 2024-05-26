@@ -9,6 +9,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.classes.LocalBackup;
+import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.handlers.commands.Command;
 
 public class UnZIPConfirmationCommand extends Command {
@@ -19,6 +20,12 @@ public class UnZIPConfirmationCommand extends Command {
 
     @Override
     public void execute() {
+
+        if (!Config.getInstance().getLocalConfig().isEnabled()) {
+            cancelSound();
+            returnFailure("local storage is disabled!");
+            return;
+        }
 
         String backupName = (String) arguments.get("backupName");
 

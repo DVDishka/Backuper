@@ -8,10 +8,15 @@ public enum Permissions {
     STOP("backuper.backup.stop"),
     RESTART("backuper.backup.restart"),
 
-    TO_ZIP("backuper.list.tozip"),
-    UNZIP("backuper.list.unzip"),
-    LIST("backuper.list"),
-    DELETE("backuper.list.delete"),
+    LOCAL_TO_ZIP("backuper.local.list.tozip"),
+    LOCAL_UNZIP("backuper.local.list.unzip"),
+    LOCAL_LIST("backuper.local.list"),
+    LOCAL_DELETE("backuper.local.list.delete"),
+    LOCAL_COPY_TO_SFTP("backuper.local.list.copytosftp"),
+
+    SFTP_LIST("backuper.sftp.list"),
+    SFTP_DELETE("backuper.sftp.list.delete"),
+    SFTP_COPY_TO_LOCAL("backuper.sftp.list.copytolocal"),
 
     CONFIG("backuper.config"),
     RELOAD("backuper.config.reload"),

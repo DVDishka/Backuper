@@ -1,8 +1,11 @@
 package ru.dvdishka.backuper.backend.config;
 
+import dev.jorel.commandapi.CommandAPI;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
 import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.backend.common.Logger;
 
@@ -92,6 +95,7 @@ public class Config {
         this.localConfig.backupsWeight = config.getLong("local.maxBackupsWeight", 0) * 1_048_576L;
         this.localConfig.zipArchive = config.getBoolean("local.zipArchive", true);
         this.localConfig.backupsFolder = config.getString("local.backupsFolder", "plugins/Backuper/Backups");
+        this.localConfig.zipCompressionLevel = config.getInt("local.zipCompressionLevel", 5);
 
         this.sftpConfig.enabled = config.getBoolean("sftp.enabled", false);
         this.sftpConfig.backupsFolder = config.getString("sftp.backupsFolder", "");
@@ -145,6 +149,18 @@ public class Config {
             this.localConfig.backupsWeight = 0;
         }
 
+        if (this.localConfig.zipCompressionLevel > 9 || this.localConfig.zipCompressionLevel < 0) {
+            Logger.getLogger().warn("Failed to load config value!");
+            if (this.localConfig.zipCompressionLevel < 0) {
+                Logger.getLogger().warn("ZipCompressionLevel must be >= 0, using 0 value...");
+                this.localConfig.zipCompressionLevel = 0;
+            }
+            if (this.localConfig.zipCompressionLevel > 9) {
+                Logger.getLogger().warn("ZipCompressionLevel must be <= 9, using 9 value...");
+                this.localConfig.zipCompressionLevel = 9;
+            }
+        }
+
         boolean isConfigFileOk = Objects.equals(configVersion, this.configVersion);
 
         List<String> configFields = List.of("backup.backupTime", "backup.backupPeriod", "backup.afterBackup", "local.maxBackupsNumber",
@@ -152,7 +168,7 @@ public class Config {
                 "backup.skipDuplicateBackup", "local.backupsFolder", "server.alertTimeBeforeRestart", "backup.addDirectoryToBackup",
                 "backup.excludeDirectoryFromBackup", "backup.setWorldsReadOnly", "server.alertOnlyServerRestart", "sftp.enabled",
                 "sftp.backupsFolder", "sftp.authType", "sftp.username", "sftp.password", "sftp.keyFilePath", "sftp.address",
-                "sftp.port", "sftp.useKnownHostsFile", "sftp.knownHostsFilePath", "local.enabled", "sftp.pathSeparatorSymbol");
+                "sftp.port", "sftp.useKnownHostsFile", "sftp.knownHostsFilePath", "local.enabled", "sftp.pathSeparatorSymbol", "local.zipCompressionLevel");
 
         for (String configField : configFields) {
             if (isConfigFileOk && !config.contains(configField)) {
@@ -187,6 +203,7 @@ public class Config {
             newConfig.set("local.maxBackupsWeight", this.localConfig.backupsWeight / 1_048_576L);
             newConfig.set("local.zipArchive", this.localConfig.zipArchive);
             newConfig.set("local.backupsFolder", this.localConfig.backupsFolder);
+            newConfig.set("local.zipCompressionLevel", this.localConfig.zipCompressionLevel);
 
             newConfig.set("sftp.enabled", this.sftpConfig.enabled);
             newConfig.set("sftp.password", this.sftpConfig.password);

@@ -30,6 +30,13 @@ public class MenuCommand extends Command {
 
         String backupName = (String) arguments.get("backupName");
 
+        if (storage.equals("local") && !Config.getInstance().getLocalConfig().isEnabled() ||
+                storage.equals("sftp") && !Config.getInstance().getSftpConfig().isEnabled()) {
+            cancelSound();
+            returnFailure(storage + " storage is disabled!");
+            return;
+        }
+
         if (storage.equals("local") && !LocalBackup.checkBackupExistenceByName(backupName) ||
                 storage.equals("sftp") && !SftpBackup.checkBackupExistenceByName(backupName)) {
             cancelSound();

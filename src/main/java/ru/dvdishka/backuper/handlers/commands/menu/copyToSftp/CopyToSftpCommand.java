@@ -20,6 +20,12 @@ public class CopyToSftpCommand extends Command {
     @Override
     public void execute() {
 
+        if (!Config.getInstance().getLocalConfig().isEnabled()) {
+            cancelSound();
+            returnFailure("Local storage is disabled");
+            return;
+        }
+
         if (!Config.getInstance().getSftpConfig().isEnabled()) {
             cancelSound();
             returnFailure("Sftp storage is disabled");

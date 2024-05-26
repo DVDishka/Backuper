@@ -7,6 +7,7 @@ public class LocalConfig {
     int backupsNumber = 0;
     long backupsWeight = 0;
     boolean zipArchive = true;
+    int zipCompressionLevel = 5;
 
     public int getBackupsNumber() {
         return backupsNumber;
@@ -26,5 +27,9 @@ public class LocalConfig {
 
     public boolean isEnabled() {
         return enabled;
+    }
+
+    public int getZipCompressionLevel() {
+        return zipCompressionLevel;
     }
 }
