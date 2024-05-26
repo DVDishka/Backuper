@@ -10,7 +10,9 @@ import ru.dvdishka.backuper.backend.utils.Utils;
 
 import java.io.File;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 
 public class CopyFilesToFolderTask extends Task {
 
@@ -19,11 +21,9 @@ public class CopyFilesToFolderTask extends Task {
     private final File sourceDirToCopy;
     private final File targetDir;
     private boolean forceExcludedDirs = false;
-
-    private volatile long completedCopyTasksCount = 0;
-    // Doesn't have to be synchronized because all increasings come from the thread staring each copy thread, and this thread is only one
-    private long copyTasksCount = 0;
     private boolean createRootDirInTargetDir = true;
+
+    private final ArrayList<CompletableFuture<Void>> copyTasks = new ArrayList<>();
 
     public CopyFilesToFolderTask(File sourceDirToCopy, File targetDir, boolean createRootDirInTargetDir, boolean forceExcludedDirs, boolean setLocked, CommandSender sender) {
 
@@ -48,17 +48,13 @@ public class CopyFilesToFolderTask extends Task {
                 prepareTask();
             }
 
-            copyTasksCount = 0;
-            completedCopyTasksCount = 0;
-
             if (createRootDirInTargetDir) {
                 unsafeCopyFilesInDir(targetDir.toPath().resolve(sourceDirToCopy.getName()).toFile(), sourceDirToCopy);
             } else {
                 unsafeCopyFilesInDir(targetDir, sourceDirToCopy);
             }
 
-            // Waiting for all files being copied
-            while (completedCopyTasksCount < copyTasksCount) {}
+            CompletableFuture.allOf(copyTasks.toArray(new CompletableFuture[0])).join();
 
             if (setLocked) {
                 UIUtils.successSound(sender);
@@ -75,10 +71,6 @@ public class CopyFilesToFolderTask extends Task {
             Logger.getLogger().warn("Something went wrong while running CopyFiles task");
             Logger.getLogger().warn(this, e);
         }
-    }
-
-    private synchronized void taskCompleted() {
-        completedCopyTasksCount++;
     }
 
     private void unsafeCopyFilesInDir(File destDir, File sourceDir) {
@@ -99,17 +91,11 @@ public class CopyFilesToFolderTask extends Task {
 
         if (sourceDir.isFile() && !sourceDir.getName().equals("session.lock")) {
 
-            copyTasksCount++;
-
-            final long taskNumber = copyTasksCount;
-
-            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+            CompletableFuture<Void> copyTask = CompletableFuture.runAsync(() -> {
 
                 try {
 
                     Files.copy(sourceDir.toPath(), destDir.toPath());
-
-                    taskCompleted();
 
                     incrementCurrentProgress(Files.size(sourceDir.toPath()));
 
@@ -118,16 +104,14 @@ public class CopyFilesToFolderTask extends Task {
                     Logger.getLogger().warn("Backup Directory is not allowed to modify! " + sourceDir.getName(), sender);
                     Logger.getLogger().warn("BackupTask", e);
 
-                    taskCompleted();
-
                 } catch (Exception e) {
 
                     Logger.getLogger().warn("Something went wrong while trying to copy file! " + sourceDir.getName(), sender);
                     Logger.getLogger().warn("BackupTask", e);
-
-                    taskCompleted();
                 }
             });
+
+            copyTasks.add(copyTask);
         }
 
         if (sourceDir.listFiles() != null) {

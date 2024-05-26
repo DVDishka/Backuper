@@ -3,7 +3,6 @@ package ru.dvdishka.backuper.backend.tasks.local.zip.unzip;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.common.Logger;
-import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
@@ -13,6 +12,7 @@ import java.io.FileOutputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.concurrent.CompletableFuture;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
@@ -24,7 +24,7 @@ public class UnpackZipTask extends Task {
     private final File sourceZipDir;
     private final File targetFolderDir;
 
-    private volatile long completedUnZIPTasksCount = 0;
+    private final ArrayList<CompletableFuture<Void>> unPackTasks = new ArrayList<>();
 
     public UnpackZipTask(File sourceZipDir, File targetFolderDir, boolean setLocked, CommandSender sender) {
 
@@ -50,11 +50,7 @@ public class UnpackZipTask extends Task {
 
             ZipEntry zipEntry;
 
-            int unZIPTasksCount = 0;
-
             while ((zipEntry = zipInput.getNextEntry()) != null) {
-
-                unZIPTasksCount++;
 
                 final String name = zipEntry.getName();
                 final ArrayList<Integer> content = new ArrayList<>();
@@ -63,10 +59,9 @@ public class UnpackZipTask extends Task {
                     content.add(c);
                 }
 
-                Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                CompletableFuture<Void> unPackTask = CompletableFuture.runAsync(() -> {
 
                     try {
-
                         if (!targetFolderDir.toPath().resolve(name).getParent().toFile().exists()) {
 
                             // Sometimes it works in vain, so there is no point in checking the result
@@ -81,22 +76,19 @@ public class UnpackZipTask extends Task {
                         outputStream.flush();
                         outputStream.close();
 
-                        taskCompleted();
-
                     } catch (Exception e) {
 
                         Logger.getLogger().warn("Something went wrong while trying to unpack file", sender);
                         Logger.getLogger().warn(this, e);
-
-                        taskCompleted();
                     }
                 });
+
+                unPackTasks.add(unPackTask);
 
                 zipInput.closeEntry();
             }
 
-            // Waiting for all files being unZipped
-            while (unZIPTasksCount != completedUnZIPTasksCount) {}
+            CompletableFuture.allOf(unPackTasks.toArray(new CompletableFuture[0])).join();
 
             Logger.getLogger().devLog("UnpackZip task has been finished");
 
@@ -115,10 +107,6 @@ public class UnpackZipTask extends Task {
             Logger.getLogger().warn("Something went wrong while running UnpackZip task", sender);
             Logger.getLogger().warn(this, e);
         }
-    }
-
-    private synchronized void taskCompleted() {
-        completedUnZIPTasksCount++;
     }
 
     @Override
