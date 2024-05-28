@@ -8,6 +8,7 @@ import ru.dvdishka.backuper.backend.classes.LocalBackup;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.backend.tasks.local.DeleteOldBackupsTask;
 import ru.dvdishka.backuper.backend.tasks.local.folder.CopyFilesToFolderTask;
 import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.tasks.local.zip.tozip.AddDirToZipTask;

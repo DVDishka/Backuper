@@ -19,7 +19,7 @@ import ru.dvdishka.backuper.backend.classes.LocalBackup;
 import ru.dvdishka.backuper.backend.classes.SftpBackup;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.backup.BackupTask;
-import ru.dvdishka.backuper.backend.tasks.backup.DeleteOldBackupsTask;
+import ru.dvdishka.backuper.backend.tasks.local.DeleteOldBackupsTask;
 import ru.dvdishka.backuper.backend.utils.SftpUtils;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;

@@ -1,9 +1,8 @@
-package ru.dvdishka.backuper.backend.tasks.backup;
+package ru.dvdishka.backuper.backend.tasks.local;
 
 import org.apache.commons.io.FileUtils;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.backend.classes.Backup;
 import ru.dvdishka.backuper.backend.classes.LocalBackup;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;

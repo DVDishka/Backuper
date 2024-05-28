@@ -1,11 +1,8 @@
 package ru.dvdishka.backuper.backend.config;
 
-import dev.jorel.commandapi.CommandAPI;
-import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.Player;
 import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.backend.common.Logger;
 
@@ -80,8 +77,8 @@ public class Config {
 
         String configVersion = config.getString("configVersion");
 
-        BackwardsCompatibility.backupPeriodFromHoursToMinutes(config);
-        BackwardsCompatibility.fixedBackupTimeToBackupTime(config);
+        BackwardsCompatibility.configBelow4(config);
+        BackwardsCompatibility.configBelow8(config);
 
         this.backupTime = config.getInt("backup.backupTime", -1);
         this.backupPeriod = config.getInt("backup.backupPeriod", 1440);
