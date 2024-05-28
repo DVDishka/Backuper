@@ -49,7 +49,7 @@ public class Backuper extends JavaPlugin {
 
     public void onLoad() {
 
-        CommandAPI.onLoad(new CommandAPIBukkitConfig(this));
+        CommandAPI.onLoad(new CommandAPIBukkitConfig(this).useMojangMappings(false));
     }
 
     public void onDisable() {
