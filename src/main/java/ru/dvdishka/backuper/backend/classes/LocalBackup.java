@@ -2,6 +2,7 @@ package ru.dvdishka.backuper.backend.classes;
 
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.tasks.local.folder.DeleteDirTask;
 import ru.dvdishka.backuper.backend.utils.Utils;
 
@@ -139,7 +140,10 @@ public class LocalBackup implements Backup {
     }
 
     public void delete(boolean setLocked, CommandSender sender) {
+        getDeleteTask(setLocked, sender).run();
+    }
 
-        new DeleteDirTask(this.getFile(), setLocked, sender).run();
+    public Task getDeleteTask(boolean setLocked, CommandSender sender) {
+        return new DeleteDirTask(this.getFile(), setLocked, sender);
     }
 }

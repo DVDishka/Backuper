@@ -105,6 +105,8 @@ public class Config {
         this.sftpConfig.useKnownHostsFile = config.getString("sftp.useKnownHostsFile", "false");
         this.sftpConfig.knownHostsFilePath = config.getString("sftp.knownHostsFilePath", "");
         this.sftpConfig.pathSeparatorSymbol = config.getString("sftp.pathSeparatorSymbol", "/");
+        this.sftpConfig.backupsNumber = config.getInt("sftp.backupsNumber", 0);
+        this.sftpConfig.backupsWeight = config.getLong("sftp.backupsWeight", 0) * 1_048_576L;
 
         this.betterLogging = config.getBoolean("server.betterLogging", false);
         this.fixedBackupTime = this.backupTime > -1;
@@ -130,30 +132,42 @@ public class Config {
 
         if (this.backupPeriod <= 0) {
             Logger.getLogger().warn("Failed to load config value!");
-            Logger.getLogger().warn("Backup period must be > 0, using default 1440 value...");
+            Logger.getLogger().warn("backup.backupPeriod must be > 0, using default 1440 value...");
             this.backupPeriod = 1440;
         }
 
         if (this.localConfig.backupsNumber < 0) {
             Logger.getLogger().warn("Failed to load config value!");
-            Logger.getLogger().warn("Backups number must be >= 0, using default 0 value...");
+            Logger.getLogger().warn("local.backupsNumber must be >= 0, using default 0 value...");
             this.localConfig.backupsNumber = 0;
         }
 
         if (this.localConfig.backupsWeight < 0) {
             Logger.getLogger().warn("Failed to load config value!");
-            Logger.getLogger().warn("Backups weight must be >= 0, using default 0 value...");
+            Logger.getLogger().warn("local.backupsWeight must be >= 0, using default 0 value...");
             this.localConfig.backupsWeight = 0;
+        }
+
+        if (this.sftpConfig.backupsNumber < 0) {
+            Logger.getLogger().warn("Failed to load config value!");
+            Logger.getLogger().warn("sftp.backupsNumber must be >= 0, using default 0 value...");
+            this.sftpConfig.backupsNumber = 0;
+        }
+
+        if (this.sftpConfig.backupsWeight < 0) {
+            Logger.getLogger().warn("Failed to load config value!");
+            Logger.getLogger().warn("sftp.backupsWeight must be >= 0, using default 0 value...");
+            this.sftpConfig.backupsWeight = 0;
         }
 
         if (this.localConfig.zipCompressionLevel > 9 || this.localConfig.zipCompressionLevel < 0) {
             Logger.getLogger().warn("Failed to load config value!");
             if (this.localConfig.zipCompressionLevel < 0) {
-                Logger.getLogger().warn("ZipCompressionLevel must be >= 0, using 0 value...");
+                Logger.getLogger().warn("local.zipCompressionLevel must be >= 0, using 0 value...");
                 this.localConfig.zipCompressionLevel = 0;
             }
             if (this.localConfig.zipCompressionLevel > 9) {
-                Logger.getLogger().warn("ZipCompressionLevel must be <= 9, using 9 value...");
+                Logger.getLogger().warn("local.zipCompressionLevel must be <= 9, using 9 value...");
                 this.localConfig.zipCompressionLevel = 9;
             }
         }
@@ -165,7 +179,8 @@ public class Config {
                 "backup.skipDuplicateBackup", "local.backupsFolder", "server.alertTimeBeforeRestart", "backup.addDirectoryToBackup",
                 "backup.excludeDirectoryFromBackup", "backup.setWorldsReadOnly", "server.alertOnlyServerRestart", "sftp.enabled",
                 "sftp.backupsFolder", "sftp.authType", "sftp.username", "sftp.password", "sftp.keyFilePath", "sftp.address",
-                "sftp.port", "sftp.useKnownHostsFile", "sftp.knownHostsFilePath", "local.enabled", "sftp.pathSeparatorSymbol", "local.zipCompressionLevel");
+                "sftp.port", "sftp.useKnownHostsFile", "sftp.knownHostsFilePath", "local.enabled", "sftp.pathSeparatorSymbol",
+                "local.zipCompressionLevel", "sftp.backupsNumber", "sftp.backupsWeight");
 
         for (String configField : configFields) {
             if (isConfigFileOk && !config.contains(configField)) {
@@ -213,6 +228,8 @@ public class Config {
             newConfig.set("sftp.useKnownHostsFile", this.sftpConfig.useKnownHostsFile);
             newConfig.set("sftp.knownHostsFilePath", this.sftpConfig.knownHostsFilePath);
             newConfig.set("sftp.pathSeparatorSymbol", this.sftpConfig.pathSeparatorSymbol);
+            newConfig.set("sftp.backupsNumber", this.sftpConfig.backupsNumber);
+            newConfig.set("sftp.backupsWeight", this.sftpConfig.backupsWeight / 1_048_576L);
 
             newConfig.set("lastBackup", this.lastBackup);
             newConfig.set("lastChange", this.lastChange);

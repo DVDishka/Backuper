@@ -12,6 +12,8 @@ public class SftpConfig {
     String useKnownHostsFile = "false";
     String keyFilePath = "";
     String pathSeparatorSymbol = "/";
+    int backupsNumber = 0;
+    long backupsWeight = 0;
     int port = 22;
 
     public String getBackupsFolder() {
@@ -57,4 +59,8 @@ public class SftpConfig {
     public String getPathSeparatorSymbol() {
         return pathSeparatorSymbol;
     }
+
+    public int getBackupsNumber() {return backupsNumber;}
+
+    public long getBackupsWeight() {return backupsWeight;}
 }
