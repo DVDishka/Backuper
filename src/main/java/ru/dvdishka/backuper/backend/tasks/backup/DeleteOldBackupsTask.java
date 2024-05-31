@@ -38,7 +38,7 @@ public class DeleteOldBackupsTask extends Task {
         }
 
         try {
-            Logger.getLogger().devLog("DeleteOldBackupsTask has been started");
+            Logger.getLogger().devLog("DeleteOldBackups task has been started");
 
             if (!isTaskPrepared) {
                 prepareTask();
@@ -48,9 +48,11 @@ public class DeleteOldBackupsTask extends Task {
                 deleteDirTask.run();
             }
 
-            Logger.getLogger().devLog("DeleteOldBackupsTask has been finished");
+            Logger.getLogger().devLog("DeleteOldBackups task has been finished");
 
             if (setLocked) {
+
+                Logger.getLogger().log("DeleteOldBackups completed", sender);
                 UIUtils.successSound(sender);
                 Backuper.unlock();
             }

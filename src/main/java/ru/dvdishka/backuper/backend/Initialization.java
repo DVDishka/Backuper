@@ -64,11 +64,17 @@ public class Initialization implements Listener {
         Metrics bStats = new Metrics(plugin, Utils.bStatsId);
     }
 
-    public static void initAutoBackup() {
+    public static void initAutoBackup(CommandSender sender) {
 
         Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
 
-            new DeleteOldBackupsTask(false, null).run();
+            Logger.getLogger().devLog("Initializing auto backup...");
+
+            Logger.getLogger().devLog("deleteOldBackups task has been started");
+
+            new DeleteOldBackupsTask(true, sender).run();
+
+            Logger.getLogger().devLog("deleteOldBackups task has been finished");
 
             if (Config.getInstance().isAutoBackup()) {
 
@@ -127,6 +133,8 @@ public class Initialization implements Listener {
                     }, delay * 20, 1440L * 60L * 20L);
                 }
             }
+
+            Logger.getLogger().devLog("Auto backup initialized successfully");
         });
     }
 
@@ -146,7 +154,7 @@ public class Initialization implements Listener {
             } catch (Exception e) {
 
                 Logger.getLogger().warn("Something went wrong when trying to create config file!", sender);
-                Logger.getLogger().devWarn("Initialization", e.getMessage());
+                Logger.getLogger().warn("Initialization", e);
             }
         }
 
@@ -607,6 +615,6 @@ public class Initialization implements Listener {
 
     @EventHandler
     public void onStartCompleted(ServerLoadEvent event) {
-        Initialization.initAutoBackup();
+        Initialization.initAutoBackup(null);
     }
 }

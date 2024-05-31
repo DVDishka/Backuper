@@ -70,6 +70,8 @@ public class Config {
 
     public void load(File configFile, CommandSender sender) {
 
+        Logger.getLogger().devLog("loading config...", sender);
+
         this.configFile = configFile;
 
         FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
@@ -250,11 +252,11 @@ public class Config {
             }
         }
 
-        if (sender != null && noErrors) {
-            Logger.getLogger().success("Config has been reloaded successfully!", sender);
+        if (noErrors) {
+            Logger.getLogger().devLog("Config has been loaded successfully!", sender);
         }
-        if (sender != null && !noErrors) {
-            Logger.getLogger().log("Config has been reloaded with errors!", sender);
+        if (!noErrors) {
+            Logger.getLogger().warn("Config has been loaded with errors!", sender);
         }
     }
 

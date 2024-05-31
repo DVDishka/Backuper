@@ -140,11 +140,16 @@ public class BackupTask extends Task {
                 }
             }
 
+            // DELETE OLD BACKUPS TASK MUST BE RAN AFTER RENAMING
+            {
+                new DeleteOldBackupsTask(false, sender).run();
+            }
+
             if (setLocked) {
                 UIUtils.successSound(sender);
                 Backuper.unlock();
+                Logger.getLogger().success("Backup process has been finished successfully!", sender);
             }
-            Logger.getLogger().success("Backup process has been finished successfully!", sender);
 
             if (afterBackup.equals("RESTART")) {
 
@@ -155,7 +160,7 @@ public class BackupTask extends Task {
 
             } else if (afterBackup.equals("STOP")) {
 
-                Logger.getLogger().devLog("Stopping server...");
+                Logger.getLogger().log("Stopping server...", sender);
                 Bukkit.shutdown();
             }
 
@@ -290,10 +295,6 @@ public class BackupTask extends Task {
                     Logger.getLogger().warn(this, e);
                 }
             }
-
-            Task task = new DeleteOldBackupsTask(false, sender);
-            task.prepareTask();
-            tasks.add(task);
 
         } catch (Exception e) {
             Logger.getLogger().warn("Something went wrong while trying to prepare local task");
