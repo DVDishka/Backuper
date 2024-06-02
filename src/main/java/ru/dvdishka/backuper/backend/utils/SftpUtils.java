@@ -10,6 +10,7 @@ import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
 
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Properties;
 import java.util.Vector;
@@ -76,7 +77,7 @@ public class SftpUtils {
                 jsch.setKnownHosts(knownHostsFilePath);
             }
 
-            sshSession.connect(10000);
+            sshSession.connect(15000);
             sftpChannel = (ChannelSftp) sshSession.openChannel("sftp");
 
             return Pair.of(sshSession, sftpChannel);

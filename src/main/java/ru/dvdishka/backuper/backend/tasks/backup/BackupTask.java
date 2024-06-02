@@ -33,6 +33,7 @@ public class BackupTask extends Task {
     private final long deleteProgressMultiplier = 1;
     private final long copyProgressMultiplier = 5;
     private final long zipProgressMultiplier = 10;
+    private final long sendSftpProgressMultiplier = 10;
 
     private File backupDir;
     private File backupsDir;
@@ -106,14 +107,19 @@ public class BackupTask extends Task {
                     Logger.getLogger().devLog("The Rename \"in progress\" Folder/ZIP local task has been started");
                     if (Config.getInstance().getLocalConfig().isZipArchive()) {
 
-                        if (!new File(Config.getInstance().getLocalConfig().getBackupsFolder()).toPath().resolve(backupDir.getName() + ".zip").toFile()
-                                .renameTo(new File(Config.getInstance().getLocalConfig().getBackupsFolder()).toPath().resolve(backupDir.getName().replace(" in progress", "") + ".zip").toFile())) {
+                        File oldZipFile = new File(Config.getInstance().getLocalConfig().getBackupsFolder()).toPath().resolve(backupDir.getName() + ".zip").toFile();
+                        File newZipFile = new File(Config.getInstance().getLocalConfig().getBackupsFolder()).toPath().resolve(backupDir.getName().replace(" in progress", "") + ".zip").toFile();
+
+                        if (!oldZipFile.renameTo(newZipFile)) {
                             Logger.getLogger().warn("The Rename \"in progress\" ZIP local task has been finished with an exception!", sender);
                         }
                     } else {
-                        if (!new File(Config.getInstance().getLocalConfig().getBackupsFolder()).toPath().resolve(backupDir.getName()).toFile()
-                                .renameTo(new File(Config.getInstance().getLocalConfig().getBackupsFolder()).toPath().resolve(backupDir.getName().replace(" in progress", "")).toFile())) {
-                            Logger.getLogger().warn("The Rename \"in progress\" ZIP local task has been finished with an exception!", sender);
+
+                        File oldFolder = new File(Config.getInstance().getLocalConfig().getBackupsFolder()).toPath().resolve(backupDir.getName()).toFile();
+                        File newFolder = new File(Config.getInstance().getLocalConfig().getBackupsFolder()).toPath().resolve(backupDir.getName().replace(" in progress", "")).toFile();
+
+                        if (!oldFolder.renameTo(newFolder)) {
+                            Logger.getLogger().warn("The Rename \"in progress\" Folder local task has been finished with an exception!", sender);
                         }
                     }
                     Logger.getLogger().devLog("The Rename \"in progress\" Folder/ZIP local task has been finished");
@@ -123,13 +129,13 @@ public class BackupTask extends Task {
             // RENAME SFTP TASK
             if (Config.getInstance().getSftpConfig().isEnabled()) {
 
-                Logger.getLogger().devLog("The Rename \"in progress\" Folder/ZIP SFTP task has been started");
+                Logger.getLogger().devLog("The Rename \"in progress\" Folder SFTP task has been started");
 
                 SftpUtils.renameRemoteFile(SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(),
                                 backupName), SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(),
                                 backupName.replace(" in progress", "")), sender);
 
-                Logger.getLogger().devLog("The Rename \"in progress\" Folder/ZIP SFTP task has been finished");
+                Logger.getLogger().devLog("The Rename \"in progress\" Folder SFTP task has been finished");
             }
 
             {
@@ -352,6 +358,9 @@ public class BackupTask extends Task {
             if (task instanceof AddDirToZipTask) {
                 taskProgressMultiplier = zipProgressMultiplier;
             }
+            if (task instanceof SftpSendFileFolderTask) {
+                taskProgressMultiplier = sendSftpProgressMultiplier;
+            }
 
             currentProgress += currentTaskProgress * taskProgressMultiplier;
         }
@@ -377,6 +386,9 @@ public class BackupTask extends Task {
             }
             if (task instanceof AddDirToZipTask) {
                 taskProgressMultiplier = zipProgressMultiplier;
+            }
+            if (task instanceof SftpSendFileFolderTask) {
+                taskProgressMultiplier = sendSftpProgressMultiplier;
             }
 
             maxProgress += maxTaskProgress * taskProgressMultiplier;

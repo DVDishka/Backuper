@@ -94,29 +94,27 @@ public class DeleteOldBackupsTask extends Task {
         HashSet<LocalDateTime> backupsToDeleteList = new HashSet<>();
 
         long backupsFolderByteSize = 0;
+
+        ArrayList<Backup> backups = new ArrayList<>();
         if (storage.equals("local")) {
-            backupsFolderByteSize = Utils.getFileFolderByteSize(new File(Config.getInstance().getLocalConfig().getBackupsFolder()));
+            backups.addAll(LocalBackup.getBackups());
         }
         if (storage.equals("sftp")) {
-            backupsFolderByteSize = SftpUtils.getDirByteSize(Config.getInstance().getSftpConfig().getBackupsFolder(), sender);
+            backups.addAll(SftpBackup.getBackups());
         }
+
+        for (Backup backup : backups) {
+            backupsFolderByteSize += backup.getByteSize(sender);
+        }
+
+        ArrayList<LocalDateTime> backupDateTimes = new ArrayList<>();
+        for (Backup backup : backups) {
+            backupDateTimes.add(backup.getLocalDateTime());
+        }
+        Utils.sortLocalDateTime(backupDateTimes);
 
         if (storage.equals("local") && Config.getInstance().getLocalConfig().getBackupsNumber() != 0 ||
                 storage.equals("sftp") && Config.getInstance().getSftpConfig().getBackupsNumber() != 0) {
-
-            ArrayList<Backup> backups = new ArrayList<>();
-            if (storage.equals("local")) {
-                backups.addAll(LocalBackup.getBackups());
-            }
-            if (storage.equals("sftp")) {
-                backups.addAll(SftpBackup.getBackups());
-            }
-
-            ArrayList<LocalDateTime> backupDateTimes = new ArrayList<>();
-            for (Backup backup : backups) {
-                backupDateTimes.add(backup.getLocalDateTime());
-            }
-            Utils.sortLocalDateTime(backupDateTimes);
 
             int backupsToDelete = backups.size();
             if (storage.equals("local")) {
@@ -157,60 +155,44 @@ public class DeleteOldBackupsTask extends Task {
             }
         }
 
-        if (Config.getInstance().getLocalConfig().getBackupsWeight() != 0) {
+        if (storage.equals("local") && Config.getInstance().getLocalConfig().getBackupsWeight() != 0 ||
+                storage.equals("sftp") && Config.getInstance().getSftpConfig().getBackupsWeight() != 0) {
 
-            if (storage.equals("local") && Config.getInstance().getLocalConfig().getBackupsWeight() != 0 ||
-                    storage.equals("sftp") && Config.getInstance().getSftpConfig().getBackupsWeight() != 0) {
 
-                ArrayList<Backup> backups = new ArrayList<>();
-                if (storage.equals("local")) {
-                    backups.addAll(LocalBackup.getBackups());
+            long bytesToDelete = backupsFolderByteSize;
+            if (storage.equals("local")) {
+                bytesToDelete -= Config.getInstance().getLocalConfig().getBackupsWeight();
+            }
+            if (storage.equals("sftp")) {
+                bytesToDelete -= Config.getInstance().getSftpConfig().getBackupsWeight();
+            }
+
+            for (LocalDateTime fileName : backupDateTimes) {
+
+                if (bytesToDelete <= 0) {
+                    break;
                 }
-                if (storage.equals("sftp")) {
-                    backups.addAll(SftpBackup.getBackups());
+
+                if (backupsToDeleteList.contains(fileName)) {
+                    continue;
                 }
 
-                ArrayList<LocalDateTime> backupDateTimes = new ArrayList<>();
                 for (Backup backup : backups) {
-                    backupDateTimes.add(backup.getLocalDateTime());
-                }
-                Utils.sortLocalDateTime(backupDateTimes);
 
-                long bytesToDelete = backupsFolderByteSize;
-                if (storage.equals("local")) {
-                    bytesToDelete -= Config.getInstance().getLocalConfig().getBackupsWeight();
-                }
-                if (storage.equals("sftp")) {
-                    bytesToDelete -= Config.getInstance().getSftpConfig().getBackupsWeight();
-                }
+                    String backupFileName = backup.getName().replace(".zip", "");
 
-                for (LocalDateTime fileName : backupDateTimes) {
+                    try {
+                        if (LocalDateTime.parse(backupFileName, LocalBackup.dateTimeFormatter).equals(fileName)) {
 
-                    if (bytesToDelete <= 0) {
-                        break;
-                    }
+                            bytesToDelete -= backup.getByteSize(sender);
 
-                    if (backupsToDeleteList.contains(fileName)) {
-                        continue;
-                    }
+                            Task deleteBackupTask = backup.getDeleteTask(false, sender);
+                            deleteBackupTask.prepareTask();
 
-                    for (Backup backup : backups) {
-
-                        String backupFileName = backup.getName().replace(".zip", "");
-
-                        try {
-                            if (LocalDateTime.parse(backupFileName, LocalBackup.dateTimeFormatter).equals(fileName)) {
-
-                                bytesToDelete -= backup.getByteSize(sender);
-
-                                Task deleteBackupTask = backup.getDeleteTask(false, sender);
-                                deleteBackupTask.prepareTask();
-
-                                deleteBackupTasks.add(deleteBackupTask);
-                                backupsToDeleteList.add(fileName);
-                            }
-                        } catch (Exception ignored) {}
-                    }
+                            deleteBackupTasks.add(deleteBackupTask);
+                            backupsToDeleteList.add(fileName);
+                        }
+                    } catch (Exception ignored) {}
                 }
             }
         }

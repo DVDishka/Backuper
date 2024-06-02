@@ -98,13 +98,13 @@ public class ListCommand extends Command {
 
     private void updateListPages() {
 
-        ArrayList<LocalDateTime> backups = null;
+        ArrayList<Backup> backups = null;
 
         if (storage.equals("local")) {
-            backups = getLocalBackupList();
+            backups = getSortedDecreaseLocalBackupList();
         }
         if (storage.equals("sftp")) {
-            backups = getSftpBackupList();
+            backups = getSortedDecreaseSftpBackupList();
         }
 
         if (backups == null) {
@@ -120,16 +120,8 @@ public class ListCommand extends Command {
                 pages.add(new ArrayList<>());
             }
 
-            String backupName = backups.get(i - 1).format(LocalBackup.dateTimeFormatter);
-
-            Backup backup = null;
-            if (storage.equals("local")) {
-                backup = LocalBackup.getInstance(backupName);
-            }
-
-            if (storage.equals("sftp")) {
-                backup = SftpBackup.getInstance(backupName);
-            }
+            Backup backup = backups.get(i);
+            String backupName = backup.getName();
 
             String backupFileType = backup.getFileType();
             long backupMbSize = backup.getMbSize(sender);
@@ -273,52 +265,45 @@ public class ListCommand extends Command {
         return pages.size();
     }
 
-    private ArrayList<LocalDateTime> getLocalBackupList() {
+    private ArrayList<Backup> getSortedDecreaseLocalBackupList() {
 
-        File backupsFolder = new File(Config.getInstance().getLocalConfig().getBackupsFolder());
-        ArrayList<LocalDateTime> backups = new ArrayList<>();
+        ArrayList<Backup> backups = new ArrayList<>(LocalBackup.getBackups());
 
-        if (backupsFolder.listFiles() == null) {
-            Logger.getLogger().warn("Wrong backupsFolder path!", sender);
-            return null;
+        for (int firstBackupsIndex = 0; firstBackupsIndex < backups.size(); firstBackupsIndex++) {
+
+            for (int secondBackupsIndex = firstBackupsIndex; secondBackupsIndex < backups.size(); secondBackupsIndex++) {
+
+                if (backups.get(firstBackupsIndex).getLocalDateTime().isBefore(backups.get(secondBackupsIndex).getLocalDateTime())) {
+
+                    Backup save = backups.get(firstBackupsIndex);
+
+                    backups.set(firstBackupsIndex, backups.get(secondBackupsIndex));
+                    backups.set(secondBackupsIndex, save);
+                }
+            }
         }
-
-        for (File file : Objects.requireNonNull(backupsFolder.listFiles())) {
-
-            try {
-                backups.add(LocalDateTime.parse(file.getName().replace(".zip", ""),
-                        LocalBackup.dateTimeFormatter));
-            } catch (Exception ignored) {}
-        }
-
-        Utils.sortLocalDateTimeDecrease(backups);
 
         return backups;
     }
 
-    private ArrayList<LocalDateTime> getSftpBackupList() {
+    private ArrayList<Backup> getSortedDecreaseSftpBackupList() {
 
-        try {
-            ArrayList<LocalDateTime> backups = new ArrayList<>();
+        ArrayList<Backup> backups = new ArrayList<>(SftpBackup.getBackups());
 
-            ArrayList<String> backupFileList = SftpUtils.ls(Config.getInstance().getSftpConfig().getBackupsFolder(), sender);
+        for (int firstBackupsIndex = 0; firstBackupsIndex < backups.size(); firstBackupsIndex++) {
 
-            for (String file : backupFileList) {
+            for (int secondBackupsIndex = firstBackupsIndex; secondBackupsIndex < backups.size(); secondBackupsIndex++) {
 
-                try {
-                    backups.add(LocalDateTime.parse(file.replace(".zip", ""), LocalBackup.dateTimeFormatter));
-                } catch (Exception ignored) {
+                if (backups.get(firstBackupsIndex).getLocalDateTime().isBefore(backups.get(secondBackupsIndex).getLocalDateTime())) {
+
+                    Backup save = backups.get(firstBackupsIndex);
+
+                    backups.set(firstBackupsIndex, backups.get(secondBackupsIndex));
+                    backups.set(secondBackupsIndex, save);
                 }
             }
-
-            Utils.sortLocalDateTimeDecrease(backups);
-
-            return backups;
-        } catch (Exception e) {
-
-            Logger.getLogger().warn("Something went wrong while trying to get SFTP backup list", sender);
-            Logger.getLogger().warn(this, e);
-            return null;
         }
+
+        return backups;
     }
 }

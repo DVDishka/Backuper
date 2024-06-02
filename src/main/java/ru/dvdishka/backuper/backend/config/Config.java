@@ -107,8 +107,8 @@ public class Config {
         this.sftpConfig.useKnownHostsFile = config.getString("sftp.useKnownHostsFile", "false");
         this.sftpConfig.knownHostsFilePath = config.getString("sftp.knownHostsFilePath", "");
         this.sftpConfig.pathSeparatorSymbol = config.getString("sftp.pathSeparatorSymbol", "/");
-        this.sftpConfig.backupsNumber = config.getInt("sftp.backupsNumber", 0);
-        this.sftpConfig.backupsWeight = config.getLong("sftp.backupsWeight", 0) * 1_048_576L;
+        this.sftpConfig.backupsNumber = config.getInt("sftp.maxBackupsNumber", 0);
+        this.sftpConfig.backupsWeight = config.getLong("sftp.maxBackupsWeight", 0) * 1_048_576L;
 
         this.betterLogging = config.getBoolean("server.betterLogging", false);
         this.fixedBackupTime = this.backupTime > -1;
@@ -140,25 +140,25 @@ public class Config {
 
         if (this.localConfig.backupsNumber < 0) {
             Logger.getLogger().warn("Failed to load config value!");
-            Logger.getLogger().warn("local.backupsNumber must be >= 0, using default 0 value...");
+            Logger.getLogger().warn("local.maxBackupsNumber must be >= 0, using default 0 value...");
             this.localConfig.backupsNumber = 0;
         }
 
         if (this.localConfig.backupsWeight < 0) {
             Logger.getLogger().warn("Failed to load config value!");
-            Logger.getLogger().warn("local.backupsWeight must be >= 0, using default 0 value...");
+            Logger.getLogger().warn("local.maxBackupsWeight must be >= 0, using default 0 value...");
             this.localConfig.backupsWeight = 0;
         }
 
         if (this.sftpConfig.backupsNumber < 0) {
             Logger.getLogger().warn("Failed to load config value!");
-            Logger.getLogger().warn("sftp.backupsNumber must be >= 0, using default 0 value...");
+            Logger.getLogger().warn("sftp.maxBackupsNumber must be >= 0, using default 0 value...");
             this.sftpConfig.backupsNumber = 0;
         }
 
         if (this.sftpConfig.backupsWeight < 0) {
             Logger.getLogger().warn("Failed to load config value!");
-            Logger.getLogger().warn("sftp.backupsWeight must be >= 0, using default 0 value...");
+            Logger.getLogger().warn("sftp.maxBackupsWeight must be >= 0, using default 0 value...");
             this.sftpConfig.backupsWeight = 0;
         }
 
@@ -182,7 +182,7 @@ public class Config {
                 "backup.excludeDirectoryFromBackup", "backup.setWorldsReadOnly", "server.alertOnlyServerRestart", "sftp.enabled",
                 "sftp.backupsFolder", "sftp.authType", "sftp.username", "sftp.password", "sftp.keyFilePath", "sftp.address",
                 "sftp.port", "sftp.useKnownHostsFile", "sftp.knownHostsFilePath", "local.enabled", "sftp.pathSeparatorSymbol",
-                "local.zipCompressionLevel", "sftp.backupsNumber", "sftp.backupsWeight");
+                "local.zipCompressionLevel", "sftp.maxBackupsNumber", "sftp.maxBackupsWeight");
 
         for (String configField : configFields) {
             if (isConfigFileOk && !config.contains(configField)) {
@@ -230,8 +230,8 @@ public class Config {
             newConfig.set("sftp.useKnownHostsFile", this.sftpConfig.useKnownHostsFile);
             newConfig.set("sftp.knownHostsFilePath", this.sftpConfig.knownHostsFilePath);
             newConfig.set("sftp.pathSeparatorSymbol", this.sftpConfig.pathSeparatorSymbol);
-            newConfig.set("sftp.backupsNumber", this.sftpConfig.backupsNumber);
-            newConfig.set("sftp.backupsWeight", this.sftpConfig.backupsWeight / 1_048_576L);
+            newConfig.set("sftp.maxBackupsNumber", this.sftpConfig.backupsNumber);
+            newConfig.set("sftp.maxBackupsWeight", this.sftpConfig.backupsWeight / 1_048_576L);
 
             newConfig.set("lastBackup", this.lastBackup);
             newConfig.set("lastChange", this.lastChange);

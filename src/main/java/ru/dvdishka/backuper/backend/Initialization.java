@@ -70,11 +70,7 @@ public class Initialization implements Listener {
 
             Logger.getLogger().devLog("Initializing auto backup...");
 
-            Logger.getLogger().devLog("deleteOldBackups task has been started");
-
             new DeleteOldBackupsTask(true, sender).run();
-
-            Logger.getLogger().devLog("deleteOldBackups task has been finished");
 
             if (Config.getInstance().isAutoBackup()) {
 
@@ -518,6 +514,7 @@ public class Initialization implements Listener {
     public static void checkOperatingSystem() {
         if (Utils.isWindows) {
             LocalBackup.dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH;mm;ss");
+            SftpBackup.dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH;mm;ss");
         }
     }
 
