@@ -1,8 +1,17 @@
 package ru.dvdishka.backuper.backend.config;
 
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
+import ru.dvdishka.backuper.backend.classes.LocalBackup;
+import ru.dvdishka.backuper.backend.common.Logger;
 
+import java.io.File;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class BackwardsCompatibility {
 
@@ -71,5 +80,54 @@ public class BackwardsCompatibility {
         config.set("server.alertTimeBeforeRestart", alertTimeBeforeRestart);
         config.set("server.alertOnlyServerRestart", alertOnlyServerRestart);
         config.set("server.betterLogging", betterLogging);
+    }
+
+    public static void unifyBackupNameFormat(CommandSender sender) {
+
+        try {
+
+            DateTimeFormatter oldUnixDateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
+            DateTimeFormatter oldWindowsDateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH;mm;ss");
+
+            File backupsDir = new File(Config.getInstance().getLocalConfig().getBackupsFolder());
+
+            if (!backupsDir.exists() || backupsDir.listFiles() == null) {
+                Logger.getLogger().warn("Wrong local.backupFolder config field value", sender);
+                throw new RuntimeException();
+            }
+
+            for (File file : Objects.requireNonNull(backupsDir.listFiles())) {
+
+                LocalDateTime backupLocalDateTime = null;
+
+                try {
+                    backupLocalDateTime = LocalDateTime.parse(file.getName().replace(".zip", ""), oldUnixDateTimeFormatter);
+                } catch (Exception ignored) {}
+
+                try {
+                    backupLocalDateTime = LocalDateTime.parse(file.getName().replace(".zip", ""), oldWindowsDateTimeFormatter);
+                } catch (Exception ignored) {}
+
+                if (backupLocalDateTime != null) {
+
+                    boolean isZip = file.getName().endsWith(".zip");
+
+                    String newFileName = LocalBackup.dateTimeFormatter.format(backupLocalDateTime);
+                    if (isZip) {
+                        newFileName += ".zip";
+                    }
+
+                    File newFile = new File(backupsDir, newFileName);
+
+                    if (!file.renameTo(newFile)) {
+                        Logger.getLogger().warn("Failed to reformat backup to new unified format " + newFile.getAbsolutePath() + " (it will be unavailable)", sender);
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            Logger.getLogger().warn("Failed to unify backup name format", sender);
+            Logger.getLogger().warn("BackwardsCompatibility:UnifyBackupNameFormat", e);
+        }
     }
 }

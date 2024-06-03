@@ -18,7 +18,7 @@ public class LocalBackup implements Backup {
     private String backupName;
     private LocalDateTime backupLocalDateTime;
 
-    public static DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
+    public static DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH-mm-ss");
 
     private static HashMap<String, LocalBackup> backups = new HashMap();
 

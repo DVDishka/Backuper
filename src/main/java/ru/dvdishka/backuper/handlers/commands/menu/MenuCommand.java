@@ -56,6 +56,8 @@ public class MenuCommand extends Command {
             backup = SftpBackup.getInstance(backupName);
         }
 
+        String backupFormattedName = backup.getFormattedName();
+
         long backupMbSize = backup.getMbSize(sender);
         String zipOrFolder = backup.getFileType();
 
@@ -74,7 +76,7 @@ public class MenuCommand extends Command {
         if (!(sender instanceof ConsoleCommandSender)) {
 
             message = message
-                    .append(Component.text(backupName)
+                    .append(Component.text(backupFormattedName)
                             .hoverEvent(HoverEvent.showText(Component.text("(" + storage + ") " + zipOrFolder + " " + backupMbSize + " MB"))))
                     .append(Component.newline())
                     .append(Component.newline());
@@ -126,7 +128,7 @@ public class MenuCommand extends Command {
         } else {
 
             message = message
-                    .append(Component.text(backupName))
+                    .append(Component.text(backupFormattedName))
                     .append(Component.space())
                     .append(Component.text("(" + storage + ")"))
                     .append(Component.space())

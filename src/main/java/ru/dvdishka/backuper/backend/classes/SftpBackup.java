@@ -16,7 +16,7 @@ public class SftpBackup implements Backup {
     private String backupName;
 
     private static HashMap<String, SftpBackup> backups = new HashMap<>();
-    public static DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
+    public static DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH-mm-ss");
 
     private SftpBackup(String backupName) {
         this.backupName = backupName;

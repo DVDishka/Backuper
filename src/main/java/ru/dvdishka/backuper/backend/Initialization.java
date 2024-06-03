@@ -17,6 +17,7 @@ import org.bukkit.event.server.ServerLoadEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.dvdishka.backuper.backend.classes.LocalBackup;
 import ru.dvdishka.backuper.backend.classes.SftpBackup;
+import ru.dvdishka.backuper.backend.config.BackwardsCompatibility;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.backup.BackupTask;
 import ru.dvdishka.backuper.backend.tasks.backup.DeleteOldBackupsTask;
@@ -52,7 +53,10 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
@@ -68,9 +72,10 @@ public class Initialization implements Listener {
 
         Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
 
-            Logger.getLogger().devLog("Initializing auto backup...");
-
+            Logger.getLogger().log("Deleting old backups...");
             new DeleteOldBackupsTask(true, sender).run();
+
+            Logger.getLogger().log("Initializing auto backup...");
 
             if (Config.getInstance().isAutoBackup()) {
 
@@ -130,11 +135,13 @@ public class Initialization implements Listener {
                 }
             }
 
-            Logger.getLogger().devLog("Auto backup initialized successfully");
+            Logger.getLogger().log("Auto backup initialization completed");
         });
     }
 
     public static void initConfig(File configFile, CommandSender sender) {
+
+        Logger.getLogger().log("Loading config...");
 
         if (configFile.exists()) {
 
@@ -155,6 +162,8 @@ public class Initialization implements Listener {
         }
 
         SftpUtils.init();
+
+        Logger.getLogger().log("Config loading completed", sender);
     }
 
     public static void initCommands() {
@@ -279,28 +288,32 @@ public class Initialization implements Listener {
 
                         .then(new LiteralArgument("local")
 
-                                .then(new TextArgument("backupName").includeSuggestions(ArgumentSuggestions.stringCollection((info) -> {
+                                .then(new TextArgument("backupName").includeSuggestions(ArgumentSuggestions.stringCollectionAsync((info) -> {
 
-                                    ArrayList<LocalBackup> backups = LocalBackup.getBackups();
-                                    ArrayList<LocalDateTime> backupDateTimes = new ArrayList<>();
+                                    return CompletableFuture.supplyAsync(() -> {
+                                        ArrayList<LocalBackup> backups = LocalBackup.getBackups();
+                                        ArrayList<LocalDateTime> backupDateTimes = new ArrayList<>();
 
-                                    for (LocalBackup backup : backups) {
-                                        backupDateTimes.add(backup.getLocalDateTime());
-                                    }
+                                        for (LocalBackup backup : backups) {
+                                            backupDateTimes.add(backup.getLocalDateTime());
+                                        }
 
-                                    Utils.sortLocalDateTimeDecrease(backupDateTimes);
+                                        Utils.sortLocalDateTimeDecrease(backupDateTimes);
 
-                                    ArrayList<String> backupSuggestions = new ArrayList<>();
+                                        ArrayList<String> backupSuggestions = new ArrayList<>();
 
-                                    for (LocalBackup backup : backups) {
-                                        backupSuggestions.add("\"" + backup.getName() + "\"");
-                                    }
-                                    return backupSuggestions;
+                                        for (LocalBackup backup : backups) {
+                                            backupSuggestions.add("\"" + backup.getName() + "\"");
+                                        }
+                                        return backupSuggestions;
+                                    });
                                 }))
 
                                                 .executes((sender, args) -> {
 
-                                                    new MenuCommand("local", sender, args).execute();
+                                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                        new MenuCommand("local", sender, args).execute();
+                                                    });
                                                 })
 
                                                 .then(new StringArgument("action")
@@ -331,7 +344,9 @@ public class Initialization implements Listener {
 
                                                             if (Objects.equals(args.get("action"), "deleteConfirmation")) {
                                                                 if (sender.hasPermission(Permissions.LOCAL_DELETE.getPermission())) {
-                                                                    new DeleteConfirmationCommand("local", sender, args).execute();
+                                                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                        new DeleteConfirmationCommand("local", sender, args).execute();
+                                                                    });
                                                                 } else {
                                                                     UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                                 }
@@ -339,7 +354,9 @@ public class Initialization implements Listener {
 
                                                             if (Objects.equals(args.get("action"), "delete")) {
                                                                 if (sender.hasPermission(Permissions.LOCAL_DELETE.getPermission())) {
-                                                                    new DeleteCommand("local", sender, args).execute();
+                                                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                        new DeleteCommand("local", sender, args).execute();
+                                                                    });
                                                                 } else {
                                                                     UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                                 }
@@ -347,7 +364,9 @@ public class Initialization implements Listener {
 
                                                             if (Objects.equals(args.get("action"), "toZIPConfirmation")) {
                                                                 if (sender.hasPermission(Permissions.LOCAL_TO_ZIP.getPermission())) {
-                                                                    new ToZIPConfirmationCommand(sender, args).execute();
+                                                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                        new ToZIPConfirmationCommand(sender, args).execute();
+                                                                    });
                                                                 } else {
                                                                     UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                                 }
@@ -355,7 +374,9 @@ public class Initialization implements Listener {
 
                                                             if (Objects.equals(args.get("action"), "toZIP")) {
                                                                 if (sender.hasPermission(Permissions.LOCAL_TO_ZIP.getPermission())) {
-                                                                    new ToZIPCommand(sender, args).execute();
+                                                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                        new ToZIPCommand(sender, args).execute();
+                                                                    });
                                                                 } else {
                                                                     UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                                 }
@@ -363,7 +384,9 @@ public class Initialization implements Listener {
 
                                                             if (Objects.equals(args.get("action"), "unZIPConfirmation")) {
                                                                 if (sender.hasPermission(Permissions.LOCAL_UNZIP.getPermission())) {
-                                                                    new UnZIPConfirmationCommand(sender, args).execute();
+                                                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                        new UnZIPConfirmationCommand(sender, args).execute();
+                                                                    });
                                                                 } else {
                                                                     UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                                 }
@@ -371,7 +394,9 @@ public class Initialization implements Listener {
 
                                                             if (Objects.equals(args.get("action"), "unZIP")) {
                                                                 if (sender.hasPermission(Permissions.LOCAL_UNZIP.getPermission())) {
-                                                                    new UnZIPCommand(sender, args).execute();
+                                                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                        new UnZIPCommand(sender, args).execute();
+                                                                    });
                                                                 } else {
                                                                     UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                                 }
@@ -379,7 +404,9 @@ public class Initialization implements Listener {
 
                                                             if (Objects.equals(args.get("action"), "copyToSftpConfirmation")) {
                                                                 if (sender.hasPermission(Permissions.LOCAL_COPY_TO_SFTP.getPermission())) {
-                                                                    new CopyToSftpConfirmationCommand(sender, args).execute();
+                                                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                        new CopyToSftpConfirmationCommand(sender, args).execute();
+                                                                    });
                                                                 } else {
                                                                     UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                                 }
@@ -387,7 +414,9 @@ public class Initialization implements Listener {
 
                                                             if (Objects.equals(args.get("action"), "copyToSftp")) {
                                                                 if (sender.hasPermission(Permissions.LOCAL_COPY_TO_SFTP.getPermission())) {
-                                                                    new CopyToSftpCommand(sender, args).execute();
+                                                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                        new CopyToSftpCommand(sender, args).execute();
+                                                                    });
                                                                 } else {
                                                                     UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                                 }
@@ -398,28 +427,32 @@ public class Initialization implements Listener {
 
                         .then(new LiteralArgument("sftp")
 
-                                .then(new TextArgument("backupName").includeSuggestions(ArgumentSuggestions.stringCollection((info) -> {
+                                .then(new TextArgument("backupName").includeSuggestions(ArgumentSuggestions.stringCollectionAsync((info) -> {
 
-                                    ArrayList<SftpBackup> backups = SftpBackup.getBackups();
-                                    ArrayList<LocalDateTime> backupDateTimes = new ArrayList<>();
+                                    return CompletableFuture.supplyAsync(() -> {
+                                        ArrayList<SftpBackup> backups = SftpBackup.getBackups();
+                                        ArrayList<LocalDateTime> backupDateTimes = new ArrayList<>();
 
-                                    for (SftpBackup backup : backups) {
-                                        backupDateTimes.add(backup.getLocalDateTime());
-                                    }
+                                        for (SftpBackup backup : backups) {
+                                            backupDateTimes.add(backup.getLocalDateTime());
+                                        }
 
-                                    Utils.sortLocalDateTimeDecrease(backupDateTimes);
+                                        Utils.sortLocalDateTimeDecrease(backupDateTimes);
 
-                                    ArrayList<String> backupSuggestions = new ArrayList<>();
+                                        ArrayList<String> backupSuggestions = new ArrayList<>();
 
-                                    for (SftpBackup backup : backups) {
-                                        backupSuggestions.add("\"" + backup.getName() + "\"");
-                                    }
-                                    return backupSuggestions;
+                                        for (SftpBackup backup : backups) {
+                                            backupSuggestions.add("\"" + backup.getName() + "\"");
+                                        }
+                                        return backupSuggestions;
+                                    });
                                 }))
 
                                         .executes((sender, args) -> {
 
-                                            new MenuCommand("sftp", sender, args).execute();
+                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                new MenuCommand("sftp", sender, args).execute();
+                                            });
                                         })
 
                                         .then(new StringArgument("action")
@@ -429,7 +462,10 @@ public class Initialization implements Listener {
 
                                                     if (Objects.equals(args.get("action"), "deleteConfirmation")) {
                                                         if (sender.hasPermission(Permissions.SFTP_DELETE.getPermission())) {
-                                                            new DeleteConfirmationCommand("sftp", sender, args).execute();
+                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                new DeleteConfirmationCommand("sftp", sender, args).execute();
+                                                            });
+
                                                         } else {
                                                             UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                         }
@@ -437,7 +473,10 @@ public class Initialization implements Listener {
 
                                                     if (Objects.equals(args.get("action"), "delete")) {
                                                         if (sender.hasPermission(Permissions.SFTP_DELETE.getPermission())) {
-                                                            new DeleteCommand("sftp", sender, args).execute();
+                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                new DeleteCommand("sftp", sender, args).execute();
+                                                            });
+
                                                         } else {
                                                             UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                         }
@@ -445,7 +484,9 @@ public class Initialization implements Listener {
 
                                                     if (Objects.equals(args.get("action"), "copyToLocalConfirmation")) {
                                                         if (sender.hasPermission(Permissions.SFTP_COPY_TO_LOCAL.getPermission())) {
-                                                            new CopyToLocalConfirmationCommand(sender, args).execute();
+                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                new CopyToLocalConfirmationCommand(sender, args).execute();
+                                                            });
                                                         } else {
                                                             UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                         }
@@ -453,7 +494,9 @@ public class Initialization implements Listener {
 
                                                     if (Objects.equals(args.get("action"), "copyToLocal")) {
                                                         if (sender.hasPermission(Permissions.SFTP_COPY_TO_LOCAL.getPermission())) {
-                                                            new CopyToLocalCommand(sender, args).execute();
+                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                new CopyToLocalCommand(sender, args).execute();
+                                                            });
                                                         } else {
                                                             UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                         }
@@ -512,10 +555,8 @@ public class Initialization implements Listener {
     }
 
     public static void checkOperatingSystem() {
-        if (Utils.isWindows) {
-            LocalBackup.dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH;mm;ss");
-            SftpBackup.dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH;mm;ss");
-        }
+        LocalBackup.dateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH-mm-ss");
+        SftpBackup.dateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH-mm-ss");
     }
 
     public static void checkPluginVersion() {
@@ -613,5 +654,11 @@ public class Initialization implements Listener {
     @EventHandler
     public void onStartCompleted(ServerLoadEvent event) {
         Initialization.initAutoBackup(null);
+    }
+
+    public static void unifyBackupNameFormat(CommandSender sender) {
+        Logger.getLogger().log("Unifying backup names format", sender);
+        BackwardsCompatibility.unifyBackupNameFormat(sender);
+        Logger.getLogger().log("Backup names format unification completed", sender);
     }
 }

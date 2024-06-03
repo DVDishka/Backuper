@@ -52,7 +52,7 @@ public class DeleteOldBackupsTask extends Task {
 
             if (setLocked) {
 
-                Logger.getLogger().log("DeleteOldBackups completed", sender);
+                Logger.getLogger().log("DeleteOldBackups task completed", sender);
                 UIUtils.successSound(sender);
                 Backuper.unlock();
             }

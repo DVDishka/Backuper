@@ -38,6 +38,7 @@ public class UnZIPConfirmationCommand extends Command {
         assert backupName != null;
 
         LocalBackup localBackup = LocalBackup.getInstance(backupName);
+        String backupFormattedName = localBackup.getFormattedName();
 
         long backupSize = localBackup.getMbSize(sender);
         String zipFolderBackup = localBackup.getFileType();
@@ -66,7 +67,7 @@ public class UnZIPConfirmationCommand extends Command {
         Component message = net.kyori.adventure.text.Component.empty();
 
         message = message
-                .append(Component.text(backupName)
+                .append(Component.text(backupFormattedName)
                         .hoverEvent(HoverEvent.showText(Component.text("(local) " + zipFolderBackup + " " + backupSize + " MB"))))
                 .append(Component.newline())
                 .append(Component.newline());

@@ -36,7 +36,7 @@ public class ReloadCommand extends Command {
         Scheduler.cancelTasks(Utils.plugin);
 
         Initialization.initConfig(new File("plugins/Backuper/config.yml"), sender);
-        Logger.getLogger().log("Config reloaded", sender);
+        Initialization.unifyBackupNameFormat(sender);
 
         StatusCommand.sendTaskStartedMessage("DeleteOldBackups", sender);
         Initialization.initAutoBackup(sender);

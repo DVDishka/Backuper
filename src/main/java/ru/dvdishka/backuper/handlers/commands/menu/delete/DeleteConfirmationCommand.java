@@ -54,6 +54,7 @@ public class DeleteConfirmationCommand extends Command {
         if (storage.equals("sftp")) {
             backup = SftpBackup.getInstance(backupName);
         }
+        String backupFormattedName = backup.getFormattedName();
 
         if (Backuper.isLocked()) {
             cancelSound();
@@ -76,7 +77,7 @@ public class DeleteConfirmationCommand extends Command {
         Component message = net.kyori.adventure.text.Component.empty();
 
         message = message
-                .append(Component.text(backupName)
+                .append(Component.text(backupFormattedName)
                         .hoverEvent(HoverEvent.showText(Component.text("(" + storage + ") " + zipFolderBackup + " " + backupSize + " MB"))))
                 .append(Component.newline())
                 .append(Component.newline());

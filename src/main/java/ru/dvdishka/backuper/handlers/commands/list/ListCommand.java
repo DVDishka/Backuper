@@ -120,21 +120,22 @@ public class ListCommand extends Command {
                 pages.add(new ArrayList<>());
             }
 
-            Backup backup = backups.get(i);
+            Backup backup = backups.get(i - 1);
             String backupName = backup.getName();
+            String backupFormattedName = backup.getFormattedName();
 
             String backupFileType = backup.getFileType();
             long backupMbSize = backup.getMbSize(sender);
 
-            backupNameMbSize.put(backupName, backupMbSize);
-            backupNameFileType.put(backupName, backupFileType);
+            backupNameMbSize.put(backupFormattedName, backupMbSize);
+            backupNameFileType.put(backupFormattedName, backupFileType);
 
             HoverEvent<net.kyori.adventure.text.Component> hoverEvent = HoverEvent
                     .showText(net.kyori.adventure.text.Component.text("(" + storage + ") " + backupFileType + " " + backupMbSize + " MB"));
             ClickEvent clickEvent = ClickEvent.runCommand("/backuper menu " + storage + " \"" + backupName + "\"");
 
             pages.get((i - 1) / 10)
-                    .add(net.kyori.adventure.text.Component.text(backupName)
+                    .add(net.kyori.adventure.text.Component.text(backupFormattedName)
                     .hoverEvent(hoverEvent)
                     .clickEvent(clickEvent));
         }

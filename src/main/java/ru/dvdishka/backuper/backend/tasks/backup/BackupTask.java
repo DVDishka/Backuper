@@ -154,7 +154,6 @@ public class BackupTask extends Task {
             if (setLocked) {
                 UIUtils.successSound(sender);
                 Backuper.unlock();
-                Logger.getLogger().success("Backup process has been finished successfully!", sender);
             }
 
             if (afterBackup.equals("RESTART")) {

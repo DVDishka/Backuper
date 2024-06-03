@@ -38,6 +38,7 @@ public class CopyToSftpConfirmationCommand extends Command {
         assert backupName != null;
 
         LocalBackup backup = LocalBackup.getInstance(backupName);
+        String backupFormattedName = backup.getFormattedName();
 
         if (Backuper.isLocked()) {
             cancelSound();
@@ -60,7 +61,7 @@ public class CopyToSftpConfirmationCommand extends Command {
         Component message = net.kyori.adventure.text.Component.empty();
 
         message = message
-                .append(Component.text(backupName)
+                .append(Component.text(backupFormattedName)
                         .hoverEvent(HoverEvent.showText(Component.text("(local) " + zipFolderBackup + " " + backupSize + " MB"))))
                 .append(Component.newline())
                 .append(Component.newline());
