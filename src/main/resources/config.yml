@@ -60,14 +60,15 @@ sftp:
   # (MB >= 0) Max backups folder weight, 0 to make it unlimited
   maxBackupsWeight: 0
 
-  authType: password
-  username:
-  password:
-  keyFilePath:
-  address:
-  port: 22
-  useKnownHostsFile: false
-  knownHostsFilePath:
+  auth:
+    authType: password
+    username:
+    password:
+    keyFilePath:
+    address:
+    port: 22
+    useKnownHostsFile: false
+    knownHostsFilePath:
 
 server:
   # (SECONDS < backupPeriod * 60 or -1) A notification about the server restart will be sent to all players on the server {alertTimeBeforeRestart} seconds before the restart. -1 to disable notifications

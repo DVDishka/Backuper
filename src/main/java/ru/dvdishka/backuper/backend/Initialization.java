@@ -188,7 +188,7 @@ public class Initialization implements Listener {
                                     new BackupCommand(sender, args).execute();
                                 })
                         )
-                        .then(new LiteralArgument("STOP").withPermission(Permissions.STOP.getPermission())
+                        .then(new LiteralArgument("stop").withPermission(Permissions.STOP.getPermission())
                                 .executes((sender, args) -> {
 
                                     new BackupCommand(sender, args, "STOP").execute();
@@ -202,7 +202,7 @@ public class Initialization implements Listener {
                                 )
                         )
 
-                        .then(new LiteralArgument("RESTART").withPermission(Permissions.RESTART.getPermission())
+                        .then(new LiteralArgument("restart").withPermission(Permissions.RESTART.getPermission())
                                 .executes((sender, args) -> {
 
                                     new BackupCommand(sender, args, "RESTART").execute();

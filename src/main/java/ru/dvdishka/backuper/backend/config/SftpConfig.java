@@ -3,6 +3,7 @@ package ru.dvdishka.backuper.backend.config;
 public class SftpConfig {
 
     boolean enabled = false;
+    String sshConfigFile = "";
     String backupsFolder = "";
     String authType = "password";
     String username = "";
@@ -63,4 +64,8 @@ public class SftpConfig {
     public int getBackupsNumber() {return backupsNumber;}
 
     public long getBackupsWeight() {return backupsWeight;}
+
+    public String getSshConfigFile() {
+        return sshConfigFile;
+    }
 }

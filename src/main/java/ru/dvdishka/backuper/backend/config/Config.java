@@ -98,17 +98,17 @@ public class Config {
 
         this.sftpConfig.enabled = config.getBoolean("sftp.enabled", false);
         this.sftpConfig.backupsFolder = config.getString("sftp.backupsFolder", "");
-        this.sftpConfig.authType = config.getString("sftp.authType", "password");
-        this.sftpConfig.username = config.getString("sftp.username", "");
-        this.sftpConfig.password = config.getString("sftp.password", "");
-        this.sftpConfig.address = config.getString("sftp.address", "");
-        this.sftpConfig.keyFilePath = config.getString("sftp.keyFilePath", "");
-        this.sftpConfig.port = config.getInt("sftp.port", 22);
-        this.sftpConfig.useKnownHostsFile = config.getString("sftp.useKnownHostsFile", "false");
-        this.sftpConfig.knownHostsFilePath = config.getString("sftp.knownHostsFilePath", "");
         this.sftpConfig.pathSeparatorSymbol = config.getString("sftp.pathSeparatorSymbol", "/");
         this.sftpConfig.backupsNumber = config.getInt("sftp.maxBackupsNumber", 0);
         this.sftpConfig.backupsWeight = config.getLong("sftp.maxBackupsWeight", 0) * 1_048_576L;
+        this.sftpConfig.keyFilePath = config.getString("sftp.auth.keyFilePath", "");
+        this.sftpConfig.authType = config.getString("sftp.auth.authType", "password");
+        this.sftpConfig.username = config.getString("sftp.auth.username", "");
+        this.sftpConfig.password = config.getString("sftp.auth.password", "");
+        this.sftpConfig.address = config.getString("sftp.auth.address", "");
+        this.sftpConfig.port = config.getInt("sftp.auth.port", 22);
+        this.sftpConfig.useKnownHostsFile = config.getString("sftp.auth.useKnownHostsFile", "false");
+        this.sftpConfig.knownHostsFilePath = config.getString("sftp.auth.knownHostsFilePath", "");
 
         this.betterLogging = config.getBoolean("server.betterLogging", false);
         this.fixedBackupTime = this.backupTime > -1;
@@ -180,8 +180,8 @@ public class Config {
                 "local.maxBackupsWeight", "local.zipArchive", "server.betterLogging", "backup.autoBackup", "lastBackup", "lastChange",
                 "backup.skipDuplicateBackup", "local.backupsFolder", "server.alertTimeBeforeRestart", "backup.addDirectoryToBackup",
                 "backup.excludeDirectoryFromBackup", "backup.setWorldsReadOnly", "server.alertOnlyServerRestart", "sftp.enabled",
-                "sftp.backupsFolder", "sftp.authType", "sftp.username", "sftp.password", "sftp.keyFilePath", "sftp.address",
-                "sftp.port", "sftp.useKnownHostsFile", "sftp.knownHostsFilePath", "local.enabled", "sftp.pathSeparatorSymbol",
+                "sftp.backupsFolder", "sftp.auth.authType", "sftp.auth.username", "sftp.auth.password", "sftp.auth.keyFilePath", "sftp.auth.address",
+                "sftp.auth.port", "sftp.auth.useKnownHostsFile", "sftp.auth.knownHostsFilePath", "local.enabled", "sftp.pathSeparatorSymbol",
                 "local.zipCompressionLevel", "sftp.maxBackupsNumber", "sftp.maxBackupsWeight");
 
         for (String configField : configFields) {
@@ -219,19 +219,19 @@ public class Config {
             newConfig.set("local.backupsFolder", this.localConfig.backupsFolder);
             newConfig.set("local.zipCompressionLevel", this.localConfig.zipCompressionLevel);
 
-            newConfig.set("sftp.enabled", this.sftpConfig.enabled);
-            newConfig.set("sftp.password", this.sftpConfig.password);
-            newConfig.set("sftp.username", this.sftpConfig.username);
-            newConfig.set("sftp.backupsFolder", this.sftpConfig.backupsFolder);
-            newConfig.set("sftp.authType", this.sftpConfig.authType);
-            newConfig.set("sftp.keyFilePath", this.sftpConfig.keyFilePath);
-            newConfig.set("sftp.address", this.sftpConfig.address);
-            newConfig.set("sftp.port", this.sftpConfig.port);
-            newConfig.set("sftp.useKnownHostsFile", this.sftpConfig.useKnownHostsFile);
-            newConfig.set("sftp.knownHostsFilePath", this.sftpConfig.knownHostsFilePath);
             newConfig.set("sftp.pathSeparatorSymbol", this.sftpConfig.pathSeparatorSymbol);
             newConfig.set("sftp.maxBackupsNumber", this.sftpConfig.backupsNumber);
             newConfig.set("sftp.maxBackupsWeight", this.sftpConfig.backupsWeight / 1_048_576L);
+            newConfig.set("sftp.enabled", this.sftpConfig.enabled);
+            newConfig.set("sftp.backupsFolder", this.sftpConfig.backupsFolder);
+            newConfig.set("sftp.auth.password", this.sftpConfig.password);
+            newConfig.set("sftp.auth.username", this.sftpConfig.username);
+            newConfig.set("sftp.auth.authType", this.sftpConfig.authType);
+            newConfig.set("sftp.auth.keyFilePath", this.sftpConfig.keyFilePath);
+            newConfig.set("sftp.auth.address", this.sftpConfig.address);
+            newConfig.set("sftp.auth.port", this.sftpConfig.port);
+            newConfig.set("sftp.auth.useKnownHostsFile", this.sftpConfig.useKnownHostsFile);
+            newConfig.set("sftp.auth.knownHostsFilePath", this.sftpConfig.knownHostsFilePath);
 
             newConfig.set("lastBackup", this.lastBackup);
             newConfig.set("lastChange", this.lastChange);

@@ -2,21 +2,27 @@ package ru.dvdishka.backuper.backend.utils;
 
 import com.jcraft.jsch.*;
 import com.jcraft.jsch.ChannelSftp;
+import com.jcraft.jsch.ConfigRepository;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.OpenSSHConfig;
 import com.jcraft.jsch.Session;
 import it.unimi.dsi.fastutil.Pair;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Vector;
 
 public class SftpUtils {
 
+    private static String sshConfigFile;
     private static String authType;
     private static String address;
     private static String username;
@@ -29,6 +35,7 @@ public class SftpUtils {
     private static int port;
 
     public static void init() {
+        sshConfigFile = Config.getInstance().getSftpConfig().getSshConfigFile();
         authType = Config.getInstance().getSftpConfig().getAuthType();
         address = Config.getInstance().getSftpConfig().getAddress();
         username = Config.getInstance().getSftpConfig().getUsername();
@@ -51,30 +58,48 @@ public class SftpUtils {
 
         Session sshSession = null;
         ChannelSftp sftpChannel = null;
-
+        
         try {
             JSch jsch = new JSch();
 
-            if (authType.equals("key")) {
-                jsch.addIdentity(keyFilePath);
-            }
-            if (authType.equals("key_pass")) {
-                jsch.addIdentity(keyFilePath, password);
-            }
+            try {
 
-            sshSession = jsch.getSession(username, address, port);
+                if (Objects.equals(sshConfigFile, "")) {
+                    throw new RuntimeException();
+                }
 
-            if (authType.equals("password")) {
-                sshSession.setPassword(password);
-            }
+                jsch.setConfigRepository(OpenSSHConfig.parseFile(sshConfigFile));
 
-            Properties config = new java.util.Properties();
-            if (useKnownHostsFile.equals("false")) {
-                config.put("StrictHostKeyChecking", "no");
-            }
-            sshSession.setConfig(config);
-            if (!useKnownHostsFile.equals("false")) {
-                jsch.setKnownHosts(knownHostsFilePath);
+            } catch (Exception e) {
+
+                if (e instanceof IOException) {
+                    Logger.getLogger().warn("Failed to load ssh config specified in config sftp.auth.sshConfigFile", sender);
+                }
+
+                if (authType.equals("key")) {
+                    jsch.addIdentity(keyFilePath);
+                }
+                if (authType.equals("key_pass")) {
+                    jsch.addIdentity(keyFilePath, password);
+                }
+
+                sshSession = jsch.getSession(username, address, port);
+
+                if (authType.equals("password")) {
+                    sshSession.setPassword(password);
+                }
+
+                Properties config = new java.util.Properties();
+                if (useKnownHostsFile.equals("false")) {
+                    config.put("StrictHostKeyChecking", "no");
+                } else {
+                    config.put("StrictHostKeyChecking", "yes");
+                }
+                sshSession.setConfig(config);
+
+                if (!useKnownHostsFile.equals("false")) {
+                    jsch.setKnownHosts(knownHostsFilePath);
+                }
             }
 
             sshSession.connect(15000);
