@@ -50,7 +50,7 @@ local:
   zipCompressionLevel: 5
 
 sftp:
-  enabled: true
+  enabled: false
 
   backupsFolder:
   pathSeparatorSymbol: /

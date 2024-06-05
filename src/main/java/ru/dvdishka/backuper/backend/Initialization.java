@@ -224,7 +224,9 @@ public class Initialization implements Listener {
 
                 .then(new LiteralArgument("list").withPermission(Permissions.LOCAL_LIST.getPermission())
 
-                        .then(new LiteralArgument("local")
+                        .then(new LiteralArgument("local").withRequirement((sender) -> {
+                            return Config.getInstance().getLocalConfig().isEnabled();
+                        })
 
                                 .executes((sender, args) -> {
 
@@ -244,7 +246,9 @@ public class Initialization implements Listener {
                                 )
                         )
 
-                        .then(new LiteralArgument("sftp")
+                        .then(new LiteralArgument("sftp").withRequirement((sender -> {
+                            return Config.getInstance().getSftpConfig().isEnabled();
+                        }))
 
                                 .executes((sender, args) -> {
 
@@ -286,7 +290,9 @@ public class Initialization implements Listener {
 
                 .then(new LiteralArgument("menu").withPermission(Permissions.LOCAL_LIST.getPermission())
 
-                        .then(new LiteralArgument("local")
+                        .then(new LiteralArgument("local").withRequirement((sender -> {
+                                            return Config.getInstance().getLocalConfig().isEnabled();
+                        }))
 
                                 .then(new TextArgument("backupName").includeSuggestions(ArgumentSuggestions.stringCollectionAsync((info) -> {
 
@@ -425,7 +431,9 @@ public class Initialization implements Listener {
                                 )
                         )
 
-                        .then(new LiteralArgument("sftp")
+                        .then(new LiteralArgument("sftp").withRequirement((sender -> {
+                                            return Config.getInstance().getSftpConfig().isEnabled();
+                        }))
 
                                 .then(new TextArgument("backupName").includeSuggestions(ArgumentSuggestions.stringCollectionAsync((info) -> {
 
@@ -657,8 +665,8 @@ public class Initialization implements Listener {
     }
 
     public static void unifyBackupNameFormat(CommandSender sender) {
-        Logger.getLogger().log("Unifying backup names format", sender);
+        Logger.getLogger().log("Unifying backup names format");
         BackwardsCompatibility.unifyBackupNameFormat(sender);
-        Logger.getLogger().log("Backup names format unification completed", sender);
+        Logger.getLogger().log("Backup names format unification completed");
     }
 }

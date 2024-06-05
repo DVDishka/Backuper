@@ -1,8 +1,11 @@
 package ru.dvdishka.backuper.backend.config;
 
+import dev.jorel.commandapi.CommandAPI;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
 import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.backend.common.Logger;
 
@@ -250,6 +253,10 @@ public class Config {
                 Logger.getLogger().warn("Initialization", e);
                 noErrors = false;
             }
+        }
+
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            CommandAPI.updateRequirements(player);
         }
 
         if (noErrors) {
