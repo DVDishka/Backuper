@@ -17,15 +17,19 @@ import org.bukkit.event.server.ServerLoadEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.dvdishka.backuper.backend.classes.LocalBackup;
 import ru.dvdishka.backuper.backend.classes.SftpBackup;
+import ru.dvdishka.backuper.backend.common.Logger;
+import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.config.BackwardsCompatibility;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.tasks.backup.BackupTask;
-import ru.dvdishka.backuper.backend.tasks.backup.DeleteOldBackupsTask;
+import ru.dvdishka.backuper.backend.tasks.common.BackupTask;
+import ru.dvdishka.backuper.backend.tasks.common.DeleteOldBackupsTask;
+import ru.dvdishka.backuper.backend.utils.FtpUtils;
 import ru.dvdishka.backuper.backend.utils.SftpUtils;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
-import ru.dvdishka.backuper.backend.common.Logger;
-import ru.dvdishka.backuper.backend.common.Scheduler;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
+import ru.dvdishka.backuper.handlers.commands.backup.BackupCommand;
+import ru.dvdishka.backuper.handlers.commands.list.ListCommand;
 import ru.dvdishka.backuper.handlers.commands.menu.MenuCommand;
 import ru.dvdishka.backuper.handlers.commands.menu.copyToLocal.CopyToLocalCommand;
 import ru.dvdishka.backuper.handlers.commands.menu.copyToLocal.CopyToLocalConfirmationCommand;
@@ -38,9 +42,6 @@ import ru.dvdishka.backuper.handlers.commands.menu.toZIP.ToZIPConfirmationComman
 import ru.dvdishka.backuper.handlers.commands.menu.unZIP.UnZIPCommand;
 import ru.dvdishka.backuper.handlers.commands.menu.unZIP.UnZIPConfirmationCommand;
 import ru.dvdishka.backuper.handlers.commands.reload.ReloadCommand;
-import ru.dvdishka.backuper.handlers.commands.Permissions;
-import ru.dvdishka.backuper.handlers.commands.backup.BackupCommand;
-import ru.dvdishka.backuper.handlers.commands.list.ListCommand;
 import ru.dvdishka.backuper.handlers.commands.status.StatusCommand;
 import ru.dvdishka.backuper.handlers.worldchangecatch.WorldChangeCatcher;
 import ru.dvdishka.backuper.handlers.worldchangecatch.WorldChangeCatcherNew;
@@ -53,8 +54,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
@@ -161,6 +160,7 @@ public class Initialization implements Listener {
             }
         }
 
+        FtpUtils.init();
         SftpUtils.init();
 
         Logger.getLogger().log("Config loading completed", sender);

@@ -40,15 +40,13 @@ public class SftpDeleteDirTask extends Task {
                 Backuper.lock(this);
             }
 
-            Pair<Session, ChannelSftp> sessionChannelSftpPair = SftpUtils.createSftpChannel(sender);
+            Pair<Session, ChannelSftp> sessionChannelSftpPair = SftpUtils.createChannel(sender);
             session = sessionChannelSftpPair.first();
             channelSftp = sessionChannelSftpPair.second();
 
             channelSftp.connect(10000);
 
             deleteDir(remoteDirToDelete);
-
-            UIUtils.successSound(sender);
 
             if (setLocked) {
                 Backuper.unlock();

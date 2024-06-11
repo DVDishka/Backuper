@@ -12,17 +12,13 @@ import org.bukkit.command.ConsoleCommandSender;
 import ru.dvdishka.backuper.backend.classes.Backup;
 import ru.dvdishka.backuper.backend.classes.LocalBackup;
 import ru.dvdishka.backuper.backend.classes.SftpBackup;
-import ru.dvdishka.backuper.backend.utils.SftpUtils;
-import ru.dvdishka.backuper.backend.utils.Utils;
-import ru.dvdishka.backuper.handlers.commands.Command;
-import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.common.Logger;
+import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.handlers.commands.Command;
 
 import java.io.File;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Objects;
 
 public class ListCommand extends Command {
 

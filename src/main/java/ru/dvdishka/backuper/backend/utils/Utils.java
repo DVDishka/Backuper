@@ -1,5 +1,10 @@
 package ru.dvdishka.backuper.backend.utils;
 
+import org.bukkit.command.CommandSender;
+import org.bukkit.plugin.Plugin;
+import ru.dvdishka.backuper.backend.common.Logger;
+import ru.dvdishka.backuper.backend.config.Config;
+
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -7,11 +12,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
-
-import org.bukkit.command.CommandSender;
-import org.bukkit.plugin.Plugin;
-import ru.dvdishka.backuper.backend.common.Logger;
-import ru.dvdishka.backuper.backend.config.Config;
 
 public class Utils {
 

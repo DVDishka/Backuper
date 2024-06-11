@@ -1,4 +1,4 @@
-package ru.dvdishka.backuper.backend.tasks.backup;
+package ru.dvdishka.backuper.backend.tasks.common;
 
 import org.bukkit.Bukkit;
 import org.bukkit.World;
@@ -8,16 +8,19 @@ import ru.dvdishka.backuper.backend.classes.LocalBackup;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.tasks.local.folder.CopyFilesToFolderTask;
 import ru.dvdishka.backuper.backend.tasks.Task;
+import ru.dvdishka.backuper.backend.tasks.ftp.FtpSendFileFolderTask;
+import ru.dvdishka.backuper.backend.tasks.local.folder.CopyFilesToFolderTask;
 import ru.dvdishka.backuper.backend.tasks.local.zip.tozip.AddDirToZipTask;
 import ru.dvdishka.backuper.backend.tasks.sftp.SftpSendFileFolderTask;
+import ru.dvdishka.backuper.backend.utils.FtpUtils;
 import ru.dvdishka.backuper.backend.utils.SftpUtils;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -131,7 +134,7 @@ public class BackupTask extends Task {
 
                 Logger.getLogger().devLog("The Rename \"in progress\" Folder SFTP task has been started");
 
-                SftpUtils.renameRemoteFile(SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(),
+                SftpUtils.renameFile(SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(),
                                 backupName), SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(),
                                 backupName.replace(" in progress", "")), sender);
 
@@ -196,8 +199,13 @@ public class BackupTask extends Task {
 
             this.backupName = LocalDateTime.now().format(LocalBackup.dateTimeFormatter) + " in progress";
 
+            tasks.add(new SetWorldsReadOnlyTask(false, sender));
+
             if (Config.getInstance().getLocalConfig().isEnabled()) {
                 prepareLocalTask();
+            }
+            if (Config.getInstance().getFtpConfig().isEnabled()) {
+                prepareFtpTask();
             }
             if (Config.getInstance().getSftpConfig().isEnabled()) {
                 prepareSftpTask();
@@ -229,8 +237,6 @@ public class BackupTask extends Task {
 
                 Logger.getLogger().warn("Can not create " + backupDir.getPath() + " dir!", sender);
             }
-
-            tasks.add(new SetWorldsReadOnlyTask(false, sender));
 
             if (Config.getInstance().getLocalConfig().isZipArchive()) {
                 targetZipOutputStream = new ZipOutputStream(new FileOutputStream(backupDir.getPath() + ".zip"));
@@ -302,7 +308,7 @@ public class BackupTask extends Task {
             }
 
         } catch (Exception e) {
-            Logger.getLogger().warn("Something went wrong while trying to prepare local task");
+            Logger.getLogger().warn("Something went wrong while trying to prepare local backup task");
             Logger.getLogger().warn(this, e);
         }
     }
@@ -311,8 +317,7 @@ public class BackupTask extends Task {
 
         try {
 
-            SftpUtils.createRemoteFolder(SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(),
-                            backupName), sender);
+            SftpUtils.createFolder(SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), backupName), sender);
 
             for (World world : Bukkit.getWorlds()) {
 
@@ -332,8 +337,92 @@ public class BackupTask extends Task {
                 }
             }
 
+            for (String additionalDirectoryToBackup : Config.getInstance().getAddDirectoryToBackup()) {
+
+                try {
+
+                    File additionalDirectoryToBackupFile = Paths.get(additionalDirectoryToBackup).toFile();
+                    boolean isExcludedDirectory = Utils.isExcludedDirectory(additionalDirectoryToBackupFile, sender);
+
+                    if (!additionalDirectoryToBackupFile.exists()) {
+                        Logger.getLogger().warn("addDirectoryToBackup \"" + additionalDirectoryToBackupFile.getPath() + "\" does not exist!");
+                        continue;
+                    }
+
+                    if (isExcludedDirectory) {
+                        continue;
+                    }
+
+                    Task task = new SftpSendFileFolderTask(additionalDirectoryToBackupFile, SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(),
+                            backupName), true, false, false, sender);
+                    task.prepareTask();
+
+                    tasks.add(task);
+
+                } catch (Exception e) {
+                    Logger.getLogger().warn("Something went wrong when trying to backup an additional directory \"" + additionalDirectoryToBackup + "\"", sender);
+                    Logger.getLogger().warn(this, e);
+                }
+            }
+
         } catch (Exception e) {
-            Logger.getLogger().warn("Something went wrong while trying to prepare sftp task");
+            Logger.getLogger().warn("Something went wrong while trying to prepare sftp backup task");
+            Logger.getLogger().warn(this, e);
+        }
+    }
+
+    private void prepareFtpTask() {
+
+        try {
+            FtpUtils.createFolder(FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(), backupName), sender);
+
+            for (World world : Bukkit.getWorlds()) {
+
+                File worldDir = world.getWorldFolder();
+
+                try {
+                    Task task = new FtpSendFileFolderTask(worldDir, FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(),
+                            backupName), true, false, false, sender);
+                    task.prepareTask();
+
+                    tasks.add(task);
+
+                } catch (Exception e) {
+
+                    Logger.getLogger().warn("Something went wrong when trying to copy files!", sender);
+                    Logger.getLogger().warn(this, e);
+                }
+            }
+
+            for (String additionalDirectoryToBackup : Config.getInstance().getAddDirectoryToBackup()) {
+
+                try {
+
+                    File additionalDirectoryToBackupFile = Paths.get(additionalDirectoryToBackup).toFile();
+                    boolean isExcludedDirectory = Utils.isExcludedDirectory(additionalDirectoryToBackupFile, sender);
+
+                    if (!additionalDirectoryToBackupFile.exists()) {
+                        Logger.getLogger().warn("addDirectoryToBackup \"" + additionalDirectoryToBackupFile.getPath() + "\" does not exist!");
+                        continue;
+                    }
+
+                    if (isExcludedDirectory) {
+                        continue;
+                    }
+
+                    Task task = new FtpSendFileFolderTask(additionalDirectoryToBackupFile, FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(),
+                            backupName), true, false, false, sender);
+                    task.prepareTask();
+
+                    tasks.add(task);
+
+                } catch (Exception e) {
+                    Logger.getLogger().warn("Something went wrong when trying to backup an additional directory \"" + additionalDirectoryToBackup + "\"", sender);
+                    Logger.getLogger().warn(this, e);
+                }
+            }
+        } catch (Exception e) {
+            Logger.getLogger().warn("Something went wrong while trying to prepare FTP(S) backup task");
             Logger.getLogger().warn(this, e);
         }
     }

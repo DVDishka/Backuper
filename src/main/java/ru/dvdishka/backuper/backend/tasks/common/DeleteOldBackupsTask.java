@@ -1,6 +1,5 @@
-package ru.dvdishka.backuper.backend.tasks.backup;
+package ru.dvdishka.backuper.backend.tasks.common;
 
-import org.apache.commons.io.FileUtils;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.classes.Backup;
@@ -9,16 +8,12 @@ import ru.dvdishka.backuper.backend.classes.SftpBackup;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.Task;
-import ru.dvdishka.backuper.backend.tasks.local.folder.DeleteDirTask;
-import ru.dvdishka.backuper.backend.utils.SftpUtils;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
 
-import java.io.File;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Objects;
 
 public class DeleteOldBackupsTask extends Task {
 

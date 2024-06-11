@@ -6,8 +6,8 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
-import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.backend.common.Logger;
+import ru.dvdishka.backuper.backend.utils.Utils;
 
 import java.io.File;
 import java.time.LocalDateTime;
@@ -39,6 +39,7 @@ public class Config {
 
     private LocalConfig localConfig = new LocalConfig();
     private SftpConfig sftpConfig = new SftpConfig();
+    private FtpConfig ftpConfig = new FtpConfig();
 
     private static Config instance = null;
 
@@ -98,6 +99,14 @@ public class Config {
         this.localConfig.zipArchive = config.getBoolean("local.zipArchive", true);
         this.localConfig.backupsFolder = config.getString("local.backupsFolder", "plugins/Backuper/Backups");
         this.localConfig.zipCompressionLevel = config.getInt("local.zipCompressionLevel", 5);
+
+        this.ftpConfig.enabled = config.getBoolean("ftp.enabled", false);
+        this.ftpConfig.backupsFolder = config.getString("ftp.backupsFolder", "");
+        this.ftpConfig.pathSeparatorSymbol = config.getString("ftp.pathSeparatorSymbol", "/");
+        this.ftpConfig.address = config.getString("ftp.auth.address", "");
+        this.ftpConfig.port = config.getInt("ftp.auth.port", 21);
+        this.ftpConfig.username = config.getString("ftp.auth.username", "");
+        this.ftpConfig.password = config.getString("ftp.auth.password", "");
 
         this.sftpConfig.enabled = config.getBoolean("sftp.enabled", false);
         this.sftpConfig.backupsFolder = config.getString("sftp.backupsFolder", "");
@@ -185,7 +194,8 @@ public class Config {
                 "backup.excludeDirectoryFromBackup", "backup.setWorldsReadOnly", "server.alertOnlyServerRestart", "sftp.enabled",
                 "sftp.backupsFolder", "sftp.auth.authType", "sftp.auth.username", "sftp.auth.password", "sftp.auth.keyFilePath", "sftp.auth.address",
                 "sftp.auth.port", "sftp.auth.useKnownHostsFile", "sftp.auth.knownHostsFilePath", "local.enabled", "sftp.pathSeparatorSymbol",
-                "local.zipCompressionLevel", "sftp.maxBackupsNumber", "sftp.maxBackupsWeight");
+                "local.zipCompressionLevel", "sftp.maxBackupsNumber", "sftp.maxBackupsWeight", "ftp.backupsFolder", "ftp.auth.address", "ftp.auth.port",
+                "ftp.pathSeparatorSymbol", "ftp.auth.password", "ftp.auth.username", "ftp.enabled");
 
         for (String configField : configFields) {
             if (isConfigFileOk && !config.contains(configField)) {
@@ -221,6 +231,14 @@ public class Config {
             newConfig.set("local.zipArchive", this.localConfig.zipArchive);
             newConfig.set("local.backupsFolder", this.localConfig.backupsFolder);
             newConfig.set("local.zipCompressionLevel", this.localConfig.zipCompressionLevel);
+
+            newConfig.set("ftp.enabled", this.ftpConfig.enabled);
+            newConfig.set("ftp.backupsFolder", this.ftpConfig.backupsFolder);
+            newConfig.set("ftp.pathSeparatorSymbol", this.ftpConfig.pathSeparatorSymbol);
+            newConfig.set("ftp.auth.address", this.ftpConfig.address);
+            newConfig.set("ftp.auth.port", this.ftpConfig.port);
+            newConfig.set("ftp.auth.username", this.ftpConfig.username);
+            newConfig.set("ftp.auth.password", this.ftpConfig.password);
 
             newConfig.set("sftp.pathSeparatorSymbol", this.sftpConfig.pathSeparatorSymbol);
             newConfig.set("sftp.maxBackupsNumber", this.sftpConfig.backupsNumber);
@@ -334,6 +352,8 @@ public class Config {
     public LocalConfig getLocalConfig() {
         return localConfig;
     }
+
+    public FtpConfig getFtpConfig() {return ftpConfig;}
 
     public SftpConfig getSftpConfig() {
         return sftpConfig;

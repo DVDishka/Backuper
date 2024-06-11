@@ -1,8 +1,6 @@
 package ru.dvdishka.backuper.backend.utils;
 
-import com.jcraft.jsch.*;
 import com.jcraft.jsch.ChannelSftp;
-import com.jcraft.jsch.ConfigRepository;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.OpenSSHConfig;
@@ -12,9 +10,7 @@ import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
 
-import java.io.File;
 import java.io.IOException;
-import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Objects;
 import java.util.Properties;
@@ -48,7 +44,7 @@ public class SftpUtils {
         port = Config.getInstance().getSftpConfig().getPort();
     }
 
-    public static Pair<Session, ChannelSftp> createSftpChannel(CommandSender sender) {
+    public static Pair<Session, ChannelSftp> createChannel(CommandSender sender) {
 
         if (!authType.equals("password") && !authType.equals("key") && !authType.equals("key_pass")) {
             Logger.getLogger().warn("Failed to connect to SFTP server", sender);
@@ -124,9 +120,9 @@ public class SftpUtils {
         }
     }
 
-    public static void createRemoteFolder(String remoteFolderPath, CommandSender sender) {
+    public static void createFolder(String remoteFolderPath, CommandSender sender) {
 
-        Pair<Session, ChannelSftp> sessionChannelSftpPair = createSftpChannel(sender);
+        Pair<Session, ChannelSftp> sessionChannelSftpPair = createChannel(sender);
 
         Session session = sessionChannelSftpPair.first();
         ChannelSftp sftpChannel = sessionChannelSftpPair.second();
@@ -165,9 +161,9 @@ public class SftpUtils {
         return path + fileName;
     }
 
-    public static void renameRemoteFile(String remoteFilePath, String newFilePath, CommandSender sender) {
+    public static void renameFile(String remoteFilePath, String newFilePath, CommandSender sender) {
 
-        Pair<Session, ChannelSftp> sessionChannelSftpPair = createSftpChannel(sender);
+        Pair<Session, ChannelSftp> sessionChannelSftpPair = createChannel(sender);
 
         Session session = sessionChannelSftpPair.first();
         ChannelSftp sftpChannel = sessionChannelSftpPair.second();
@@ -200,7 +196,7 @@ public class SftpUtils {
 
     public static ArrayList<String> ls(String remoteFolderPath, CommandSender sender) {
 
-        Pair<Session, ChannelSftp> sessionChannelSftpPair = createSftpChannel(sender);
+        Pair<Session, ChannelSftp> sessionChannelSftpPair = createChannel(sender);
 
         Session session = sessionChannelSftpPair.first();
         ChannelSftp sftpChannel = sessionChannelSftpPair.second();
@@ -242,7 +238,7 @@ public class SftpUtils {
 
     public static long getDirByteSize(String remoteFilePath, CommandSender sender) {
 
-        Pair<Session, ChannelSftp> sessionChannelSftpPair = createSftpChannel(sender);
+        Pair<Session, ChannelSftp> sessionChannelSftpPair = createChannel(sender);
 
         Session session = sessionChannelSftpPair.first();
         ChannelSftp sftpChannel = sessionChannelSftpPair.second();

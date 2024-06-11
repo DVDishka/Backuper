@@ -1,8 +1,6 @@
 package ru.dvdishka.backuper.backend.tasks.sftp;
 
-import com.jcraft.jsch.*;
 import com.jcraft.jsch.ChannelSftp;
-import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import it.unimi.dsi.fastutil.Pair;
@@ -10,7 +8,6 @@ import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.classes.SftpProgressMonitor;
 import ru.dvdishka.backuper.backend.common.Logger;
-import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.utils.SftpUtils;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
@@ -18,25 +15,15 @@ import ru.dvdishka.backuper.backend.utils.Utils;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Properties;
 
 public class SftpSendFileFolderTask extends Task {
 
     private static final String taskName = "SftpSendFileFolder";
 
-    private String authType = "password";
-    private String address = "";
-    private String username = "";
-    private int port = 22;
-    private String password = "";
-    private String keyFilePath = "";
-    private String useKnownHostsFile = "no";
-    private String knownHostsFilePath = "";
     private File localDirToSend;
     private boolean createRootDirInTargetDir;
     private String remoteTargetDir = "";
     private boolean forceExcludedDirs = false;
-    private String pathSeparatorSymbol = "/";
 
     private com.jcraft.jsch.Session sshSession;
     private ChannelSftp sftpChannel;
@@ -48,18 +35,9 @@ public class SftpSendFileFolderTask extends Task {
         super(taskName, setLocked, sender);
 
         this.localDirToSend = localDirToSend;
-        this.authType = authType;
-        this.address = address;
-        this.port = port;
-        this.password = password;
-        this.keyFilePath = keyFilePath;
-        this.username = username;
-        this.useKnownHostsFile = useKnownHostsFile;
-        this.knownHostsFilePath = knownHostsFilePath;
         this.createRootDirInTargetDir = createRootDirInTargetDir;
         this.remoteTargetDir = remoteTargetDir;
         this.forceExcludedDirs = forceExcludedDirs;
-        this.pathSeparatorSymbol = pathSeparatorSymbol;
     }
 
     @Override
@@ -75,7 +53,7 @@ public class SftpSendFileFolderTask extends Task {
                 prepareTask();
             }
 
-            Pair<Session, ChannelSftp> sessionChannelSftpPair = SftpUtils.createSftpChannel(sender);
+            Pair<Session, ChannelSftp> sessionChannelSftpPair = SftpUtils.createChannel(sender);
             sshSession = sessionChannelSftpPair.first();
             sftpChannel = sessionChannelSftpPair.second();
 

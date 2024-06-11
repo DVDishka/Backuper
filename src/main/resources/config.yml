@@ -49,6 +49,18 @@ local:
   # (0 - 9) archive compression level. A higher value may reduce file size, but may also increase the time required to archive and decompress
   zipCompressionLevel: 5
 
+ftp:
+  enabled: false
+
+  backupsFolder:
+  pathSeparatorSymbol: /
+
+  auth:
+    address:
+    port: 21
+    username:
+    password:
+
 sftp:
   enabled: false
 
@@ -61,12 +73,12 @@ sftp:
   maxBackupsWeight: 0
 
   auth:
+    address:
+    port: 22
     authType: password
     username:
     password:
     keyFilePath:
-    address:
-    port: 22
     useKnownHostsFile: false
     knownHostsFilePath:
 
