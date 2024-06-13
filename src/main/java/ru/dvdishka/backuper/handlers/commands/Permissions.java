@@ -18,6 +18,10 @@ public enum Permissions {
     SFTP_DELETE("backuper.sftp.list.delete"),
     SFTP_COPY_TO_LOCAL("backuper.sftp.list.copytolocal"),
 
+    FTP_LIST("backuper.ftp.list"),
+    FTP_DELETE("backuper.ftp.list.delete"),
+    FTP_COPY_TO_LOCAL("backuper.ftp.list.copytolocal"),
+
     CONFIG("backuper.config"),
     RELOAD("backuper.config.reload"),
 

@@ -5,7 +5,6 @@ import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.tasks.ftp.FtpDeleteDirTask;
 import ru.dvdishka.backuper.backend.utils.FtpUtils;
-import ru.dvdishka.backuper.backend.utils.SftpUtils;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;

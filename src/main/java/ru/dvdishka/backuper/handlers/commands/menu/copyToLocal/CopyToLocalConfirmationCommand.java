@@ -8,14 +8,19 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
+import ru.dvdishka.backuper.backend.classes.Backup;
+import ru.dvdishka.backuper.backend.classes.FtpBackup;
 import ru.dvdishka.backuper.backend.classes.SftpBackup;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.handlers.commands.Command;
 
 public class CopyToLocalConfirmationCommand extends Command {
 
-    public CopyToLocalConfirmationCommand(CommandSender sender, CommandArguments arguments) {
+    private String storage;
+
+    public CopyToLocalConfirmationCommand(String storage, CommandSender sender, CommandArguments arguments) {
         super(sender, arguments);
+        this.storage = storage;
     }
 
     @Override
@@ -23,26 +28,33 @@ public class CopyToLocalConfirmationCommand extends Command {
 
         String backupName = (String) arguments.get("backupName");
 
-        if (!Config.getInstance().getLocalConfig().isEnabled()) {
+        if (storage.equals("sftp") && !Config.getInstance().getLocalConfig().isEnabled() ||
+                storage.equals("ftp") && !Config.getInstance().getFtpConfig().isEnabled()) {
             cancelSound();
             returnFailure("Local storage is disabled");
             return;
         }
 
-        if (!SftpBackup.checkBackupExistenceByName(backupName)) {
+        Backup backup = null;
+
+        if (storage.equals("sftp")) {
+            backup = SftpBackup.getInstance(backupName);
+        }
+        if (storage.equals("ftp")) {
+            backup = FtpBackup.getInstance(backupName);
+        }
+
+        if (backup == null) {
             cancelSound();
-            returnFailure("Backup does not exist!");
+            returnFailure("Wrong backupName!");
             return;
         }
 
-        assert backupName != null;
-
-        SftpBackup backup = SftpBackup.getInstance(backupName);
         String backupFormattedName = backup.getFormattedName();
 
         if (Backuper.isLocked()) {
             cancelSound();
-            returnFailure("Backup is blocked by another operation!");
+            returnFailure("Blocked by another operation!");
             return;
         }
 
@@ -68,7 +80,7 @@ public class CopyToLocalConfirmationCommand extends Command {
 
         message = message
                 .append(Component.text("[COPY TO LOCAL]")
-                        .clickEvent(ClickEvent.runCommand("/backuper menu sftp " + "\"" + backupName + "\" copyToLocal"))
+                        .clickEvent(ClickEvent.runCommand("/backuper menu " + storage + " " + "\"" + backupName + "\" copyToLocal"))
                         .color(TextColor.color(0xB02100))
                         .decorate(TextDecoration.BOLD));
 

@@ -53,6 +53,19 @@ permissions:
               backuper.sftp.list.copytolocal:
                 default: op
 
+      backuper.ftp.*:
+        default: false
+        children:
+          backuper.ftp.list.*:
+            default: false
+            children:
+              backuper.ftp.list:
+                default: op
+              backuper.ftp.list.delete:
+                default: op
+              backuper.ftp.list.copytolocal:
+                default: op
+
       backuper.config.*:
         default: false
         children:

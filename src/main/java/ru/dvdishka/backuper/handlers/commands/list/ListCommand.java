@@ -10,6 +10,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import ru.dvdishka.backuper.backend.classes.Backup;
+import ru.dvdishka.backuper.backend.classes.FtpBackup;
 import ru.dvdishka.backuper.backend.classes.LocalBackup;
 import ru.dvdishka.backuper.backend.classes.SftpBackup;
 import ru.dvdishka.backuper.backend.common.Logger;
@@ -38,7 +39,8 @@ public class ListCommand extends Command {
     public void execute() {
 
         if (storage.equals("local") && !Config.getInstance().getLocalConfig().isEnabled() ||
-                storage.equals("sftp") && !Config.getInstance().getSftpConfig().isEnabled()) {
+                storage.equals("sftp") && !Config.getInstance().getSftpConfig().isEnabled() ||
+                storage.equals("ftp") && !Config.getInstance().getFtpConfig().isEnabled()) {
             cancelSound();
             returnFailure(storage + " storage is disabled!");
             return;
@@ -101,6 +103,9 @@ public class ListCommand extends Command {
         }
         if (storage.equals("sftp")) {
             backups = getSortedDecreaseSftpBackupList();
+        }
+        if (storage.equals("ftp")) {
+            backups = getSortedDecreaseFtpBackupList();
         }
 
         if (backups == null) {
@@ -265,6 +270,27 @@ public class ListCommand extends Command {
     private ArrayList<Backup> getSortedDecreaseLocalBackupList() {
 
         ArrayList<Backup> backups = new ArrayList<>(LocalBackup.getBackups());
+
+        for (int firstBackupsIndex = 0; firstBackupsIndex < backups.size(); firstBackupsIndex++) {
+
+            for (int secondBackupsIndex = firstBackupsIndex; secondBackupsIndex < backups.size(); secondBackupsIndex++) {
+
+                if (backups.get(firstBackupsIndex).getLocalDateTime().isBefore(backups.get(secondBackupsIndex).getLocalDateTime())) {
+
+                    Backup save = backups.get(firstBackupsIndex);
+
+                    backups.set(firstBackupsIndex, backups.get(secondBackupsIndex));
+                    backups.set(secondBackupsIndex, save);
+                }
+            }
+        }
+
+        return backups;
+    }
+
+    private ArrayList<Backup> getSortedDecreaseFtpBackupList() {
+
+        ArrayList<Backup> backups = new ArrayList<>(FtpBackup.getBackups());
 
         for (int firstBackupsIndex = 0; firstBackupsIndex < backups.size(); firstBackupsIndex++) {
 

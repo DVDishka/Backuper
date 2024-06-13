@@ -99,6 +99,19 @@ public class LocalBackup implements Backup {
         return zipOrFolder;
     }
 
+    public String getFileName() {
+        if (getFileType().equals("(ZIP)")) {
+            return backupName + ".zip";
+        }
+        else {
+            return backupName;
+        }
+    }
+
+    public String getPath() {
+        return new File(Config.getInstance().getLocalConfig().getBackupsFolder(), getFileName()).getPath();
+    }
+
     public File getFile() {
 
         File backupsFolder = new File(Config.getInstance().getLocalConfig().getBackupsFolder());

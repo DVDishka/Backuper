@@ -24,8 +24,8 @@ public class FtpGetFileFolderTask extends Task {
 
     FTPClient ftp;
 
-    protected FtpGetFileFolderTask(String remotePathToGet, File localTargetPathFile, boolean createRootDirInTargetDir,
-                                   boolean setLocked, CommandSender sender) {
+    public FtpGetFileFolderTask(String remotePathToGet, File localTargetPathFile, boolean createRootDirInTargetDir,
+                                boolean setLocked, CommandSender sender) {
         super(taskName, setLocked, sender);
 
         this.remotePathToGet = remotePathToGet;
@@ -120,7 +120,12 @@ public class FtpGetFileFolderTask extends Task {
                 ftp.mkd(remoteDir);
                 localDir.mkdirs();
 
+                ftp.changeWorkingDirectory(remoteDir);
+
                 for (FTPFile file : ftp.listFiles()) {
+                    if (file.getName().equals(".") || file.getName().equals("..")) {
+                        continue;
+                    }
                     getFileFolder(FtpUtils.resolve(remoteDir, file.getName()),
                             localDir.toPath().resolve(file.getName()).toFile(), sender);
                 }

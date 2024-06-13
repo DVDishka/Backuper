@@ -26,4 +26,8 @@ public interface Backup {
     public long getMbSize(CommandSender sender);
 
     public String getFileType();
+
+    public String getFileName();
+
+    public String getPath();
 }
