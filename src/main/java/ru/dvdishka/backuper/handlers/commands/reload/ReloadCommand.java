@@ -37,7 +37,6 @@ public class ReloadCommand extends Command {
         Initialization.initConfig(new File("plugins/Backuper/config.yml"), sender);
         Initialization.unifyBackupNameFormat(sender);
 
-        StatusCommand.sendTaskStartedMessage("DeleteOldBackups", sender);
         Initialization.initAutoBackup(sender);
 
         successSound();

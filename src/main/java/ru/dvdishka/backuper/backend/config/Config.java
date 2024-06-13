@@ -103,6 +103,8 @@ public class Config {
         this.ftpConfig.enabled = config.getBoolean("ftp.enabled", false);
         this.ftpConfig.backupsFolder = config.getString("ftp.backupsFolder", "");
         this.ftpConfig.pathSeparatorSymbol = config.getString("ftp.pathSeparatorSymbol", "/");
+        this.ftpConfig.backupsNumber = config.getInt("ftp.maxBackupsNumber", 0);
+        this.ftpConfig.backupsWeight = config.getLong("ftp.maxBackupsWeight", 0) * 1_048_576L;
         this.ftpConfig.address = config.getString("ftp.auth.address", "");
         this.ftpConfig.port = config.getInt("ftp.auth.port", 21);
         this.ftpConfig.username = config.getString("ftp.auth.username", "");
@@ -195,7 +197,7 @@ public class Config {
                 "sftp.backupsFolder", "sftp.auth.authType", "sftp.auth.username", "sftp.auth.password", "sftp.auth.keyFilePath", "sftp.auth.address",
                 "sftp.auth.port", "sftp.auth.useKnownHostsFile", "sftp.auth.knownHostsFilePath", "local.enabled", "sftp.pathSeparatorSymbol",
                 "local.zipCompressionLevel", "sftp.maxBackupsNumber", "sftp.maxBackupsWeight", "ftp.backupsFolder", "ftp.auth.address", "ftp.auth.port",
-                "ftp.pathSeparatorSymbol", "ftp.auth.password", "ftp.auth.username", "ftp.enabled");
+                "ftp.pathSeparatorSymbol", "ftp.auth.password", "ftp.auth.username", "ftp.enabled", "ftp.maxBackupsNumber", "ftp.maxBackupsWeight");
 
         for (String configField : configFields) {
             if (isConfigFileOk && !config.contains(configField)) {
@@ -235,6 +237,8 @@ public class Config {
             newConfig.set("ftp.enabled", this.ftpConfig.enabled);
             newConfig.set("ftp.backupsFolder", this.ftpConfig.backupsFolder);
             newConfig.set("ftp.pathSeparatorSymbol", this.ftpConfig.pathSeparatorSymbol);
+            newConfig.set("ftp.maxBackupsNumber", this.ftpConfig.backupsNumber);
+            newConfig.set("ftp.maxBackupsWeight", this.ftpConfig.backupsWeight / 1_048_576L);
             newConfig.set("ftp.auth.address", this.ftpConfig.address);
             newConfig.set("ftp.auth.port", this.ftpConfig.port);
             newConfig.set("ftp.auth.username", this.ftpConfig.username);

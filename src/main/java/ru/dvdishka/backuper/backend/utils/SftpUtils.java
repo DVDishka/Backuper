@@ -44,6 +44,10 @@ public class SftpUtils {
         port = Config.getInstance().getSftpConfig().getPort();
     }
 
+    public static boolean checkConnection(CommandSender sender) {
+        return createChannel(sender) != null;
+    }
+
     public static Pair<Session, ChannelSftp> createChannel(CommandSender sender) {
 
         if (!authType.equals("password") && !authType.equals("key") && !authType.equals("key_pass")) {

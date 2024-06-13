@@ -37,6 +37,7 @@ public class BackupTask extends Task {
     private final long copyProgressMultiplier = 5;
     private final long zipProgressMultiplier = 10;
     private final long sendSftpProgressMultiplier = 10;
+    private final long sendFtpProgressMultiplier = 10;
 
     private File backupDir;
     private File backupsDir;
@@ -129,8 +130,20 @@ public class BackupTask extends Task {
                 }
             }
 
+            // RENAME FTP TASK
+            if (Config.getInstance().getFtpConfig().isEnabled()) {
+
+                Logger.getLogger().devLog("The Rename \"in progress\" Folder FTP(S) task has been started");
+
+                FtpUtils.renameFile(FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(),
+                        backupName), FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(),
+                        backupName.replace(" in progress", "")), sender);
+
+                Logger.getLogger().devLog("The Rename \"in progress\" Folder FTP(S) task has been finished");
+            }
+
             // RENAME SFTP TASK
-            if (Config.getInstance().getSftpConfig().isEnabled()) {
+            if (Config.getInstance().getSftpConfig().isEnabled() && SftpUtils.checkConnection(sender)) {
 
                 Logger.getLogger().devLog("The Rename \"in progress\" Folder SFTP task has been started");
 
@@ -449,6 +462,9 @@ public class BackupTask extends Task {
             if (task instanceof SftpSendFileFolderTask) {
                 taskProgressMultiplier = sendSftpProgressMultiplier;
             }
+            if (task instanceof FtpSendFileFolderTask) {
+                taskProgressMultiplier = sendFtpProgressMultiplier;
+            }
 
             currentProgress += currentTaskProgress * taskProgressMultiplier;
         }
@@ -477,6 +493,9 @@ public class BackupTask extends Task {
             }
             if (task instanceof SftpSendFileFolderTask) {
                 taskProgressMultiplier = sendSftpProgressMultiplier;
+            }
+            if (task instanceof FtpSendFileFolderTask) {
+                taskProgressMultiplier = sendFtpProgressMultiplier;
             }
 
             maxProgress += maxTaskProgress * taskProgressMultiplier;

@@ -72,6 +72,7 @@ public class Initialization implements Listener {
         Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
 
             Logger.getLogger().log("Deleting old backups...");
+            StatusCommand.sendTaskStartedMessage("DeleteOldBackups", sender);
             new DeleteOldBackupsTask(true, sender).run();
 
             Logger.getLogger().log("Initializing auto backup...");
@@ -661,7 +662,7 @@ public class Initialization implements Listener {
 
     @EventHandler
     public void onStartCompleted(ServerLoadEvent event) {
-        Initialization.initAutoBackup(null);
+        Initialization.initAutoBackup(Bukkit.getConsoleSender());
     }
 
     public static void unifyBackupNameFormat(CommandSender sender) {

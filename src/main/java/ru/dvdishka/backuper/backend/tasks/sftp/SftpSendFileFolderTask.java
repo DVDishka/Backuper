@@ -54,6 +54,11 @@ public class SftpSendFileFolderTask extends Task {
             }
 
             Pair<Session, ChannelSftp> sessionChannelSftpPair = SftpUtils.createChannel(sender);
+
+            if (sessionChannelSftpPair == null) {
+                return;
+            }
+
             sshSession = sessionChannelSftpPair.first();
             sftpChannel = sessionChannelSftpPair.second();
 

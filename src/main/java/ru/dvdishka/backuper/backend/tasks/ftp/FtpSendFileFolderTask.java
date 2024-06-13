@@ -20,8 +20,8 @@ public class FtpSendFileFolderTask extends Task {
 
     private File localDirToSend;
     private boolean createRootDirInTargetDir;
-    private String remoteTargetDir = "";
-    private boolean forceExcludedDirs = false;
+    private String remoteTargetDir;
+    private boolean forceExcludedDirs;
 
     private FTPClient ftp;
 
@@ -112,20 +112,20 @@ public class FtpSendFileFolderTask extends Task {
 
             try (InputStream inputStream = new FileInputStream(localDirToSend)) {
 
-                if (!ftp.appendFile(remotePath, inputStream)) {
-                    throw new IOException("Failed to send file " + localDirToSend.getAbsolutePath() + " to " + remotePath);
+                if (!ftp.storeFile(remotePath, inputStream)) {
+                    throw new IOException("Failed to send file \"" + localDirToSend.getCanonicalPath() + "\" to \"" + remotePath + "\"");
                 }
-                currentProgress += localDirToSend.length();
+                incrementCurrentProgress(localDirToSend.length());
 
             } catch (Exception e) {
-                Logger.getLogger().warn("Something went wrong while sending file \"" + localDirToSend.getAbsolutePath() + "\" to FTP(S) server", e);
+                Logger.getLogger().warn("Something went wrong while sending file \"" + localDirToSend.getPath() + "\" to FTP(S) server", e);
                 Logger.getLogger().warn(this, e);
             }
         }
         if (localDirToSend.isDirectory() && localDirToSend.listFiles() != null) {
 
             try {
-                ftp.mkd(remotePath);
+                ftp.makeDirectory(remotePath);
             } catch (Exception ignored) {}
 
             for (File file : localDirToSend.listFiles()) {

@@ -8,6 +8,8 @@ public class FtpConfig {
     String address = "";
     String password = "";
     String pathSeparatorSymbol = "/";
+    int backupsNumber = 0;
+    long backupsWeight = 0;
     int port = 22;
 
     public String getBackupsFolder() {
@@ -37,4 +39,8 @@ public class FtpConfig {
     public String getPathSeparatorSymbol() {
         return pathSeparatorSymbol;
     }
+
+    public int getBackupsNumber() {return backupsNumber;}
+
+    public long getBackupsWeight() {return backupsWeight;}
 }

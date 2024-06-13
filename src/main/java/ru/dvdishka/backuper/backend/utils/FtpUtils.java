@@ -1,8 +1,5 @@
 package ru.dvdishka.backuper.backend.utils;
 
-import com.jcraft.jsch.ChannelSftp;
-import com.jcraft.jsch.Session;
-import it.unimi.dsi.fastutil.Pair;
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPFile;
 import org.apache.commons.net.ftp.FTPReply;
@@ -11,8 +8,8 @@ import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.stream.Collectors;
 
 public class FtpUtils {
@@ -35,11 +32,14 @@ public class FtpUtils {
         port = Config.getInstance().getFtpConfig().getPort();
     }
 
+    public static boolean checkConnection(CommandSender sender) {
+        return createChannel(sender) != null;
+    }
+
     public static FTPClient createChannel(CommandSender sender) {
 
         try {
             FTPClient ftp = new FTPClient();
-
             ftp.setControlEncoding("UTF-8");
             ftp.connect(address, port);
             int reply = ftp.getReplyCode();
@@ -49,7 +49,10 @@ public class FtpUtils {
                 throw new IOException("Exception in connecting to FTP Server");
             }
 
+            ftp.enterLocalPassiveMode();
             ftp.login(username, password);
+
+            ftp.setListHiddenFiles(true);
 
             return ftp;
 
@@ -60,13 +63,14 @@ public class FtpUtils {
         }
     }
 
-    public static List<String> ls(String path, CommandSender sender) {
+    public static ArrayList<String> ls(String path, CommandSender sender) {
 
         FTPClient ftp = createChannel(sender);
 
         try {
-            FTPFile[] files = ftp.listFiles(path);
-            return Arrays.stream(files).map(FTPFile::getName).collect(Collectors.toList());
+            ftp.changeWorkingDirectory(path);
+            FTPFile[] files = ftp.listFiles();
+            return new ArrayList<>(Arrays.stream(files).map(FTPFile::getName).collect(Collectors.toList()));
 
         } catch (Exception e) {
 
@@ -131,11 +135,19 @@ public class FtpUtils {
             }
             if (currentDir.isDirectory()) {
 
-                for (FTPFile file : ftp.listFiles()) {
+                boolean dr = ftp.changeWorkingDirectory(remoteFilePath);
+                FTPFile[] files = ftp.listFiles();
+
+                if (!dr) {
+                    Logger.getLogger().warn("Failed to get file list from FTP(S) server", sender);
+                    return 0;
+                }
+
+                for (FTPFile file : files) {
                     if (file.getName().equals(".") || file.getName().equals("..")) {
                         continue;
                     }
-                    dirSize += getFileFolderByteSize(ftp, SftpUtils.resolve(remoteFilePath, file.getName()), sender);
+                    dirSize += getFileFolderByteSize(ftp, FtpUtils.resolve(remoteFilePath, file.getName()), sender);
                 }
             }
         } catch (Exception e) {
@@ -155,12 +167,23 @@ public class FtpUtils {
         } catch (Exception e) {
 
             Logger.getLogger().warn("Failed to create remote folder + \"" + remoteFolderPath + "\" on FTP(S) server", sender);
-            Logger.getLogger().warn("SftpUtils; createRemoteFolder", e);
+            Logger.getLogger().warn("FtpUtils; createRemoteFolder", e);
 
         } finally {
             try {
                 ftp.disconnect();
             } catch (Exception ignored) {}
+        }
+    }
+
+    public static void renameFile(String path, String newPath, CommandSender sender) {
+
+        FTPClient ftp = createChannel(sender);
+        try {
+            ftp.rename(path, newPath);
+        } catch (Exception e) {
+            Logger.getLogger().warn("Failed to rename file on FTP(S) server \"" + path + "\" to \"" + newPath + "\"", sender);
+            Logger.getLogger().warn("FtpUtils; renameFile", e);
         }
     }
 }

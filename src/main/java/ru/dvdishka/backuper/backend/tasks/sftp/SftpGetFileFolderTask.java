@@ -53,6 +53,11 @@ public class SftpGetFileFolderTask extends Task {
             }
 
             Pair<Session, ChannelSftp> sessionChannelSftpPair = SftpUtils.createChannel(sender);
+
+            if (sessionChannelSftpPair == null) {
+                return;
+            }
+
             session = sessionChannelSftpPair.first();
             sftpChannel = sessionChannelSftpPair.second();
 

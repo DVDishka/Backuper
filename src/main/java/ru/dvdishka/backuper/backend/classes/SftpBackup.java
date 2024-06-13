@@ -95,9 +95,8 @@ public class SftpBackup implements Backup {
         getDeleteTask(setLocked, sender).run();
     }
 
-    @Override
     public Task getDeleteTask(boolean setLocked, CommandSender sender) {
-        return new SftpDeleteDirTask(SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), getFileName()), setLocked, sender);
+        return new SftpDeleteDirTask(getPath(), setLocked, sender);
     }
 
     public LocalDateTime getLocalDateTime() {

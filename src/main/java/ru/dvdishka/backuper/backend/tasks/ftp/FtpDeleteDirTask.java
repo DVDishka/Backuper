@@ -76,7 +76,11 @@ public class FtpDeleteDirTask extends Task {
 
             if (remoteFile.isDirectory()) {
 
-                for (FTPFile file : ftp.listFiles(remoteDirToDelete)) {
+                if (!ftp.changeWorkingDirectory(remoteDirToDelete)) {
+                    return;
+                }
+
+                for (FTPFile file : ftp.listFiles()) {
                     if (file.getName().equals(".") || file.getName().equals("..")) {
                         continue;
                     }
@@ -87,7 +91,7 @@ public class FtpDeleteDirTask extends Task {
             if (remoteFile.isFile()) {
                 long fileSize = remoteFile.getSize();
                 ftp.deleteFile(remoteDirToDelete);
-                currentProgress += fileSize;
+                incrementCurrentProgress(fileSize);
             }
         } catch (Exception e) {
             Logger.getLogger().warn("Something went while trying to delete FTP(S) directory", sender);

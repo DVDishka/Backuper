@@ -41,6 +41,11 @@ public class SftpDeleteDirTask extends Task {
             }
 
             Pair<Session, ChannelSftp> sessionChannelSftpPair = SftpUtils.createChannel(sender);
+
+            if (sessionChannelSftpPair == null) {
+                return;
+            }
+
             session = sessionChannelSftpPair.first();
             channelSftp = sessionChannelSftpPair.second();
 
@@ -73,6 +78,7 @@ public class SftpDeleteDirTask extends Task {
 
     @Override
     public void prepareTask() {
+        maxProgress = SftpUtils.getDirByteSize(remoteDirToDelete, sender);
         isTaskPrepared = true;
     }
 
@@ -91,21 +97,13 @@ public class SftpDeleteDirTask extends Task {
                 }
                 channelSftp.rmdir(remoteDirToDelete);
             } else {
+                long fileSize = stat.getSize();
                 channelSftp.rm(remoteDirToDelete);
+                incrementCurrentProgress(fileSize);
             }
         } catch (Exception e) {
             Logger.getLogger().warn("Something went while trying to delete SFTP directory", sender);
             Logger.getLogger().warn(this, e);
         }
-    }
-
-    @Override
-    public long getTaskCurrentProgress() {
-        return 0;
-    }
-
-    @Override
-    public long getTaskMaxProgress() {
-        return 100;
     }
 }

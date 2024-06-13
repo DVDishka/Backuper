@@ -44,7 +44,7 @@ public abstract class Task {
         return setLocked;
     }
 
-    protected void incrementCurrentProgress(long progress) {
+    protected synchronized void incrementCurrentProgress(long progress) {
         this.currentProgress += progress;
     }
 
