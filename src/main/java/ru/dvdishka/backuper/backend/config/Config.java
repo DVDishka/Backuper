@@ -105,6 +105,8 @@ public class Config {
         this.ftpConfig.pathSeparatorSymbol = config.getString("ftp.pathSeparatorSymbol", "/");
         this.ftpConfig.backupsNumber = config.getInt("ftp.maxBackupsNumber", 0);
         this.ftpConfig.backupsWeight = config.getLong("ftp.maxBackupsWeight", 0) * 1_048_576L;
+        this.ftpConfig.zipArchive = config.getBoolean("ftp.zipArchive", true);
+        this.ftpConfig.zipCompressionLevel = config.getInt("ftp.zipCompressionLevel", 5);
         this.ftpConfig.address = config.getString("ftp.auth.address", "");
         this.ftpConfig.port = config.getInt("ftp.auth.port", 21);
         this.ftpConfig.username = config.getString("ftp.auth.username", "");
@@ -188,6 +190,18 @@ public class Config {
             }
         }
 
+        if (this.ftpConfig.zipCompressionLevel > 9 || this.ftpConfig.zipCompressionLevel < 0) {
+            Logger.getLogger().warn("Failed to load config value!");
+            if (this.ftpConfig.zipCompressionLevel < 0) {
+                Logger.getLogger().warn("ftp.zipCompressionLevel must be >= 0, using 0 value...");
+                this.ftpConfig.zipCompressionLevel = 0;
+            }
+            if (this.ftpConfig.zipCompressionLevel > 9) {
+                Logger.getLogger().warn("ftp.zipCompressionLevel must be <= 9, using 9 value...");
+                this.ftpConfig.zipCompressionLevel = 9;
+            }
+        }
+
         boolean isConfigFileOk = Objects.equals(configVersion, this.configVersion);
 
         List<String> configFields = List.of("backup.backupTime", "backup.backupPeriod", "backup.afterBackup", "local.maxBackupsNumber",
@@ -197,7 +211,8 @@ public class Config {
                 "sftp.backupsFolder", "sftp.auth.authType", "sftp.auth.username", "sftp.auth.password", "sftp.auth.keyFilePath", "sftp.auth.address",
                 "sftp.auth.port", "sftp.auth.useKnownHostsFile", "sftp.auth.knownHostsFilePath", "local.enabled", "sftp.pathSeparatorSymbol",
                 "local.zipCompressionLevel", "sftp.maxBackupsNumber", "sftp.maxBackupsWeight", "ftp.backupsFolder", "ftp.auth.address", "ftp.auth.port",
-                "ftp.pathSeparatorSymbol", "ftp.auth.password", "ftp.auth.username", "ftp.enabled", "ftp.maxBackupsNumber", "ftp.maxBackupsWeight");
+                "ftp.pathSeparatorSymbol", "ftp.auth.password", "ftp.auth.username", "ftp.enabled", "ftp.maxBackupsNumber", "ftp.maxBackupsWeight",
+                "ftp.zipArchive", "ftp.zipCompressionLevel");
 
         for (String configField : configFields) {
             if (isConfigFileOk && !config.contains(configField)) {
@@ -239,6 +254,8 @@ public class Config {
             newConfig.set("ftp.pathSeparatorSymbol", this.ftpConfig.pathSeparatorSymbol);
             newConfig.set("ftp.maxBackupsNumber", this.ftpConfig.backupsNumber);
             newConfig.set("ftp.maxBackupsWeight", this.ftpConfig.backupsWeight / 1_048_576L);
+            newConfig.set("ftp.zipArchive", true);
+            newConfig.set("ftp.zipCompressionLevel", 5);
             newConfig.set("ftp.auth.address", this.ftpConfig.address);
             newConfig.set("ftp.auth.port", this.ftpConfig.port);
             newConfig.set("ftp.auth.username", this.ftpConfig.username);

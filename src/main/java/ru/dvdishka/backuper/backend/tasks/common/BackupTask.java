@@ -394,8 +394,13 @@ public class BackupTask extends Task {
                 File worldDir = world.getWorldFolder();
 
                 try {
-                    Task task = new FtpSendFileFolderTask(worldDir, FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(),
-                            backupName), true, false, false, sender);
+                    Task task;
+                    if (Config.getInstance().getFtpConfig().isZipArchive()) {
+                        task = new FtpSendFileFolderTask(worldDir, FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(),
+                                backupName), true, false, false, sender);
+                    } else {
+                        task = new AddDirToZipTask(worldDir, );
+                    }
                     task.prepareTask();
 
                     tasks.add(task);
