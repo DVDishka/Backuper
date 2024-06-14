@@ -37,6 +37,7 @@ public class Config {
     private boolean betterLogging = false;
     private boolean setWorldsReadOnly = false;
     private boolean alertOnlyServerRestart = true;
+    private boolean checkUpdates = true;
 
     private static Config instance = null;
 
@@ -99,6 +100,7 @@ public class Config {
         this.alertTimeBeforeRestart = config.getLong("alertTimeBeforeRestart", 60);
         this.setWorldsReadOnly = config.getBoolean("setWorldsReadOnly", false);
         this.alertOnlyServerRestart = config.getBoolean("alertOnlyServerRestart", true);
+        this.checkUpdates = config.getBoolean("checkUpdates", true);
 
         if (this.backupTime < -1) {
             Logger.getLogger().warn("Failed to load config value!");
@@ -135,7 +137,7 @@ public class Config {
         List<String> configFields = List.of("backupTime", "backupPeriod", "afterBackup", "maxBackupsNumber",
                 "maxBackupsWeight", "zipArchive", "betterLogging", "autoBackup", "lastBackup", "lastChange",
                 "skipDuplicateBackup", "backupsFolder", "alertTimeBeforeRestart", "addDirectoryToBackup",
-                "excludeDirectoryFromBackup", "setWorldsReadOnly", "alertOnlyServerRestart");
+                "excludeDirectoryFromBackup", "setWorldsReadOnly", "alertOnlyServerRestart", "checkUpdates");
 
         for (String configField : configFields) {
             if (isConfigFileOk && !config.contains(configField)) {
@@ -173,6 +175,7 @@ public class Config {
             newConfig.set("excludeDirectoryFromBackup", this.excludeDirectoryFromBackup);
             newConfig.set("setWorldsReadOnly", this.setWorldsReadOnly);
             newConfig.set("alertOnlyServerRestart", this.alertOnlyServerRestart);
+            newConfig.set("checkUpdates", this.checkUpdates);
 
             try {
 
@@ -272,5 +275,9 @@ public class Config {
 
     public boolean isAlertOnlyServerRestart() {
         return alertOnlyServerRestart;
+    }
+
+    public boolean isCheckUpdates() {
+        return checkUpdates;
     }
 }

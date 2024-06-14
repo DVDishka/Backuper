@@ -359,6 +359,10 @@ public class Initialization implements Listener {
 
     public static void checkPluginVersion() {
 
+        if (!Config.getInstance().isCheckUpdates()) {
+            return;
+        }
+
         try {
 
             HttpURLConnection connection = (HttpURLConnection) Utils.getLatestVersionURL.openConnection();

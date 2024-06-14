@@ -3,7 +3,6 @@ configVersion: 7.0
 lastBackup: 0
 lastChange: 0
 
-
 # (true/false) Automatic backup once in a specified period
 autoBackup: true
 
@@ -47,3 +46,5 @@ alertOnlyServerRestart: true
 betterLogging: false
 # (true/false) (True recommended) The backuper will mark all world folders as Read Only to prevent folder changing that may cause the backup crash. True value may cause access denied errors during the backup (you should just ignore that)
 setWorldsReadOnly: false
+# (true/false) Check for new versions of the Backuper to stay up to date
+checkUpdates: true

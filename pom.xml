@@ -6,14 +6,14 @@
 
     <groupId>ru.dvdishka</groupId>
     <artifactId>Backuper</artifactId>
-    <version>2.0.2</version>
+    <version>2.0.3</version>
     <packaging>jar</packaging>
 
     <name>Backuper</name>
 
     <description>Backuper plugin for spigot</description>
     <properties>
-        <java.version>1.8</java.version>
+        <java.version>11</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
     <url>dvdserv.ru</url>
@@ -92,7 +92,7 @@
         <dependency>
             <groupId>dev.jorel</groupId>
             <artifactId>commandapi-bukkit-shade</artifactId>
-            <version>9.4.2</version>
+            <version>9.5.0</version>
         </dependency>
         <dependency>
             <groupId>io.papermc.paper</groupId>
