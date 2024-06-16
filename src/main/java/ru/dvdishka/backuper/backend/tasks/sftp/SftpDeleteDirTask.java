@@ -40,6 +40,8 @@ public class SftpDeleteDirTask extends Task {
                 Backuper.lock(this);
             }
 
+            Logger.getLogger().log("SftpDeleteDir task has been started");
+
             Pair<Session, ChannelSftp> sessionChannelSftpPair = SftpUtils.createChannel(sender);
 
             if (sessionChannelSftpPair == null) {
@@ -73,6 +75,8 @@ public class SftpDeleteDirTask extends Task {
             try {
                 channelSftp.exit();
             } catch (Exception ignored) {}
+
+            Logger.getLogger().devLog("SftpDeleteDir task has been finished");
         }
     }
 

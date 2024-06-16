@@ -1,5 +1,6 @@
 package ru.dvdishka.backuper.backend.utils;
 
+import org.apache.commons.net.PrintCommandListener;
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPFile;
 import org.apache.commons.net.ftp.FTPReply;
@@ -8,6 +9,7 @@ import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -40,6 +42,11 @@ public class FtpUtils {
 
         try {
             FTPClient ftp = new FTPClient();
+
+            if (Config.getInstance().isBetterLogging()) {
+                ftp.addProtocolCommandListener(new PrintCommandListener(new PrintWriter(System.out)));
+            }
+
             ftp.setControlEncoding("UTF-8");
             ftp.connect(address, port);
             int reply = ftp.getReplyCode();
@@ -127,11 +134,11 @@ public class FtpUtils {
 
         try {
 
+            ftp.changeWorkingDirectory("");
             FTPFile currentDir = ftp.mlistFile(remoteFilePath);
 
             if (currentDir.isFile()) {
                 dirSize += currentDir.getSize();
-
             }
             if (currentDir.isDirectory()) {
 

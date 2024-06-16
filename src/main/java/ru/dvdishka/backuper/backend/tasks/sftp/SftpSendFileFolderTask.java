@@ -53,6 +53,8 @@ public class SftpSendFileFolderTask extends Task {
                 prepareTask();
             }
 
+            Logger.getLogger().devLog("SftpSendFileFolder task has been started");
+
             Pair<Session, ChannelSftp> sessionChannelSftpPair = SftpUtils.createChannel(sender);
 
             if (sessionChannelSftpPair == null) {
@@ -99,6 +101,8 @@ public class SftpSendFileFolderTask extends Task {
 
             Logger.getLogger().warn("Something went wrong when trying to send file/folder through the SFTP channel", sender);
             Logger.getLogger().warn(this, e);
+        } finally {
+            Logger.getLogger().devLog("SftpSendFileFolder task has been finished");
         }
     }
 

@@ -27,6 +27,7 @@ public class FtpDeleteDirTask extends Task {
     public void run() {
 
         try {
+
             if (!isTaskPrepared) {
                 prepareTask();
             }
@@ -34,6 +35,8 @@ public class FtpDeleteDirTask extends Task {
             if (setLocked) {
                 Backuper.lock(this);
             }
+
+            Logger.getLogger().devLog("FtpDeleteDir task started");
 
             ftp = FtpUtils.createChannel(sender);
 
@@ -59,6 +62,8 @@ public class FtpDeleteDirTask extends Task {
             try {
                 ftp.disconnect();
             } catch (Exception ignored) {}
+
+            Logger.getLogger().devLog("FtpDeleteDir task has been finished");
         }
     }
 
@@ -72,6 +77,7 @@ public class FtpDeleteDirTask extends Task {
     private void deleteDir(String remoteDirToDelete) {
 
         try {
+            ftp.changeWorkingDirectory("");
             FTPFile remoteFile = ftp.mlistFile(remoteDirToDelete);
 
             if (remoteFile.isDirectory()) {
@@ -86,6 +92,7 @@ public class FtpDeleteDirTask extends Task {
                     }
                     deleteDir(FtpUtils.resolve(remoteDirToDelete, file.getName()));
                 }
+                ftp.changeWorkingDirectory("");
                 ftp.removeDirectory(remoteDirToDelete);
             }
             if (remoteFile.isFile()) {

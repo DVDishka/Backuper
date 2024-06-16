@@ -184,37 +184,68 @@ public class Initialization implements Listener {
                             }
                         })
 
-                        .then(new LongArgument("delaySeconds")
-                                .executes((sender, args) -> {
+                        .then(new StringArgument("storage").includeSuggestions(ArgumentSuggestions.stringCollection((sender) -> {
+                            ArrayList<String> suggestions = new ArrayList<>();
 
-                                    new BackupCommand(sender, args).execute();
-                                })
-                        )
-                        .then(new LiteralArgument("stop").withPermission(Permissions.STOP.getPermission())
-                                .executes((sender, args) -> {
+                            if (Config.getInstance().getLocalConfig().isEnabled()) {
+                                suggestions.add("local");
+                            }
+                            if (Config.getInstance().getFtpConfig().isEnabled()) {
+                                suggestions.add("ftp");
+                            }
+                            if (Config.getInstance().getSftpConfig().isEnabled()) {
+                                suggestions.add("sftp");
+                            }
 
-                                    new BackupCommand(sender, args, "STOP").execute();
-                                })
+                            if (Config.getInstance().getLocalConfig().isEnabled() && Config.getInstance().getFtpConfig().isEnabled()) {
+                                suggestions.add("local:ftp");
+                            }
+                            if (Config.getInstance().getLocalConfig().isEnabled() && Config.getInstance().getSftpConfig().isEnabled()) {
+                                suggestions.add("local:sftp");
+                            }
+                            if (Config.getInstance().getFtpConfig().isEnabled() && Config.getInstance().getSftpConfig().isEnabled()) {
+                                suggestions.add("ftp:sftp");
+                            }
+
+                            if (Config.getInstance().getLocalConfig().isEnabled() && Config.getInstance().getSftpConfig().isEnabled() && Config.getInstance().getFtpConfig().isEnabled()) {
+                                suggestions.add("local:ftp:sftp");
+                            }
+
+                            return suggestions;
+                        }))
 
                                 .then(new LongArgument("delaySeconds")
+                                        .executes((sender, args) -> {
+
+                                            new BackupCommand(sender, args).execute();
+                                        })
+                                )
+                                .then(new LiteralArgument("stop").withPermission(Permissions.STOP.getPermission())
                                         .executes((sender, args) -> {
 
                                             new BackupCommand(sender, args, "STOP").execute();
                                         })
+
+                                        .then(new LongArgument("delaySeconds")
+                                                .executes((sender, args) -> {
+
+                                                    new BackupCommand(sender, args, "STOP").execute();
+                                                })
+                                        )
                                 )
-                        )
 
-                        .then(new LiteralArgument("restart").withPermission(Permissions.RESTART.getPermission())
-                                .executes((sender, args) -> {
-
-                                    new BackupCommand(sender, args, "RESTART").execute();
-                                })
-
-                                .then(new LongArgument("delaySeconds")
+                                .then(new LiteralArgument("restart").withPermission(Permissions.RESTART.getPermission())
                                         .executes((sender, args) -> {
 
                                             new BackupCommand(sender, args, "RESTART").execute();
                                         })
+
+                                        .then(new LongArgument("delaySeconds")
+                                                .executes((sender, args) -> {
+
+                                                    new BackupCommand(sender, args, "RESTART").execute();
+                                                })
+                                        )
                                 )
                         )
                 )
@@ -224,11 +255,11 @@ public class Initialization implements Listener {
         CommandTree backupListCommandTree = new CommandTree("backuper").withPermission(Permissions.BACKUPER.getPermission());
         backupListCommandTree
 
-                .then(new LiteralArgument("list").withPermission(Permissions.LOCAL_LIST.getPermission())
+                .then(new LiteralArgument("list")
 
                         .then(new LiteralArgument("local").withRequirement((sender) -> {
                             return Config.getInstance().getLocalConfig().isEnabled();
-                        })
+                        }).withPermission(Permissions.LOCAL_LIST.getPermission())
 
                                 .executes((sender, args) -> {
 
@@ -250,7 +281,7 @@ public class Initialization implements Listener {
 
                         .then(new LiteralArgument("sftp").withRequirement((sender -> {
                             return Config.getInstance().getSftpConfig().isEnabled();
-                        }))
+                        })).withPermission(Permissions.SFTP_LIST.getPermission())
 
                                 .executes((sender, args) -> {
 
@@ -272,7 +303,7 @@ public class Initialization implements Listener {
 
                         .then(new LiteralArgument("ftp").withRequirement((sender -> {
                             return Config.getInstance().getFtpConfig().isEnabled();
-                        }))
+                        })).withPermission(Permissions.FTP_LIST.getPermission())
 
                                 .executes((sender, args) -> {
 
@@ -312,11 +343,11 @@ public class Initialization implements Listener {
         CommandTree backupMenuCommandTree = new CommandTree("backuper").withPermission(Permissions.BACKUPER.getPermission());
         backupMenuCommandTree
 
-                .then(new LiteralArgument("menu").withPermission(Permissions.LOCAL_LIST.getPermission())
+                .then(new LiteralArgument("menu")
 
                         .then(new LiteralArgument("local").withRequirement((sender -> {
-                                            return Config.getInstance().getLocalConfig().isEnabled();
-                        }))
+                            return Config.getInstance().getLocalConfig().isEnabled();
+                        })).withPermission(Permissions.LOCAL_LIST.getPermission())
 
                                 .then(new TextArgument("backupName").includeSuggestions(ArgumentSuggestions.stringCollectionAsync((info) -> {
 
@@ -456,8 +487,8 @@ public class Initialization implements Listener {
                         )
 
                         .then(new LiteralArgument("sftp").withRequirement((sender -> {
-                                            return Config.getInstance().getSftpConfig().isEnabled();
-                        }))
+                            return Config.getInstance().getSftpConfig().isEnabled();
+                        })).withPermission(Permissions.SFTP_LIST.getPermission())
 
                                 .then(new TextArgument("backupName").includeSuggestions(ArgumentSuggestions.stringCollectionAsync((info) -> {
 
@@ -540,7 +571,7 @@ public class Initialization implements Listener {
 
                         .then(new LiteralArgument("ftp").withRequirement((sender -> {
                             return Config.getInstance().getFtpConfig().isEnabled();
-                        }))
+                        })).withPermission(Permissions.FTP_LIST.getPermission())
 
                                 .then(new TextArgument("backupName").includeSuggestions(ArgumentSuggestions.stringCollectionAsync((info) -> {
 
@@ -675,6 +706,10 @@ public class Initialization implements Listener {
     }
 
     public static void checkPluginVersion() {
+
+        if (!Config.getInstance().isCheckUpdates()) {
+            return;
+        }
 
         try {
 

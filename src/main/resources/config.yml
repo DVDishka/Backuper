@@ -35,6 +35,7 @@ backup:
 local:
   # (true/false) Enable backup to local directory
   enabled: true
+  autoBackup: true
 
   # (Path) Full directory where backups will be stored
   backupsFolder: plugins/Backuper/Backups
@@ -51,6 +52,7 @@ local:
 
 ftp:
   enabled: false
+  autoBackup: true
 
   backupsFolder:
   pathSeparatorSymbol: /
@@ -73,6 +75,7 @@ ftp:
 
 sftp:
   enabled: false
+  autoBackup: true
 
   backupsFolder:
   pathSeparatorSymbol: /
@@ -97,6 +100,9 @@ server:
   alertTimeBeforeRestart: 60
   # (true/false) Notifications will be sent only if the server will be restarted or stopped after the backup
   alertOnlyServerRestart: true
+
+  # (true/false) Check for new versions of the Backuper to stay up to date
+  checkUpdates: true
 
   # (true/false) Better logging (Some statistic and other information for debugging, you probably don't need it)
   betterLogging: false

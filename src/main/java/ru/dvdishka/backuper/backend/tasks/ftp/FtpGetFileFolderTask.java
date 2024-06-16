@@ -46,6 +46,8 @@ public class FtpGetFileFolderTask extends Task {
                 prepareTask();
             }
 
+            Logger.getLogger().devLog("FtpGetFileFolder task has been started");
+
             ftp = FtpUtils.createChannel(sender);
 
             if (ftp == null) {
@@ -71,20 +73,29 @@ public class FtpGetFileFolderTask extends Task {
 
             getFileFolder(remotePathToGet, localTargetPathFile, sender);
 
+            if (setLocked) {
+
+                Backuper.unlock();
+                UIUtils.successSound(sender);
+            }
+
         } catch (Exception e) {
+
+            if (setLocked) {
+                Backuper.unlock();
+                UIUtils.cancelSound(sender);
+            }
 
             Logger.getLogger().warn("Something went wrong when trying to download file/folder from FTP(S) server", sender);
             Logger.getLogger().warn("FtpGetFileFolderTask:run", e);
 
         } finally {
 
-            if (setLocked) {
-                Backuper.unlock();
-                UIUtils.successSound(sender);
-            }
             try {
                 ftp.disconnect();
             } catch (Exception ignored) {}
+
+            Logger.getLogger().devLog("FtpGetFileFolder task has been finished");
         }
     }
 
@@ -99,6 +110,7 @@ public class FtpGetFileFolderTask extends Task {
 
         try {
 
+            ftp.changeWorkingDirectory("");
             FTPFile currentDir = ftp.mlistFile(remoteDir);
 
             if (currentDir.isFile()) {

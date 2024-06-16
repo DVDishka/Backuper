@@ -36,6 +36,7 @@ public class Config {
     private boolean betterLogging = false;
     private boolean setWorldsReadOnly = false;
     private boolean alertOnlyServerRestart = true;
+    private boolean checkUpdates = true;
 
     private LocalConfig localConfig = new LocalConfig();
     private SftpConfig sftpConfig = new SftpConfig();
@@ -94,6 +95,7 @@ public class Config {
         this.skipDuplicateBackup = config.getBoolean("backup.skipDuplicateBackup", true);
 
         this.localConfig.enabled = config.getBoolean("local.enabled", true);
+        this.localConfig.autoBackup = config.getBoolean("local.autoBackup", true);
         this.localConfig.backupsNumber = config.getInt("local.maxBackupsNumber", 0);
         this.localConfig.backupsWeight = config.getLong("local.maxBackupsWeight", 0) * 1_048_576L;
         this.localConfig.zipArchive = config.getBoolean("local.zipArchive", true);
@@ -101,6 +103,7 @@ public class Config {
         this.localConfig.zipCompressionLevel = config.getInt("local.zipCompressionLevel", 5);
 
         this.ftpConfig.enabled = config.getBoolean("ftp.enabled", false);
+        this.ftpConfig.autoBackup = config.getBoolean("ftp.autoBackup", true);
         this.ftpConfig.backupsFolder = config.getString("ftp.backupsFolder", "");
         this.ftpConfig.pathSeparatorSymbol = config.getString("ftp.pathSeparatorSymbol", "/");
         this.ftpConfig.backupsNumber = config.getInt("ftp.maxBackupsNumber", 0);
@@ -113,6 +116,7 @@ public class Config {
         this.ftpConfig.password = config.getString("ftp.auth.password", "");
 
         this.sftpConfig.enabled = config.getBoolean("sftp.enabled", false);
+        this.sftpConfig.autoBackup = config.getBoolean("sftp.autoBackup", true);
         this.sftpConfig.backupsFolder = config.getString("sftp.backupsFolder", "");
         this.sftpConfig.pathSeparatorSymbol = config.getString("sftp.pathSeparatorSymbol", "/");
         this.sftpConfig.backupsNumber = config.getInt("sftp.maxBackupsNumber", 0);
@@ -132,6 +136,7 @@ public class Config {
         this.excludeDirectoryFromBackup = config.getStringList("backup.excludeDirectoryFromBackup");
         this.alertTimeBeforeRestart = config.getLong("server.alertTimeBeforeRestart", 60);
         this.alertOnlyServerRestart = config.getBoolean("server.alertOnlyServerRestart", true);
+        this.checkUpdates = config.getBoolean("server.checkUpdates", true);
 
         this.lastBackup = config.getLong("lastBackup", 0);
         this.lastChange = config.getLong("lastChange", 0);
@@ -212,7 +217,7 @@ public class Config {
                 "sftp.auth.port", "sftp.auth.useKnownHostsFile", "sftp.auth.knownHostsFilePath", "local.enabled", "sftp.pathSeparatorSymbol",
                 "local.zipCompressionLevel", "sftp.maxBackupsNumber", "sftp.maxBackupsWeight", "ftp.backupsFolder", "ftp.auth.address", "ftp.auth.port",
                 "ftp.pathSeparatorSymbol", "ftp.auth.password", "ftp.auth.username", "ftp.enabled", "ftp.maxBackupsNumber", "ftp.maxBackupsWeight",
-                "ftp.zipArchive", "ftp.zipCompressionLevel");
+                "ftp.zipArchive", "ftp.zipCompressionLevel", "server.checkUpdates", "local.autoBackup", "ftp.autoBackup", "sftp.autoBackup");
 
         for (String configField : configFields) {
             if (isConfigFileOk && !config.contains(configField)) {
@@ -243,6 +248,7 @@ public class Config {
             newConfig.set("backup.setWorldsReadOnly", this.setWorldsReadOnly);
 
             newConfig.set("local.enabled", this.localConfig.enabled);
+            newConfig.set("local.autoBackup", this.localConfig.autoBackup);
             newConfig.set("local.maxBackupsNumber", this.localConfig.backupsNumber);
             newConfig.set("local.maxBackupsWeight", this.localConfig.backupsWeight / 1_048_576L);
             newConfig.set("local.zipArchive", this.localConfig.zipArchive);
@@ -250,6 +256,7 @@ public class Config {
             newConfig.set("local.zipCompressionLevel", this.localConfig.zipCompressionLevel);
 
             newConfig.set("ftp.enabled", this.ftpConfig.enabled);
+            newConfig.set("ftp.autoBackup", this.ftpConfig.autoBackup);
             newConfig.set("ftp.backupsFolder", this.ftpConfig.backupsFolder);
             newConfig.set("ftp.pathSeparatorSymbol", this.ftpConfig.pathSeparatorSymbol);
             newConfig.set("ftp.maxBackupsNumber", this.ftpConfig.backupsNumber);
@@ -265,6 +272,7 @@ public class Config {
             newConfig.set("sftp.maxBackupsNumber", this.sftpConfig.backupsNumber);
             newConfig.set("sftp.maxBackupsWeight", this.sftpConfig.backupsWeight / 1_048_576L);
             newConfig.set("sftp.enabled", this.sftpConfig.enabled);
+            newConfig.set("sftp.autoBackup", this.sftpConfig.autoBackup);
             newConfig.set("sftp.backupsFolder", this.sftpConfig.backupsFolder);
             newConfig.set("sftp.auth.password", this.sftpConfig.password);
             newConfig.set("sftp.auth.username", this.sftpConfig.username);
@@ -281,6 +289,7 @@ public class Config {
             newConfig.set("server.betterLogging", this.betterLogging);
             newConfig.set("server.alertTimeBeforeRestart", this.alertTimeBeforeRestart);
             newConfig.set("server.alertOnlyServerRestart", this.alertOnlyServerRestart);
+            newConfig.set("server.checkUpdates", this.checkUpdates);
 
             try {
 
@@ -368,6 +377,10 @@ public class Config {
 
     public boolean isAlertOnlyServerRestart() {
         return alertOnlyServerRestart;
+    }
+
+    public boolean isCheckUpdates() {
+        return checkUpdates;
     }
 
     public LocalConfig getLocalConfig() {

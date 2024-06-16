@@ -52,6 +52,8 @@ public class SftpGetFileFolderTask extends Task {
                 prepareTask();
             }
 
+            Logger.getLogger().devLog("SftpGetFileFolder task has been started");
+
             Pair<Session, ChannelSftp> sessionChannelSftpPair = SftpUtils.createChannel(sender);
 
             if (sessionChannelSftpPair == null) {
@@ -107,6 +109,8 @@ public class SftpGetFileFolderTask extends Task {
 
             Logger.getLogger().warn("Something went wrong when trying to get file from the SFTP channel", sender);
             Logger.getLogger().warn(this, e);
+        } finally {
+            Logger.getLogger().devLog("SftpGetFileFolder task has been finished");
         }
     }
 

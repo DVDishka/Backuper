@@ -2,12 +2,13 @@ package ru.dvdishka.backuper.backend.config;
 
 public class LocalConfig {
 
-    boolean enabled = true;
-    String backupsFolder = "plugins/Backuper/Backups";
-    int backupsNumber = 0;
-    long backupsWeight = 0;
-    boolean zipArchive = true;
-    int zipCompressionLevel = 5;
+    boolean enabled;
+    boolean autoBackup;
+    String backupsFolder;
+    int backupsNumber;
+    long backupsWeight;
+    boolean zipArchive;
+    int zipCompressionLevel;
 
     public int getBackupsNumber() {
         return backupsNumber;
@@ -31,5 +32,9 @@ public class LocalConfig {
 
     public int getZipCompressionLevel() {
         return zipCompressionLevel;
+    }
+
+    public boolean isAutoBackup() {
+        return autoBackup;
     }
 }

@@ -2,20 +2,21 @@ package ru.dvdishka.backuper.backend.config;
 
 public class SftpConfig {
 
-    boolean enabled = false;
-    String sshConfigFile = "";
-    String backupsFolder = "";
-    String authType = "password";
-    String username = "";
-    String address = "";
-    String password = "";
-    String knownHostsFilePath = "";
-    String useKnownHostsFile = "false";
-    String keyFilePath = "";
-    String pathSeparatorSymbol = "/";
-    int backupsNumber = 0;
-    long backupsWeight = 0;
-    int port = 22;
+    boolean enabled;
+    boolean autoBackup;
+    String sshConfigFile;
+    String backupsFolder;
+    String authType;
+    String username;
+    String address;
+    String password;
+    String knownHostsFilePath;
+    String useKnownHostsFile;
+    String keyFilePath;
+    String pathSeparatorSymbol;
+    int backupsNumber;
+    long backupsWeight;
+    int port;
 
     public String getBackupsFolder() {
         return backupsFolder;
@@ -67,5 +68,9 @@ public class SftpConfig {
 
     public String getSshConfigFile() {
         return sshConfigFile;
+    }
+
+    public boolean isAutoBackup() {
+        return autoBackup;
     }
 }

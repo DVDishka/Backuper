@@ -19,19 +19,36 @@ import static java.lang.Math.max;
 public class BackupCommand extends Command {
 
     private String afterBackup = "NOTHING";
-    private long delay = 1;
+    private long delay;
+    private boolean isLocal = false;
+    private boolean isFtp = false;
+    private boolean isSftp = false;
 
     public BackupCommand(CommandSender sender, CommandArguments args, String afterBackup) {
 
         super(sender, args);
         this.afterBackup = afterBackup;
         this.delay = (long) args.getOrDefault("delaySeconds", 1L);
+
+        String storageString = ((String) args.get("storage"));
+        if (storageString != null) {
+            isLocal = storageString.contains("local");
+            isFtp = storageString.contains("ftp");
+            isSftp = storageString.contains("sftp");
+        }
     }
 
     public BackupCommand(CommandSender sender, CommandArguments args) {
 
         super(sender, args);
         this.delay = (long) args.getOrDefault("delaySeconds", 1L);
+
+        String storageString = ((String) args.get("storage"));
+        if (storageString != null) {
+            isLocal = storageString.contains("local");
+            isFtp = storageString.contains("ftp");
+            isSftp = storageString.contains("sftp");
+        }
     }
 
     public void execute() {
@@ -45,6 +62,12 @@ public class BackupCommand extends Command {
         if (delay < 1) {
             cancelSound();
             returnFailure("Delay must be > 0!");
+            return;
+        }
+
+        if (!isLocal && !isFtp && !isSftp) {
+            cancelSound();
+            returnFailure("Wrong storage types!");
             return;
         }
 
@@ -64,7 +87,7 @@ public class BackupCommand extends Command {
             StatusCommand.sendTaskStartedMessage("Backup", sender);
 
             Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                new BackupTask(afterBackup, false, true, sender).run();
+                new BackupTask(afterBackup, false, isLocal, isFtp, isSftp, true, sender).run();
                 sendMessage("Backup task completed");
             });
 

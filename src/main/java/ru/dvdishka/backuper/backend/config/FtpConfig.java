@@ -2,17 +2,18 @@ package ru.dvdishka.backuper.backend.config;
 
 public class FtpConfig {
 
-    boolean enabled = false;
-    String backupsFolder = "";
-    String username = "";
-    String address = "";
-    String password = "";
-    String pathSeparatorSymbol = "/";
-    int backupsNumber = 0;
-    long backupsWeight = 0;
-    int port = 22;
-    boolean zipArchive = true;
-    int zipCompressionLevel = 5;
+    boolean enabled;
+    boolean autoBackup;
+    String backupsFolder;
+    String username;
+    String address;
+    String password;
+    String pathSeparatorSymbol;
+    int backupsNumber;
+    long backupsWeight;
+    int port;
+    boolean zipArchive;
+    int zipCompressionLevel;
 
     public String getBackupsFolder() {
         return backupsFolder;
@@ -48,5 +49,9 @@ public class FtpConfig {
 
     public boolean isZipArchive() {return zipArchive;}
 
-    public int getBackupsCompressionLevel() {return zipCompressionLevel;}
+    public int getZipCompressionLevel() {return zipCompressionLevel;}
+
+    public boolean isAutoBackup() {
+        return autoBackup;
+    }
 }

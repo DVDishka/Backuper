@@ -9,6 +9,7 @@ import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.Task;
+import ru.dvdishka.backuper.backend.tasks.ftp.FtpAddLocalDirsToZipTask;
 import ru.dvdishka.backuper.backend.tasks.ftp.FtpSendFileFolderTask;
 import ru.dvdishka.backuper.backend.tasks.local.folder.CopyFilesToFolderTask;
 import ru.dvdishka.backuper.backend.tasks.local.zip.tozip.AddDirToZipTask;
@@ -20,7 +21,6 @@ import ru.dvdishka.backuper.backend.utils.Utils;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -30,14 +30,18 @@ public class BackupTask extends Task {
 
     private static final String taskName = "Backup";
 
-    private boolean isAutoBackup = false;
-    private String afterBackup = "NOTHING";
+    private final boolean isAutoBackup;
+    private final String afterBackup;
+    private final boolean isLocal;
+    private final boolean isFtp;
+    private final boolean isSftp;
 
     private final long deleteProgressMultiplier = 1;
     private final long copyProgressMultiplier = 5;
     private final long zipProgressMultiplier = 10;
     private final long sendSftpProgressMultiplier = 10;
     private final long sendFtpProgressMultiplier = 10;
+    private final long zipFtpProgressMultiplier = 15;
 
     private File backupDir;
     private File backupsDir;
@@ -49,9 +53,23 @@ public class BackupTask extends Task {
     public BackupTask(String afterBackup, boolean isAutoBackup, boolean setLocked, CommandSender sender) {
 
         super(taskName, setLocked, sender);
-        this.afterBackup = afterBackup;
+        this.afterBackup = afterBackup.toUpperCase();
         this.isAutoBackup = isAutoBackup;
+        this.isLocal = Config.getInstance().getLocalConfig().isAutoBackup();
+        this.isFtp = Config.getInstance().getFtpConfig().isAutoBackup();
+        this.isSftp = Config.getInstance().getSftpConfig().isAutoBackup();
     }
+
+    public BackupTask(String afterBackup, boolean isAutoBackup, boolean isLocal, boolean isFtp, boolean isSftp, boolean setLocked, CommandSender sender) {
+
+        super(taskName, setLocked, sender);
+        this.afterBackup = afterBackup.toUpperCase();
+        this.isAutoBackup = isAutoBackup;
+        this.isLocal = isLocal;
+        this.isFtp = isFtp;
+        this.isSftp = isSftp;
+    }
+
 
     @Override
     public void run() {
@@ -97,7 +115,7 @@ public class BackupTask extends Task {
                 task.run();
             }
 
-            if (Config.getInstance().getLocalConfig().isEnabled()) {
+            if (isLocal) {
 
                 if (Config.getInstance().getLocalConfig().isZipArchive()) {
                     try {
@@ -131,19 +149,25 @@ public class BackupTask extends Task {
             }
 
             // RENAME FTP TASK
-            if (Config.getInstance().getFtpConfig().isEnabled()) {
+            if (isFtp && FtpUtils.checkConnection(sender)) {
 
                 Logger.getLogger().devLog("The Rename \"in progress\" Folder FTP(S) task has been started");
 
+                String fileType = "";
+
+                if (Config.getInstance().getFtpConfig().isZipArchive()) {
+                    fileType = ".zip";
+                }
+
                 FtpUtils.renameFile(FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(),
-                        backupName), FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(),
-                        backupName.replace(" in progress", "")), sender);
+                        backupName + fileType), FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(),
+                        backupName.replace(" in progress", "") + fileType), sender);
 
                 Logger.getLogger().devLog("The Rename \"in progress\" Folder FTP(S) task has been finished");
             }
 
             // RENAME SFTP TASK
-            if (Config.getInstance().getSftpConfig().isEnabled() && SftpUtils.checkConnection(sender)) {
+            if (isSftp && SftpUtils.checkConnection(sender)) {
 
                 Logger.getLogger().devLog("The Rename \"in progress\" Folder SFTP task has been started");
 
@@ -214,13 +238,13 @@ public class BackupTask extends Task {
 
             tasks.add(new SetWorldsReadOnlyTask(false, sender));
 
-            if (Config.getInstance().getLocalConfig().isEnabled()) {
+            if (isLocal) {
                 prepareLocalTask();
             }
-            if (Config.getInstance().getFtpConfig().isEnabled()) {
+            if (isFtp) {
                 prepareFtpTask();
             }
-            if (Config.getInstance().getSftpConfig().isEnabled()) {
+            if (isSftp) {
                 prepareSftpTask();
             }
 
@@ -387,23 +411,27 @@ public class BackupTask extends Task {
     private void prepareFtpTask() {
 
         try {
-            FtpUtils.createFolder(FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(), backupName), sender);
+            if (!Config.getInstance().getFtpConfig().isZipArchive()) {
+                FtpUtils.createFolder(FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(), backupName), sender);
+            }
+
+            ArrayList<File> dirsToAddToZip = new ArrayList<>();
 
             for (World world : Bukkit.getWorlds()) {
 
                 File worldDir = world.getWorldFolder();
 
                 try {
-                    Task task;
-                    if (Config.getInstance().getFtpConfig().isZipArchive()) {
-                        task = new FtpSendFileFolderTask(worldDir, FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(),
-                                backupName), true, false, false, sender);
-                    } else {
-                        task = new AddDirToZipTask(worldDir, );
-                    }
-                    task.prepareTask();
+                    if (!Config.getInstance().getFtpConfig().isZipArchive()) {
 
-                    tasks.add(task);
+                        Task task = new FtpSendFileFolderTask(worldDir, FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(),
+                                backupName), true, false, false, sender);
+                        task.prepareTask();
+
+                        tasks.add(task);
+                    } else {
+                        dirsToAddToZip.add(worldDir);
+                    }
 
                 } catch (Exception e) {
 
@@ -428,17 +456,32 @@ public class BackupTask extends Task {
                         continue;
                     }
 
-                    Task task = new FtpSendFileFolderTask(additionalDirectoryToBackupFile, FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(),
-                            backupName), true, false, false, sender);
-                    task.prepareTask();
+                    if (Config.getInstance().getFtpConfig().isZipArchive()) {
 
-                    tasks.add(task);
+                        Task task = new FtpSendFileFolderTask(additionalDirectoryToBackupFile, FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(),
+                                backupName), true, false, false, sender);
+                        task.prepareTask();
+
+                        tasks.add(task);
+                    } else {
+                        dirsToAddToZip.add(additionalDirectoryToBackupFile);
+                    }
 
                 } catch (Exception e) {
                     Logger.getLogger().warn("Something went wrong when trying to backup an additional directory \"" + additionalDirectoryToBackup + "\"", sender);
                     Logger.getLogger().warn(this, e);
                 }
             }
+
+            if (Config.getInstance().getFtpConfig().isZipArchive()) {
+
+                String targetZipPath = FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(), backupName + ".zip");
+                Task task = new FtpAddLocalDirsToZipTask(dirsToAddToZip, targetZipPath, true, false, false, sender);
+                task.prepareTask();
+
+                tasks.add(task);
+            }
+
         } catch (Exception e) {
             Logger.getLogger().warn("Something went wrong while trying to prepare FTP(S) backup task");
             Logger.getLogger().warn(this, e);
@@ -469,6 +512,9 @@ public class BackupTask extends Task {
             }
             if (task instanceof FtpSendFileFolderTask) {
                 taskProgressMultiplier = sendFtpProgressMultiplier;
+            }
+            if (task instanceof FtpAddLocalDirsToZipTask) {
+                taskProgressMultiplier = zipFtpProgressMultiplier;
             }
 
             currentProgress += currentTaskProgress * taskProgressMultiplier;
@@ -501,6 +547,9 @@ public class BackupTask extends Task {
             }
             if (task instanceof FtpSendFileFolderTask) {
                 taskProgressMultiplier = sendFtpProgressMultiplier;
+            }
+            if (task instanceof FtpAddLocalDirsToZipTask) {
+                taskProgressMultiplier = zipFtpProgressMultiplier;
             }
 
             maxProgress += maxTaskProgress * taskProgressMultiplier;
