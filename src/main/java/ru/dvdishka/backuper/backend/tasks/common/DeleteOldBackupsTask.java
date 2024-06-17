@@ -107,7 +107,12 @@ public class DeleteOldBackupsTask extends Task {
         }
 
         for (Backup backup : backups) {
-            backupsFolderByteSize += backup.getByteSize(sender);
+            try {
+                backupsFolderByteSize += backup.getByteSize(sender);
+            } catch (Exception e) {
+                Logger.getLogger().warn("Failed to get backup byte size", sender);
+                Logger.getLogger().warn(this, e);
+            }
         }
 
         ArrayList<LocalDateTime> backupDateTimes = new ArrayList<>();

@@ -48,7 +48,7 @@ public class FtpGetFileFolderTask extends Task {
 
             Logger.getLogger().devLog("FtpGetFileFolder task has been started");
 
-            ftp = FtpUtils.createChannel(sender);
+            ftp = FtpUtils.getClient(sender);
 
             if (ftp == null) {
                 return;
@@ -93,7 +93,9 @@ public class FtpGetFileFolderTask extends Task {
 
             try {
                 ftp.disconnect();
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                Logger.getLogger().warn(this, e);
+            }
 
             Logger.getLogger().devLog("FtpGetFileFolder task has been finished");
         }

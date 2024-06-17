@@ -54,7 +54,7 @@ public class FtpAddLocalDirsToZipTask extends Task {
                 prepareTask();
             }
 
-            ftpClient = FtpUtils.createChannel(sender);
+            ftpClient = FtpUtils.getClient(sender);
             if (ftpClient == null) {
                 return;
             }

@@ -45,7 +45,17 @@ public class SftpUtils {
     }
 
     public static boolean checkConnection(CommandSender sender) {
-        return createChannel(sender) != null;
+        Pair<Session, ChannelSftp> channelSftp = createChannel(sender);
+        boolean connected = channelSftp != null;
+
+        try {
+            channelSftp.first().disconnect();
+        } catch (Exception ignored) {}
+        try {
+            channelSftp.second().exit();
+        } catch (Exception ignored) {}
+
+        return connected;
     }
 
     public static Pair<Session, ChannelSftp> createChannel(CommandSender sender) {

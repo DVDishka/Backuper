@@ -2,6 +2,7 @@ package ru.dvdishka.backuper.backend.utils;
 
 import org.apache.commons.net.PrintCommandListener;
 import org.apache.commons.net.ftp.FTPClient;
+import org.apache.commons.net.ftp.FTPClientConfig;
 import org.apache.commons.net.ftp.FTPFile;
 import org.apache.commons.net.ftp.FTPReply;
 import org.bukkit.command.CommandSender;
@@ -24,6 +25,8 @@ public class FtpUtils {
     private static String pathSeparatorSymbol;
     private static int port;
 
+    private static ArrayList<FTPClient> ftps = new ArrayList<>();
+
     public static void init() {
         enabled = Config.getInstance().getFtpConfig().isEnabled();
         backupsFolder = Config.getInstance().getFtpConfig().getBackupsFolder();
@@ -35,12 +38,29 @@ public class FtpUtils {
     }
 
     public static boolean checkConnection(CommandSender sender) {
-        return createChannel(sender) != null;
-    }
-
-    public static FTPClient createChannel(CommandSender sender) {
+        FTPClient ftp = getClient(sender);
+        boolean connected = ftp != null;
 
         try {
+            ftp.disconnect();
+        } catch (Exception e) {
+            Logger.getLogger().warn("FtpUtils; checkConnection", e);
+        }
+
+        return connected;
+    }
+
+    public static FTPClient getClient(CommandSender sender) {
+
+        try {
+
+            int cnt = 0;
+            for (FTPClient client : ftps) {
+                if (client.isConnected()) {
+                    cnt++;
+                }
+            }
+
             FTPClient ftp = new FTPClient();
 
             if (Config.getInstance().isBetterLogging()) {
@@ -61,6 +81,8 @@ public class FtpUtils {
 
             ftp.setListHiddenFiles(true);
 
+            ftps.add(ftp);
+
             return ftp;
 
         } catch (Exception e) {
@@ -72,11 +94,12 @@ public class FtpUtils {
 
     public static ArrayList<String> ls(String path, CommandSender sender) {
 
-        FTPClient ftp = createChannel(sender);
+        FTPClient ftp = getClient(sender);
 
         try {
             ftp.changeWorkingDirectory(path);
             FTPFile[] files = ftp.listFiles();
+            ftp.changeWorkingDirectory("");
             return new ArrayList<>(Arrays.stream(files).map(FTPFile::getName).collect(Collectors.toList()));
 
         } catch (Exception e) {
@@ -88,7 +111,32 @@ public class FtpUtils {
         } finally {
             try {
                 ftp.disconnect();
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                Logger.getLogger().warn("FtpUtils; renameFile", e);
+            }
+        }
+    }
+
+    public static ArrayList<String> ls(FTPClient ftp, String path, CommandSender sender) {
+
+        try {
+            ftp.changeWorkingDirectory(path);
+            FTPFile[] files = ftp.listFiles();
+            ftp.changeWorkingDirectory("");
+            return new ArrayList<>(Arrays.stream(files).map(FTPFile::getName).collect(Collectors.toList()));
+
+        } catch (Exception e) {
+
+            Logger.getLogger().warn("Failed to get file list from FTP(S) server", sender);
+            Logger.getLogger().warn("FtpUtils:ls", e);
+            return null;
+
+        } finally {
+            try {
+                ftp.disconnect();
+            } catch (Exception e) {
+                Logger.getLogger().warn("FtpUtils; renameFile", e);
+            }
         }
     }
 
@@ -102,7 +150,7 @@ public class FtpUtils {
 
     public static long getDirByteSize(String remoteFilePath, CommandSender sender) {
 
-        FTPClient ftp = FtpUtils.createChannel(sender);
+        FTPClient ftp = FtpUtils.getClient(sender);
 
         if (ftp == null) {
             return 0;
@@ -124,7 +172,37 @@ public class FtpUtils {
         } finally {
             try {
                 ftp.disconnect();
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                Logger.getLogger().warn("FtpUtils; renameFile", e);
+            }
+        }
+    }
+
+    public static long getDirByteSize(FTPClient ftp, String remoteFilePath, CommandSender sender) {
+
+        if (ftp == null) {
+            return 0;
+        }
+
+        try {
+
+            long size = getFileFolderByteSize(ftp, remoteFilePath, sender);
+
+            return size;
+
+        } catch (Exception e) {
+
+            Logger.getLogger().warn("Failed to get dir size \"" + remoteFilePath + "\" from FTP(S) server", sender);
+            Logger.getLogger().warn("FtpUtils; getDirByteSize", e);
+
+            return 0;
+
+        } finally {
+            try {
+                ftp.disconnect();
+            } catch (Exception e) {
+                Logger.getLogger().warn("FtpUtils; renameFile", e);
+            }
         }
     }
 
@@ -157,6 +235,7 @@ public class FtpUtils {
                     dirSize += getFileFolderByteSize(ftp, FtpUtils.resolve(remoteFilePath, file.getName()), sender);
                 }
             }
+            ftp.changeWorkingDirectory("");
         } catch (Exception e) {
             Logger.getLogger().warn("Failed to get dir size \"" + remoteFilePath + "\" from FTP(S) server", sender);
             Logger.getLogger().warn("FtpUtils; getFileFolderByteSize", e);
@@ -166,7 +245,7 @@ public class FtpUtils {
 
     public static void createFolder(String remoteFolderPath, CommandSender sender) {
 
-        FTPClient ftp = createChannel(sender);
+        FTPClient ftp = getClient(sender);
 
         try {
             ftp.mkd(remoteFolderPath);
@@ -179,18 +258,61 @@ public class FtpUtils {
         } finally {
             try {
                 ftp.disconnect();
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                Logger.getLogger().warn("FtpUtils; renameFile", e);
+            }
+        }
+    }
+
+    public static void createFolder(FTPClient ftp, String remoteFolderPath, CommandSender sender) {
+
+        try {
+            ftp.mkd(remoteFolderPath);
+
+        } catch (Exception e) {
+
+            Logger.getLogger().warn("Failed to create remote folder + \"" + remoteFolderPath + "\" on FTP(S) server", sender);
+            Logger.getLogger().warn("FtpUtils; createRemoteFolder", e);
+
+        } finally {
+            try {
+                ftp.disconnect();
+            } catch (Exception e) {
+                Logger.getLogger().warn("FtpUtils; renameFile", e);
+            }
         }
     }
 
     public static void renameFile(String path, String newPath, CommandSender sender) {
 
-        FTPClient ftp = createChannel(sender);
+        FTPClient ftp = getClient(sender);
         try {
             ftp.rename(path, newPath);
         } catch (Exception e) {
             Logger.getLogger().warn("Failed to rename file on FTP(S) server \"" + path + "\" to \"" + newPath + "\"", sender);
             Logger.getLogger().warn("FtpUtils; renameFile", e);
+        } finally {
+            try {
+                ftp.disconnect();
+            } catch (Exception e) {
+                Logger.getLogger().warn("FtpUtils; renameFile", e);
+            }
+        }
+    }
+
+    public static void renameFile(FTPClient ftp, String path, String newPath, CommandSender sender) {
+
+        try {
+            ftp.rename(path, newPath);
+        } catch (Exception e) {
+            Logger.getLogger().warn("Failed to rename file on FTP(S) server \"" + path + "\" to \"" + newPath + "\"", sender);
+            Logger.getLogger().warn("FtpUtils; renameFile", e);
+        } finally {
+            try {
+                ftp.disconnect();
+            } catch (Exception e) {
+                Logger.getLogger().warn("FtpUtils; renameFile", e);
+            }
         }
     }
 }

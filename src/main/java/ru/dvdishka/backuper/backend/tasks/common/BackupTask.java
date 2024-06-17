@@ -55,9 +55,9 @@ public class BackupTask extends Task {
         super(taskName, setLocked, sender);
         this.afterBackup = afterBackup.toUpperCase();
         this.isAutoBackup = isAutoBackup;
-        this.isLocal = Config.getInstance().getLocalConfig().isAutoBackup();
-        this.isFtp = Config.getInstance().getFtpConfig().isAutoBackup();
-        this.isSftp = Config.getInstance().getSftpConfig().isAutoBackup();
+        this.isLocal = Config.getInstance().getLocalConfig().isAutoBackup() && Config.getInstance().getLocalConfig().isEnabled();
+        this.isFtp = Config.getInstance().getFtpConfig().isAutoBackup() && Config.getInstance().getFtpConfig().isEnabled();
+        this.isSftp = Config.getInstance().getSftpConfig().isAutoBackup() && Config.getInstance().getSftpConfig().isEnabled();
     }
 
     public BackupTask(String afterBackup, boolean isAutoBackup, boolean isLocal, boolean isFtp, boolean isSftp, boolean setLocked, CommandSender sender) {
@@ -82,6 +82,10 @@ public class BackupTask extends Task {
 
             if (!isTaskPrepared) {
                 prepareTask();
+            }
+
+            if (isAutoBackup) {
+                Logger.getLogger().log("Auto backup task has been started", sender);
             }
 
             if (Config.getInstance().isSkipDuplicateBackup() && isAutoBackup && Config.getInstance().getLastBackup() >= Config.getInstance().getLastChange()) {
@@ -211,6 +215,10 @@ public class BackupTask extends Task {
 
             Logger.getLogger().devLog("Backup task has been finished");
 
+            if (isAutoBackup) {
+                Logger.getLogger().log("Auto backup task has been finished", sender);
+            }
+
         } catch (Exception e) {
 
             try {
@@ -219,6 +227,10 @@ public class BackupTask extends Task {
 
             Logger.getLogger().warn("Something went wrong while running the task: " + taskName);
             Logger.getLogger().warn(e.getMessage());
+
+            if (isAutoBackup) {
+                Logger.getLogger().log("Auto backup task has been finished with an exception", sender);
+            }
 
             if (setLocked) {
                 UIUtils.cancelSound(sender);
@@ -456,7 +468,7 @@ public class BackupTask extends Task {
                         continue;
                     }
 
-                    if (Config.getInstance().getFtpConfig().isZipArchive()) {
+                    if (!Config.getInstance().getFtpConfig().isZipArchive()) {
 
                         Task task = new FtpSendFileFolderTask(additionalDirectoryToBackupFile, FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(),
                                 backupName), true, false, false, sender);

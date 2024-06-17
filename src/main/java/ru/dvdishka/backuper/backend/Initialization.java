@@ -15,6 +15,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.server.ServerLoadEvent;
 import org.bukkit.plugin.java.JavaPlugin;
+import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.classes.FtpBackup;
 import ru.dvdishka.backuper.backend.classes.LocalBackup;
 import ru.dvdishka.backuper.backend.classes.SftpBackup;
@@ -122,7 +123,11 @@ public class Initialization implements Listener {
 
                     Scheduler.getScheduler().runSyncRepeatingTask(Utils.plugin, () -> {
                         Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                            new BackupTask(Config.getInstance().getAfterBackup(), true, true, null).run();
+                            if (!Backuper.isLocked()) {
+                                new BackupTask(Config.getInstance().getAfterBackup(), true, true, null).run();
+                            } else {
+                                Logger.getLogger().warn("Failed to start an Auto Backup task. Blocked by another operation", sender);
+                            }
                         });
                     }, delay * 20, Config.getInstance().getBackupPeriod() * 60L * 20L);
 
@@ -130,7 +135,11 @@ public class Initialization implements Listener {
 
                     Scheduler.getScheduler().runSyncRepeatingTask(Utils.plugin, () -> {
                         Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                            new BackupTask(Config.getInstance().getAfterBackup(), true, true, null).run();
+                            if (!Backuper.isLocked()) {
+                                new BackupTask(Config.getInstance().getAfterBackup(), true, true, null).run();
+                            } else {
+                                Logger.getLogger().warn("Failed to start an Auto Backup task. Blocked by another operation", sender);
+                            }
                         });
                     }, delay * 20, 1440L * 60L * 20L);
                 }
@@ -175,14 +184,6 @@ public class Initialization implements Listener {
         backupCommandTree
 
                 .then(new LiteralArgument("backup").withPermission(Permissions.BACKUP.getPermission())
-                        .executes((sender, args) -> {
-
-                            if (sender.hasPermission(Permissions.BACKUP.getPermission())) {
-                                new BackupCommand(sender, args).execute();
-                            } else {
-                                UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
-                            }
-                        })
 
                         .then(new StringArgument("storage").includeSuggestions(ArgumentSuggestions.stringCollection((sender) -> {
                             ArrayList<String> suggestions = new ArrayList<>();
@@ -198,21 +199,26 @@ public class Initialization implements Listener {
                             }
 
                             if (Config.getInstance().getLocalConfig().isEnabled() && Config.getInstance().getFtpConfig().isEnabled()) {
-                                suggestions.add("local:ftp");
+                                suggestions.add("local-ftp");
                             }
                             if (Config.getInstance().getLocalConfig().isEnabled() && Config.getInstance().getSftpConfig().isEnabled()) {
-                                suggestions.add("local:sftp");
+                                suggestions.add("local-sftp");
                             }
                             if (Config.getInstance().getFtpConfig().isEnabled() && Config.getInstance().getSftpConfig().isEnabled()) {
-                                suggestions.add("ftp:sftp");
+                                suggestions.add("ftp-sftp");
                             }
 
                             if (Config.getInstance().getLocalConfig().isEnabled() && Config.getInstance().getSftpConfig().isEnabled() && Config.getInstance().getFtpConfig().isEnabled()) {
-                                suggestions.add("local:ftp:sftp");
+                                suggestions.add("local-ftp-sftp");
                             }
 
                             return suggestions;
                         }))
+
+                                .executes((sender, args) -> {
+
+                                    new BackupCommand(sender, args).execute();
+                                })
 
                                 .then(new LongArgument("delaySeconds")
                                         .executes((sender, args) -> {
