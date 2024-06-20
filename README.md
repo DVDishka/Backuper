@@ -98,6 +98,7 @@
 
 * `Better logging` - **(true/false)** - Enable logging of additional information **(used for debugging, you probably don't need it)**
 * `Set worlds read only` - **(true/false)** - **(True recommended)** The backuper will mark all world folders as **Read Only** to prevent folder changing that may cause the backup crash. **True** value may cause **access denied** errors during the backup **(you should just ignore that)**
+* `Check updates` - **(true/false)** - Backuper will tell you if a new version is available
 
 ---
 
