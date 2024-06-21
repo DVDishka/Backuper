@@ -24,6 +24,7 @@ import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.config.BackwardsCompatibility;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.common.BackupTask;
+import ru.dvdishka.backuper.backend.tasks.common.DeleteBrokenBackupsTask;
 import ru.dvdishka.backuper.backend.tasks.common.DeleteOldBackupsTask;
 import ru.dvdishka.backuper.backend.utils.FtpUtils;
 import ru.dvdishka.backuper.backend.utils.SftpUtils;
@@ -76,6 +77,13 @@ public class Initialization implements Listener {
             Logger.getLogger().log("Deleting old backups...");
             StatusCommand.sendTaskStartedMessage("DeleteOldBackups", sender);
             new DeleteOldBackupsTask(true, sender).run();
+
+            Logger.getLogger().log("Deleting broken backups...");
+            StatusCommand.sendTaskStartedMessage("DeleteBrokenBackups", sender);
+
+            if (Config.getInstance().isDeleteBrokenBackups()) {
+                new DeleteBrokenBackupsTask(true, sender).run();
+            }
 
             Logger.getLogger().log("Initializing auto backup...");
 
@@ -816,5 +824,18 @@ public class Initialization implements Listener {
         Logger.getLogger().log("Unifying backup names format");
         BackwardsCompatibility.unifyBackupNameFormat(sender);
         Logger.getLogger().log("Backup names format unification completed");
+    }
+
+    public static void checkStorages(CommandSender sender) {
+        if (Config.getInstance().getFtpConfig().isEnabled() && !FtpUtils.checkConnection(sender)) {
+            Logger.getLogger().warn("Failed to establish FTP(S) connection", sender);
+        } else {
+            Logger.getLogger().log("FTP(S) connection established successfully", sender);
+        }
+        if (Config.getInstance().getSftpConfig().isEnabled() && !SftpUtils.checkConnection(sender)) {
+            Logger.getLogger().warn("Failed to establish SFTP connection", sender);
+        } else {
+            Logger.getLogger().log("SFTP connection established successfully", sender);
+        }
     }
 }

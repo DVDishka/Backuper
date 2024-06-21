@@ -8,6 +8,8 @@ import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.common.BackupTask;
+import ru.dvdishka.backuper.backend.utils.FtpUtils;
+import ru.dvdishka.backuper.backend.utils.SftpUtils;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.handlers.commands.Command;
@@ -44,10 +46,18 @@ public class BackupCommand extends Command {
         this.delay = (long) args.getOrDefault("delaySeconds", 1L);
 
         String storageString = ((String) args.get("storage"));
-        if (storageString != null) {
-            isLocal = storageString.contains("local");
-            isFtp = storageString.contains("ftp");
-            isSftp = storageString.contains("sftp");
+        String[] storages = storageString.split("-");
+
+        for (String s : storages) {
+            if (s.equals("local")) {
+                isLocal = true;
+            }
+            if (s.equals("ftp")) {
+                isFtp = true;
+            }
+            if (s.equals("sftp")) {
+                isSftp = true;
+            }
         }
     }
 
@@ -68,6 +78,24 @@ public class BackupCommand extends Command {
         if (!isLocal && !isFtp && !isSftp) {
             cancelSound();
             returnFailure("Wrong storage types!");
+            return;
+        }
+
+        if (isLocal && !Config.getInstance().getLocalConfig().isEnabled()) {
+            cancelSound();
+            returnFailure("Local storage is disabled!");
+            return;
+        }
+
+        if (isFtp && !SftpUtils.checkConnection(sender)) {
+            cancelSound();
+            returnFailure("FTP(S) storage is disabled or unavailable!");
+            return;
+        }
+
+        if (isSftp && !FtpUtils.checkConnection(sender)) {
+            cancelSound();
+            returnFailure("SFTP storage is disabled or unavailable!");
             return;
         }
 

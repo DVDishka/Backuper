@@ -38,6 +38,11 @@ public class FtpUtils {
     }
 
     public static boolean checkConnection(CommandSender sender) {
+
+        if (!Config.getInstance().getFtpConfig().isEnabled()) {
+            return false;
+        }
+
         FTPClient ftp = getClient(sender);
         boolean connected = ftp != null;
 

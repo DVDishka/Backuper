@@ -45,6 +45,11 @@ public class SftpUtils {
     }
 
     public static boolean checkConnection(CommandSender sender) {
+
+        if (!Config.getInstance().getSftpConfig().isEnabled()) {
+            return false;
+        }
+
         Pair<Session, ChannelSftp> channelSftp = createChannel(sender);
         boolean connected = channelSftp != null;
 

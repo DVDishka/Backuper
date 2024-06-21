@@ -57,6 +57,7 @@ public class Backuper extends JavaPlugin {
         }
 
         Initialization.initConfig(configFile, null);
+        Initialization.checkStorages(null);
         Initialization.unifyBackupNameFormat(null);
         Initialization.initBStats(this);
         Initialization.initCommands();

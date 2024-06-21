@@ -37,6 +37,7 @@ public class Config {
     private boolean setWorldsReadOnly = false;
     private boolean alertOnlyServerRestart = true;
     private boolean checkUpdates = true;
+    private boolean deleteBrokenBackups = true;
 
     private LocalConfig localConfig = new LocalConfig();
     private SftpConfig sftpConfig = new SftpConfig();
@@ -93,6 +94,7 @@ public class Config {
         this.setWorldsReadOnly = config.getBoolean("backup.setWorldsReadOnly", false);
         this.autoBackup = config.getBoolean("backup.autoBackup", true);
         this.skipDuplicateBackup = config.getBoolean("backup.skipDuplicateBackup", true);
+        this.deleteBrokenBackups = config.getBoolean("backup.deleteBrokenBackups", true);
 
         this.localConfig.enabled = config.getBoolean("local.enabled", true);
         this.localConfig.autoBackup = config.getBoolean("local.autoBackup", true);
@@ -217,7 +219,8 @@ public class Config {
                 "sftp.auth.port", "sftp.auth.useKnownHostsFile", "sftp.auth.knownHostsFilePath", "local.enabled", "sftp.pathSeparatorSymbol",
                 "local.zipCompressionLevel", "sftp.maxBackupsNumber", "sftp.maxBackupsWeight", "ftp.backupsFolder", "ftp.auth.address", "ftp.auth.port",
                 "ftp.pathSeparatorSymbol", "ftp.auth.password", "ftp.auth.username", "ftp.enabled", "ftp.maxBackupsNumber", "ftp.maxBackupsWeight",
-                "ftp.zipArchive", "ftp.zipCompressionLevel", "server.checkUpdates", "local.autoBackup", "ftp.autoBackup", "sftp.autoBackup");
+                "ftp.zipArchive", "ftp.zipCompressionLevel", "server.checkUpdates", "local.autoBackup", "ftp.autoBackup", "sftp.autoBackup",
+                "backup.deleteBrokenBackups");
 
         for (String configField : configFields) {
             if (isConfigFileOk && !config.contains(configField)) {
@@ -246,6 +249,7 @@ public class Config {
             newConfig.set("backup.addDirectoryToBackup", this.addDirectoryToBackup);
             newConfig.set("backup.excludeDirectoryFromBackup", this.excludeDirectoryFromBackup);
             newConfig.set("backup.setWorldsReadOnly", this.setWorldsReadOnly);
+            newConfig.set("backup.deleteBrokenBackups", this.deleteBrokenBackups);
 
             newConfig.set("local.enabled", this.localConfig.enabled);
             newConfig.set("local.autoBackup", this.localConfig.autoBackup);
@@ -391,5 +395,9 @@ public class Config {
 
     public SftpConfig getSftpConfig() {
         return sftpConfig;
+    }
+
+    public boolean isDeleteBrokenBackups() {
+        return deleteBrokenBackups;
     }
 }

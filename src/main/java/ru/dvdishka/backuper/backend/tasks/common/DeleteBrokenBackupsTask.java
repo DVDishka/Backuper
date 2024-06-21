@@ -1,0 +1,142 @@
+package ru.dvdishka.backuper.backend.tasks.common;
+
+import org.bukkit.command.CommandSender;
+import ru.dvdishka.backuper.Backuper;
+import ru.dvdishka.backuper.backend.common.Logger;
+import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.backend.tasks.Task;
+import ru.dvdishka.backuper.backend.tasks.ftp.FtpDeleteDirTask;
+import ru.dvdishka.backuper.backend.tasks.local.folder.DeleteDirTask;
+import ru.dvdishka.backuper.backend.tasks.sftp.SftpDeleteDirTask;
+import ru.dvdishka.backuper.backend.utils.FtpUtils;
+import ru.dvdishka.backuper.backend.utils.SftpUtils;
+import ru.dvdishka.backuper.backend.utils.UIUtils;
+
+import java.io.File;
+import java.util.ArrayList;
+
+public class DeleteBrokenBackupsTask extends Task {
+
+    private static final String taskName = "DeleteBrokenBackupsTask";
+
+    private ArrayList<Task> tasks = new ArrayList<>();
+
+    public DeleteBrokenBackupsTask(boolean setLocked, CommandSender sender) {
+        super(taskName, setLocked, sender);
+    }
+
+    @Override
+    public void run() {
+
+        if (setLocked) {
+            Backuper.lock(this);
+        }
+
+        try {
+
+            Logger.getLogger().devLog("DeleteBrokenBackups task has been started");
+
+            if (!isTaskPrepared) {
+                prepareTask();
+            }
+
+            for (Task task : tasks) {
+                task.run();
+            }
+
+            if (setLocked) {
+                Logger.getLogger().log("DeleteBrokenBackups task completed");
+                UIUtils.successSound(sender);
+                Backuper.unlock();
+            }
+
+            Logger.getLogger().devLog("DeleteBrokenBackups task has been finished");
+
+        } catch (Exception e) {
+
+            Logger.getLogger().warn("Something went wrong when trying to delete broken backups", sender);
+            Logger.getLogger().warn(this, e);
+
+            if (setLocked) {
+                UIUtils.cancelSound(sender);
+                Backuper.unlock();
+            }
+        }
+    }
+
+    @Override
+    public void prepareTask() {
+
+        if (Config.getInstance().getLocalConfig().isEnabled()) {
+
+            File backupsFolder = new File(Config.getInstance().getLocalConfig().getBackupsFolder());
+
+            if (!backupsFolder.exists() || backupsFolder.listFiles() == null) {
+                Logger.getLogger().warn("Wrong local backupsFolder!");
+            } else {
+
+                for (File file : backupsFolder.listFiles()) {
+                    if (file.getName().replace(".zip", "").endsWith(" in progress")) {
+                        tasks.add(new DeleteDirTask(file, false, sender));
+                    }
+                }
+            }
+        }
+
+        if (Config.getInstance().getFtpConfig().isEnabled()) {
+            if (FtpUtils.checkConnection(sender)) {
+
+                ArrayList<String> files = FtpUtils.ls(Config.getInstance().getFtpConfig().getBackupsFolder(), sender);
+
+                for (String file : files) {
+
+                    if (file.replace(".zip", "").endsWith(" in progress")) {
+                        tasks.add(new FtpDeleteDirTask(FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(), file), false, sender));
+                    }
+                }
+
+            } else {
+                Logger.getLogger().warn("Failed to establish FTP(S) connection");
+            }
+        }
+
+        if (Config.getInstance().getSftpConfig().isEnabled()) {
+            if (SftpUtils.checkConnection(sender)) {
+
+                ArrayList<String> files = SftpUtils.ls(Config.getInstance().getSftpConfig().getBackupsFolder(), sender);
+
+                for (String file : files) {
+
+                    if (file.replace(".zip", "").endsWith(" in progress")) {
+                        tasks.add(new SftpDeleteDirTask(FtpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), file), false, sender));
+                    }
+                }
+
+            } else {
+                Logger.getLogger().warn("Failed to establish SFTP connection");
+            }
+        }
+    }
+
+    @Override
+    public long getTaskMaxProgress() {
+        long maxProgress = 0;
+
+        for (Task task : tasks) {
+            maxProgress += task.getTaskMaxProgress();
+        }
+
+        return maxProgress;
+    }
+
+    @Override
+    public long getTaskCurrentProgress() {
+        long currentProgress = 0;
+
+        for (Task task : tasks) {
+            currentProgress += task.getTaskCurrentProgress();
+        }
+
+        return currentProgress;
+    }
+}

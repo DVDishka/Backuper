@@ -33,8 +33,8 @@ public class BackupTask extends Task {
     private final boolean isAutoBackup;
     private final String afterBackup;
     private final boolean isLocal;
-    private final boolean isFtp;
-    private final boolean isSftp;
+    private boolean isFtp;
+    private boolean isSftp;
 
     private final long deleteProgressMultiplier = 1;
     private final long copyProgressMultiplier = 5;
@@ -88,6 +88,15 @@ public class BackupTask extends Task {
                 Logger.getLogger().log("Auto backup task has been started", sender);
             }
 
+            if (isFtp && !FtpUtils.checkConnection(sender)) {
+                Logger.getLogger().warn("Failed to connect to FTP(S) server during the backup task. Skipping this storage...", sender);
+                isFtp = false;
+            }
+            if (isSftp && !SftpUtils.checkConnection(sender)) {
+                Logger.getLogger().warn("Failed to connect to SFTP server during the backup task. Skipping this storage...", sender);
+                isSftp = false;
+            }
+
             if (Config.getInstance().isSkipDuplicateBackup() && isAutoBackup && Config.getInstance().getLastBackup() >= Config.getInstance().getLastChange()) {
 
                 Logger.getLogger().log("The backup cycle will be skipped since there were no changes from the previous backup", sender);
@@ -116,6 +125,12 @@ public class BackupTask extends Task {
             Logger.getLogger().devLog("Backup task has been started");
 
             for (Task task : tasks) {
+                if ((task instanceof FtpAddLocalDirsToZipTask || task instanceof FtpSendFileFolderTask) && !isFtp) {
+                    continue;
+                }
+                if (task instanceof SftpSendFileFolderTask && !isSftp) {
+                    continue;
+                }
                 task.run();
             }
 
@@ -153,7 +168,7 @@ public class BackupTask extends Task {
             }
 
             // RENAME FTP TASK
-            if (isFtp && FtpUtils.checkConnection(sender)) {
+            if (isFtp) {
 
                 Logger.getLogger().devLog("The Rename \"in progress\" Folder FTP(S) task has been started");
 
@@ -171,7 +186,7 @@ public class BackupTask extends Task {
             }
 
             // RENAME SFTP TASK
-            if (isSftp && SftpUtils.checkConnection(sender)) {
+            if (isSftp) {
 
                 Logger.getLogger().devLog("The Rename \"in progress\" Folder SFTP task has been started");
 
@@ -193,6 +208,7 @@ public class BackupTask extends Task {
             // DELETE OLD BACKUPS TASK MUST BE RAN AFTER RENAMING
             {
                 new DeleteOldBackupsTask(false, sender).run();
+                new DeleteBrokenBackupsTask(false, sender).run();
             }
 
             if (setLocked) {
