@@ -208,7 +208,9 @@ public class BackupTask extends Task {
             // DELETE OLD BACKUPS TASK MUST BE RAN AFTER RENAMING
             {
                 new DeleteOldBackupsTask(false, sender).run();
-                new DeleteBrokenBackupsTask(false, sender).run();
+                if (Config.getInstance().isDeleteBrokenBackups()) {
+                    new DeleteBrokenBackupsTask(false, sender).run();
+                }
             }
 
             if (setLocked) {
