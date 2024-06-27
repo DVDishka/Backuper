@@ -1,4 +1,4 @@
-package ru.dvdishka.backuper.handlers.commands.menu.copyToSftp;
+package ru.dvdishka.backuper.handlers.commands.menu.copyToFtp;
 
 import dev.jorel.commandapi.executors.CommandArguments;
 import net.kyori.adventure.text.Component;
@@ -12,9 +12,9 @@ import ru.dvdishka.backuper.backend.classes.LocalBackup;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.handlers.commands.Command;
 
-public class CopyToSftpConfirmationCommand extends Command {
+public class CopyToFtpConfirmationCommand extends Command {
 
-    public CopyToSftpConfirmationCommand(CommandSender sender, CommandArguments arguments) {
+    public CopyToFtpConfirmationCommand(CommandSender sender, CommandArguments arguments) {
         super(sender, arguments);
     }
 
@@ -23,9 +23,9 @@ public class CopyToSftpConfirmationCommand extends Command {
 
         String backupName = (String) arguments.get("backupName");
 
-        if (!Config.getInstance().getSftpConfig().isEnabled()) {
+        if (!Config.getInstance().getFtpConfig().isEnabled()) {
             cancelSound();
-            returnFailure("SFTP storage is disabled");
+            returnFailure("FTP storage is disabled");
             return;
         }
 
@@ -54,7 +54,7 @@ public class CopyToSftpConfirmationCommand extends Command {
         Component header = Component.empty();
 
         header = header
-                .append(Component.text("Confirm copying to SFTP")
+                .append(Component.text("Confirm copying to FTP")
                         .decorate(TextDecoration.BOLD)
                         .color(TextColor.color(0xB02100)));
 
@@ -67,8 +67,8 @@ public class CopyToSftpConfirmationCommand extends Command {
                 .append(Component.newline());
 
         message = message
-                .append(Component.text("[COPY TO SFTP]")
-                        .clickEvent(ClickEvent.runCommand("/backuper menu local " + "\"" + backupName + "\" copyToSftp"))
+                .append(Component.text("[COPY TO FTP]")
+                        .clickEvent(ClickEvent.runCommand("/backuper menu local " + "\"" + backupName + "\" copyToFtp"))
                         .color(TextColor.color(0xB02100))
                         .decorate(TextDecoration.BOLD));
 

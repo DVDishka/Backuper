@@ -126,7 +126,7 @@ public class FtpGetFileFolderTask extends Task {
                     Logger.getLogger().warn("Failed to download file \"" + remoteDir + "\" from FTP(S) server");
                     Logger.getLogger().warn("FtpGetFileFolder:getFileFolder", e);
                 }
-                currentProgress += currentDir.getSize();
+                incrementCurrentProgress(currentDir.getSize());
             }
 
             if (currentDir.isDirectory()) {

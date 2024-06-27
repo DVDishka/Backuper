@@ -80,23 +80,6 @@ public class BackupTask extends Task {
 
         try {
 
-            if (!isTaskPrepared) {
-                prepareTask();
-            }
-
-            if (isAutoBackup) {
-                Logger.getLogger().log("Auto backup task has been started", sender);
-            }
-
-            if (isFtp && !FtpUtils.checkConnection(sender)) {
-                Logger.getLogger().warn("Failed to connect to FTP(S) server during the backup task. Skipping this storage...", sender);
-                isFtp = false;
-            }
-            if (isSftp && !SftpUtils.checkConnection(sender)) {
-                Logger.getLogger().warn("Failed to connect to SFTP server during the backup task. Skipping this storage...", sender);
-                isSftp = false;
-            }
-
             if (Config.getInstance().isSkipDuplicateBackup() && isAutoBackup && Config.getInstance().getLastBackup() >= Config.getInstance().getLastChange()) {
 
                 Logger.getLogger().log("The backup cycle will be skipped since there were no changes from the previous backup", sender);
@@ -120,6 +103,23 @@ public class BackupTask extends Task {
                     Backuper.unlock();
                 }
                 return;
+            }
+
+            if (!isTaskPrepared) {
+                prepareTask();
+            }
+
+            if (isAutoBackup) {
+                Logger.getLogger().log("Auto backup task has been started", sender);
+            }
+
+            if (isFtp && !FtpUtils.checkConnection(sender)) {
+                Logger.getLogger().warn("Failed to connect to FTP(S) server during the backup task. Skipping this storage...", sender);
+                isFtp = false;
+            }
+            if (isSftp && !SftpUtils.checkConnection(sender)) {
+                Logger.getLogger().warn("Failed to connect to SFTP server during the backup task. Skipping this storage...", sender);
+                isSftp = false;
             }
 
             Logger.getLogger().devLog("Backup task has been started");

@@ -33,10 +33,18 @@ public class BackupCommand extends Command {
         this.delay = (long) args.getOrDefault("delaySeconds", 1L);
 
         String storageString = ((String) args.get("storage"));
-        if (storageString != null) {
-            isLocal = storageString.contains("local");
-            isFtp = storageString.contains("ftp");
-            isSftp = storageString.contains("sftp");
+        String[] storages = storageString.split("-");
+
+        for (String s : storages) {
+            if (s.equals("local")) {
+                isLocal = true;
+            }
+            if (s.equals("ftp")) {
+                isFtp = true;
+            }
+            if (s.equals("sftp")) {
+                isSftp = true;
+            }
         }
     }
 
@@ -87,13 +95,13 @@ public class BackupCommand extends Command {
             return;
         }
 
-        if (isFtp && !SftpUtils.checkConnection(sender)) {
+        if (isFtp && !FtpUtils.checkConnection(sender)) {
             cancelSound();
             returnFailure("FTP(S) storage is disabled or unavailable!");
             return;
         }
 
-        if (isSftp && !FtpUtils.checkConnection(sender)) {
+        if (isSftp && !SftpUtils.checkConnection(sender)) {
             cancelSound();
             returnFailure("SFTP storage is disabled or unavailable!");
             return;

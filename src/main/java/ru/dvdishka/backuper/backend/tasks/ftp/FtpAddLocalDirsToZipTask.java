@@ -1,6 +1,8 @@
 package ru.dvdishka.backuper.backend.tasks.ftp;
 
+import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
+import org.apache.commons.net.ftp.FTPClientConfig;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.common.Logger;
@@ -12,6 +14,7 @@ import ru.dvdishka.backuper.backend.utils.Utils;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -23,7 +26,6 @@ public class FtpAddLocalDirsToZipTask extends Task {
     private static final String taskName = "FtpAddLocalDirToZip";
 
     private String targetZipPath;
-    private ZipOutputStream targetZipOutputStream;
     private final ArrayList<File> sourceDirsToAdd;
 
     private FTPClient ftpClient = null;
@@ -58,10 +60,12 @@ public class FtpAddLocalDirsToZipTask extends Task {
             if (ftpClient == null) {
                 return;
             }
+            ftpClient.setFileType(FTPClient.BINARY_FILE_TYPE);
+
+            OutputStream outputStream = ftpClient.storeFileStream(targetZipPath);
+            ZipOutputStream targetZipOutputStream = new ZipOutputStream(outputStream);
 
             try {
-                targetZipOutputStream = new ZipOutputStream(ftpClient.storeFileStream(targetZipPath));
-
                 for (File sourceDirToAdd : sourceDirsToAdd) {
                     if (createRootDirInTargetZIP) {
                         addDirToZip(targetZipOutputStream, sourceDirToAdd, sourceDirToAdd.getCanonicalFile().getParentFile().toPath());
@@ -76,6 +80,9 @@ public class FtpAddLocalDirsToZipTask extends Task {
 
                 Backuper.unlock();
             } finally {
+                targetZipOutputStream.finish();
+                targetZipOutputStream.close();
+                outputStream.close();
                 ftpClient.disconnect();
             }
 
@@ -127,16 +134,15 @@ public class FtpAddLocalDirsToZipTask extends Task {
 
                 zip.putNextEntry(zipEntry);
                 FileInputStream fileInputStream = new FileInputStream(sourceDir);
-                byte[] buffer = new byte[4048];
+                byte[] buffer = new byte[1024];
                 int length;
 
-                while ((length = fileInputStream.read(buffer)) > 0) {
+                while ((length = fileInputStream.read(buffer)) >= 0) {
                     zip.write(buffer, 0, length);
+                    incrementCurrentProgress(length);
                 }
                 zip.closeEntry();
                 fileInputStream.close();
-
-                incrementCurrentProgress(notCompressedByteSize);
 
             } catch (Exception e) {
 

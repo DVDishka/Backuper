@@ -2,10 +2,12 @@ package ru.dvdishka.backuper.handlers.commands.menu.copyToLocal;
 
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
+import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.classes.Backup;
 import ru.dvdishka.backuper.backend.classes.FtpBackup;
 import ru.dvdishka.backuper.backend.classes.LocalBackup;
 import ru.dvdishka.backuper.backend.classes.SftpBackup;
+import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.Task;
@@ -57,6 +59,12 @@ public class CopyToLocalCommand extends Command {
             return;
         }
 
+        if (Backuper.isLocked()) {
+            cancelSound();
+            returnFailure("Blocked by another operation!");
+            return;
+        }
+
         for (LocalBackup localBackup : LocalBackup.getBackups()) {
             if (localBackup.getName().equals(backup.getName())) {
                 cancelSound();
@@ -71,19 +79,33 @@ public class CopyToLocalCommand extends Command {
 
         final Task copyToLocalTask;
 
+        String inProgressName = backup.getName() + " in progress";
+        if (backup.getFileType().equals("(ZIP)")) {
+            inProgressName += ".zip";
+        }
+        File inProgressFile = new File(Config.getInstance().getLocalConfig().getBackupsFolder(), inProgressName);
+
         if (storage.equals("sftp")) {
-            copyToLocalTask = new SftpGetFileFolderTask(backup.getPath(), new File(Config.getInstance().getLocalConfig().getBackupsFolder()),
-                    true, true, sender);
+            copyToLocalTask = new SftpGetFileFolderTask(backup.getPath(), inProgressFile,
+                    false, true, sender);
         }
         else if (storage.equals("ftp")) {
-            copyToLocalTask = new FtpGetFileFolderTask(backup.getPath(), new File(Config.getInstance().getLocalConfig().getBackupsFolder()),
-                    true, true, sender);
+            copyToLocalTask = new FtpGetFileFolderTask(backup.getPath(), inProgressFile,
+                    false, true, sender);
         } else {
             copyToLocalTask = null;
         }
 
+        final String backupFileName = backup.getFileName();
+
         Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
             copyToLocalTask.run();
+
+            if (!inProgressFile.renameTo(new File(Config.getInstance().getLocalConfig().getBackupsFolder(), backupFileName))) {
+                Logger.getLogger().warn("Failed to rename local file: \"" + inProgressFile.getAbsolutePath() + "\" to \"" +
+                        new File(Config.getInstance().getLocalConfig().getBackupsFolder(), backupFileName).getAbsolutePath() + "\"", sender);
+            }
+
             sendMessage("CopyToLocal task completed");
         });
     }

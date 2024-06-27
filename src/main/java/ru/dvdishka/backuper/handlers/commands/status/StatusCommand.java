@@ -9,6 +9,8 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import ru.dvdishka.backuper.Backuper;
+import ru.dvdishka.backuper.backend.tasks.ftp.FtpGetFileFolderTask;
+import ru.dvdishka.backuper.backend.tasks.ftp.FtpSendFileFolderTask;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
@@ -57,6 +59,13 @@ public class StatusCommand extends Command {
                 .append(Component.text(progress + "%")
                         .decorate(TextDecoration.BOLD)
                         .color(color));
+
+        if (Backuper.getCurrentTask() instanceof FtpSendFileFolderTask || Backuper.getCurrentTask() instanceof FtpGetFileFolderTask) {
+            message = message
+                    .append(Component.newline())
+                    .append(Component.text("(The progress of this task may not be displayed correctly)")
+                            .color(TextColor.color(190, 0, 27)));
+        }
 
         if (!(sender instanceof ConsoleCommandSender)) {
             sendFramedMessage(message, 15);

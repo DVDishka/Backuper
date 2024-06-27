@@ -43,16 +43,17 @@ public class FtpUtils {
             return false;
         }
 
-        FTPClient ftp = getClient(sender);
-        boolean connected = ftp != null;
-
         try {
+            FTPClient ftp = getClient(sender);
+            boolean connected = ftp != null;
             ftp.disconnect();
-        } catch (Exception e) {
-            Logger.getLogger().warn("FtpUtils; checkConnection", e);
-        }
+            return connected;
 
-        return connected;
+        } catch (Exception e) {
+
+            Logger.getLogger().warn("FtpUtils; checkConnection", e);
+            return false;
+        }
     }
 
     public static FTPClient getClient(CommandSender sender) {
@@ -83,6 +84,13 @@ public class FtpUtils {
 
             ftp.enterLocalPassiveMode();
             ftp.login(username, password);
+
+            reply = ftp.getReplyCode();
+
+            if (!FTPReply.isPositiveCompletion(reply)) {
+                ftp.disconnect();
+                throw new IOException("Failed to login FTP Server");
+            }
 
             ftp.setListHiddenFiles(true);
 

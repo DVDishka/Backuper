@@ -104,6 +104,15 @@ public class MenuCommand extends Command {
                         .append(Component.space());
             }
 
+            if (storage.equals("ftp") && Config.getInstance().getFtpConfig().isEnabled()) {
+                message = message
+                        .append(Component.text("[COPY TO FTP]")
+                                .clickEvent(ClickEvent.runCommand("/backuper menu " + storage + " \"" + backupName + "\"" + " copyToFtpConfirmation"))
+                                .decorate(TextDecoration.BOLD)
+                                .color(TextColor.color(17, 102, 212)))
+                        .append(Component.space());
+            }
+
             if (storage.equals("local") && Config.getInstance().getSftpConfig().isEnabled()) {
                 message = message
                         .append(Component.text("[COPY TO SFTP]")

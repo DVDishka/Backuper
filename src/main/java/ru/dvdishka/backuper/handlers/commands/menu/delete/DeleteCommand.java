@@ -45,6 +45,12 @@ public class DeleteCommand extends Command {
             return;
         }
 
+        if (Backuper.isLocked()) {
+            cancelSound();
+            returnFailure("Blocked by another operation!");
+            return;
+        }
+
         Backup backup = null;
 
         if (storage.equals("local")) {
@@ -55,12 +61,6 @@ public class DeleteCommand extends Command {
         }
         if (storage.equals("ftp")) {
             backup = FtpBackup.getInstance(backupName);
-        }
-
-        if (Backuper.isLocked()) {
-            cancelSound();
-            returnFailure("Blocked by another operation!");
-            return;
         }
 
         buttonSound();

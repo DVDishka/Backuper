@@ -13,6 +13,7 @@ public enum Permissions {
     LOCAL_LIST("backuper.local.list"),
     LOCAL_DELETE("backuper.local.list.delete"),
     LOCAL_COPY_TO_SFTP("backuper.local.list.copytosftp"),
+    LOCAL_COPY_TO_FTP("backuper.local.list.copytoftp"),
 
     SFTP_LIST("backuper.sftp.list"),
     SFTP_DELETE("backuper.sftp.list.delete"),

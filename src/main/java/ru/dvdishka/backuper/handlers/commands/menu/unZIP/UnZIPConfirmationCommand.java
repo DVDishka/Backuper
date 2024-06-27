@@ -49,9 +49,9 @@ public class UnZIPConfirmationCommand extends Command {
             return;
         }
 
-        if (Backuper.isLocked() || Backuper.isLocked()) {
+        if (Backuper.isLocked()) {
             cancelSound();
-            returnFailure("Backup is blocked by another operation!");
+            returnFailure("Blocked by another operation!");
             return;
         }
 

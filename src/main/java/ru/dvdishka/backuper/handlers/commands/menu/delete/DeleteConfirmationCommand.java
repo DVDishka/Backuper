@@ -63,7 +63,7 @@ public class DeleteConfirmationCommand extends Command {
 
         if (Backuper.isLocked()) {
             cancelSound();
-            returnFailure("Backup is blocked by another operation!");
+            returnFailure("Blocked by another operation!");
             return;
         }
 

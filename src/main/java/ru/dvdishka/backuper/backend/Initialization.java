@@ -32,6 +32,8 @@ import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
 import ru.dvdishka.backuper.handlers.commands.backup.BackupCommand;
+import ru.dvdishka.backuper.handlers.commands.menu.copyToFtp.CopyToFtpCommand;
+import ru.dvdishka.backuper.handlers.commands.menu.copyToFtp.CopyToFtpConfirmationCommand;
 import ru.dvdishka.backuper.handlers.commands.list.ListCommand;
 import ru.dvdishka.backuper.handlers.commands.menu.MenuCommand;
 import ru.dvdishka.backuper.handlers.commands.menu.copyToLocal.CopyToLocalCommand;
@@ -407,6 +409,9 @@ public class Initialization implements Listener {
                                                                     suggestions.add("unZIP");
                                                                 }
                                                                 suggestions.add("delete");
+                                                                if (Config.getInstance().getFtpConfig().isEnabled()) {
+                                                                    suggestions.add("copyToFtp");
+                                                                }
                                                                 if (Config.getInstance().getSftpConfig().isEnabled()) {
                                                                     suggestions.add("copyToSftp");
                                                                 }
@@ -495,7 +500,28 @@ public class Initialization implements Listener {
                                                                 } else {
                                                                     UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
                                                                 }
-                                                            }                                                        })
+                                                            }
+
+                                                            if (Objects.equals(args.get("action"), "copyToFtpConfirmation")) {
+                                                                if (sender.hasPermission(Permissions.LOCAL_COPY_TO_FTP.getPermission())) {
+                                                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                        new CopyToFtpConfirmationCommand(sender, args).execute();
+                                                                    });
+                                                                } else {
+                                                                    UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                                }
+                                                            }
+
+                                                            if (Objects.equals(args.get("action"), "copyToFtp")) {
+                                                                if (sender.hasPermission(Permissions.LOCAL_COPY_TO_FTP.getPermission())) {
+                                                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                        new CopyToFtpCommand(sender, args).execute();
+                                                                    });
+                                                                } else {
+                                                                    UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                                }
+                                                            }
+                                                        })
                                                 )
                                 )
                         )

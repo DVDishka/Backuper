@@ -1,21 +1,21 @@
-package ru.dvdishka.backuper.handlers.commands.menu.copyToSftp;
+package ru.dvdishka.backuper.handlers.commands.menu.copyToFtp;
 
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
+import ru.dvdishka.backuper.backend.classes.FtpBackup;
 import ru.dvdishka.backuper.backend.classes.LocalBackup;
-import ru.dvdishka.backuper.backend.classes.SftpBackup;
 import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.tasks.sftp.SftpSendFileFolderTask;
-import ru.dvdishka.backuper.backend.utils.SftpUtils;
+import ru.dvdishka.backuper.backend.tasks.ftp.FtpSendFileFolderTask;
+import ru.dvdishka.backuper.backend.utils.FtpUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.handlers.commands.status.StatusCommand;
 
-public class CopyToSftpCommand extends Command {
+public class CopyToFtpCommand extends Command {
 
-    public CopyToSftpCommand(CommandSender sender, CommandArguments arguments) {
+    public CopyToFtpCommand(CommandSender sender, CommandArguments arguments) {
         super(sender, arguments);
     }
 
@@ -28,9 +28,9 @@ public class CopyToSftpCommand extends Command {
             return;
         }
 
-        if (!Config.getInstance().getSftpConfig().isEnabled()) {
+        if (!Config.getInstance().getFtpConfig().isEnabled()) {
             cancelSound();
-            returnFailure("SFTP storage is disabled");
+            returnFailure("FTP storage is disabled");
             return;
         }
 
@@ -48,17 +48,17 @@ public class CopyToSftpCommand extends Command {
             return;
         }
 
-        for (SftpBackup sftpBackup : SftpBackup.getBackups()) {
-            if (sftpBackup.getName().equals(localBackup.getName())) {
+        for (FtpBackup ftpBackup : FtpBackup.getBackups()) {
+            if (ftpBackup.getName().equals(localBackup.getName())) {
                 cancelSound();
-                returnFailure("Sftp storage already contains this backup");
+                returnFailure("Ftp storage already contains this backup");
                 return;
             }
         }
 
         buttonSound();
 
-        StatusCommand.sendTaskStartedMessage("CopyToSftp", sender);
+        StatusCommand.sendTaskStartedMessage("CopyToFtp", sender);
 
         Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
 
@@ -67,15 +67,15 @@ public class CopyToSftpCommand extends Command {
                 inProgressName += ".zip";
             }
 
-            new SftpSendFileFolderTask(localBackup.getFile(),
-                    SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), inProgressName),
+            new FtpSendFileFolderTask(localBackup.getFile(),
+                    FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(), inProgressName),
                     false, true, true, sender).run();
 
-            SftpUtils.renameFile(SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), inProgressName),
-                    SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), localBackup.getFileName()),
+            FtpUtils.renameFile(FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(), inProgressName),
+                    FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(), localBackup.getFileName()),
                     sender);
 
-            sendMessage("CopyToSftp task completed");
+            sendMessage("CopyToFtp task completed");
         });
     }
 }
