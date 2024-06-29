@@ -60,7 +60,6 @@ public class FtpAddLocalDirsToZipTask extends Task {
             if (ftpClient == null) {
                 return;
             }
-            ftpClient.setFileType(FTPClient.BINARY_FILE_TYPE);
 
             OutputStream outputStream = ftpClient.storeFileStream(targetZipPath);
             ZipOutputStream targetZipOutputStream = new ZipOutputStream(outputStream);
@@ -125,8 +124,6 @@ public class FtpAddLocalDirsToZipTask extends Task {
             try {
 
                 String relativeFilePath = relativeDirPath.toAbsolutePath().relativize(sourceDir.toPath().toAbsolutePath()).toString();
-
-                long notCompressedByteSize = Files.size(sourceDir.toPath());
 
                 zip.setLevel(Config.getInstance().getFtpConfig().getZipCompressionLevel());
 

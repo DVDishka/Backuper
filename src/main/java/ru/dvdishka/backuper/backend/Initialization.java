@@ -853,15 +853,19 @@ public class Initialization implements Listener {
     }
 
     public static void checkStorages(CommandSender sender) {
-        if (Config.getInstance().getFtpConfig().isEnabled() && !FtpUtils.checkConnection(sender)) {
-            Logger.getLogger().warn("Failed to establish FTP(S) connection", sender);
-        } else {
-            Logger.getLogger().log("FTP(S) connection established successfully", sender);
+        if (Config.getInstance().getFtpConfig().isEnabled()) {
+            if (FtpUtils.checkConnection(sender)) {
+                Logger.getLogger().log("FTP(S) connection established successfully", sender);
+            } else{
+                Logger.getLogger().warn("Failed to establish FTP(S) connection", sender);
+            }
         }
-        if (Config.getInstance().getSftpConfig().isEnabled() && !SftpUtils.checkConnection(sender)) {
-            Logger.getLogger().warn("Failed to establish SFTP connection", sender);
-        } else {
-            Logger.getLogger().log("SFTP connection established successfully", sender);
+        if (Config.getInstance().getSftpConfig().isEnabled()) {
+            if (SftpUtils.checkConnection(sender)) {
+                Logger.getLogger().log("SFTP connection established successfully", sender);
+            } else{
+                Logger.getLogger().warn("Failed to establish SFTP connection", sender);
+            }
         }
     }
 }

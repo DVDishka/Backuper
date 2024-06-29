@@ -141,8 +141,6 @@ public class AddDirToZipTask extends Task {
 
                 String relativeFilePath = relativeDirPath.toAbsolutePath().relativize(sourceDir.toPath().toAbsolutePath()).toString();
 
-                long notCompressedByteSize = Files.size(sourceDir.toPath());
-
                 zip.setLevel(Config.getInstance().getLocalConfig().getZipCompressionLevel());
 
                 ZipEntry zipEntry = new ZipEntry(relativeFilePath);
@@ -152,13 +150,12 @@ public class AddDirToZipTask extends Task {
                 byte[] buffer = new byte[4048];
                 int length;
 
-                while ((length = fileInputStream.read(buffer)) > 0) {
+                while ((length = fileInputStream.read(buffer)) >= 0) {
                     zip.write(buffer, 0, length);
+                    incrementCurrentProgress(length);
                 }
                 zip.closeEntry();
                 fileInputStream.close();
-
-                incrementCurrentProgress(notCompressedByteSize);
 
             } catch (Exception e) {
 

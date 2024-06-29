@@ -1,8 +1,8 @@
 package ru.dvdishka.backuper.backend.utils;
 
 import org.apache.commons.net.PrintCommandListener;
+import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
-import org.apache.commons.net.ftp.FTPClientConfig;
 import org.apache.commons.net.ftp.FTPFile;
 import org.apache.commons.net.ftp.FTPReply;
 import org.bukkit.command.CommandSender;
@@ -92,6 +92,8 @@ public class FtpUtils {
                 throw new IOException("Failed to login FTP Server");
             }
 
+            ftp.setFileType(FTP.BINARY_FILE_TYPE, FTP.BINARY_FILE_TYPE);
+            ftp.setFileTransferMode(FTP.STREAM_TRANSFER_MODE);
             ftp.setListHiddenFiles(true);
 
             ftps.add(ftp);

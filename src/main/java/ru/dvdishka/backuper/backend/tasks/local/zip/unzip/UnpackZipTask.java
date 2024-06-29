@@ -9,6 +9,7 @@ import ru.dvdishka.backuper.backend.utils.Utils;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -23,8 +24,6 @@ public class UnpackZipTask extends Task {
 
     private final File sourceZipDir;
     private final File targetFolderDir;
-
-    private final ArrayList<CompletableFuture<Void>> unPackTasks = new ArrayList<>();
 
     public UnpackZipTask(File sourceZipDir, File targetFolderDir, boolean setLocked, CommandSender sender) {
 
@@ -52,43 +51,42 @@ public class UnpackZipTask extends Task {
 
             while ((zipEntry = zipInput.getNextEntry()) != null) {
 
-                final String name = zipEntry.getName();
-                final ArrayList<Integer> content = new ArrayList<>();
-
-                for (int c = zipInput.read(); c != -1; c = zipInput.read()) {
-                    content.add(c);
+                if (zipEntry.isDirectory()) {
+                    targetFolderDir.mkdirs();
+                    continue;
                 }
 
-                CompletableFuture<Void> unPackTask = CompletableFuture.runAsync(() -> {
+                final String name = zipEntry.getName();
 
-                    try {
-                        if (!targetFolderDir.toPath().resolve(name).getParent().toFile().exists()) {
+                try {
 
-                            // Sometimes it works in vain, so there is no point in checking the result
-                            targetFolderDir.toPath().resolve(name).getParent().toFile().mkdirs();
-                        }
+                    if (!targetFolderDir.toPath().resolve(name).getParent().toFile().exists()) {
 
-                        FileOutputStream outputStream = new FileOutputStream(targetFolderDir.toPath().resolve(name).toFile());
-                        for (int c : content) {
-                            outputStream.write(c);
-                            incrementCurrentProgress(1);
-                        }
-                        outputStream.flush();
-                        outputStream.close();
-
-                    } catch (Exception e) {
-
-                        Logger.getLogger().warn("Something went wrong while trying to unpack file", sender);
-                        Logger.getLogger().warn(this, e);
+                        // Sometimes it works in vain, so there is no point in checking the result
+                        targetFolderDir.toPath().resolve(name).getParent().toFile().mkdirs();
                     }
-                });
 
-                unPackTasks.add(unPackTask);
+                    try (FileOutputStream outputStream = new FileOutputStream(targetFolderDir.toPath().resolve(name).toFile())) {
+
+                        int length;
+                        byte[] buffer = new byte[4096];
+
+                        while ((length = zipInput.read(buffer)) >= 0) {
+                            outputStream.write(buffer, 0, length);
+                            incrementCurrentProgress(length);
+                        }
+
+                        outputStream.flush();
+                    }
+
+                } catch (Exception e) {
+
+                    Logger.getLogger().warn("Something went wrong while trying to unpack file", sender);
+                    Logger.getLogger().warn(this, e);
+                }
 
                 zipInput.closeEntry();
             }
-
-            CompletableFuture.allOf(unPackTasks.toArray(new CompletableFuture[0])).join();
 
             Logger.getLogger().devLog("UnpackZip task has been finished");
 

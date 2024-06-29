@@ -12,6 +12,7 @@ import ru.dvdishka.backuper.backend.utils.UIUtils;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.util.Objects;
 
 public class FtpGetFileFolderTask extends Task {
@@ -119,14 +120,20 @@ public class FtpGetFileFolderTask extends Task {
 
                 localDir.createNewFile();
 
-                try (FileOutputStream outputStream = new FileOutputStream(localDir)) {
-                    ftp.retrieveFile(remoteDir, outputStream);
+                try (FileOutputStream outputStream = new FileOutputStream(localDir); InputStream inputStream = ftp.retrieveFileStream(remoteDir)) {
+
+                    byte[] buffer = new byte[1024];
+                    int length;
+
+                    while ((length = inputStream.read(buffer)) >= 0) {
+                        outputStream.write(buffer, 0, length);
+                        incrementCurrentProgress(length);
+                    }
 
                 } catch (Exception e) {
                     Logger.getLogger().warn("Failed to download file \"" + remoteDir + "\" from FTP(S) server");
                     Logger.getLogger().warn("FtpGetFileFolder:getFileFolder", e);
                 }
-                incrementCurrentProgress(currentDir.getSize());
             }
 
             if (currentDir.isDirectory()) {

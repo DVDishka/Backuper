@@ -37,10 +37,10 @@ public class StatusCommand extends Command {
         long progress = Backuper.getCurrentTask().getTaskPercentProgress();
         TextColor color;
 
-        if (progress < 25) {
+        if (progress < 40) {
             color = TextColor.color(190, 0, 27);
         }
-        else if (progress < 70) {
+        else if (progress < 75) {
             color = TextColor.color(190, 151, 0);
         }
         else {
@@ -59,13 +59,6 @@ public class StatusCommand extends Command {
                 .append(Component.text(progress + "%")
                         .decorate(TextDecoration.BOLD)
                         .color(color));
-
-        if (Backuper.getCurrentTask() instanceof FtpSendFileFolderTask || Backuper.getCurrentTask() instanceof FtpGetFileFolderTask) {
-            message = message
-                    .append(Component.newline())
-                    .append(Component.text("(The progress of this task may not be displayed correctly)")
-                            .color(TextColor.color(190, 0, 27)));
-        }
 
         if (!(sender instanceof ConsoleCommandSender)) {
             sendFramedMessage(message, 15);

@@ -24,6 +24,7 @@ backup:
   # (0 - 23). Automatic backups will be made at this time every day. (backupPeriod will be automatically set to 24 hours). -1 to disable backup time fixation
   backupTime: -1
 
+  # (true/false) Sometimes errors may occur while creating a backup. When this option is enabled, such backups will be deleted
   deleteBrokenBackups: true
   # (true/false) The backup will only occur if the world has been changed since the last backup. If the world has not been changed, this backup cycle will be skipped
   skipDuplicateBackup: true
