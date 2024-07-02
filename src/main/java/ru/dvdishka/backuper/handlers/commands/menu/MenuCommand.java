@@ -104,7 +104,7 @@ public class MenuCommand extends Command {
                         .append(Component.space());
             }
 
-            if (storage.equals("ftp") && Config.getInstance().getFtpConfig().isEnabled()) {
+            if (storage.equals("local") && Config.getInstance().getFtpConfig().isEnabled()) {
                 message = message
                         .append(Component.text("[COPY TO FTP]")
                                 .clickEvent(ClickEvent.runCommand("/backuper menu " + storage + " \"" + backupName + "\"" + " copyToFtpConfirmation"))

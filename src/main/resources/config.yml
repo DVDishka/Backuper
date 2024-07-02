@@ -35,8 +35,9 @@ backup:
   setWorldsReadOnly: false
 
 local:
-  # (true/false) Enable backup to local directory
+  # (true/false) Enable local storage to use it via the Backuper
   enabled: true
+  # (true/false) With automatic backup, backups will be saved to specified local storage. Works only if 'enabled: true'
   autoBackup: true
 
   # (Path) Full directory where backups will be stored
@@ -53,10 +54,14 @@ local:
   zipCompressionLevel: 5
 
 ftp:
+  # (true/false) Enable FTP storage to use it via the Backuper
   enabled: false
+  # (true/false) With automatic backup, backups will be saved to specified FTP server. Works only if 'enabled: true'
   autoBackup: true
 
-  backupsFolder:
+  # (Path) FTP server directory where backups will be stored
+  backupsFolder: ''
+  # (Symbol) Path separator symbol used on FTP SERVER. For example '/' on UNIX systems and '\' on windows
   pathSeparatorSymbol: /
 
   # (>= 0) Max backups in backups folder, 0 to make it unlimited
@@ -70,16 +75,24 @@ ftp:
   zipCompressionLevel: 5
 
   auth:
-    address:
+    # (Address) FTP server address
+    address: ''
+    # (Port) FTP server port
     port: 21
-    username:
-    password:
+    # (Username) FTP server username to use for authentication
+    username: ''
+    # (Password) FTP server password to use for authentication
+    password: ''
 
 sftp:
+  # (true/false) Enable SFTP storage to use it via the Backuper
   enabled: false
+  # (true/false) With automatic backup, backups will be saved to specified SFTP server. Works only if 'enabled: true'
   autoBackup: true
 
-  backupsFolder:
+  # (Path) SFTP server directory where backups will be stored
+  backupsFolder: ''
+  # (Symbol) Path separator symbol used on SFTP SERVER. For example '/' on UNIX systems and '\' on windows
   pathSeparatorSymbol: /
 
   # (>= 0) Max backups in backups folder, 0 to make it unlimited
@@ -88,14 +101,22 @@ sftp:
   maxBackupsWeight: 0
 
   auth:
-    address:
+    # (Address) SFTP server address
+    address: ''
+    # (Port) FTP server port
     port: 22
+    # (password/key) SFTP server authentication type
     authType: password
-    username:
-    password:
-    keyFilePath:
+    # (Username) FTP server username to use for authentication
+    username: ''
+    # (Password) FTP server password to use for authentication
+    password: ''
+    # (Absolute Path) Local path to key file if 'authType: key'
+    keyFilePath: ''
+    # (true/false) Do you want to specify local knownHostsFile?
     useKnownHostsFile: false
-    knownHostsFilePath:
+    # (Path) Path to local knownHostsFile if 'useKnownHostsFile: true'
+    knownHostsFilePath: ''
 
 server:
   # (SECONDS < backupPeriod * 60 or -1) A notification about the server restart will be sent to all players on the server {alertTimeBeforeRestart} seconds before the restart. -1 to disable notifications

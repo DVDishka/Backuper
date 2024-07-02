@@ -120,20 +120,15 @@ public class FtpGetFileFolderTask extends Task {
 
                 localDir.createNewFile();
 
-                try (FileOutputStream outputStream = new FileOutputStream(localDir); InputStream inputStream = ftp.retrieveFileStream(remoteDir)) {
+                try (FileOutputStream outputStream = new FileOutputStream(localDir)) {
 
-                    byte[] buffer = new byte[1024];
-                    int length;
-
-                    while ((length = inputStream.read(buffer)) >= 0) {
-                        outputStream.write(buffer, 0, length);
-                        incrementCurrentProgress(length);
-                    }
+                    ftp.retrieveFile(remoteDir, outputStream);
 
                 } catch (Exception e) {
-                    Logger.getLogger().warn("Failed to download file \"" + remoteDir + "\" from FTP(S) server");
+                    Logger.getLogger().warn("Failed to download file \"" + remoteDir + "\" from FTP(S) server", sender);
                     Logger.getLogger().warn("FtpGetFileFolder:getFileFolder", e);
                 }
+                incrementCurrentProgress(currentDir.getSize());
             }
 
             if (currentDir.isDirectory()) {
