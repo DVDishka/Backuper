@@ -131,10 +131,10 @@ public class BackupCommand extends Command {
 
         if (arguments.get("delaySeconds") != null) {
 
-            returnSuccess("Backup process will be started in " + delay + " seconds");
+            returnSuccess("Backup task will be started in " + delay + " seconds");
 
             if (!(sender instanceof ConsoleCommandSender)) {
-                Logger.getLogger().log("Backup process will be started in " + delay + " seconds");
+                Logger.getLogger().log("Backup task will be started in " + delay + " seconds");
             }
         }
     }

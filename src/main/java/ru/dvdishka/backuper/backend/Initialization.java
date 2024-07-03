@@ -123,10 +123,15 @@ public class Initialization implements Listener {
                     }, firstAlertDelay);
 
                     long secondAlertDelay = max((delay + Config.getInstance().getBackupPeriod() * 60L - Config.getInstance().getAlertTimeBeforeRestart()) * 20, 1);
+                    long period = Config.getInstance().getBackupPeriod() * 60L * 20L;
+
+                    if (Config.getInstance().isFixedBackupTime()) {
+                        period = 1440 * 60L * 20L;
+                    }
 
                     Scheduler.getScheduler().runSyncRepeatingTask(Utils.plugin, () -> {
                         UIUtils.sendBackupAlert(Config.getInstance().getAlertTimeBeforeRestart(), Config.getInstance().getAfterBackup());
-                    }, secondAlertDelay, Config.getInstance().getBackupPeriod() * 60L * 20L);
+                    }, secondAlertDelay, period);
                 }
 
                 if (!Config.getInstance().isFixedBackupTime()) {

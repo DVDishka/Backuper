@@ -73,7 +73,12 @@ public class FtpUtils {
                 ftp.addProtocolCommandListener(new PrintCommandListener(new PrintWriter(System.out)));
             }
 
+            ftp.setConnectTimeout(10 * 1000);
+            ftp.setDefaultTimeout(30 * 1000);
+            ftp.setDataTimeout(30 * 1000);
+            ftp.setControlKeepAliveTimeout(30 * 1000);
             ftp.setControlEncoding("UTF-8");
+
             ftp.connect(address, port);
             int reply = ftp.getReplyCode();
 

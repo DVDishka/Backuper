@@ -143,7 +143,7 @@ public class Utils {
 
                 File excludeDirectoryFromBackupFile = Paths.get(excludeDirectoryFromBackup).toFile().getCanonicalFile();
 
-                if (path.toPath().startsWith(excludeDirectoryFromBackupFile.toPath())) {
+                if (path.getCanonicalFile().toPath().startsWith(excludeDirectoryFromBackupFile.toPath())) {
                     isExcludedDirectory = true;
                 }
 

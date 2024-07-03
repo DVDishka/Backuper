@@ -151,16 +151,24 @@ public class BackupTask extends Task {
                         File oldZipFile = new File(Config.getInstance().getLocalConfig().getBackupsFolder()).toPath().resolve(backupDir.getName() + ".zip").toFile();
                         File newZipFile = new File(Config.getInstance().getLocalConfig().getBackupsFolder()).toPath().resolve(backupDir.getName().replace(" in progress", "") + ".zip").toFile();
 
-                        if (!oldZipFile.renameTo(newZipFile)) {
-                            Logger.getLogger().warn("The Rename \"in progress\" ZIP local task has been finished with an exception!", sender);
+                        int attempts = 0;
+                        while (!oldZipFile.renameTo(newZipFile) && attempts < 1000000) {
+                            if (attempts == 999999) {
+                                Logger.getLogger().warn("The Rename \"in progress\" ZIP local task has been finished with an exception!", sender);
+                            }
+                            attempts++;
                         }
                     } else {
 
                         File oldFolder = new File(Config.getInstance().getLocalConfig().getBackupsFolder()).toPath().resolve(backupDir.getName()).toFile();
                         File newFolder = new File(Config.getInstance().getLocalConfig().getBackupsFolder()).toPath().resolve(backupDir.getName().replace(" in progress", "")).toFile();
 
-                        if (!oldFolder.renameTo(newFolder)) {
-                            Logger.getLogger().warn("The Rename \"in progress\" Folder local task has been finished with an exception!", sender);
+                        int attempts = 0;
+                        while (!oldFolder.renameTo(newFolder) && attempts < 1000000) {
+                            if (attempts == 999999) {
+                                Logger.getLogger().warn("The Rename \"in progress\" Folder local task has been finished with an exception!", sender);
+                            }
+                            attempts++;
                         }
                     }
                     Logger.getLogger().devLog("The Rename \"in progress\" Folder/ZIP local task has been finished");
@@ -214,6 +222,9 @@ public class BackupTask extends Task {
             }
 
             if (setLocked) {
+                if (isAutoBackup) {
+                    Logger.getLogger().log("Auto backup task completed", sender);
+                }
                 UIUtils.successSound(sender);
                 Backuper.unlock();
             }
@@ -232,10 +243,6 @@ public class BackupTask extends Task {
             }
 
             Logger.getLogger().devLog("Backup task has been finished");
-
-            if (isAutoBackup) {
-                Logger.getLogger().log("Auto backup task has been finished", sender);
-            }
 
         } catch (Exception e) {
 
