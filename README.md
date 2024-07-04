@@ -167,7 +167,7 @@
 
 
 
-### Server
+### Server settings
 
 * `Alert time before restart` - **(> 0 or -1)** - A notification about the server restart will be sent to all players on the server `alertTimeBeforeRestart` seconds before the restart. -1 to disable notifications
 * `Alert only server restart` - **(true/false)** - Notifications will be sent only if the server will be restarted or stopped after the backup
