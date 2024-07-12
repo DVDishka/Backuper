@@ -8,6 +8,10 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bstats.bukkit.Metrics;
+import org.bstats.charts.AdvancedBarChart;
+import org.bstats.charts.CustomChart;
+import org.bstats.charts.SimpleBarChart;
+import org.bstats.charts.SimplePie;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.EventHandler;
@@ -59,7 +63,10 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 
 import static java.lang.Math.max;
@@ -68,8 +75,17 @@ import static java.lang.Math.min;
 public class Initialization implements Listener {
 
     public static void initBStats(JavaPlugin plugin) {
+
+        Logger.getLogger().log("Initializing BStats...");
+
         @SuppressWarnings("unused")
         Metrics bStats = new Metrics(plugin, Utils.bStatsId);
+
+        bStats.addCustomChart(new SimplePie("local_storage", () -> Config.getInstance().getLocalConfig().isEnabled() ? "enabled" : "disabled"));
+        bStats.addCustomChart(new SimplePie("ftp_storage", () -> Config.getInstance().getFtpConfig().isEnabled() ? "enabled" : "disabled"));
+        bStats.addCustomChart(new SimplePie("sftp_storage", () -> Config.getInstance().getSftpConfig().isEnabled() ? "enabled" : "disabled"));
+
+        Logger.getLogger().log("BStats initialization completed");
     }
 
     public static void initAutoBackup(CommandSender sender) {
