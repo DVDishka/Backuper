@@ -51,4 +51,6 @@ public abstract class Task {
     abstract public void run();
 
     abstract public void prepareTask();
+
+    abstract public void cancel();
 }

@@ -1,6 +1,7 @@
 package ru.dvdishka.backuper.backend.classes;
 
 import org.bukkit.command.CommandSender;
+import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.tasks.local.folder.DeleteDirTask;
@@ -48,6 +49,13 @@ public class LocalBackup implements Backup {
         }
 
         ArrayList<LocalBackup> backups = new ArrayList<>();
+
+        if (!new File(Config.getInstance().getLocalConfig().getBackupsFolder()).exists() ||
+                new File(Config.getInstance().getLocalConfig().getBackupsFolder()).listFiles() == null) {
+            Logger.getLogger().warn("Wrong local.backupsFolder config value! (Maybe the specified folder does not exist)");
+            return backups;
+        }
+
         for (File file : Objects.requireNonNull(new File(Config.getInstance().getLocalConfig().getBackupsFolder()).listFiles())) {
             try {
                 LocalBackup localBackup = LocalBackup.getInstance(file.getName().replace(".zip", ""));

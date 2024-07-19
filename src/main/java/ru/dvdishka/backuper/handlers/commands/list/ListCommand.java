@@ -48,8 +48,8 @@ public class ListCommand extends Command {
 
         if (storage.equals("local")) {
             File backupsFolder = new File(Config.getInstance().getLocalConfig().getBackupsFolder());
-            if (backupsFolder.listFiles() == null) {
-                returnFailure("Wrong local backups folder in config.yml!");
+            if (!backupsFolder.exists() || backupsFolder.listFiles() == null) {
+                returnFailure("Wrong local.backupsFolder config value! (Maybe the specified folder does not exist)");
                 cancelSound();
                 return;
             }
