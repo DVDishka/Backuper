@@ -53,7 +53,7 @@
 2. If you want to make your backups one time a day at specific time change `backup.backupTime` option
 3. If you want to restart your server after automatic backup use `backup.afterBackup` option
 4. To set the maximum number of backups to store change `local.maxBackupsNumber`/`ftp.maxBackupsNumber`/`sftp.maxBackupsNumber`
-5. To set the maximum weight of backups to store change `local.maxBackupsNumber`/`ftp.maxBackupsNumber`/`sftp.maxBackupsNumber`
+5. To set the maximum weight of backups to store change `local.maxBackupsWeight`/`ftp.maxBackupsWeight`/`sftp.maxBackupsWeight`
 
 **To setup FTP/SFTP storage check the `Configuration` section below**
 
