@@ -38,13 +38,16 @@ public class FtpDeleteDirTask extends Task {
 
             Logger.getLogger().devLog("FtpDeleteDir task started");
 
-            ftp = FtpUtils.getClient(sender);
-
-            if (ftp == null) {
-                return;
+            if (!cancelled) {
+                ftp = FtpUtils.getClient(sender);
+                if (ftp == null) {
+                    return;
+                }
             }
 
-            deleteDir(remoteDirToDelete);
+            if (!cancelled) {
+                deleteDir(remoteDirToDelete);
+            }
 
             if (setLocked) {
                 Backuper.unlock();
@@ -72,11 +75,20 @@ public class FtpDeleteDirTask extends Task {
     @Override
     public void prepareTask() {
         isTaskPrepared = true;
-
         maxProgress = FtpUtils.getDirByteSize(remoteDirToDelete, sender);
     }
 
+    @Override
+    public void cancel() {
+        cancelled = true;
+        currentProgress = maxProgress;
+    }
+
     private void deleteDir(String remoteDirToDelete) {
+
+        if (cancelled) {
+            return;
+        }
 
         try {
             ftp.changeWorkingDirectory("");

@@ -50,4 +50,9 @@ public class SetWorldsWritableTask extends Task {
     public void prepareTask() {
         this.isTaskPrepared = true;
     }
+
+    @Override
+    public void cancel() {
+        cancelled = true;
+    }
 }

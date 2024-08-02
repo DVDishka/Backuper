@@ -1,8 +1,6 @@
 package ru.dvdishka.backuper.backend.tasks.ftp;
 
-import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
-import org.apache.commons.net.ftp.FTPClientConfig;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.common.Logger;
@@ -15,7 +13,6 @@ import ru.dvdishka.backuper.backend.utils.Utils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.OutputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.zip.ZipEntry;
@@ -56,9 +53,11 @@ public class FtpAddLocalDirsToZipTask extends Task {
                 prepareTask();
             }
 
-            ftpClient = FtpUtils.getClient(sender);
-            if (ftpClient == null) {
-                return;
+            if (!cancelled) {
+                ftpClient = FtpUtils.getClient(sender);
+                if (ftpClient == null) {
+                    return;
+                }
             }
 
             OutputStream outputStream = ftpClient.storeFileStream(targetZipPath);
@@ -66,6 +65,11 @@ public class FtpAddLocalDirsToZipTask extends Task {
 
             try {
                 for (File sourceDirToAdd : sourceDirsToAdd) {
+
+                    if (cancelled) {
+                        break;
+                    }
+
                     if (createRootDirInTargetZIP) {
                         addDirToZip(targetZipOutputStream, sourceDirToAdd, sourceDirToAdd.getCanonicalFile().getParentFile().toPath());
                     } else {
@@ -105,6 +109,10 @@ public class FtpAddLocalDirsToZipTask extends Task {
 
     private void addDirToZip(ZipOutputStream zip, File sourceDir, Path relativeDirPath) {
 
+        if (cancelled) {
+            return;
+        }
+
         if (!sourceDir.exists()) {
             Logger.getLogger().warn("Something went wrong while running FtpAddLocalDirToZIP task", sender);
             Logger.getLogger().warn("Directory " + sourceDir.getAbsolutePath() + " does not exist", sender);
@@ -135,6 +143,11 @@ public class FtpAddLocalDirsToZipTask extends Task {
                 int length;
 
                 while ((length = fileInputStream.read(buffer)) >= 0) {
+
+                    if (cancelled) {
+                        break;
+                    }
+
                     zip.write(buffer, 0, length);
                     incrementCurrentProgress(length);
                 }
@@ -174,5 +187,11 @@ public class FtpAddLocalDirsToZipTask extends Task {
                 this.maxProgress += Utils.getFileFolderByteSize(sourceDirToAdd);
             }
         }
+    }
+
+    @Override
+    public void cancel() {
+        cancelled = true;
+        currentProgress = maxProgress;
     }
 }

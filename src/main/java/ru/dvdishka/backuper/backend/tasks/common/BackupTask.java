@@ -105,7 +105,7 @@ public class BackupTask extends Task {
                 return;
             }
 
-            if (!isTaskPrepared) {
+            if (!cancelled && !isTaskPrepared) {
                 prepareTask();
             }
 
@@ -113,11 +113,11 @@ public class BackupTask extends Task {
                 Logger.getLogger().log("Auto backup task has been started", sender);
             }
 
-            if (isFtp && !FtpUtils.checkConnection(sender)) {
+            if (!cancelled && isFtp && !FtpUtils.checkConnection(sender)) {
                 Logger.getLogger().warn("Failed to connect to FTP(S) server during the backup task. Skipping this storage...", sender);
                 isFtp = false;
             }
-            if (isSftp && !SftpUtils.checkConnection(sender)) {
+            if (!cancelled && isSftp && !SftpUtils.checkConnection(sender)) {
                 Logger.getLogger().warn("Failed to connect to SFTP server during the backup task. Skipping this storage...", sender);
                 isSftp = false;
             }
@@ -131,10 +131,12 @@ public class BackupTask extends Task {
                 if (task instanceof SftpSendFileFolderTask && !isSftp) {
                     continue;
                 }
-                task.run();
+                if (!cancelled || task instanceof SetWorldsWritableTask) {
+                    task.run();
+                }
             }
 
-            if (isLocal) {
+            if (!cancelled && isLocal) {
 
                 if (Config.getInstance().getLocalConfig().isZipArchive()) {
                     try {
@@ -176,7 +178,7 @@ public class BackupTask extends Task {
             }
 
             // RENAME FTP TASK
-            if (isFtp) {
+            if (!cancelled && isFtp) {
 
                 Logger.getLogger().devLog("The Rename \"in progress\" Folder FTP(S) task has been started");
 
@@ -194,7 +196,7 @@ public class BackupTask extends Task {
             }
 
             // RENAME SFTP TASK
-            if (isSftp) {
+            if (!cancelled && isSftp) {
 
                 Logger.getLogger().devLog("The Rename \"in progress\" Folder SFTP task has been started");
 
@@ -205,16 +207,15 @@ public class BackupTask extends Task {
                 Logger.getLogger().devLog("The Rename \"in progress\" Folder SFTP task has been finished");
             }
 
-            {
-                if (isAutoBackup) {
-                    Logger.getLogger().devLog("Update \"lastBackup\" Variable task has been started");
-                    Config.getInstance().updateLastBackup();
-                    Logger.getLogger().devLog("Update \"lastBackup\" Variable task has been finished");
-                }
+            // UPDATE VARIABLES
+            if (!cancelled && isAutoBackup) {
+                Logger.getLogger().devLog("Update \"lastBackup\" Variable task has been started");
+                Config.getInstance().updateLastBackup();
+                Logger.getLogger().devLog("Update \"lastBackup\" Variable task has been finished");
             }
 
             // DELETE OLD BACKUPS TASK MUST BE RAN AFTER RENAMING
-            {
+            if (!cancelled) {
                 new DeleteOldBackupsTask(false, sender).run();
                 if (Config.getInstance().isDeleteBrokenBackups()) {
                     new DeleteBrokenBackupsTask(false, sender).run();
@@ -273,15 +274,17 @@ public class BackupTask extends Task {
 
             this.backupName = LocalDateTime.now().format(LocalBackup.dateTimeFormatter) + " in progress";
 
-            tasks.add(new SetWorldsReadOnlyTask(false, sender));
+            if (!cancelled) {
+                tasks.add(new SetWorldsReadOnlyTask(false, sender));
+            }
 
-            if (isLocal) {
+            if (!cancelled && isLocal) {
                 prepareLocalTask();
             }
-            if (isFtp) {
+            if (!cancelled && isFtp) {
                 prepareFtpTask();
             }
-            if (isSftp) {
+            if (!cancelled && isSftp) {
                 prepareSftpTask();
             }
 
@@ -304,6 +307,10 @@ public class BackupTask extends Task {
 
         try {
 
+            if (cancelled) {
+                return;
+            }
+
             this.backupDir = new File(Config.getInstance().getLocalConfig().getBackupsFolder()).toPath().resolve(backupName).toFile();
             this.backupsDir = new File(Config.getInstance().getLocalConfig().getBackupsFolder());
 
@@ -317,6 +324,10 @@ public class BackupTask extends Task {
             }
 
             for (World world : Bukkit.getWorlds()) {
+
+                if (cancelled) {
+                    break;
+                }
 
                 File worldDir = world.getWorldFolder();
 
@@ -345,6 +356,10 @@ public class BackupTask extends Task {
             }
 
             for (String additionalDirectoryToBackup : Config.getInstance().getAddDirectoryToBackup()) {
+
+                if (cancelled) {
+                    break;
+                }
 
                 try {
 
@@ -391,9 +406,17 @@ public class BackupTask extends Task {
 
         try {
 
+            if (cancelled) {
+                return;
+            }
+
             SftpUtils.createFolder(SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), backupName), sender);
 
             for (World world : Bukkit.getWorlds()) {
+
+                if (cancelled) {
+                    break;
+                }
 
                 File worldDir = world.getWorldFolder();
 
@@ -414,6 +437,10 @@ public class BackupTask extends Task {
             for (String additionalDirectoryToBackup : Config.getInstance().getAddDirectoryToBackup()) {
 
                 try {
+
+                    if (cancelled) {
+                        break;
+                    }
 
                     File additionalDirectoryToBackupFile = Paths.get(additionalDirectoryToBackup).toFile();
                     boolean isExcludedDirectory = Utils.isExcludedDirectory(additionalDirectoryToBackupFile, sender);
@@ -448,6 +475,11 @@ public class BackupTask extends Task {
     private void prepareFtpTask() {
 
         try {
+
+            if (cancelled) {
+                return;
+            }
+
             if (!Config.getInstance().getFtpConfig().isZipArchive()) {
                 FtpUtils.createFolder(FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(), backupName), sender);
             }
@@ -455,6 +487,10 @@ public class BackupTask extends Task {
             ArrayList<File> dirsToAddToZip = new ArrayList<>();
 
             for (World world : Bukkit.getWorlds()) {
+
+                if (cancelled) {
+                    break;
+                }
 
                 File worldDir = world.getWorldFolder();
 
@@ -480,6 +516,10 @@ public class BackupTask extends Task {
             for (String additionalDirectoryToBackup : Config.getInstance().getAddDirectoryToBackup()) {
 
                 try {
+
+                    if (cancelled) {
+                        break;
+                    }
 
                     File additionalDirectoryToBackupFile = Paths.get(additionalDirectoryToBackup).toFile();
                     boolean isExcludedDirectory = Utils.isExcludedDirectory(additionalDirectoryToBackupFile, sender);
@@ -527,6 +567,10 @@ public class BackupTask extends Task {
 
     @Override
     public long getTaskCurrentProgress() {
+
+        if (cancelled) {
+            return getTaskMaxProgress();
+        }
 
         long currentProgress = 0;
 
@@ -593,5 +637,14 @@ public class BackupTask extends Task {
         }
 
         return maxProgress;
+    }
+
+    @Override
+    public void cancel() {
+        cancelled = true;
+
+        for (Task task : tasks) {
+            task.cancel();
+        }
     }
 }

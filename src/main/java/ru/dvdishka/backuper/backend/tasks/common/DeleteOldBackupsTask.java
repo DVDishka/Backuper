@@ -9,7 +9,6 @@ import ru.dvdishka.backuper.backend.classes.SftpBackup;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.Task;
-import ru.dvdishka.backuper.backend.utils.SftpUtils;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
 
@@ -42,7 +41,9 @@ public class DeleteOldBackupsTask extends Task {
             }
 
             for (Task deleteDirTask : deleteBackupTasks) {
-                deleteDirTask.run();
+                if (!cancelled) {
+                    deleteDirTask.run();
+                }
             }
 
             Logger.getLogger().devLog("DeleteOldBackups task has been finished");
@@ -89,7 +90,20 @@ public class DeleteOldBackupsTask extends Task {
         }
     }
 
+    @Override
+    public void cancel() {
+        cancelled = true;
+
+        for (Task deleteDirTask : deleteBackupTasks) {
+            deleteDirTask.cancel();
+        }
+    }
+
     private void deleteBackups(String storage) {
+
+        if (cancelled) {
+            return;
+        }
 
         HashSet<LocalDateTime> backupsToDeleteList = new HashSet<>();
 
@@ -148,6 +162,10 @@ public class DeleteOldBackupsTask extends Task {
 
                 for (Backup backup : backups) {
 
+                    if (cancelled) {
+                        return;
+                    }
+
                     String backupFileName = backup.getName().replace(".zip", "");
 
                     try {
@@ -195,6 +213,10 @@ public class DeleteOldBackupsTask extends Task {
 
                 for (Backup backup : backups) {
 
+                    if (cancelled) {
+                        return;
+                    }
+
                     String backupFileName = backup.getName().replace(".zip", "");
 
                     try {
@@ -216,6 +238,10 @@ public class DeleteOldBackupsTask extends Task {
 
     @Override
     public long getTaskCurrentProgress() {
+
+        if (cancelled) {
+            return getTaskMaxProgress();
+        }
 
         long currentProgress = 0;
 

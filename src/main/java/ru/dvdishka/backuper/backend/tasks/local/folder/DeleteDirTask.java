@@ -61,12 +61,16 @@ public class DeleteDirTask extends Task {
 
     private void deleteDir(File dir) {
 
+        if (cancelled) {
+            return;
+        }
+
         if (!dir.exists()) {
             Logger.getLogger().warn("Directory " + dir.getAbsolutePath() + " does not exist");
             return;
         }
 
-        if (dir.isFile()) {
+        if (!cancelled && dir.isFile()) {
 
             long fileByteSize = 0;
 
@@ -102,5 +106,11 @@ public class DeleteDirTask extends Task {
     public void prepareTask() {
         isTaskPrepared = true;
         maxProgress = Utils.getFileFolderByteSize(dirToDelete);
+    }
+
+    public void cancel() {
+        cancelled = true;
+
+        currentProgress = maxProgress;
     }
 }

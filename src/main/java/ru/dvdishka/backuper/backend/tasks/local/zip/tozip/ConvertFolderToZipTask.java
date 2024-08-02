@@ -42,19 +42,25 @@ public class ConvertFolderToZipTask extends Task {
                 prepareTask();
             }
 
-            Logger.getLogger().devLog("Pack To Zip task has been started");
-            addDirToZipTask.run();
-            Logger.getLogger().devLog("Pack To Zip task has been finished");
-
-            Logger.getLogger().devLog("Delete Folder task has been started");
-            deleteDirTask.run();
-            Logger.getLogger().devLog("Delete Folder task has been finished");
-
-            Logger.getLogger().devLog("The Rename \"in progress\" Folder/ZIP local task has been started");
-            if (!new File(sourceFolderDir.getPath() + " in progress.zip").renameTo(new File(sourceFolderDir.getPath() + ".zip"))) {
-                Logger.getLogger().warn("The Rename \"in progress\" ZIP local task has been finished with an exception!", sender);
+            if (!cancelled) {
+                Logger.getLogger().devLog("Pack To Zip task has been started");
+                addDirToZipTask.run();
+                Logger.getLogger().devLog("Pack To Zip task has been finished");
             }
-            Logger.getLogger().devLog("The Rename \"in progress\" Folder/ZIP local task has been finished");
+
+            if (!cancelled) {
+                Logger.getLogger().devLog("Delete Folder task has been started");
+                deleteDirTask.run();
+                Logger.getLogger().devLog("Delete Folder task has been finished");
+            }
+
+            if (!cancelled) {
+                Logger.getLogger().devLog("The Rename \"in progress\" Folder/ZIP local task has been started");
+                if (!new File(sourceFolderDir.getPath() + " in progress.zip").renameTo(new File(sourceFolderDir.getPath() + ".zip"))) {
+                    Logger.getLogger().warn("The Rename \"in progress\" ZIP local task has been finished with an exception!", sender);
+                }
+                Logger.getLogger().devLog("The Rename \"in progress\" Folder/ZIP local task has been finished");
+            }
 
             Logger.getLogger().devLog("FolderToZip task has been finished");
 
@@ -107,5 +113,13 @@ public class ConvertFolderToZipTask extends Task {
 
         return addDirToZipTask.getTaskMaxProgress() * zipProgressMultiplier +
                 deleteDirTask.getTaskMaxProgress() * deleteProgressMultiplier;
+    }
+
+    @Override
+    public void cancel() {
+        cancelled = true;
+
+        deleteDirTask.cancel();
+        addDirToZipTask.cancel();
     }
 }

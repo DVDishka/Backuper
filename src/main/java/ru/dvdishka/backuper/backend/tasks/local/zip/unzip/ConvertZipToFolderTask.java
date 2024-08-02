@@ -27,7 +27,6 @@ public class ConvertZipToFolderTask extends Task {
         this.sourceZipFileDir = sourceZipFileDir;
     }
 
-
     @Override
     public void run() {
 
@@ -43,19 +42,25 @@ public class ConvertZipToFolderTask extends Task {
                 prepareTask();
             }
 
-            Logger.getLogger().devLog("UnpackZip task has been started");
-            unpackZipTask.run();
-            Logger.getLogger().devLog("UnpackZip task has been finished");
-
-            Logger.getLogger().devLog("DeleteDir task has been started");
-            deleteDirTask.run();
-            Logger.getLogger().devLog("DeleteDir task has been started");
-
-            Logger.getLogger().devLog("The Rename \"in progress\" Folder/ZIP local task has been started");
-            if (!new File(sourceZipFileDir.getPath().replace(".zip", "") + " in progress").renameTo(new File(sourceZipFileDir.getPath().replace(".zip", "")))) {
-                Logger.getLogger().warn("The Rename \"in progress\" ZIP local task has been finished with an exception!", sender);
+            if (!cancelled) {
+                Logger.getLogger().devLog("UnpackZip task has been started");
+                unpackZipTask.run();
+                Logger.getLogger().devLog("UnpackZip task has been finished");
             }
-            Logger.getLogger().devLog("The Rename \"in progress\" Folder/ZIP local task has been finished");
+
+            if (!cancelled) {
+                Logger.getLogger().devLog("DeleteDir task has been started");
+                deleteDirTask.run();
+                Logger.getLogger().devLog("DeleteDir task has been started");
+            }
+
+            if (!cancelled) {
+                Logger.getLogger().devLog("The Rename \"in progress\" Folder/ZIP local task has been started");
+                if (!new File(sourceZipFileDir.getPath().replace(".zip", "") + " in progress").renameTo(new File(sourceZipFileDir.getPath().replace(".zip", "")))) {
+                    Logger.getLogger().warn("The Rename \"in progress\" ZIP local task has been finished with an exception!", sender);
+                }
+                Logger.getLogger().devLog("The Rename \"in progress\" Folder/ZIP local task has been finished");
+            }
 
             Logger.getLogger().devLog("ZipToFolder task has been finished");
 
@@ -99,5 +104,13 @@ public class ConvertZipToFolderTask extends Task {
             return 100;
         }
         return unpackZipTask.getTaskMaxProgress() * unZipProgressMultiplier + deleteDirTask.getTaskMaxProgress() * deleteProgressMultiplier;
+    }
+
+    @Override
+    public void cancel() {
+        cancelled = true;
+
+        deleteDirTask.cancel();
+        unpackZipTask.cancel();
     }
 }

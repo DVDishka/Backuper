@@ -15,6 +15,7 @@ import ru.dvdishka.backuper.backend.utils.Utils;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.concurrent.CompletableFuture;
 
 public class SftpSendFileFolderTask extends Task {
 
@@ -27,6 +28,7 @@ public class SftpSendFileFolderTask extends Task {
 
     private com.jcraft.jsch.Session sshSession;
     private ChannelSftp sftpChannel;
+    private ArrayList<CompletableFuture<Void>> sftpTasks = new ArrayList<>();
     private ArrayList<SftpProgressMonitor> progressMonitors = null;
     private long dirSize = 0;
 
@@ -55,26 +57,31 @@ public class SftpSendFileFolderTask extends Task {
 
             Logger.getLogger().devLog("SftpSendFileFolder task has been started");
 
-            Pair<Session, ChannelSftp> sessionChannelSftpPair = SftpUtils.createChannel(sender);
+            if (!cancelled) {
+                Pair<Session, ChannelSftp> sessionChannelSftpPair = SftpUtils.createChannel(sender);
 
-            if (sessionChannelSftpPair == null) {
-                return;
+                if (sessionChannelSftpPair == null) {
+                    return;
+                }
+
+                sshSession = sessionChannelSftpPair.first();
+                sftpChannel = sessionChannelSftpPair.second();
+
+                if (sftpChannel == null) {
+                    return;
+                }
+                sftpChannel.connect(10000);
             }
-
-            sshSession = sessionChannelSftpPair.first();
-            sftpChannel = sessionChannelSftpPair.second();
-
-            if (sftpChannel == null) {
-                return;
-            }
-            sftpChannel.connect(10000);
 
             if (createRootDirInTargetDir) {
                 remoteTargetDir = SftpUtils.resolve(remoteTargetDir, localDirToSend.getName());
             }
 
             progressMonitors = new ArrayList<>();
-            sendFolder(localDirToSend, remoteTargetDir);
+            if (!cancelled) {
+                sendFolder(localDirToSend, remoteTargetDir);
+                CompletableFuture.allOf(sftpTasks.toArray(new CompletableFuture[sftpTasks.size()])).join();
+            }
 
             sftpChannel.exit();
             sshSession.disconnect();
@@ -118,6 +125,10 @@ public class SftpSendFileFolderTask extends Task {
 
     private void sendFolder(File localDirToSend, String remotePath) {
 
+        if (cancelled) {
+            return;
+        }
+
         if (!localDirToSend.exists()) {
             Logger.getLogger().warn("Something went wrong while trying to send files from " + localDirToSend.getAbsolutePath());
             Logger.getLogger().warn("Directory " + localDirToSend.getAbsolutePath() + " does not exist", sender);
@@ -139,7 +150,15 @@ public class SftpSendFileFolderTask extends Task {
 
                 SftpProgressMonitor progressMonitor = new SftpProgressMonitor();
                 progressMonitors.add(progressMonitor);
-                sftpChannel.put(localPath, remotePath, progressMonitor);
+
+                sftpTasks.add(CompletableFuture.runAsync(() -> {
+                    try {
+                        sftpChannel.put(localPath, remotePath, progressMonitor);
+                    } catch (Exception e) {
+                        Logger.getLogger().warn("Failed to get canonical path", e);
+                        Logger.getLogger().warn(this, e);
+                    }
+                }));
 
             } catch (Exception e) {
                 Logger.getLogger().warn("Something went wrong while sending file to the SFTP channel", e);
@@ -160,6 +179,11 @@ public class SftpSendFileFolderTask extends Task {
 
     @Override
     public long getTaskCurrentProgress() {
+
+        if (cancelled) {
+            return maxProgress;
+        }
+
         if (progressMonitors == null) {
             return 0;
         }
@@ -175,5 +199,16 @@ public class SftpSendFileFolderTask extends Task {
     @Override
     public long getTaskMaxProgress() {
         return dirSize;
+    }
+
+    @Override
+    public void cancel() {
+        cancelled = true;
+
+        for (CompletableFuture<Void> sftpTask : sftpTasks) {
+            sftpTask.cancel(true);
+        }
+
+        currentProgress = maxProgress;
     }
 }

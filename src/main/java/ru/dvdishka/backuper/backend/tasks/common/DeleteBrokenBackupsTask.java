@@ -41,6 +41,9 @@ public class DeleteBrokenBackupsTask extends Task {
             }
 
             for (Task task : tasks) {
+                if (cancelled) {
+                    break;
+                }
                 task.run();
             }
 
@@ -67,6 +70,10 @@ public class DeleteBrokenBackupsTask extends Task {
     @Override
     public void prepareTask() {
 
+        if (cancelled) {
+            return;
+        }
+
         if (Config.getInstance().getLocalConfig().isEnabled()) {
 
             File backupsFolder = new File(Config.getInstance().getLocalConfig().getBackupsFolder());
@@ -76,6 +83,11 @@ public class DeleteBrokenBackupsTask extends Task {
             } else {
 
                 for (File file : backupsFolder.listFiles()) {
+
+                    if (cancelled) {
+                        return;
+                    }
+
                     if (file.getName().replace(".zip", "").endsWith(" in progress")) {
                         tasks.add(new DeleteDirTask(file, false, sender));
                     }
@@ -89,6 +101,10 @@ public class DeleteBrokenBackupsTask extends Task {
                 ArrayList<String> files = FtpUtils.ls(Config.getInstance().getFtpConfig().getBackupsFolder(), sender);
 
                 for (String file : files) {
+
+                    if (cancelled) {
+                        return;
+                    }
 
                     if (file.replace(".zip", "").endsWith(" in progress")) {
                         tasks.add(new FtpDeleteDirTask(FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(), file), false, sender));
@@ -107,6 +123,10 @@ public class DeleteBrokenBackupsTask extends Task {
 
                 for (String file : files) {
 
+                    if (cancelled) {
+                        return;
+                    }
+
                     if (file.replace(".zip", "").endsWith(" in progress")) {
                         tasks.add(new SftpDeleteDirTask(FtpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), file), false, sender));
                     }
@@ -115,6 +135,16 @@ public class DeleteBrokenBackupsTask extends Task {
             } else {
                 Logger.getLogger().warn("Failed to establish SFTP connection");
             }
+        }
+    }
+
+    @Override
+    public void cancel() {
+
+        cancelled = true;
+
+        for (Task task : tasks) {
+            task.cancel();
         }
     }
 
@@ -131,6 +161,11 @@ public class DeleteBrokenBackupsTask extends Task {
 
     @Override
     public long getTaskCurrentProgress() {
+
+        if (cancelled) {
+            return getTaskMaxProgress();
+        }
+
         long currentProgress = 0;
 
         for (Task task : tasks) {

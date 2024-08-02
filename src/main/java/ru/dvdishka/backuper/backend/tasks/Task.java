@@ -13,6 +13,7 @@ public abstract class Task {
     protected long maxProgress = 0;
     protected boolean setLocked = false;
     protected boolean isTaskPrepared = false;
+    protected boolean cancelled = false;
 
     protected Task(String taskName, boolean setLocked, CommandSender sender) {
         this.sender = sender;

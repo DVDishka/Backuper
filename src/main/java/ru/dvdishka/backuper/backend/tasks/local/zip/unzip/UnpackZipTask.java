@@ -9,11 +9,8 @@ import ru.dvdishka.backuper.backend.utils.Utils;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.nio.ByteBuffer;
 import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.concurrent.CompletableFuture;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
@@ -49,10 +46,11 @@ public class UnpackZipTask extends Task {
 
             ZipEntry zipEntry;
 
-            while ((zipEntry = zipInput.getNextEntry()) != null) {
+            while (!cancelled && (zipEntry = zipInput.getNextEntry()) != null) {
 
                 if (zipEntry.isDirectory()) {
                     targetFolderDir.mkdirs();
+                    zipInput.closeEntry();
                     continue;
                 }
 
@@ -72,6 +70,11 @@ public class UnpackZipTask extends Task {
                         byte[] buffer = new byte[4096];
 
                         while ((length = zipInput.read(buffer)) >= 0) {
+
+                            if (cancelled) {
+                                break;
+                            }
+
                             outputStream.write(buffer, 0, length);
                             incrementCurrentProgress(length);
                         }
@@ -118,6 +121,11 @@ public class UnpackZipTask extends Task {
             Enumeration<? extends ZipEntry> zipEntries = zipFile.entries();
 
             while (zipEntries.hasMoreElements()) {
+
+                if (cancelled) {
+                    break;
+                }
+
                 ZipEntry zipEntry = zipEntries.nextElement();
                 maxProgress += zipEntry.getSize();
             }
@@ -131,5 +139,11 @@ public class UnpackZipTask extends Task {
         if (maxProgress <= 0) {
             maxProgress = (long) (((double) Utils.getFileFolderByteSize(sourceZipDir)) * 1.6);
         }
+    }
+
+    @Override
+    public void cancel() {
+        cancelled = true;
+        currentProgress = maxProgress;
     }
 }

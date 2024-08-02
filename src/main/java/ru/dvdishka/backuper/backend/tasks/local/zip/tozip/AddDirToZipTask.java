@@ -11,7 +11,6 @@ import ru.dvdishka.backuper.backend.utils.Utils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -121,6 +120,10 @@ public class AddDirToZipTask extends Task {
 
     private void addDirToZip(ZipOutputStream zip, File sourceDir, Path relativeDirPath) {
 
+        if (cancelled) {
+            return;
+        }
+
         if (!sourceDir.exists()) {
             Logger.getLogger().warn("Something went wrong while running AddDirToZIP task", sender);
             Logger.getLogger().warn("Directory " + sourceDir.getAbsolutePath() + " does not exist", sender);
@@ -135,7 +138,7 @@ public class AddDirToZipTask extends Task {
             }
         }
 
-        if (sourceDir.isFile()) {
+        if (!cancelled && sourceDir.isFile()) {
 
             try {
 
@@ -151,6 +154,11 @@ public class AddDirToZipTask extends Task {
                 int length;
 
                 while ((length = fileInputStream.read(buffer)) >= 0) {
+
+                    if (cancelled) {
+                        break;
+                    }
+
                     zip.write(buffer, 0, length);
                     incrementCurrentProgress(length);
                 }
@@ -186,5 +194,12 @@ public class AddDirToZipTask extends Task {
         } else {
             this.maxProgress = Utils.getFileFolderByteSize(sourceDirToAdd);
         }
+    }
+
+    @Override
+    public void cancel() {
+        cancelled = true;
+
+        currentProgress = maxProgress;
     }
 }

@@ -47,13 +47,15 @@ public class CopyFilesToFolderTask extends Task {
                 prepareTask();
             }
 
-            if (createRootDirInTargetDir) {
-                unsafeCopyFilesInDir(targetDir.toPath().resolve(sourceDirToCopy.getName()).toFile(), sourceDirToCopy);
-            } else {
-                unsafeCopyFilesInDir(targetDir, sourceDirToCopy);
-            }
+            if (!cancelled) {
+                if (createRootDirInTargetDir) {
+                    unsafeCopyFilesInDir(targetDir.toPath().resolve(sourceDirToCopy.getName()).toFile(), sourceDirToCopy);
+                } else {
+                    unsafeCopyFilesInDir(targetDir, sourceDirToCopy);
+                }
 
-            CompletableFuture.allOf(copyTasks.toArray(new CompletableFuture[0])).join();
+                CompletableFuture.allOf(copyTasks.toArray(new CompletableFuture[0])).join();
+            }
 
             if (setLocked) {
                 UIUtils.successSound(sender);
@@ -74,6 +76,10 @@ public class CopyFilesToFolderTask extends Task {
 
     private void unsafeCopyFilesInDir(File destDir, File sourceDir) {
 
+        if (cancelled) {
+            return;
+        }
+
         if (!sourceDir.exists()) {
             Logger.getLogger().warn("Something went wrong while copying files from " + sourceDir.getAbsolutePath());
             Logger.getLogger().warn("Directory " + sourceDir.getAbsolutePath() + " does not exist", sender);
@@ -88,7 +94,7 @@ public class CopyFilesToFolderTask extends Task {
             }
         }
 
-        if (sourceDir.isFile() && !sourceDir.getName().equals("session.lock")) {
+        if (!cancelled && sourceDir.isFile() && !sourceDir.getName().equals("session.lock")) {
 
             CompletableFuture<Void> copyTask = CompletableFuture.runAsync(() -> {
 
@@ -136,5 +142,17 @@ public class CopyFilesToFolderTask extends Task {
         } else {
             this.maxProgress = Utils.getFileFolderByteSizeExceptExcluded(sourceDirToCopy);
         }
+    }
+
+    @Override
+    public void cancel() {
+
+        cancelled = true;
+
+        for (CompletableFuture<Void> task : copyTasks) {
+            task.cancel(true);
+        }
+
+        currentProgress = maxProgress;
     }
 }

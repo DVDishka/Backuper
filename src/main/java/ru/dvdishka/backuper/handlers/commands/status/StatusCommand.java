@@ -58,7 +58,9 @@ public class StatusCommand extends Command {
                 .append(Component.space())
                 .append(Component.text(progress + "%")
                         .decorate(TextDecoration.BOLD)
-                        .color(color));
+                        .color(color))
+                .append(Component.text("[CANCEL]")
+                        .color());
 
         if (!(sender instanceof ConsoleCommandSender)) {
             sendFramedMessage(message, 15);

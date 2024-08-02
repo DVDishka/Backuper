@@ -48,4 +48,9 @@ public class SetWorldsReadOnlyTask extends Task {
     public void prepareTask() {
         this.isTaskPrepared = true;
     }
+
+    @Override
+    public void cancel() {
+
+    }
 }
