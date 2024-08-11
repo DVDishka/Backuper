@@ -6,7 +6,7 @@
 
     <groupId>ru.dvdishka</groupId>
     <artifactId>Backuper</artifactId>
-    <version>3.0.0</version>
+    <version>3.0.1</version>
     <packaging>jar</packaging>
 
     <name>Backuper</name>
@@ -102,7 +102,7 @@
         <dependency>
             <groupId>dev.jorel</groupId>
             <artifactId>commandapi-bukkit-shade</artifactId>
-            <version>9.5.1</version>
+            <version>9.5.3</version>
         </dependency>
         <dependency>
             <groupId>io.papermc.paper</groupId>
