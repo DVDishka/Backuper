@@ -8,9 +8,10 @@ import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.handlers.commands.Command;
-import ru.dvdishka.backuper.handlers.commands.status.StatusCommand;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.io.File;
+import java.util.ArrayList;
 
 public class ReloadCommand extends Command {
 

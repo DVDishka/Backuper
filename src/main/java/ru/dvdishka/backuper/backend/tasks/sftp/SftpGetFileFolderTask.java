@@ -12,9 +12,11 @@ import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.utils.SftpUtils;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
@@ -33,8 +35,8 @@ public class SftpGetFileFolderTask extends Task {
     private ArrayList<SftpProgressMonitor> progressMonitors = new ArrayList<>();
 
     public SftpGetFileFolderTask(String remotePathToGet, File localTargetPathFile, boolean createRootDirInTargetDir,
-                                 boolean setLocked, CommandSender sender) {
-        super(taskName, setLocked, sender);
+                                 boolean setLocked, List<Permissions> permission, CommandSender sender) {
+        super(taskName, setLocked, permission, sender);
 
         this.remotePathToGet = remotePathToGet;
         this.localTargetPathFile = localTargetPathFile;

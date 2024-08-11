@@ -15,9 +15,12 @@ import ru.dvdishka.backuper.backend.tasks.ftp.FtpGetFileFolderTask;
 import ru.dvdishka.backuper.backend.tasks.sftp.SftpGetFileFolderTask;
 import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.handlers.commands.Command;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
 import ru.dvdishka.backuper.handlers.commands.status.StatusCommand;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 public class CopyToLocalCommand extends Command {
 
@@ -87,11 +90,11 @@ public class CopyToLocalCommand extends Command {
 
         if (storage.equals("sftp")) {
             copyToLocalTask = new SftpGetFileFolderTask(backup.getPath(), inProgressFile,
-                    false, true, sender);
+                    false, true, List.of(Permissions.SFTP_COPY_TO_LOCAL), sender);
         }
         else if (storage.equals("ftp")) {
             copyToLocalTask = new FtpGetFileFolderTask(backup.getPath(), inProgressFile,
-                    false, true, sender);
+                    false, true, List.of(Permissions.FTP_COPY_TO_LOCAL), sender);
         } else {
             copyToLocalTask = null;
         }

@@ -10,7 +10,11 @@ import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.local.zip.unzip.ConvertZipToFolderTask;
 import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.handlers.commands.Command;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
 import ru.dvdishka.backuper.handlers.commands.status.StatusCommand;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class UnZIPCommand extends Command {
 
@@ -59,7 +63,7 @@ public class UnZIPCommand extends Command {
 
             try {
 
-                new ConvertZipToFolderTask(localBackup.getZIPFile(), true, sender).run();
+                new ConvertZipToFolderTask(localBackup.getZIPFile(), true, List.of(Permissions.LOCAL_UNZIP), sender).run();
 
                 sendMessage("UnZIP task completed");
 

@@ -8,12 +8,14 @@ import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.utils.FtpUtils;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class FtpSendFileFolderTask extends Task {
@@ -29,8 +31,8 @@ public class FtpSendFileFolderTask extends Task {
     private FTPClient ftp;
 
     public FtpSendFileFolderTask(File localDirToSend, String remoteTargetDir, boolean createRootDirInTargetDir,
-                                  boolean forceExcludedDirs, boolean setLocked, CommandSender sender) {
-        super(taskName, setLocked, sender);
+                                 boolean forceExcludedDirs, boolean setLocked, List<Permissions> permission, CommandSender sender) {
+        super(taskName, setLocked, permission, sender);
 
         this.localDirToSend = localDirToSend;
         this.createRootDirInTargetDir = createRootDirInTargetDir;

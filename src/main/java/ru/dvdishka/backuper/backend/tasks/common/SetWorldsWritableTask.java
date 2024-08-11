@@ -7,6 +7,10 @@ import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.utils.Utils;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class SetWorldsWritableTask extends Task {
 
@@ -14,13 +18,13 @@ public class SetWorldsWritableTask extends Task {
 
     private final boolean force;
 
-    public SetWorldsWritableTask(boolean force, boolean setLocked, CommandSender sender) {
-        super(taskName, setLocked, sender);
+    public SetWorldsWritableTask(boolean force, boolean setLocked, ArrayList<Permissions> permission, CommandSender sender) {
+        super(taskName, setLocked, permission, sender);
         this.force = force;
     }
 
-    public SetWorldsWritableTask(boolean setLocked, CommandSender sender) {
-        super(taskName, setLocked, sender);
+    public SetWorldsWritableTask(boolean setLocked, List<Permissions> permission, CommandSender sender) {
+        super(taskName, setLocked, permission, sender);
         this.force = false;
     }
 

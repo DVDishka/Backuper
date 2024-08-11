@@ -8,9 +8,6 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bstats.bukkit.Metrics;
-import org.bstats.charts.AdvancedBarChart;
-import org.bstats.charts.CustomChart;
-import org.bstats.charts.SimpleBarChart;
 import org.bstats.charts.SimplePie;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
@@ -52,6 +49,8 @@ import ru.dvdishka.backuper.handlers.commands.menu.unZIP.UnZIPCommand;
 import ru.dvdishka.backuper.handlers.commands.menu.unZIP.UnZIPConfirmationCommand;
 import ru.dvdishka.backuper.handlers.commands.reload.ReloadCommand;
 import ru.dvdishka.backuper.handlers.commands.status.StatusCommand;
+import ru.dvdishka.backuper.handlers.commands.task.cancel.CancelCommand;
+import ru.dvdishka.backuper.handlers.commands.task.cancel.CancelConfirmationCommand;
 import ru.dvdishka.backuper.handlers.worldchangecatch.WorldChangeCatcher;
 import ru.dvdishka.backuper.handlers.worldchangecatch.WorldChangeCatcherNew;
 
@@ -63,10 +62,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 
 import static java.lang.Math.max;
@@ -90,17 +87,29 @@ public class Initialization implements Listener {
 
     public static void initAutoBackup(CommandSender sender) {
 
+        // AUTO BACKUP PERMISSION LIST CREATION
+        List<Permissions> autoBackupPermissions = new ArrayList<>();
+        {
+            autoBackupPermissions.add(Permissions.BACKUP);
+            if (Config.getInstance().getAfterBackup().equals("STOP")) {
+                autoBackupPermissions.add(Permissions.STOP);
+            }
+            if (Config.getInstance().getAfterBackup().equals("RESTART")) {
+                autoBackupPermissions.add(Permissions.RESTART);
+            }
+        }
+
         Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
 
             Logger.getLogger().log("Deleting old backups...");
             StatusCommand.sendTaskStartedMessage("DeleteOldBackups", sender);
-            new DeleteOldBackupsTask(true, sender).run();
+            new DeleteOldBackupsTask(true, List.of(Permissions.BACKUP), sender).run();
 
             Logger.getLogger().log("Deleting broken backups...");
             StatusCommand.sendTaskStartedMessage("DeleteBrokenBackups", sender);
 
             if (Config.getInstance().isDeleteBrokenBackups()) {
-                new DeleteBrokenBackupsTask(true, sender).run();
+                new DeleteBrokenBackupsTask(true, List.of(Permissions.BACKUP), sender).run();
             }
 
             Logger.getLogger().log("Initializing auto backup...");
@@ -155,7 +164,7 @@ public class Initialization implements Listener {
                     Scheduler.getScheduler().runSyncRepeatingTask(Utils.plugin, () -> {
                         Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
                             if (!Backuper.isLocked()) {
-                                new BackupTask(Config.getInstance().getAfterBackup(), true, true, null).run();
+                                new BackupTask(Config.getInstance().getAfterBackup(), true, true, autoBackupPermissions, null).run();
                             } else {
                                 Logger.getLogger().warn("Failed to start an Auto Backup task. Blocked by another operation", sender);
                             }
@@ -167,7 +176,7 @@ public class Initialization implements Listener {
                     Scheduler.getScheduler().runSyncRepeatingTask(Utils.plugin, () -> {
                         Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
                             if (!Backuper.isLocked()) {
-                                new BackupTask(Config.getInstance().getAfterBackup(), true, true, null).run();
+                                new BackupTask(Config.getInstance().getAfterBackup(), true, true, autoBackupPermissions, null).run();
                             } else {
                                 Logger.getLogger().warn("Failed to start an Auto Backup task. Blocked by another operation", sender);
                             }
@@ -715,6 +724,28 @@ public class Initialization implements Listener {
                 )
         ;
         backupMenuCommandTree.register();
+
+        CommandTree backupTaskCommandTree = new CommandTree("backuper").withPermission(Permissions.BACKUPER.getPermission());
+        backupTaskCommandTree
+                .then(new StringArgument("action").replaceSuggestions(ArgumentSuggestions.strings("cancel"))
+                        .executes((sender, args) -> {
+
+                            if (Objects.equals(args.get("action"), "cancelConfirmation")) {
+                                Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                    new CancelConfirmationCommand(sender, args).execute();
+                                });
+                            }
+
+                            if (Objects.equals(args.get("action"), "cancel")) {
+                                Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                    new CancelCommand(sender, args).execute();
+                                });
+                            }
+                        })
+                )
+        ;
+        backupTaskCommandTree.register();
+
 
         CommandTree backupStatusCommandTree = new CommandTree("backuper").withPermission(Permissions.BACKUPER.getPermission());
 

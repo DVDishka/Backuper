@@ -6,9 +6,12 @@ import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.io.File;
 import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public class DeleteDirTask extends Task {
@@ -17,9 +20,9 @@ public class DeleteDirTask extends Task {
 
     private final File dirToDelete;
 
-    public DeleteDirTask(File dirToDelete, boolean setLocked, CommandSender sender) {
+    public DeleteDirTask(File dirToDelete, boolean setLocked, List<Permissions> permission, CommandSender sender) {
 
-        super(taskName, setLocked, sender);
+        super(taskName, setLocked, permission, sender);
         this.dirToDelete = dirToDelete;
     }
 

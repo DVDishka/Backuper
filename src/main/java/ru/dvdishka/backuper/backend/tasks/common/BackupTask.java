@@ -18,12 +18,14 @@ import ru.dvdishka.backuper.backend.utils.FtpUtils;
 import ru.dvdishka.backuper.backend.utils.SftpUtils;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.zip.ZipOutputStream;
 
 public class BackupTask extends Task {
@@ -48,11 +50,11 @@ public class BackupTask extends Task {
     private String backupName;
     private ZipOutputStream targetZipOutputStream = null;
 
-    private ArrayList<Task> tasks = new ArrayList<>();
+    private List<Task> tasks = new ArrayList<>();
 
-    public BackupTask(String afterBackup, boolean isAutoBackup, boolean setLocked, CommandSender sender) {
+    public BackupTask(String afterBackup, boolean isAutoBackup, boolean setLocked, List<Permissions> permission, CommandSender sender) {
 
-        super(taskName, setLocked, sender);
+        super(taskName, setLocked, permission, sender);
         this.afterBackup = afterBackup.toUpperCase();
         this.isAutoBackup = isAutoBackup;
         this.isLocal = Config.getInstance().getLocalConfig().isAutoBackup() && Config.getInstance().getLocalConfig().isEnabled();
@@ -60,9 +62,9 @@ public class BackupTask extends Task {
         this.isSftp = Config.getInstance().getSftpConfig().isAutoBackup() && Config.getInstance().getSftpConfig().isEnabled();
     }
 
-    public BackupTask(String afterBackup, boolean isAutoBackup, boolean isLocal, boolean isFtp, boolean isSftp, boolean setLocked, CommandSender sender) {
+    public BackupTask(String afterBackup, boolean isAutoBackup, boolean isLocal, boolean isFtp, boolean isSftp, boolean setLocked, List<Permissions> permission, CommandSender sender) {
 
-        super(taskName, setLocked, sender);
+        super(taskName, setLocked, permission, sender);
         this.afterBackup = afterBackup.toUpperCase();
         this.isAutoBackup = isAutoBackup;
         this.isLocal = isLocal;
@@ -216,9 +218,9 @@ public class BackupTask extends Task {
 
             // DELETE OLD BACKUPS TASK MUST BE RAN AFTER RENAMING
             if (!cancelled) {
-                new DeleteOldBackupsTask(false, sender).run();
+                new DeleteOldBackupsTask(false, permissions, sender).run();
                 if (Config.getInstance().isDeleteBrokenBackups()) {
-                    new DeleteBrokenBackupsTask(false, sender).run();
+                    new DeleteBrokenBackupsTask(false, permissions, sender).run();
                 }
             }
 
@@ -275,7 +277,7 @@ public class BackupTask extends Task {
             this.backupName = LocalDateTime.now().format(LocalBackup.dateTimeFormatter) + " in progress";
 
             if (!cancelled) {
-                tasks.add(new SetWorldsReadOnlyTask(false, sender));
+                tasks.add(new SetWorldsReadOnlyTask(false, permissions, sender));
             }
 
             if (!cancelled && isLocal) {
@@ -288,7 +290,7 @@ public class BackupTask extends Task {
                 prepareSftpTask();
             }
 
-            tasks.add(new SetWorldsWritableTask(false, sender));
+            tasks.add(new SetWorldsWritableTask(false, permissions, sender));
 
         } catch (Exception e) {
 
@@ -296,7 +298,7 @@ public class BackupTask extends Task {
                 UIUtils.cancelSound(sender);
             }
 
-            new SetWorldsWritableTask(false, sender).run();
+            new SetWorldsWritableTask(false, permissions, sender).run();
 
             Logger.getLogger().warn("The Backup task has been finished with an exception!", sender);
             Logger.getLogger().warn(this, e);
@@ -335,14 +337,14 @@ public class BackupTask extends Task {
 
                     if (Config.getInstance().getLocalConfig().isZipArchive()) {
 
-                        Task task = new AddDirToZipTask(worldDir, targetZipOutputStream, true, false, false, sender);
+                        Task task = new AddDirToZipTask(worldDir, targetZipOutputStream, true, false, false, permissions, sender);
                         task.prepareTask();
 
                         tasks.add(task);
 
                     } else {
 
-                        Task task = new CopyFilesToFolderTask(worldDir, backupDir, true, false, false, sender);
+                        Task task = new CopyFilesToFolderTask(worldDir, backupDir, true, false, false, permissions, sender);
                         task.prepareTask();
 
                         tasks.add(task);
@@ -377,14 +379,14 @@ public class BackupTask extends Task {
 
                     if (Config.getInstance().getLocalConfig().isZipArchive()) {
 
-                        Task task = new AddDirToZipTask(additionalDirectoryToBackupFile, targetZipOutputStream, true, false, false, sender);
+                        Task task = new AddDirToZipTask(additionalDirectoryToBackupFile, targetZipOutputStream, true, false, false, permissions, sender);
                         task.prepareTask();
 
                         tasks.add(task);
 
                     } else {
 
-                        Task task = new CopyFilesToFolderTask(additionalDirectoryToBackupFile, backupDir, true, false, false, sender);
+                        Task task = new CopyFilesToFolderTask(additionalDirectoryToBackupFile, backupDir, true, false, false, permissions, sender);
                         task.prepareTask();
 
                         tasks.add(task);
@@ -422,7 +424,7 @@ public class BackupTask extends Task {
 
                 try {
                     Task task = new SftpSendFileFolderTask(worldDir, SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(),
-                            backupName), true, false, false, sender);
+                            backupName), true, false, false, permissions, sender);
                     task.prepareTask();
 
                     tasks.add(task);
@@ -455,7 +457,7 @@ public class BackupTask extends Task {
                     }
 
                     Task task = new SftpSendFileFolderTask(additionalDirectoryToBackupFile, SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(),
-                            backupName), true, false, false, sender);
+                            backupName), true, false, false, permissions, sender);
                     task.prepareTask();
 
                     tasks.add(task);
@@ -498,7 +500,7 @@ public class BackupTask extends Task {
                     if (!Config.getInstance().getFtpConfig().isZipArchive()) {
 
                         Task task = new FtpSendFileFolderTask(worldDir, FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(),
-                                backupName), true, false, false, sender);
+                                backupName), true, false, false, permissions, sender);
                         task.prepareTask();
 
                         tasks.add(task);
@@ -536,7 +538,7 @@ public class BackupTask extends Task {
                     if (!Config.getInstance().getFtpConfig().isZipArchive()) {
 
                         Task task = new FtpSendFileFolderTask(additionalDirectoryToBackupFile, FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(),
-                                backupName), true, false, false, sender);
+                                backupName), true, false, false, permissions, sender);
                         task.prepareTask();
 
                         tasks.add(task);
@@ -553,7 +555,7 @@ public class BackupTask extends Task {
             if (Config.getInstance().getFtpConfig().isZipArchive()) {
 
                 String targetZipPath = FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(), backupName + ".zip");
-                Task task = new FtpAddLocalDirsToZipTask(dirsToAddToZip, targetZipPath, true, false, false, sender);
+                Task task = new FtpAddLocalDirsToZipTask(dirsToAddToZip, targetZipPath, true, false, false, permissions, sender);
                 task.prepareTask();
 
                 tasks.add(task);

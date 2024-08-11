@@ -8,6 +8,10 @@ import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.utils.FtpUtils;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class FtpDeleteDirTask extends Task {
 
@@ -17,8 +21,8 @@ public class FtpDeleteDirTask extends Task {
 
     private FTPClient ftp;
 
-    public FtpDeleteDirTask(String remoteDirToDelete, boolean setLocked, CommandSender sender) {
-        super(taskName, setLocked, sender);
+    public FtpDeleteDirTask(String remoteDirToDelete, boolean setLocked, List<Permissions> permission, CommandSender sender) {
+        super(taskName, setLocked, permission, sender);
 
         this.remoteDirToDelete = remoteDirToDelete;
     }

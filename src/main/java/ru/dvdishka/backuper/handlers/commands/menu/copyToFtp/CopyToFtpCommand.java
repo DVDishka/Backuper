@@ -11,7 +11,11 @@ import ru.dvdishka.backuper.backend.tasks.ftp.FtpSendFileFolderTask;
 import ru.dvdishka.backuper.backend.utils.FtpUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.handlers.commands.Command;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
 import ru.dvdishka.backuper.handlers.commands.status.StatusCommand;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class CopyToFtpCommand extends Command {
 
@@ -69,7 +73,7 @@ public class CopyToFtpCommand extends Command {
 
             new FtpSendFileFolderTask(localBackup.getFile(),
                     FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(), inProgressName),
-                    false, true, true, sender).run();
+                    false, true, true, List.of(Permissions.LOCAL_COPY_TO_FTP), sender).run();
 
             FtpUtils.renameFile(FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(), inProgressName),
                     FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(), localBackup.getFileName()),

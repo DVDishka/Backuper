@@ -13,7 +13,11 @@ import ru.dvdishka.backuper.backend.utils.SftpUtils;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.handlers.commands.Command;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
 import ru.dvdishka.backuper.handlers.commands.status.StatusCommand;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.google.common.primitives.Longs.min;
 import static java.lang.Math.max;
@@ -118,12 +122,21 @@ public class BackupCommand extends Command {
             }, max((delay - Config.getInstance().getAlertTimeBeforeRestart()) * 20, 1));
         }
 
+        List<Permissions> backupPermissions = new ArrayList<>();
+        backupPermissions.add(Permissions.BACKUP);
+        if (afterBackup.equals("STOP")) {
+            backupPermissions.add(Permissions.STOP);
+        }
+        if (afterBackup.equals("RESTART")) {
+            backupPermissions.add(Permissions.RESTART);
+        }
+
         Scheduler.getScheduler().runSyncDelayed(Utils.plugin, () -> {
 
             StatusCommand.sendTaskStartedMessage("Backup", sender);
 
             Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                new BackupTask(afterBackup, false, isLocal, isFtp, isSftp, true, sender).run();
+                new BackupTask(afterBackup, false, isLocal, isFtp, isSftp, true, backupPermissions, sender).run();
                 sendMessage("Backup task completed");
             });
 

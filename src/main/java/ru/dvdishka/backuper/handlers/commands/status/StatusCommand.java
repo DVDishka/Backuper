@@ -9,11 +9,11 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.backend.tasks.ftp.FtpGetFileFolderTask;
-import ru.dvdishka.backuper.backend.tasks.ftp.FtpSendFileFolderTask;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
+
+import java.util.ArrayList;
 
 public class StatusCommand extends Command {
 
@@ -60,7 +60,9 @@ public class StatusCommand extends Command {
                         .decorate(TextDecoration.BOLD)
                         .color(color))
                 .append(Component.text("[CANCEL]")
-                        .color());
+                        .decorate(TextDecoration.BOLD)
+                        .color(TextColor.color(0xB02100))
+                        .clickEvent(ClickEvent.runCommand("/backuper task cancelConfirmation")));
 
         if (!(sender instanceof ConsoleCommandSender)) {
             sendFramedMessage(message, 15);

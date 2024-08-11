@@ -10,7 +10,10 @@ import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.utils.SftpUtils;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
 
 public class SftpDeleteDirTask extends Task {
@@ -22,8 +25,8 @@ public class SftpDeleteDirTask extends Task {
     Session session = null;
     ChannelSftp channelSftp = null;
 
-    public SftpDeleteDirTask(String remoteDirToDelete, boolean setLocked, CommandSender sender) {
-        super(taskName, setLocked, sender);
+    public SftpDeleteDirTask(String remoteDirToDelete, boolean setLocked, List<Permissions> permission, CommandSender sender) {
+        super(taskName, setLocked, permission, sender);
 
         this.remoteDirToDelete = remoteDirToDelete;
     }

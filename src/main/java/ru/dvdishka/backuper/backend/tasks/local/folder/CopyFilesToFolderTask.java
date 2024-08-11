@@ -6,10 +6,12 @@ import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.io.File;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
@@ -24,9 +26,10 @@ public class CopyFilesToFolderTask extends Task {
 
     private final ArrayList<CompletableFuture<Void>> copyTasks = new ArrayList<>();
 
-    public CopyFilesToFolderTask(File sourceDirToCopy, File targetDir, boolean createRootDirInTargetDir, boolean forceExcludedDirs, boolean setLocked, CommandSender sender) {
+    public CopyFilesToFolderTask(File sourceDirToCopy, File targetDir, boolean createRootDirInTargetDir, boolean forceExcludedDirs,
+                                 boolean setLocked, List<Permissions> permission, CommandSender sender) {
 
-        super(taskName, setLocked, sender);
+        super(taskName, setLocked, permission, sender);
         this.sourceDirToCopy = sourceDirToCopy;
         this.targetDir = targetDir;
         this.forceExcludedDirs = forceExcludedDirs;

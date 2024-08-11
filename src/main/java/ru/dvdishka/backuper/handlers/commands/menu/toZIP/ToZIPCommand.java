@@ -10,7 +10,11 @@ import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.local.zip.tozip.ConvertFolderToZipTask;
 import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.handlers.commands.Command;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
 import ru.dvdishka.backuper.handlers.commands.status.StatusCommand;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ToZIPCommand extends Command {
 
@@ -58,7 +62,7 @@ public class ToZIPCommand extends Command {
         Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
             try {
 
-                new ConvertFolderToZipTask(localBackup.getFile(), true, sender).run();
+                new ConvertFolderToZipTask(localBackup.getFile(), true, List.of(Permissions.LOCAL_TO_ZIP), sender).run();
 
                 sendMessage("ToZIP task completed");
 

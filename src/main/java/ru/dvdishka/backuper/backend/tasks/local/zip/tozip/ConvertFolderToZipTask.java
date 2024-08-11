@@ -6,8 +6,11 @@ import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.tasks.local.folder.DeleteDirTask;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ConvertFolderToZipTask extends Task {
 
@@ -21,9 +24,9 @@ public class ConvertFolderToZipTask extends Task {
     private final long deleteProgressMultiplier = 1;
     private final long zipProgressMultiplier = 10;
 
-    public ConvertFolderToZipTask(File sourceFolderDir, boolean setLocked, CommandSender sender) {
+    public ConvertFolderToZipTask(File sourceFolderDir, boolean setLocked, List<Permissions> permission, CommandSender sender) {
 
-        super(taskName, setLocked, sender);
+        super(taskName, setLocked, permission, sender);
         this.sourceFolderDir = sourceFolderDir;
     }
 
@@ -86,10 +89,10 @@ public class ConvertFolderToZipTask extends Task {
 
         this.isTaskPrepared = true;
 
-        addDirToZipTask = new AddDirToZipTask(sourceFolderDir, new File(sourceFolderDir.getPath() + " in progress.zip"), false, true, false, sender);
+        addDirToZipTask = new AddDirToZipTask(sourceFolderDir, new File(sourceFolderDir.getPath() + " in progress.zip"), false, true, false, permissions, sender);
         addDirToZipTask.prepareTask();
 
-        deleteDirTask = new DeleteDirTask(sourceFolderDir, false, sender);
+        deleteDirTask = new DeleteDirTask(sourceFolderDir, false, permissions, sender);
         deleteDirTask.prepareTask();
     }
 

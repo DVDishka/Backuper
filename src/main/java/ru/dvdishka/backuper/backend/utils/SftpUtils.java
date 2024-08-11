@@ -9,6 +9,7 @@ import it.unimi.dsi.fastutil.Pair;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.io.IOException;
 import java.util.ArrayList;

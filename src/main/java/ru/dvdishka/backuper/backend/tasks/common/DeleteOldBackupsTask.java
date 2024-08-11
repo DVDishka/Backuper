@@ -11,10 +11,12 @@ import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 
 public class DeleteOldBackupsTask extends Task {
 
@@ -22,8 +24,8 @@ public class DeleteOldBackupsTask extends Task {
 
     private ArrayList<Task> deleteBackupTasks = new ArrayList<>();
 
-    public DeleteOldBackupsTask(boolean setLocked, CommandSender sender) {
-        super(taskName, setLocked, sender);
+    public DeleteOldBackupsTask(boolean setLocked, List<Permissions> permission, CommandSender sender) {
+        super(taskName, setLocked, permission, sender);
     }
 
     @Override

@@ -10,10 +10,11 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
-import org.jetbrains.annotations.NotNull;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
+
+import java.util.ArrayList;
 
 public class UIUtils {
     public static void returnFailure(String message, CommandSender sender) {
@@ -52,7 +53,7 @@ public class UIUtils {
         } catch (Exception ignored) {}
     }
 
-    public static void sendMessage(String message, @NotNull CommandSender sender) {
+    public static void sendMessage(String message, CommandSender sender) {
         try {
             sender.sendMessage(message);
         } catch (Exception ignored) {}

@@ -9,12 +9,14 @@ import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.utils.FtpUtils;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -29,9 +31,10 @@ public class FtpAddLocalDirsToZipTask extends Task {
     private boolean forceExcludedDirs;
     private boolean createRootDirInTargetZIP;
 
-    public FtpAddLocalDirsToZipTask(ArrayList<File> sourceDirsToAdd, String targetZipPath, boolean createRootDirInTargetZIP, boolean forceExcludedDirs, boolean setLocked, CommandSender sender) {
+    public FtpAddLocalDirsToZipTask(ArrayList<File> sourceDirsToAdd, String targetZipPath, boolean createRootDirInTargetZIP,
+                                    boolean forceExcludedDirs, boolean setLocked, List<Permissions> permission, CommandSender sender) {
 
-        super(taskName, setLocked, sender);
+        super(taskName, setLocked, permission, sender);
         this.targetZipPath = targetZipPath;
         this.sourceDirsToAdd = sourceDirsToAdd;
         this.sender = sender;

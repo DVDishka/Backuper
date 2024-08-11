@@ -7,11 +7,14 @@ import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -26,9 +29,10 @@ public class AddDirToZipTask extends Task {
     private boolean forceExcludedDirs = false;
     private boolean createRootDirInTargetZIP = true;
 
-    public AddDirToZipTask(File sourceDirToAdd, File targetZipFileDir, boolean createRootDirInTargetZIP, boolean forceExcludedDirs, boolean setLocked, CommandSender sender) {
+    public AddDirToZipTask(File sourceDirToAdd, File targetZipFileDir, boolean createRootDirInTargetZIP, boolean forceExcludedDirs,
+                           boolean setLocked, List<Permissions> permission, CommandSender sender) {
 
-        super(taskName, setLocked, sender);
+        super(taskName, setLocked, permission, sender);
         this.targetZipFileDir = targetZipFileDir;
         this.sourceDirToAdd = sourceDirToAdd;
         this.sender = sender;
@@ -36,9 +40,10 @@ public class AddDirToZipTask extends Task {
         this.createRootDirInTargetZIP = createRootDirInTargetZIP;
     }
 
-    public AddDirToZipTask(File sourceDirToAdd, ZipOutputStream targetZipOutputStream, boolean createRootDirInTargetZIP, boolean forceExcludedDirs, boolean setLocked, CommandSender sender) {
+    public AddDirToZipTask(File sourceDirToAdd, ZipOutputStream targetZipOutputStream, boolean createRootDirInTargetZIP,
+                           boolean forceExcludedDirs, boolean setLocked, List<Permissions> permission, CommandSender sender) {
 
-        super(taskName, setLocked, sender);
+        super(taskName, setLocked, permission, sender);
         this.targetZipOutputStream = targetZipOutputStream;
         this.sourceDirToAdd = sourceDirToAdd;
         this.sender = sender;

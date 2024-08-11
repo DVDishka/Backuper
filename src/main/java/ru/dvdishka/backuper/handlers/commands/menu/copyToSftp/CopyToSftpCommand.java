@@ -11,7 +11,11 @@ import ru.dvdishka.backuper.backend.tasks.sftp.SftpSendFileFolderTask;
 import ru.dvdishka.backuper.backend.utils.SftpUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.handlers.commands.Command;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
 import ru.dvdishka.backuper.handlers.commands.status.StatusCommand;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class CopyToSftpCommand extends Command {
 
@@ -69,7 +73,7 @@ public class CopyToSftpCommand extends Command {
 
             new SftpSendFileFolderTask(localBackup.getFile(),
                     SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), inProgressName),
-                    false, true, true, sender).run();
+                    false, true, true, List.of(Permissions.LOCAL_COPY_TO_SFTP), sender).run();
 
             SftpUtils.renameFile(SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), inProgressName),
                     SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), localBackup.getFileName()),

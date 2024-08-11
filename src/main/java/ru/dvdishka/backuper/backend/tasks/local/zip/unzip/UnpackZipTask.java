@@ -6,11 +6,14 @@ import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
@@ -22,9 +25,9 @@ public class UnpackZipTask extends Task {
     private final File sourceZipDir;
     private final File targetFolderDir;
 
-    public UnpackZipTask(File sourceZipDir, File targetFolderDir, boolean setLocked, CommandSender sender) {
+    public UnpackZipTask(File sourceZipDir, File targetFolderDir, boolean setLocked, List<Permissions> permission, CommandSender sender) {
 
-        super(taskName, setLocked, sender);
+        super(taskName, setLocked, permission, sender);
         this.sourceZipDir = sourceZipDir;
         this.targetFolderDir = targetFolderDir;
     }

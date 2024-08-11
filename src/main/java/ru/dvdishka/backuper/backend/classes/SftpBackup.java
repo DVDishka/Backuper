@@ -1,10 +1,10 @@
 package ru.dvdishka.backuper.backend.classes;
 
-import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.tasks.sftp.SftpDeleteDirTask;
 import ru.dvdishka.backuper.backend.utils.SftpUtils;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;

@@ -4,6 +4,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.io.File;
 import java.net.MalformedURLException;

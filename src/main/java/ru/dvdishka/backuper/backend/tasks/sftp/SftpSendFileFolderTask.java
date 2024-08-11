@@ -12,9 +12,11 @@ import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.utils.SftpUtils;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class SftpSendFileFolderTask extends Task {
@@ -33,8 +35,8 @@ public class SftpSendFileFolderTask extends Task {
     private long dirSize = 0;
 
     public SftpSendFileFolderTask(File localDirToSend, String remoteTargetDir, boolean createRootDirInTargetDir,
-                                  boolean forceExcludedDirs, boolean setLocked, CommandSender sender) {
-        super(taskName, setLocked, sender);
+                                  boolean forceExcludedDirs, boolean setLocked, List<Permissions> permission, CommandSender sender) {
+        super(taskName, setLocked, permission, sender);
 
         this.localDirToSend = localDirToSend;
         this.createRootDirInTargetDir = createRootDirInTargetDir;

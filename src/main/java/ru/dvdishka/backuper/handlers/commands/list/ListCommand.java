@@ -16,6 +16,7 @@ import ru.dvdishka.backuper.backend.classes.SftpBackup;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.handlers.commands.Command;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.io.File;
 import java.util.ArrayList;

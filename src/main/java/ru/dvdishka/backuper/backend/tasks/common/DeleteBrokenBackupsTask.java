@@ -11,9 +11,11 @@ import ru.dvdishka.backuper.backend.tasks.sftp.SftpDeleteDirTask;
 import ru.dvdishka.backuper.backend.utils.FtpUtils;
 import ru.dvdishka.backuper.backend.utils.SftpUtils;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 
 public class DeleteBrokenBackupsTask extends Task {
 
@@ -21,8 +23,8 @@ public class DeleteBrokenBackupsTask extends Task {
 
     private ArrayList<Task> tasks = new ArrayList<>();
 
-    public DeleteBrokenBackupsTask(boolean setLocked, CommandSender sender) {
-        super(taskName, setLocked, sender);
+    public DeleteBrokenBackupsTask(boolean setLocked, List<Permissions> permission, CommandSender sender) {
+        super(taskName, setLocked, permission, sender);
     }
 
     @Override
@@ -89,7 +91,7 @@ public class DeleteBrokenBackupsTask extends Task {
                     }
 
                     if (file.getName().replace(".zip", "").endsWith(" in progress")) {
-                        tasks.add(new DeleteDirTask(file, false, sender));
+                        tasks.add(new DeleteDirTask(file, false, permissions, sender));
                     }
                 }
             }
@@ -107,7 +109,7 @@ public class DeleteBrokenBackupsTask extends Task {
                     }
 
                     if (file.replace(".zip", "").endsWith(" in progress")) {
-                        tasks.add(new FtpDeleteDirTask(FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(), file), false, sender));
+                        tasks.add(new FtpDeleteDirTask(FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(), file), false, permissions, sender));
                     }
                 }
 
@@ -128,7 +130,7 @@ public class DeleteBrokenBackupsTask extends Task {
                     }
 
                     if (file.replace(".zip", "").endsWith(" in progress")) {
-                        tasks.add(new SftpDeleteDirTask(FtpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), file), false, sender));
+                        tasks.add(new SftpDeleteDirTask(FtpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), file), false, permissions, sender));
                     }
                 }
 
