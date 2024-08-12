@@ -77,7 +77,7 @@ public class CancelConfirmationCommand extends Command {
         sendFramedMessage(header, message, 15);
     }
 
-    public boolean checkPermission(CommandSender sender) {
+    public static boolean checkPermission(CommandSender sender) {
 
         for (Permissions permission : Backuper.getCurrentTask().getPermissions()) {
             if (!sender.hasPermission(permission.getPermission())) {

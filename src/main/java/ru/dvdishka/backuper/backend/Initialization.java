@@ -379,7 +379,9 @@ public class Initialization implements Listener {
 
                                 .executes((sender, args) -> {
 
-                                    new ReloadCommand(sender, args).execute();
+                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                        new ReloadCommand(sender, args).execute();
+                                    });
                                 })
                         )
                 )
@@ -727,21 +729,23 @@ public class Initialization implements Listener {
 
         CommandTree backupTaskCommandTree = new CommandTree("backuper").withPermission(Permissions.BACKUPER.getPermission());
         backupTaskCommandTree
-                .then(new StringArgument("action").replaceSuggestions(ArgumentSuggestions.strings("cancel"))
-                        .executes((sender, args) -> {
+                .then(new LiteralArgument("task")
+                        .then(new StringArgument("action").replaceSuggestions(ArgumentSuggestions.strings("cancel"))
+                                .executes((sender, args) -> {
 
-                            if (Objects.equals(args.get("action"), "cancelConfirmation")) {
-                                Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                                    new CancelConfirmationCommand(sender, args).execute();
-                                });
-                            }
+                                    if (Objects.equals(args.get("action"), "cancelConfirmation")) {
+                                        Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                            new CancelConfirmationCommand(sender, args).execute();
+                                        });
+                                    }
 
-                            if (Objects.equals(args.get("action"), "cancel")) {
-                                Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                                    new CancelCommand(sender, args).execute();
-                                });
-                            }
-                        })
+                                    if (Objects.equals(args.get("action"), "cancel")) {
+                                        Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                            new CancelCommand(sender, args).execute();
+                                        });
+                                    }
+                                })
+                        )
                 )
         ;
         backupTaskCommandTree.register();

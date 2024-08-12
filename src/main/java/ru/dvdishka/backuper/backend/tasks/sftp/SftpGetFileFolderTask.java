@@ -146,14 +146,17 @@ public class SftpGetFileFolderTask extends Task {
                 SftpProgressMonitor progressMonitor = new SftpProgressMonitor();
                 progressMonitors.add(progressMonitor);
 
-                sftpTasks.add(CompletableFuture.runAsync(() -> {
+                CompletableFuture<Void> task = CompletableFuture.runAsync(() -> {
                     try {
                         sftpChannel.get(remotePath, localPath.getCanonicalPath(), progressMonitor);
                     } catch (Exception e) {
                         Logger.getLogger().warn("Failed to get canonical path", e);
                         Logger.getLogger().warn(this, e);
                     }
-                }));
+                });
+
+                sftpTasks.add(task);
+                task.join();
 
             } else {
 

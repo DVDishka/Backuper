@@ -1,5 +1,6 @@
 package ru.dvdishka.backuper.backend.classes;
 
+import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.Task;
@@ -12,6 +13,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Objects;
 
 public class LocalBackup implements Backup {
@@ -165,6 +167,6 @@ public class LocalBackup implements Backup {
     }
 
     public Task getDeleteTask(boolean setLocked, CommandSender sender) {
-        return new DeleteDirTask(this.getFile(), setLocked, sender);
+        return new DeleteDirTask(this.getFile(), setLocked, List.of(Permissions.LOCAL_DELETE), sender);
     }
 }

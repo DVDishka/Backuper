@@ -12,6 +12,7 @@ import ru.dvdishka.backuper.backend.tasks.common.SetWorldsWritableTask;
 import ru.dvdishka.backuper.backend.utils.Utils;
 
 import java.io.File;
+import java.util.List;
 
 public class Backuper extends JavaPlugin {
 
@@ -77,7 +78,7 @@ public class Backuper extends JavaPlugin {
 
     public void onDisable() {
 
-        new SetWorldsWritableTask(false, null).run();
+        new SetWorldsWritableTask(false, List.of(), null).run();
 
         Scheduler.cancelTasks(this);
 

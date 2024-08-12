@@ -59,6 +59,7 @@ public class StatusCommand extends Command {
                 .append(Component.text(progress + "%")
                         .decorate(TextDecoration.BOLD)
                         .color(color))
+                .append(Component.newline())
                 .append(Component.text("[CANCEL]")
                         .decorate(TextDecoration.BOLD)
                         .color(TextColor.color(0xB02100))

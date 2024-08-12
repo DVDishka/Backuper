@@ -1,5 +1,6 @@
 package ru.dvdishka.backuper.backend.classes;
 
+import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.tasks.ftp.FtpDeleteDirTask;
@@ -77,7 +78,7 @@ public class FtpBackup implements Backup {
     }
 
     public Task getDeleteTask(boolean setLocked, CommandSender sender) {
-        return new FtpDeleteDirTask(getPath(), setLocked, sender);
+        return new FtpDeleteDirTask(getPath(), setLocked, List.of(Permissions.FTP_DELETE), sender);
     }
 
     public LocalDateTime getLocalDateTime() {

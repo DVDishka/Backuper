@@ -8,6 +8,8 @@ import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.util.ArrayList;
 
+import static ru.dvdishka.backuper.handlers.commands.task.cancel.CancelConfirmationCommand.checkPermission;
+
 public class CancelCommand extends Command {
 
     public CancelCommand(CommandSender sender, CommandArguments arguments) {
@@ -23,8 +25,14 @@ public class CancelCommand extends Command {
             return;
         }
 
+        if (!checkPermission(sender)) {
+            cancelSound();
+            returnFailure("You do not have permission to cancel this task!");
+            return;
+        }
+
         buttonSound();
-        sendMessage("Cancelling task...");
+        sendMessage("Cancelling " + Backuper.getCurrentTask().getTaskName() +  " task...");
 
         Backuper.getCurrentTask().cancel();
     }

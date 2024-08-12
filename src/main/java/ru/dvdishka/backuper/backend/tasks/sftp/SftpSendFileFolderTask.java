@@ -153,17 +153,20 @@ public class SftpSendFileFolderTask extends Task {
                 SftpProgressMonitor progressMonitor = new SftpProgressMonitor();
                 progressMonitors.add(progressMonitor);
 
-                sftpTasks.add(CompletableFuture.runAsync(() -> {
+                CompletableFuture<Void> task = CompletableFuture.runAsync(() -> {
                     try {
                         sftpChannel.put(localPath, remotePath, progressMonitor);
                     } catch (Exception e) {
-                        Logger.getLogger().warn("Failed to get canonical path", e);
+                        Logger.getLogger().warn("Failed to send file using SFTP connection", sender);
                         Logger.getLogger().warn(this, e);
                     }
-                }));
+                });
+                sftpTasks.add(task);
+                task.join();
 
             } catch (Exception e) {
-                Logger.getLogger().warn("Something went wrong while sending file to the SFTP channel", e);
+
+                Logger.getLogger().warn("Something went wrong while sending file to the SFTP channel", sender);
                 Logger.getLogger().warn(this, e);
             }
         }

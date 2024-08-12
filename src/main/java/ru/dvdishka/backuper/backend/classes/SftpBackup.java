@@ -1,5 +1,6 @@
 package ru.dvdishka.backuper.backend.classes;
 
+import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.tasks.sftp.SftpDeleteDirTask;
@@ -10,6 +11,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 public class SftpBackup implements Backup {
 
@@ -96,7 +98,7 @@ public class SftpBackup implements Backup {
     }
 
     public Task getDeleteTask(boolean setLocked, CommandSender sender) {
-        return new SftpDeleteDirTask(getPath(), setLocked, sender);
+        return new SftpDeleteDirTask(getPath(), setLocked, List.of(Permissions.SFTP_DELETE), sender);
     }
 
     public LocalDateTime getLocalDateTime() {
