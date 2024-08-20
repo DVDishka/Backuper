@@ -48,7 +48,7 @@ import ru.dvdishka.backuper.handlers.commands.menu.toZIP.ToZIPConfirmationComman
 import ru.dvdishka.backuper.handlers.commands.menu.unZIP.UnZIPCommand;
 import ru.dvdishka.backuper.handlers.commands.menu.unZIP.UnZIPConfirmationCommand;
 import ru.dvdishka.backuper.handlers.commands.reload.ReloadCommand;
-import ru.dvdishka.backuper.handlers.commands.status.StatusCommand;
+import ru.dvdishka.backuper.handlers.commands.task.status.StatusCommand;
 import ru.dvdishka.backuper.handlers.commands.task.cancel.CancelCommand;
 import ru.dvdishka.backuper.handlers.commands.task.cancel.CancelConfirmationCommand;
 import ru.dvdishka.backuper.handlers.worldchangecatch.WorldChangeCatcher;
@@ -746,24 +746,16 @@ public class Initialization implements Listener {
                                     }
                                 })
                         )
+                        .then(new LiteralArgument("status").withPermission(Permissions.STATUS.getPermission())
+
+                                .executes((sender, args) -> {
+
+                                    new StatusCommand(sender, args).execute();
+                                })
+                        )
                 )
         ;
         backupTaskCommandTree.register();
-
-
-        CommandTree backupStatusCommandTree = new CommandTree("backuper").withPermission(Permissions.BACKUPER.getPermission());
-
-        backupStatusCommandTree
-
-                .then(new LiteralArgument("status").withPermission(Permissions.STATUS.getPermission())
-
-                        .executes((sender, args) -> {
-
-                            new StatusCommand(sender, args).execute();
-                        })
-                );
-
-        backupStatusCommandTree.register();
     }
 
     public static void initEventHandlers() {
@@ -794,11 +786,6 @@ public class Initialization implements Listener {
             Utils.isFolia = false;
             Logger.getLogger().devLog("Folia/Paper(1.20+) has not been detected!");
         }
-    }
-
-    public static void checkOperatingSystem() {
-        LocalBackup.dateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH-mm-ss");
-        SftpBackup.dateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH-mm-ss");
     }
 
     public static void checkPluginVersion() {

@@ -1,4 +1,4 @@
-package ru.dvdishka.backuper.handlers.commands.status;
+package ru.dvdishka.backuper.handlers.commands.task.status;
 
 import dev.jorel.commandapi.executors.CommandArguments;
 import net.kyori.adventure.text.Component;
@@ -12,8 +12,6 @@ import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
-
-import java.util.ArrayList;
 
 public class StatusCommand extends Command {
 
@@ -92,18 +90,18 @@ public class StatusCommand extends Command {
                     .append(Component.text("[STATUS]")
                             .color(TextColor.color(17, 102, 212)))
                     .append(Component.text(" button below or using command "))
-                    .append(Component.text("/backuper status")
+                    .append(Component.text("/backuper task status")
                             .decorate(TextDecoration.UNDERLINED)
-                            .clickEvent(ClickEvent.suggestCommand("/backuper status"))
+                            .clickEvent(ClickEvent.suggestCommand("/backuper task status"))
                             .hoverEvent(HoverEvent.showText(Component
-                                    .text("/backuper status")
+                                    .text("/backuper task status")
                                             .decorate(TextDecoration.ITALIC))))
                     .append(Component.newline());
 
             message = message
                     .append(Component.newline())
                     .append(Component.text("[STATUS]")
-                            .clickEvent(ClickEvent.runCommand("/backuper status"))
+                            .clickEvent(ClickEvent.runCommand("/backuper task status"))
                             .color(TextColor.color(17, 102, 212))
                             .decorate(TextDecoration.BOLD));
         }
@@ -118,9 +116,9 @@ public class StatusCommand extends Command {
                     .append(Component.newline())
                     .append(Component.text("you can check the task status using command"))
                     .append(Component.newline())
-                    .append(Component.text("/backuper status")
+                    .append(Component.text("/backuper task status")
                             .decorate(TextDecoration.UNDERLINED)
-                            .clickEvent(ClickEvent.suggestCommand("/backuper status")));
+                            .clickEvent(ClickEvent.suggestCommand("/backuper task status")));
         }
 
         UIUtils.sendFramedMessage(message, sender);

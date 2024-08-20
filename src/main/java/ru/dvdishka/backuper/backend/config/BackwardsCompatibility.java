@@ -112,7 +112,7 @@ public class BackwardsCompatibility {
 
                     boolean isZip = file.getName().endsWith(".zip");
 
-                    String newFileName = LocalBackup.dateTimeFormatter.format(backupLocalDateTime);
+                    String newFileName = Config.getInstance().getDateTimeFormatter().format(backupLocalDateTime);
                     if (isZip) {
                         newFileName += ".zip";
                     }

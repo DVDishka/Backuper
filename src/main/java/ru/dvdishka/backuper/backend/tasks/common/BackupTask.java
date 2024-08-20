@@ -274,7 +274,7 @@ public class BackupTask extends Task {
 
             this.isTaskPrepared = true;
 
-            this.backupName = LocalDateTime.now().format(LocalBackup.dateTimeFormatter) + " in progress";
+            this.backupName = LocalDateTime.now().format(Config.getInstance().getDateTimeFormatter()) + " in progress";
 
             if (!cancelled) {
                 tasks.add(new SetWorldsReadOnlyTask(false, permissions, sender));

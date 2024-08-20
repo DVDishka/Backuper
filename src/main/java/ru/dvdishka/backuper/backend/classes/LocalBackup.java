@@ -21,8 +21,6 @@ public class LocalBackup implements Backup {
     private String backupName;
     private LocalDateTime backupLocalDateTime;
 
-    public static DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH-mm-ss");
-
     private static HashMap<String, LocalBackup> backups = new HashMap();
 
     public static LocalBackup getInstance(String backupName) {
@@ -41,7 +39,7 @@ public class LocalBackup implements Backup {
     private LocalBackup(String backupName) {
 
         this.backupName = backupName;
-        this.backupLocalDateTime = LocalDateTime.parse(backupName, dateTimeFormatter);
+        this.backupLocalDateTime = LocalDateTime.parse(backupName, Config.getInstance().getDateTimeFormatter());
     }
 
     public static ArrayList<LocalBackup> getBackups() {
@@ -151,7 +149,7 @@ public class LocalBackup implements Backup {
         }
 
         try {
-            LocalDateTime.parse(backupName, dateTimeFormatter);
+            LocalDateTime.parse(backupName, Config.getInstance().getDateTimeFormatter());
         } catch (Exception e) {
             return false;
         }

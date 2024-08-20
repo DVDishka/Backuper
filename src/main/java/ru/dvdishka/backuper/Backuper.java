@@ -66,7 +66,6 @@ public class Backuper extends JavaPlugin {
         Initialization.checkDependencies();
         Initialization.checkPluginVersion();
         Initialization.sendIssueToGitHub();
-        Initialization.checkOperatingSystem();
 
         Logger.getLogger().log("Backuper plugin has been enabled!");
     }

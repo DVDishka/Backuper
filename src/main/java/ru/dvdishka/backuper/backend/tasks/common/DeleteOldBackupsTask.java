@@ -171,7 +171,7 @@ public class DeleteOldBackupsTask extends Task {
                     String backupFileName = backup.getName().replace(".zip", "");
 
                     try {
-                        if (LocalDateTime.parse(backupFileName, LocalBackup.dateTimeFormatter).equals(fileName)) {
+                        if (LocalDateTime.parse(backupFileName, Config.getInstance().getDateTimeFormatter()).equals(fileName)) {
 
                             Task deleteBackupTask = backup.getDeleteTask(false, sender);
                             deleteBackupTask.prepareTask();
@@ -222,7 +222,7 @@ public class DeleteOldBackupsTask extends Task {
                     String backupFileName = backup.getName().replace(".zip", "");
 
                     try {
-                        if (LocalDateTime.parse(backupFileName, LocalBackup.dateTimeFormatter).equals(fileName)) {
+                        if (LocalDateTime.parse(backupFileName, Config.getInstance().getDateTimeFormatter()).equals(fileName)) {
 
                             bytesToDelete -= backup.getByteSize(sender);
 

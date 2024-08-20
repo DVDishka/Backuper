@@ -18,7 +18,6 @@ public class FtpBackup implements Backup {
     private String backupName;
 
     private static HashMap<String, FtpBackup> backups = new HashMap<>();
-    public static DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH-mm-ss");
 
     private FtpBackup(String backupName) {
         this.backupName = backupName;
@@ -44,7 +43,7 @@ public class FtpBackup implements Backup {
         }
 
         try {
-            LocalDateTime.parse(backupName, dateTimeFormatter);
+            LocalDateTime.parse(backupName, Config.getInstance().getDateTimeFormatter());
         } catch (Exception e) {
             return false;
         }
@@ -82,7 +81,7 @@ public class FtpBackup implements Backup {
     }
 
     public LocalDateTime getLocalDateTime() {
-        return LocalDateTime.parse(backupName, dateTimeFormatter);
+        return LocalDateTime.parse(backupName, Config.getInstance().getDateTimeFormatter());
     }
 
     public String getName() {

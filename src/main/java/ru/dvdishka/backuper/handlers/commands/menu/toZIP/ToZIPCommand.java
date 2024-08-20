@@ -11,9 +11,8 @@ import ru.dvdishka.backuper.backend.tasks.local.zip.tozip.ConvertFolderToZipTask
 import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
-import ru.dvdishka.backuper.handlers.commands.status.StatusCommand;
+import ru.dvdishka.backuper.handlers.commands.task.status.StatusCommand;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class ToZIPCommand extends Command {

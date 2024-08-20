@@ -13,6 +13,7 @@ import ru.dvdishka.backuper.handlers.commands.Permissions;
 import java.io.File;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -39,6 +40,8 @@ public class Config {
     private boolean alertOnlyServerRestart = true;
     private boolean checkUpdates = true;
     private boolean deleteBrokenBackups = true;
+    private String backupFileNameFormat = "dd-MM-yyyy HH-mm-ss";
+    private DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH-mm-ss");
 
     private LocalConfig localConfig = new LocalConfig();
     private SftpConfig sftpConfig = new SftpConfig();
@@ -89,7 +92,10 @@ public class Config {
         BackwardsCompatibility.configBelow4(config);
         BackwardsCompatibility.configBelow8(config);
 
+        boolean isConfigFileOk = true;
+
         this.backupTime = config.getInt("backup.backupTime", -1);
+        this.backupFileNameFormat = config.getString("backup.backupFileNameFormat", "dd-MM-yyyy HH-mm-ss");
         this.backupPeriod = config.getInt("backup.backupPeriod", 1440);
         this.afterBackup = config.getString("backup.afterBackup", "NOTHING").toUpperCase();
         this.setWorldsReadOnly = config.getBoolean("backup.setWorldsReadOnly", false);
@@ -143,6 +149,15 @@ public class Config {
 
         this.lastBackup = config.getLong("lastBackup", 0);
         this.lastChange = config.getLong("lastChange", 0);
+
+        try {
+            dateTimeFormatter = DateTimeFormatter.ofPattern(backupFileNameFormat);
+        } catch (Exception e) {
+            Logger.getLogger().warn("Wrong backupFileNameFormat format: \"" + backupFileNameFormat + "\", using default \"dd-MM-yyyy HH-mm-ss\" value...");
+            Logger.getLogger().warn(this, e);
+            isConfigFileOk = false;
+            backupFileNameFormat = "dd-MM-yyyy HH-mm-ss";
+        }
 
         if (this.backupTime < -1) {
             Logger.getLogger().warn("Failed to load config value!");
@@ -210,7 +225,7 @@ public class Config {
             }
         }
 
-        boolean isConfigFileOk = Objects.equals(configVersion, this.configVersion);
+        isConfigFileOk = isConfigFileOk && Objects.equals(configVersion, this.configVersion);
 
         List<String> configFields = List.of("backup.backupTime", "backup.backupPeriod", "backup.afterBackup", "local.maxBackupsNumber",
                 "local.maxBackupsWeight", "local.zipArchive", "server.betterLogging", "backup.autoBackup", "lastBackup", "lastChange",
@@ -221,7 +236,7 @@ public class Config {
                 "local.zipCompressionLevel", "sftp.maxBackupsNumber", "sftp.maxBackupsWeight", "ftp.backupsFolder", "ftp.auth.address", "ftp.auth.port",
                 "ftp.pathSeparatorSymbol", "ftp.auth.password", "ftp.auth.username", "ftp.enabled", "ftp.maxBackupsNumber", "ftp.maxBackupsWeight",
                 "ftp.zipArchive", "ftp.zipCompressionLevel", "server.checkUpdates", "local.autoBackup", "ftp.autoBackup", "sftp.autoBackup",
-                "backup.deleteBrokenBackups");
+                "backup.deleteBrokenBackups", "backup.backupFileNameFormat");
 
         for (String configField : configFields) {
             if (isConfigFileOk && !config.contains(configField)) {
@@ -243,6 +258,7 @@ public class Config {
             FileConfiguration newConfig = YamlConfiguration.loadConfiguration(configFile);
 
             newConfig.set("backup.backupTime", this.backupTime);
+            newConfig.set("backup.backupFileNameFormat", this.backupFileNameFormat);
             newConfig.set("backup.backupPeriod", this.backupPeriod);
             newConfig.set("backup.afterBackup", this.afterBackup);
             newConfig.set("backup.autoBackup", this.autoBackup);
@@ -400,5 +416,9 @@ public class Config {
 
     public boolean isDeleteBrokenBackups() {
         return deleteBrokenBackups;
+    }
+
+    public DateTimeFormatter getDateTimeFormatter() {
+        return dateTimeFormatter;
     }
 }

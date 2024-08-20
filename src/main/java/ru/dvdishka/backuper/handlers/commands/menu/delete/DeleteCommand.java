@@ -12,10 +12,7 @@ import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.handlers.commands.Command;
-import ru.dvdishka.backuper.handlers.commands.Permissions;
-import ru.dvdishka.backuper.handlers.commands.status.StatusCommand;
-
-import java.util.ArrayList;
+import ru.dvdishka.backuper.handlers.commands.task.status.StatusCommand;
 
 public class DeleteCommand extends Command {
 

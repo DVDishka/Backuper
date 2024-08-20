@@ -18,7 +18,6 @@ public class SftpBackup implements Backup {
     private String backupName;
 
     private static HashMap<String, SftpBackup> backups = new HashMap<>();
-    public static DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH-mm-ss");
 
     private SftpBackup(String backupName) {
         this.backupName = backupName;
@@ -44,7 +43,7 @@ public class SftpBackup implements Backup {
         }
 
         try {
-            LocalDateTime.parse(backupName, dateTimeFormatter);
+            LocalDateTime.parse(backupName, Config.getInstance().getDateTimeFormatter());
         } catch (Exception e) {
             return false;
         }
@@ -102,7 +101,7 @@ public class SftpBackup implements Backup {
     }
 
     public LocalDateTime getLocalDateTime() {
-        return LocalDateTime.parse(backupName, dateTimeFormatter);
+        return LocalDateTime.parse(backupName, Config.getInstance().getDateTimeFormatter());
     }
 
     public long getByteSize(CommandSender sender) {
