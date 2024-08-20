@@ -152,6 +152,7 @@ public class Config {
 
         try {
             dateTimeFormatter = DateTimeFormatter.ofPattern(backupFileNameFormat);
+            LocalDateTime localDateTime = LocalDateTime.parse(LocalDateTime.now().format(dateTimeFormatter), dateTimeFormatter);
         } catch (Exception e) {
             Logger.getLogger().warn("Wrong backupFileNameFormat format: \"" + backupFileNameFormat + "\", using default \"dd-MM-yyyy HH-mm-ss\" value...");
             Logger.getLogger().warn(this, e);
