@@ -20,28 +20,31 @@ import java.util.Objects;
 
 public class Config {
 
-    private File configFile = null;
+    // Fields are defined in `load()`
+    // Defining fields when initializing while also defining with defaults later
+    // hides bugs that may exist with reading the config.
+    private File configFile;
 
     private final String configVersion = "8.0";
-    private long lastBackup = 0;
-    private long lastChange = 0;
+    private long lastBackup;
+    private long lastChange;
 
-    private List<String> addDirectoryToBackup = new ArrayList<>();
-    private List<String> excludeDirectoryFromBackup = new ArrayList<>();
-    private boolean fixedBackupTime = false;
-    private boolean autoBackup = true;
-    private int backupTime = -1;
-    private int backupPeriod = 1440;
-    private String afterBackup = "NOTHING";
-    private boolean skipDuplicateBackup = true;
-    private long alertTimeBeforeRestart = 60;
-    private boolean betterLogging = false;
-    private boolean setWorldsReadOnly = false;
-    private boolean alertOnlyServerRestart = true;
-    private boolean checkUpdates = true;
-    private boolean deleteBrokenBackups = true;
-    private String backupFileNameFormat = "dd-MM-yyyy HH-mm-ss";
-    private DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH-mm-ss");
+    private List<String> addDirectoryToBackup;
+    private List<String> excludeDirectoryFromBackup;
+    private boolean fixedBackupTime;
+    private boolean autoBackup;
+    private int backupTime;
+    private int backupPeriod;
+    private String afterBackup;
+    private boolean skipDuplicateBackup;
+    private long alertTimeBeforeRestart;
+    private boolean betterLogging;
+    private boolean setWorldsReadOnly;
+    private boolean alertOnlyServerRestart;
+    private boolean checkUpdates;
+    private boolean deleteBrokenBackups;
+    private String backupFileNameFormat;
+    private DateTimeFormatter dateTimeFormatter;
 
     private LocalConfig localConfig = new LocalConfig();
     private SftpConfig sftpConfig = new SftpConfig();
@@ -151,7 +154,7 @@ public class Config {
         this.lastChange = config.getLong("lastChange", 0);
 
         try {
-            dateTimeFormatter = DateTimeFormatter.ofPattern(backupFileNameFormat);
+            this.dateTimeFormatter = DateTimeFormatter.ofPattern(backupFileNameFormat);
             LocalDateTime localDateTime = LocalDateTime.parse(LocalDateTime.now().format(dateTimeFormatter), dateTimeFormatter);
         } catch (Exception e) {
             Logger.getLogger().warn("Wrong backupFileNameFormat format: \"" + backupFileNameFormat + "\", using default \"dd-MM-yyyy HH-mm-ss\" value...");
