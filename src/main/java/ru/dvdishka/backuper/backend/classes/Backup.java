@@ -3,6 +3,8 @@ package ru.dvdishka.backuper.backend.classes;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
+import ru.dvdishka.backuper.backend.config.Config;
+
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -19,7 +21,8 @@ public interface Backup {
     public String getName();
 
     public default String getFormattedName() {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
+        String fileNameFormat = Config.getInstance().getDateTimeFormatter().toString();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(fileNameFormat);
         return getLocalDateTime().format(formatter);
     }
 
