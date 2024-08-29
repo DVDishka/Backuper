@@ -69,6 +69,8 @@ public class CancelConfirmationCommand extends Command {
                 .append(Component.text(progress + "%")
                         .decorate(TextDecoration.BOLD)
                         .color(color))
+                .append(Component.newline())
+                .append(Component.newline())
                 .append(Component.text("[CANCEL]")
                         .clickEvent(ClickEvent.runCommand("/backuper task cancel"))
                         .color(TextColor.color(0xB02100))

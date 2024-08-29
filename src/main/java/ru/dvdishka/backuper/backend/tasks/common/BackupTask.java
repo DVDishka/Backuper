@@ -232,17 +232,19 @@ public class BackupTask extends Task {
                 Backuper.unlock();
             }
 
-            if (afterBackup.equals("RESTART")) {
+            if (!cancelled) {
+                if (afterBackup.equals("RESTART")) {
 
-                Scheduler.getScheduler().runSyncDelayed(Utils.plugin, () -> {
-                    Scheduler.cancelTasks(Utils.plugin);
-                    Bukkit.getServer().spigot().restart();
-                }, 20);
+                    Scheduler.getScheduler().runSyncDelayed(Utils.plugin, () -> {
+                        Scheduler.cancelTasks(Utils.plugin);
+                        Bukkit.getServer().spigot().restart();
+                    }, 20);
 
-            } else if (afterBackup.equals("STOP")) {
+                } else if (afterBackup.equals("STOP")) {
 
-                Logger.getLogger().log("Stopping server...", sender);
-                Bukkit.shutdown();
+                    Logger.getLogger().log("Stopping server...", sender);
+                    Bukkit.shutdown();
+                }
             }
 
             Logger.getLogger().devLog("Backup task has been finished");
