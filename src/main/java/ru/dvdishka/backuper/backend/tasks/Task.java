@@ -58,6 +58,10 @@ public abstract class Task {
         this.currentProgress += progress;
     }
 
+    public boolean isCancelled() {
+        return cancelled;
+    }
+
     abstract public void run();
 
     abstract public void prepareTask();

@@ -14,6 +14,7 @@ import ru.dvdishka.backuper.handlers.commands.Permissions;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -79,7 +80,9 @@ public class FtpGetFileFolderTask extends Task {
 
             if (!cancelled) {
                 getFileFolder(remotePathToGet, localTargetPathFile, sender);
-                CompletableFuture.allOf(ftpTasks.toArray(new CompletableFuture[ftpTasks.size()])).join();
+                try {
+                    CompletableFuture.allOf(ftpTasks.toArray(new CompletableFuture[ftpTasks.size()])).join();
+                } catch (Exception ignored) {}
             }
 
             if (setLocked) {
@@ -139,8 +142,8 @@ public class FtpGetFileFolderTask extends Task {
                         ftp.retrieveFile(remoteDir, outputStream);
 
                     } catch (Exception e) {
-                        Logger.getLogger().warn("Failed to download file \"" + remoteDir + "\" from FTP(S) server", sender);
-                        Logger.getLogger().warn("FtpGetFileFolder:getFileFolder", e);
+                        Logger.getLogger().devWarn(this, "Failed to download file \"" + remoteDir + "\" from FTP(S) server");
+                        Logger.getLogger().devWarn("FtpGetFileFolder:getFileFolder", Arrays.toString(e.getStackTrace()));
                     }
                     incrementCurrentProgress(currentDir.getSize());
                 }));

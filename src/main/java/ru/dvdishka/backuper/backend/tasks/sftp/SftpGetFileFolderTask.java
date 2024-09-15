@@ -16,6 +16,7 @@ import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -90,7 +91,6 @@ public class SftpGetFileFolderTask extends Task {
 
             if (!cancelled) {
                 getRemoteDir(remotePathToGet, localTargetPathFile);
-                CompletableFuture.allOf(sftpTasks.toArray(new CompletableFuture[sftpTasks.size()])).join();
             }
 
             try {
@@ -150,13 +150,15 @@ public class SftpGetFileFolderTask extends Task {
                     try {
                         sftpChannel.get(remotePath, localPath.getCanonicalPath(), progressMonitor);
                     } catch (Exception e) {
-                        Logger.getLogger().warn("Failed to get canonical path", e);
-                        Logger.getLogger().warn(this, e);
+                        Logger.getLogger().devWarn(this, "Failed to get canonical path");
+                        Logger.getLogger().devWarn(this, Arrays.toString(e.getStackTrace()));
                     }
                 });
 
                 sftpTasks.add(task);
-                task.join();
+                try {
+                    task.join();
+                } catch (Exception ignored) {}
 
             } else {
 

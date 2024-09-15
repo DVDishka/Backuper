@@ -15,7 +15,10 @@ import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -82,7 +85,6 @@ public class SftpSendFileFolderTask extends Task {
             progressMonitors = new ArrayList<>();
             if (!cancelled) {
                 sendFolder(localDirToSend, remoteTargetDir);
-                CompletableFuture.allOf(sftpTasks.toArray(new CompletableFuture[sftpTasks.size()])).join();
             }
 
             sftpChannel.exit();
@@ -157,12 +159,15 @@ public class SftpSendFileFolderTask extends Task {
                     try {
                         sftpChannel.put(localPath, remotePath, progressMonitor);
                     } catch (Exception e) {
-                        Logger.getLogger().warn("Failed to send file using SFTP connection", sender);
-                        Logger.getLogger().warn(this, e);
+                        Logger.getLogger().devWarn(this, "Failed to send file using SFTP connection");
+                        Logger.getLogger().devWarn(this, Arrays.toString(e.getStackTrace()));
                     }
                 });
+
                 sftpTasks.add(task);
-                task.join();
+                try {
+                    task.join();
+                } catch (Exception ignored) {}
 
             } catch (Exception e) {
 
@@ -211,7 +216,7 @@ public class SftpSendFileFolderTask extends Task {
         cancelled = true;
 
         for (CompletableFuture<Void> sftpTask : sftpTasks) {
-            sftpTask.cancel(true);
+            sftpTask.cancel(false);
         }
 
         currentProgress = maxProgress;

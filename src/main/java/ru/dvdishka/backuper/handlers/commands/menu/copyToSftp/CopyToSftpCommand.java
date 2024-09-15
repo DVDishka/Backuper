@@ -7,6 +7,7 @@ import ru.dvdishka.backuper.backend.classes.LocalBackup;
 import ru.dvdishka.backuper.backend.classes.SftpBackup;
 import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.tasks.sftp.SftpSendFileFolderTask;
 import ru.dvdishka.backuper.backend.utils.SftpUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
@@ -70,13 +71,16 @@ public class CopyToSftpCommand extends Command {
                 inProgressName += ".zip";
             }
 
-            new SftpSendFileFolderTask(localBackup.getFile(),
+            Task task = new SftpSendFileFolderTask(localBackup.getFile(),
                     SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), inProgressName),
-                    false, true, true, List.of(Permissions.LOCAL_COPY_TO_SFTP), sender).run();
+                    false, true, true, List.of(Permissions.LOCAL_COPY_TO_SFTP), sender);
+            task.run();
 
-            SftpUtils.renameFile(SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), inProgressName),
-                    SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), localBackup.getFileName()),
-                    sender);
+            if (!task.isCancelled()) {
+                SftpUtils.renameFile(SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), inProgressName),
+                        SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), localBackup.getFileName()),
+                        sender);
+            }
 
             sendMessage("CopyToSftp task completed");
         });

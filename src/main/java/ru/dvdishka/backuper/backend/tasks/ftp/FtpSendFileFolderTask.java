@@ -15,6 +15,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -68,7 +69,9 @@ public class FtpSendFileFolderTask extends Task {
 
             if (!cancelled) {
                 sendFolder(localDirToSend, remoteTargetDir);
-                CompletableFuture.allOf(ftpTasks.toArray(new CompletableFuture[ftpTasks.size()])).join();
+                try {
+                    CompletableFuture.allOf(ftpTasks.toArray(new CompletableFuture[ftpTasks.size()])).join();
+                } catch (Exception ignored) {}
             }
 
             if (setLocked) {
@@ -149,8 +152,8 @@ public class FtpSendFileFolderTask extends Task {
                     incrementCurrentProgress(localDirToSend.length());
 
                 } catch (Exception e) {
-                    Logger.getLogger().warn("Something went wrong while sending file \"" + localDirToSend.getPath() + "\" to FTP(S) server", e);
-                    Logger.getLogger().warn(this, e);
+                    Logger.getLogger().devWarn(this, "Something went wrong while sending file \"" + localDirToSend.getPath() + "\" to FTP(S) server");
+                    Logger.getLogger().devWarn(this, Arrays.toString(e.getStackTrace()));
                 }
             }));
         }

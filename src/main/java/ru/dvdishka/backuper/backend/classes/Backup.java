@@ -21,9 +21,7 @@ public interface Backup {
     public String getName();
 
     public default String getFormattedName() {
-        String fileNameFormat = Config.getInstance().getDateTimeFormatter().toString();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(fileNameFormat);
-        return getLocalDateTime().format(formatter);
+        return getLocalDateTime().format(Config.getInstance().getDateTimeFormatter());
     }
 
     public long getByteSize(CommandSender sender);

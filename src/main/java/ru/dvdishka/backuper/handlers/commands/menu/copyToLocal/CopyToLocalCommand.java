@@ -103,9 +103,11 @@ public class CopyToLocalCommand extends Command {
         Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
             copyToLocalTask.run();
 
-            if (!inProgressFile.renameTo(new File(Config.getInstance().getLocalConfig().getBackupsFolder(), backupFileName))) {
-                Logger.getLogger().warn("Failed to rename local file: \"" + inProgressFile.getAbsolutePath() + "\" to \"" +
-                        new File(Config.getInstance().getLocalConfig().getBackupsFolder(), backupFileName).getAbsolutePath() + "\"", sender);
+            if (!copyToLocalTask.isCancelled()) {
+                if (!inProgressFile.renameTo(new File(Config.getInstance().getLocalConfig().getBackupsFolder(), backupFileName))) {
+                    Logger.getLogger().warn("Failed to rename local file: \"" + inProgressFile.getAbsolutePath() + "\" to \"" +
+                            new File(Config.getInstance().getLocalConfig().getBackupsFolder(), backupFileName).getAbsolutePath() + "\"", sender);
+                }
             }
 
             sendMessage("CopyToLocal task completed");

@@ -7,6 +7,7 @@ import ru.dvdishka.backuper.backend.classes.FtpBackup;
 import ru.dvdishka.backuper.backend.classes.LocalBackup;
 import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.tasks.ftp.FtpSendFileFolderTask;
 import ru.dvdishka.backuper.backend.utils.FtpUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
@@ -70,13 +71,16 @@ public class CopyToFtpCommand extends Command {
                 inProgressName += ".zip";
             }
 
-            new FtpSendFileFolderTask(localBackup.getFile(),
+            Task task = new FtpSendFileFolderTask(localBackup.getFile(),
                     FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(), inProgressName),
-                    false, true, true, List.of(Permissions.LOCAL_COPY_TO_FTP), sender).run();
+                    false, true, true, List.of(Permissions.LOCAL_COPY_TO_FTP), sender);
+            task.run();
 
-            FtpUtils.renameFile(FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(), inProgressName),
-                    FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(), localBackup.getFileName()),
-                    sender);
+            if (!task.isCancelled()) {
+                FtpUtils.renameFile(FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(), inProgressName),
+                        FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(), localBackup.getFileName()),
+                        sender);
+            }
 
             sendMessage("CopyToFtp task completed");
         });

@@ -56,18 +56,22 @@ public class StatusCommand extends Command {
                 .append(Component.space())
                 .append(Component.text(progress + "%")
                         .decorate(TextDecoration.BOLD)
-                        .color(color))
-                .append(Component.newline())
-                .append(Component.newline())
-                .append(Component.text("[STATUS]")
-                        .clickEvent(ClickEvent.runCommand("/backuper task status"))
-                        .color(TextColor.color(17, 102, 212))
-                        .decorate(TextDecoration.BOLD))
-                .append(Component.space())
-                .append(Component.text("[CANCEL]")
-                        .decorate(TextDecoration.BOLD)
-                        .color(TextColor.color(0xB02100))
-                        .clickEvent(ClickEvent.runCommand("/backuper task cancelConfirmation")));
+                        .color(color));
+
+        if (!(sender instanceof ConsoleCommandSender)) {
+            message = message
+                    .append(Component.newline())
+                    .append(Component.newline())
+                    .append(Component.text("[STATUS]")
+                            .clickEvent(ClickEvent.runCommand("/backuper task status"))
+                            .color(TextColor.color(17, 102, 212))
+                            .decorate(TextDecoration.BOLD))
+                    .append(Component.space())
+                    .append(Component.text("[CANCEL]")
+                            .decorate(TextDecoration.BOLD)
+                            .color(TextColor.color(0xB02100))
+                            .clickEvent(ClickEvent.runCommand("/backuper task cancelConfirmation")));
+        }
 
         if (!(sender instanceof ConsoleCommandSender)) {
             sendFramedMessage(message, 15);
@@ -121,10 +125,9 @@ public class StatusCommand extends Command {
                             .decorate(TextDecoration.UNDERLINED)
                             .clickEvent(ClickEvent.suggestCommand("/backuper task status")))
                     .append(Component.newline())
-                    .append(Component.newline())
                     .append(Component.text("You can cancel the task using command"))
                     .append(Component.newline())
-                    .append(Component.text("/backuper task cancelConfirmation")
+                    .append(Component.text("/backuper task cancel")
                             .decorate(TextDecoration.UNDERLINED)
                             .clickEvent(ClickEvent.suggestCommand("/backuper task cancel")));
         }

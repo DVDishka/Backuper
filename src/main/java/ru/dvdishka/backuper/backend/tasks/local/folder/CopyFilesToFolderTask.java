@@ -11,6 +11,7 @@ import ru.dvdishka.backuper.handlers.commands.Permissions;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -57,7 +58,9 @@ public class CopyFilesToFolderTask extends Task {
                     unsafeCopyFilesInDir(targetDir, sourceDirToCopy);
                 }
 
-                CompletableFuture.allOf(copyTasks.toArray(new CompletableFuture[0])).join();
+                try {
+                    CompletableFuture.allOf(copyTasks.toArray(new CompletableFuture[0])).join();
+                } catch (Exception ignored) {}
             }
 
             if (setLocked) {
@@ -114,8 +117,8 @@ public class CopyFilesToFolderTask extends Task {
 
                 } catch (Exception e) {
 
-                    Logger.getLogger().warn("Something went wrong while trying to copy file! " + sourceDir.getName(), sender);
-                    Logger.getLogger().warn("BackupTask", e);
+                    Logger.getLogger().devWarn(this, "Something went wrong while trying to copy file! " + sourceDir.getName());
+                    Logger.getLogger().devWarn(this, Arrays.toString(e.getStackTrace()));
                 }
             });
 
