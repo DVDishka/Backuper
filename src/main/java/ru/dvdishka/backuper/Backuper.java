@@ -72,7 +72,7 @@ public class Backuper extends JavaPlugin {
 
     public void onLoad() {
 
-        CommandAPI.onLoad(new CommandAPIBukkitConfig(this));
+        CommandAPI.onLoad(new CommandAPIBukkitConfig(this).useLatestNMSVersion(true));
     }
 
     public void onDisable() {

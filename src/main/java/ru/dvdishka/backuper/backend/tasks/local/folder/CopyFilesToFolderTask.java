@@ -60,7 +60,10 @@ public class CopyFilesToFolderTask extends Task {
 
                 try {
                     CompletableFuture.allOf(copyTasks.toArray(new CompletableFuture[0])).join();
-                } catch (Exception ignored) {}
+                } catch (Exception e) {
+                    Logger.getLogger().warn("Failed to copy files into target dir", sender);
+                    Logger.getLogger().warn(this, e);
+                }
             }
 
             if (setLocked) {

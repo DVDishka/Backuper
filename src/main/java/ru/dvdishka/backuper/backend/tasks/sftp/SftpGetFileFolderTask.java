@@ -150,7 +150,7 @@ public class SftpGetFileFolderTask extends Task {
                     try {
                         sftpChannel.get(remotePath, localPath.getCanonicalPath(), progressMonitor);
                     } catch (Exception e) {
-                        Logger.getLogger().devWarn(this, "Failed to get canonical path");
+                        Logger.getLogger().devWarn(this, "Something went wrong when trying to download file \"" + remotePath + "\" from SFTP server");
                         Logger.getLogger().devWarn(this, Arrays.toString(e.getStackTrace()));
                     }
                 });
@@ -158,7 +158,12 @@ public class SftpGetFileFolderTask extends Task {
                 sftpTasks.add(task);
                 try {
                     task.join();
-                } catch (Exception ignored) {}
+                } catch (Exception e) {
+                    if (!cancelled) {
+                        Logger.getLogger().warn("Something went wrong when trying to download file \"" + remotePath + "\" from SFTP server", sender);
+                        Logger.getLogger().warn(this, e);
+                    }
+                }
 
             } else {
 

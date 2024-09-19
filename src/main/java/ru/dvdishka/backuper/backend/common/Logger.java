@@ -100,4 +100,16 @@ public class Logger {
     public void warn(String sourceClassName, Exception exception) {
         Utils.plugin.getLogger().warning(sourceClassName + ": " + exception.getMessage() + "\n" + Arrays.toString(exception.getStackTrace()));
     }
+
+    public void devWarn(Object sourceClass, Exception exception) {
+        if (Config.getInstance().isBetterLogging()) {
+            Utils.plugin.getLogger().warning(sourceClass.getClass().getSimpleName() + ": " + exception.getMessage() + "\n" + Arrays.toString(exception.getStackTrace()));
+        }
+    }
+
+    public void devWarn(String sourceClassName, Exception exception) {
+        if (Config.getInstance().isBetterLogging()) {
+            Utils.plugin.getLogger().warning(sourceClassName + ": " + exception.getMessage() + "\n" + Arrays.toString(exception.getStackTrace()));
+        }
+    }
 }

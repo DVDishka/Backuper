@@ -159,7 +159,7 @@ public class SftpSendFileFolderTask extends Task {
                     try {
                         sftpChannel.put(localPath, remotePath, progressMonitor);
                     } catch (Exception e) {
-                        Logger.getLogger().devWarn(this, "Failed to send file using SFTP connection");
+                        Logger.getLogger().devWarn(this, "Failed to send file \"" + localPath + "\" using SFTP connection");
                         Logger.getLogger().devWarn(this, Arrays.toString(e.getStackTrace()));
                     }
                 });
@@ -167,7 +167,12 @@ public class SftpSendFileFolderTask extends Task {
                 sftpTasks.add(task);
                 try {
                     task.join();
-                } catch (Exception ignored) {}
+                } catch (Exception e) {
+                    if (!cancelled) {
+                        Logger.getLogger().warn("Failed to send file \"" + localPath + "\" using SFTP connection", sender);
+                        Logger.getLogger().warn(this, e);
+                    }
+                }
 
             } catch (Exception e) {
 

@@ -69,9 +69,6 @@ public class FtpSendFileFolderTask extends Task {
 
             if (!cancelled) {
                 sendFolder(localDirToSend, remoteTargetDir);
-                try {
-                    CompletableFuture.allOf(ftpTasks.toArray(new CompletableFuture[ftpTasks.size()])).join();
-                } catch (Exception ignored) {}
             }
 
             if (setLocked) {
@@ -143,7 +140,7 @@ public class FtpSendFileFolderTask extends Task {
 
         if (localDirToSend.isFile() && !localDirToSend.getName().equals("session.lock")) {
 
-            ftpTasks.add(CompletableFuture.runAsync(() -> {
+            CompletableFuture<Void> ftpTask = CompletableFuture.runAsync(() -> {
                 try (InputStream inputStream = new FileInputStream(localDirToSend)) {
 
                     if (!ftp.storeFile(remotePath, inputStream)) {
@@ -155,7 +152,16 @@ public class FtpSendFileFolderTask extends Task {
                     Logger.getLogger().devWarn(this, "Something went wrong while sending file \"" + localDirToSend.getPath() + "\" to FTP(S) server");
                     Logger.getLogger().devWarn(this, Arrays.toString(e.getStackTrace()));
                 }
-            }));
+            });
+            ftpTasks.add(ftpTask);
+            try {
+                ftpTask.join();
+            } catch (Exception e) {
+                if (!cancelled) {
+                    Logger.getLogger().warn("Something went wrong while sending file \"" + localDirToSend.getPath() + "\" to FTP(S) server", sender);
+                    Logger.getLogger().warn(this, e);
+                }
+            }
         }
         if (localDirToSend.isDirectory() && localDirToSend.listFiles() != null) {
 

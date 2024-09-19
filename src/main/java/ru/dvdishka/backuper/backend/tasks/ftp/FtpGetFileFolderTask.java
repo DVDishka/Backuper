@@ -80,9 +80,6 @@ public class FtpGetFileFolderTask extends Task {
 
             if (!cancelled) {
                 getFileFolder(remotePathToGet, localTargetPathFile, sender);
-                try {
-                    CompletableFuture.allOf(ftpTasks.toArray(new CompletableFuture[ftpTasks.size()])).join();
-                } catch (Exception ignored) {}
             }
 
             if (setLocked) {
@@ -135,7 +132,7 @@ public class FtpGetFileFolderTask extends Task {
 
                 localDir.createNewFile();
 
-                ftpTasks.add(CompletableFuture.runAsync(() -> {
+                CompletableFuture<Void> ftpTask = CompletableFuture.runAsync(() -> {
 
                     try (FileOutputStream outputStream = new FileOutputStream(localDir)) {
 
@@ -146,7 +143,17 @@ public class FtpGetFileFolderTask extends Task {
                         Logger.getLogger().devWarn("FtpGetFileFolder:getFileFolder", Arrays.toString(e.getStackTrace()));
                     }
                     incrementCurrentProgress(currentDir.getSize());
-                }));
+                });
+
+                ftpTasks.add(ftpTask);
+                try {
+                    ftpTask.join();
+                } catch (Exception e) {
+                    if (!cancelled) {
+                        Logger.getLogger().warn("Failed to download file \"" + remoteDir + "\" from FTP(S) server", sender);
+                        Logger.getLogger().warn(this, e);
+                    }
+                }
             }
 
             if (currentDir.isDirectory()) {
