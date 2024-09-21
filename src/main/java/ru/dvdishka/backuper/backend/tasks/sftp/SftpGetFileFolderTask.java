@@ -3,7 +3,7 @@ package ru.dvdishka.backuper.backend.tasks.sftp;
 import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.SftpATTRS;
-import it.unimi.dsi.fastutil.Pair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.classes.SftpProgressMonitor;
@@ -66,8 +66,8 @@ public class SftpGetFileFolderTask extends Task {
                     return;
                 }
 
-                session = sessionChannelSftpPair.first();
-                sftpChannel = sessionChannelSftpPair.second();
+                session = sessionChannelSftpPair.getLeft();
+                sftpChannel = sessionChannelSftpPair.getRight();
 
                 sftpChannel.connect(10000);
             }

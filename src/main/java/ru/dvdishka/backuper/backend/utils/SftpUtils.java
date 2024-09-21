@@ -5,7 +5,7 @@ import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.OpenSSHConfig;
 import com.jcraft.jsch.Session;
-import it.unimi.dsi.fastutil.Pair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
@@ -55,10 +55,10 @@ public class SftpUtils {
         boolean connected = channelSftp != null;
 
         try {
-            channelSftp.first().disconnect();
+            channelSftp.getLeft().disconnect();
         } catch (Exception ignored) {}
         try {
-            channelSftp.second().exit();
+            channelSftp.getRight().exit();
         } catch (Exception ignored) {}
 
         return connected;
@@ -144,8 +144,8 @@ public class SftpUtils {
 
         Pair<Session, ChannelSftp> sessionChannelSftpPair = createChannel(sender);
 
-        Session session = sessionChannelSftpPair.first();
-        ChannelSftp sftpChannel = sessionChannelSftpPair.second();
+        Session session = sessionChannelSftpPair.getLeft();
+        ChannelSftp sftpChannel = sessionChannelSftpPair.getRight();
 
         if (sftpChannel == null) {
             return;
@@ -185,8 +185,8 @@ public class SftpUtils {
 
         Pair<Session, ChannelSftp> sessionChannelSftpPair = createChannel(sender);
 
-        Session session = sessionChannelSftpPair.first();
-        ChannelSftp sftpChannel = sessionChannelSftpPair.second();
+        Session session = sessionChannelSftpPair.getLeft();
+        ChannelSftp sftpChannel = sessionChannelSftpPair.getRight();
 
         if (sftpChannel == null) {
             return;
@@ -218,8 +218,8 @@ public class SftpUtils {
 
         Pair<Session, ChannelSftp> sessionChannelSftpPair = createChannel(sender);
 
-        Session session = sessionChannelSftpPair.first();
-        ChannelSftp sftpChannel = sessionChannelSftpPair.second();
+        Session session = sessionChannelSftpPair.getLeft();
+        ChannelSftp sftpChannel = sessionChannelSftpPair.getRight();
 
         if (sftpChannel == null) {
             return null;
@@ -260,8 +260,8 @@ public class SftpUtils {
 
         Pair<Session, ChannelSftp> sessionChannelSftpPair = createChannel(sender);
 
-        Session session = sessionChannelSftpPair.first();
-        ChannelSftp sftpChannel = sessionChannelSftpPair.second();
+        Session session = sessionChannelSftpPair.getLeft();
+        ChannelSftp sftpChannel = sessionChannelSftpPair.getRight();
 
         if (sftpChannel == null) {
             return 0;

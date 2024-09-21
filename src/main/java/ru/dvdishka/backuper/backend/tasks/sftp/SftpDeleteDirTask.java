@@ -3,7 +3,7 @@ package ru.dvdishka.backuper.backend.tasks.sftp;
 import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.SftpATTRS;
-import it.unimi.dsi.fastutil.Pair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.common.Logger;
@@ -12,7 +12,6 @@ import ru.dvdishka.backuper.backend.utils.SftpUtils;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -52,8 +51,8 @@ public class SftpDeleteDirTask extends Task {
                     return;
                 }
 
-                session = sessionChannelSftpPair.first();
-                channelSftp = sessionChannelSftpPair.second();
+                session = sessionChannelSftpPair.getLeft();
+                channelSftp = sessionChannelSftpPair.getRight();
 
                 channelSftp.connect(10000);
             }
