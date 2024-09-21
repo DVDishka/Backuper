@@ -69,6 +69,10 @@
 
 
 
+* `Backup File Name Format` - **(Date Time format)** - Set a format for backup file names **(see java.time docs)**. It must contain information about both time and date
+
+
+
 * `Add directory to backup` - **(List of paths)** - Full directory paths to folders/files that you want to be backed up. World folders will be backed up automatically, so you do not need to specify world folders there (For example you can specify "plugins", "config")
 * `Exclude Directory From Backup` - **(List of paths)** - Full directory paths to folders/files that you want to be excluded from backup. If you want to backup everything from the **folder1** except some **folder1/file1** you can specify **folder1** in `addDirectoryToBackup` and **folder1/file1** in `excludeDirectoryFromBackup`. (The `backupsFolder` directory will be excluded automatically to prevent the loop)
 
@@ -206,7 +210,8 @@
 
 
 
-* `/backuper status` - Command to get the current progress of a task
+* `/backuper task status` - Command to get the current progress of a task
+* `/backuper task cancel` - Command to cancel the current task
 
 ---
 
