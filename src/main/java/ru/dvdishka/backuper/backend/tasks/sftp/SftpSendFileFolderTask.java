@@ -97,11 +97,13 @@ public class SftpSendFileFolderTask extends Task {
 
             try {
                 sftpChannel.disconnect();
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
             try {
                 sshSession.disconnect();
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
             if (setLocked) {
                 UIUtils.cancelSound(sender);
@@ -182,10 +184,11 @@ public class SftpSendFileFolderTask extends Task {
 
             try {
                 sftpChannel.mkdir(remotePath);
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
             for (File file : localDirToSend.listFiles()) {
-                 sendFolder(file, SftpUtils.resolve(remotePath, file.getName()));
+                sendFolder(file, SftpUtils.resolve(remotePath, file.getName()));
             }
         }
     }

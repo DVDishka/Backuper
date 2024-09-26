@@ -8,7 +8,6 @@ import ru.dvdishka.backuper.backend.utils.FtpUtils;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -67,7 +66,8 @@ public class FtpBackup implements Backup {
                 if (backup != null) {
                     backups.add(backup);
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
         }
         return backups;
     }
@@ -91,8 +91,7 @@ public class FtpBackup implements Backup {
     public String getFileName() {
         if (getFileType().equals("(ZIP)")) {
             return backupName + ".zip";
-        }
-        else {
+        } else {
             return backupName;
         }
     }

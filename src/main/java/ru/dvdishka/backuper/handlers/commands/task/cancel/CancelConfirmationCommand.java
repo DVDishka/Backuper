@@ -10,8 +10,6 @@ import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
 
-import java.util.ArrayList;
-
 public class CancelConfirmationCommand extends Command {
 
     public CancelConfirmationCommand(CommandSender sender, CommandArguments arguments) {
@@ -49,11 +47,9 @@ public class CancelConfirmationCommand extends Command {
 
         if (progress < 40) {
             color = TextColor.color(190, 0, 27);
-        }
-        else if (progress < 75) {
+        } else if (progress < 75) {
             color = TextColor.color(190, 151, 0);
-        }
-        else {
+        } else {
             color = TextColor.color(0, 156, 61);
         }
 

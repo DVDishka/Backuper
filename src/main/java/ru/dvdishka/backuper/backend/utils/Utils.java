@@ -4,7 +4,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -37,6 +36,7 @@ public class Utils {
     public static final List<String> downloadLinksName = List.of("Modrinth", "Hangar");
     public static URL getLatestVersionURL = null;
     public static boolean isUpdatedToLatest = true;
+
     static {
         try {
             getLatestVersionURL = new URL("https://hangar.papermc.io/api/v1/projects/Collagen/Backuper/latestrelease");

@@ -14,9 +14,6 @@ import ru.dvdishka.backuper.backend.classes.LocalBackup;
 import ru.dvdishka.backuper.backend.classes.SftpBackup;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.handlers.commands.Command;
-import ru.dvdishka.backuper.handlers.commands.Permissions;
-
-import java.util.ArrayList;
 
 public class MenuCommand extends Command {
 
@@ -77,7 +74,8 @@ public class MenuCommand extends Command {
                 .append(Component.space())
                 .append(Component.text("(" + storage + ")")
                         .color(TextColor.fromHexString("#129c9b"))
-                        .decorate(TextDecoration.BOLD));;
+                        .decorate(TextDecoration.BOLD));
+        ;
 
         Component message = Component.empty();
 

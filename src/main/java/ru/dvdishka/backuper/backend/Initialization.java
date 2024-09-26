@@ -27,16 +27,13 @@ import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.common.BackupTask;
 import ru.dvdishka.backuper.backend.tasks.common.DeleteBrokenBackupsTask;
 import ru.dvdishka.backuper.backend.tasks.common.DeleteOldBackupsTask;
-import ru.dvdishka.backuper.backend.utils.FtpUtils;
-import ru.dvdishka.backuper.backend.utils.SftpUtils;
-import ru.dvdishka.backuper.backend.utils.UIUtils;
-import ru.dvdishka.backuper.backend.utils.Utils;
+import ru.dvdishka.backuper.backend.utils.*;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
 import ru.dvdishka.backuper.handlers.commands.backup.BackupCommand;
-import ru.dvdishka.backuper.handlers.commands.menu.copyToFtp.CopyToFtpCommand;
-import ru.dvdishka.backuper.handlers.commands.menu.copyToFtp.CopyToFtpConfirmationCommand;
 import ru.dvdishka.backuper.handlers.commands.list.ListCommand;
 import ru.dvdishka.backuper.handlers.commands.menu.MenuCommand;
+import ru.dvdishka.backuper.handlers.commands.menu.copyToFtp.CopyToFtpCommand;
+import ru.dvdishka.backuper.handlers.commands.menu.copyToFtp.CopyToFtpConfirmationCommand;
 import ru.dvdishka.backuper.handlers.commands.menu.copyToLocal.CopyToLocalCommand;
 import ru.dvdishka.backuper.handlers.commands.menu.copyToLocal.CopyToLocalConfirmationCommand;
 import ru.dvdishka.backuper.handlers.commands.menu.copyToSftp.CopyToSftpCommand;
@@ -48,9 +45,9 @@ import ru.dvdishka.backuper.handlers.commands.menu.toZIP.ToZIPConfirmationComman
 import ru.dvdishka.backuper.handlers.commands.menu.unZIP.UnZIPCommand;
 import ru.dvdishka.backuper.handlers.commands.menu.unZIP.UnZIPConfirmationCommand;
 import ru.dvdishka.backuper.handlers.commands.reload.ReloadCommand;
-import ru.dvdishka.backuper.handlers.commands.task.status.StatusCommand;
 import ru.dvdishka.backuper.handlers.commands.task.cancel.CancelCommand;
 import ru.dvdishka.backuper.handlers.commands.task.cancel.CancelConfirmationCommand;
+import ru.dvdishka.backuper.handlers.commands.task.status.StatusCommand;
 import ru.dvdishka.backuper.handlers.worldchangecatch.WorldChangeCatcher;
 import ru.dvdishka.backuper.handlers.worldchangecatch.WorldChangeCatcherNew;
 
@@ -60,7 +57,6 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -213,6 +209,7 @@ public class Initialization implements Listener {
 
         FtpUtils.init();
         SftpUtils.init();
+        GoogleDriveUtils.init();
 
         Logger.getLogger().log("Config loading completed", sender);
     }
@@ -226,73 +223,73 @@ public class Initialization implements Listener {
                 .then(new LiteralArgument("backup").withPermission(Permissions.BACKUP.getPermission())
 
                         .then(new StringArgument("storage").includeSuggestions(ArgumentSuggestions.stringCollection((sender) -> {
-                            ArrayList<String> suggestions = new ArrayList<>();
+                                            ArrayList<String> suggestions = new ArrayList<>();
 
-                            if (Config.getInstance().getLocalConfig().isEnabled()) {
-                                suggestions.add("local");
-                            }
-                            if (Config.getInstance().getFtpConfig().isEnabled()) {
-                                suggestions.add("ftp");
-                            }
-                            if (Config.getInstance().getSftpConfig().isEnabled()) {
-                                suggestions.add("sftp");
-                            }
+                                            if (Config.getInstance().getLocalConfig().isEnabled()) {
+                                                suggestions.add("local");
+                                            }
+                                            if (Config.getInstance().getFtpConfig().isEnabled()) {
+                                                suggestions.add("ftp");
+                                            }
+                                            if (Config.getInstance().getSftpConfig().isEnabled()) {
+                                                suggestions.add("sftp");
+                                            }
 
-                            if (Config.getInstance().getLocalConfig().isEnabled() && Config.getInstance().getFtpConfig().isEnabled()) {
-                                suggestions.add("local-ftp");
-                            }
-                            if (Config.getInstance().getLocalConfig().isEnabled() && Config.getInstance().getSftpConfig().isEnabled()) {
-                                suggestions.add("local-sftp");
-                            }
-                            if (Config.getInstance().getFtpConfig().isEnabled() && Config.getInstance().getSftpConfig().isEnabled()) {
-                                suggestions.add("ftp-sftp");
-                            }
+                                            if (Config.getInstance().getLocalConfig().isEnabled() && Config.getInstance().getFtpConfig().isEnabled()) {
+                                                suggestions.add("local-ftp");
+                                            }
+                                            if (Config.getInstance().getLocalConfig().isEnabled() && Config.getInstance().getSftpConfig().isEnabled()) {
+                                                suggestions.add("local-sftp");
+                                            }
+                                            if (Config.getInstance().getFtpConfig().isEnabled() && Config.getInstance().getSftpConfig().isEnabled()) {
+                                                suggestions.add("ftp-sftp");
+                                            }
 
-                            if (Config.getInstance().getLocalConfig().isEnabled() && Config.getInstance().getSftpConfig().isEnabled() && Config.getInstance().getFtpConfig().isEnabled()) {
-                                suggestions.add("local-ftp-sftp");
-                            }
+                                            if (Config.getInstance().getLocalConfig().isEnabled() && Config.getInstance().getSftpConfig().isEnabled() && Config.getInstance().getFtpConfig().isEnabled()) {
+                                                suggestions.add("local-ftp-sftp");
+                                            }
 
-                            return suggestions;
-                        }))
+                                            return suggestions;
+                                        }))
 
-                                .executes((sender, args) -> {
-
-                                    new BackupCommand(sender, args).execute();
-                                })
-
-                                .then(new LongArgument("delaySeconds")
                                         .executes((sender, args) -> {
 
                                             new BackupCommand(sender, args).execute();
                                         })
-                                )
-                                .then(new LiteralArgument("stop").withPermission(Permissions.STOP.getPermission())
-                                        .executes((sender, args) -> {
-
-                                            new BackupCommand(sender, args, "STOP").execute();
-                                        })
 
                                         .then(new LongArgument("delaySeconds")
+                                                .executes((sender, args) -> {
+
+                                                    new BackupCommand(sender, args).execute();
+                                                })
+                                        )
+                                        .then(new LiteralArgument("stop").withPermission(Permissions.STOP.getPermission())
                                                 .executes((sender, args) -> {
 
                                                     new BackupCommand(sender, args, "STOP").execute();
                                                 })
+
+                                                .then(new LongArgument("delaySeconds")
+                                                        .executes((sender, args) -> {
+
+                                                            new BackupCommand(sender, args, "STOP").execute();
+                                                        })
+                                                )
                                         )
-                                )
 
-                                .then(new LiteralArgument("restart").withPermission(Permissions.RESTART.getPermission())
-                                        .executes((sender, args) -> {
-
-                                            new BackupCommand(sender, args, "RESTART").execute();
-                                        })
-
-                                        .then(new LongArgument("delaySeconds")
+                                        .then(new LiteralArgument("restart").withPermission(Permissions.RESTART.getPermission())
                                                 .executes((sender, args) -> {
 
                                                     new BackupCommand(sender, args, "RESTART").execute();
                                                 })
+
+                                                .then(new LongArgument("delaySeconds")
+                                                        .executes((sender, args) -> {
+
+                                                            new BackupCommand(sender, args, "RESTART").execute();
+                                                        })
+                                                )
                                         )
-                                )
                         )
                 )
         ;
@@ -304,17 +301,8 @@ public class Initialization implements Listener {
                 .then(new LiteralArgument("list")
 
                         .then(new LiteralArgument("local").withRequirement((sender) -> {
-                            return Config.getInstance().getLocalConfig().isEnabled();
-                        }).withPermission(Permissions.LOCAL_LIST.getPermission())
-
-                                .executes((sender, args) -> {
-
-                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                                        new ListCommand("local", sender, args).execute();
-                                    });
-                                })
-
-                                .then(new IntegerArgument("pageNumber")
+                                            return Config.getInstance().getLocalConfig().isEnabled();
+                                        }).withPermission(Permissions.LOCAL_LIST.getPermission())
 
                                         .executes((sender, args) -> {
 
@@ -322,21 +310,21 @@ public class Initialization implements Listener {
                                                 new ListCommand("local", sender, args).execute();
                                             });
                                         })
-                                )
+
+                                        .then(new IntegerArgument("pageNumber")
+
+                                                .executes((sender, args) -> {
+
+                                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                        new ListCommand("local", sender, args).execute();
+                                                    });
+                                                })
+                                        )
                         )
 
                         .then(new LiteralArgument("sftp").withRequirement((sender -> {
-                            return Config.getInstance().getSftpConfig().isEnabled();
-                        })).withPermission(Permissions.SFTP_LIST.getPermission())
-
-                                .executes((sender, args) -> {
-
-                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                                        new ListCommand("sftp", sender, args).execute();
-                                    });
-                                })
-
-                                .then(new IntegerArgument("pageNumber")
+                                            return Config.getInstance().getSftpConfig().isEnabled();
+                                        })).withPermission(Permissions.SFTP_LIST.getPermission())
 
                                         .executes((sender, args) -> {
 
@@ -344,21 +332,21 @@ public class Initialization implements Listener {
                                                 new ListCommand("sftp", sender, args).execute();
                                             });
                                         })
-                                )
+
+                                        .then(new IntegerArgument("pageNumber")
+
+                                                .executes((sender, args) -> {
+
+                                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                        new ListCommand("sftp", sender, args).execute();
+                                                    });
+                                                })
+                                        )
                         )
 
                         .then(new LiteralArgument("ftp").withRequirement((sender -> {
-                            return Config.getInstance().getFtpConfig().isEnabled();
-                        })).withPermission(Permissions.FTP_LIST.getPermission())
-
-                                .executes((sender, args) -> {
-
-                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                                        new ListCommand("ftp", sender, args).execute();
-                                    });
-                                })
-
-                                .then(new IntegerArgument("pageNumber")
+                                            return Config.getInstance().getFtpConfig().isEnabled();
+                                        })).withPermission(Permissions.FTP_LIST.getPermission())
 
                                         .executes((sender, args) -> {
 
@@ -366,7 +354,16 @@ public class Initialization implements Listener {
                                                 new ListCommand("ftp", sender, args).execute();
                                             });
                                         })
-                                )
+
+                                        .then(new IntegerArgument("pageNumber")
+
+                                                .executes((sender, args) -> {
+
+                                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                        new ListCommand("ftp", sender, args).execute();
+                                                    });
+                                                })
+                                        )
                         )
                 )
         ;
@@ -394,334 +391,335 @@ public class Initialization implements Listener {
                 .then(new LiteralArgument("menu")
 
                         .then(new LiteralArgument("local").withRequirement((sender -> {
-                            return Config.getInstance().getLocalConfig().isEnabled();
-                        })).withPermission(Permissions.LOCAL_LIST.getPermission())
+                                            return Config.getInstance().getLocalConfig().isEnabled();
+                                        })).withPermission(Permissions.LOCAL_LIST.getPermission())
 
-                                .then(new TextArgument("backupName").includeSuggestions(ArgumentSuggestions.stringCollectionAsync((info) -> {
+                                        .then(new TextArgument("backupName").includeSuggestions(ArgumentSuggestions.stringCollectionAsync((info) -> {
 
-                                    return CompletableFuture.supplyAsync(() -> {
-                                        ArrayList<LocalBackup> backups = LocalBackup.getBackups();
-                                        ArrayList<LocalDateTime> backupDateTimes = new ArrayList<>();
+                                                            return CompletableFuture.supplyAsync(() -> {
+                                                                ArrayList<LocalBackup> backups = LocalBackup.getBackups();
+                                                                ArrayList<LocalDateTime> backupDateTimes = new ArrayList<>();
 
-                                        for (LocalBackup backup : backups) {
-                                            backupDateTimes.add(backup.getLocalDateTime());
-                                        }
-
-                                        Utils.sortLocalDateTimeDecrease(backupDateTimes);
-
-                                        ArrayList<String> backupSuggestions = new ArrayList<>();
-
-                                        for (LocalBackup backup : backups) {
-                                            backupSuggestions.add("\"" + backup.getName() + "\"");
-                                        }
-                                        return backupSuggestions;
-                                    });
-                                }))
-
-                                                .executes((sender, args) -> {
-
-                                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                                                        new MenuCommand("local", sender, args).execute();
-                                                    });
-                                                })
-
-                                                .then(new StringArgument("action")
-                                                        .replaceSuggestions(ArgumentSuggestions.stringCollection((senderSuggestionInfo) -> {
-
-                                                            ArrayList<String> suggestions = new ArrayList<>();
-
-                                                            String backupName = (String) senderSuggestionInfo.previousArgs().get("backupName");
-                                                            LocalBackup backup = LocalBackup.getInstance(backupName);
-
-                                                            try {
-                                                                if (backup.getFileType().equals("(Folder)")) {
-                                                                    suggestions.add("toZIP");
+                                                                for (LocalBackup backup : backups) {
+                                                                    backupDateTimes.add(backup.getLocalDateTime());
                                                                 }
-                                                                if (backup.getFileType().equals("(ZIP)")) {
-                                                                    suggestions.add("unZIP");
-                                                                }
-                                                                suggestions.add("delete");
-                                                                if (Config.getInstance().getFtpConfig().isEnabled()) {
-                                                                    suggestions.add("copyToFtp");
-                                                                }
-                                                                if (Config.getInstance().getSftpConfig().isEnabled()) {
-                                                                    suggestions.add("copyToSftp");
-                                                                }
-                                                            } catch (Exception ignored) {}
 
-                                                            return suggestions;
+                                                                Utils.sortLocalDateTimeDecrease(backupDateTimes);
+
+                                                                ArrayList<String> backupSuggestions = new ArrayList<>();
+
+                                                                for (LocalBackup backup : backups) {
+                                                                    backupSuggestions.add("\"" + backup.getName() + "\"");
+                                                                }
+                                                                return backupSuggestions;
+                                                            });
                                                         }))
 
                                                         .executes((sender, args) -> {
 
-                                                            if (Objects.equals(args.get("action"), "deleteConfirmation")) {
-                                                                if (sender.hasPermission(Permissions.LOCAL_DELETE.getPermission())) {
-                                                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                                                                        new DeleteConfirmationCommand("local", sender, args).execute();
-                                                                    });
-                                                                } else {
-                                                                    UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
-                                                                }
-                                                            }
-
-                                                            if (Objects.equals(args.get("action"), "delete")) {
-                                                                if (sender.hasPermission(Permissions.LOCAL_DELETE.getPermission())) {
-                                                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                                                                        new DeleteCommand("local", sender, args).execute();
-                                                                    });
-                                                                } else {
-                                                                    UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
-                                                                }
-                                                            }
-
-                                                            if (Objects.equals(args.get("action"), "toZIPConfirmation")) {
-                                                                if (sender.hasPermission(Permissions.LOCAL_TO_ZIP.getPermission())) {
-                                                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                                                                        new ToZIPConfirmationCommand(sender, args).execute();
-                                                                    });
-                                                                } else {
-                                                                    UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
-                                                                }
-                                                            }
-
-                                                            if (Objects.equals(args.get("action"), "toZIP")) {
-                                                                if (sender.hasPermission(Permissions.LOCAL_TO_ZIP.getPermission())) {
-                                                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                                                                        new ToZIPCommand(sender, args).execute();
-                                                                    });
-                                                                } else {
-                                                                    UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
-                                                                }
-                                                            }
-
-                                                            if (Objects.equals(args.get("action"), "unZIPConfirmation")) {
-                                                                if (sender.hasPermission(Permissions.LOCAL_UNZIP.getPermission())) {
-                                                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                                                                        new UnZIPConfirmationCommand(sender, args).execute();
-                                                                    });
-                                                                } else {
-                                                                    UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
-                                                                }
-                                                            }
-
-                                                            if (Objects.equals(args.get("action"), "unZIP")) {
-                                                                if (sender.hasPermission(Permissions.LOCAL_UNZIP.getPermission())) {
-                                                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                                                                        new UnZIPCommand(sender, args).execute();
-                                                                    });
-                                                                } else {
-                                                                    UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
-                                                                }
-                                                            }
-
-                                                            if (Objects.equals(args.get("action"), "copyToSftpConfirmation")) {
-                                                                if (sender.hasPermission(Permissions.LOCAL_COPY_TO_SFTP.getPermission())) {
-                                                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                                                                        new CopyToSftpConfirmationCommand(sender, args).execute();
-                                                                    });
-                                                                } else {
-                                                                    UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
-                                                                }
-                                                            }
-
-                                                            if (Objects.equals(args.get("action"), "copyToSftp")) {
-                                                                if (sender.hasPermission(Permissions.LOCAL_COPY_TO_SFTP.getPermission())) {
-                                                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                                                                        new CopyToSftpCommand(sender, args).execute();
-                                                                    });
-                                                                } else {
-                                                                    UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
-                                                                }
-                                                            }
-
-                                                            if (Objects.equals(args.get("action"), "copyToFtpConfirmation")) {
-                                                                if (sender.hasPermission(Permissions.LOCAL_COPY_TO_FTP.getPermission())) {
-                                                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                                                                        new CopyToFtpConfirmationCommand(sender, args).execute();
-                                                                    });
-                                                                } else {
-                                                                    UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
-                                                                }
-                                                            }
-
-                                                            if (Objects.equals(args.get("action"), "copyToFtp")) {
-                                                                if (sender.hasPermission(Permissions.LOCAL_COPY_TO_FTP.getPermission())) {
-                                                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                                                                        new CopyToFtpCommand(sender, args).execute();
-                                                                    });
-                                                                } else {
-                                                                    UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
-                                                                }
-                                                            }
+                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                new MenuCommand("local", sender, args).execute();
+                                                            });
                                                         })
-                                                )
-                                )
+
+                                                        .then(new StringArgument("action")
+                                                                .replaceSuggestions(ArgumentSuggestions.stringCollection((senderSuggestionInfo) -> {
+
+                                                                    ArrayList<String> suggestions = new ArrayList<>();
+
+                                                                    String backupName = (String) senderSuggestionInfo.previousArgs().get("backupName");
+                                                                    LocalBackup backup = LocalBackup.getInstance(backupName);
+
+                                                                    try {
+                                                                        if (backup.getFileType().equals("(Folder)")) {
+                                                                            suggestions.add("toZIP");
+                                                                        }
+                                                                        if (backup.getFileType().equals("(ZIP)")) {
+                                                                            suggestions.add("unZIP");
+                                                                        }
+                                                                        suggestions.add("delete");
+                                                                        if (Config.getInstance().getFtpConfig().isEnabled()) {
+                                                                            suggestions.add("copyToFtp");
+                                                                        }
+                                                                        if (Config.getInstance().getSftpConfig().isEnabled()) {
+                                                                            suggestions.add("copyToSftp");
+                                                                        }
+                                                                    } catch (Exception ignored) {
+                                                                    }
+
+                                                                    return suggestions;
+                                                                }))
+
+                                                                .executes((sender, args) -> {
+
+                                                                    if (Objects.equals(args.get("action"), "deleteConfirmation")) {
+                                                                        if (sender.hasPermission(Permissions.LOCAL_DELETE.getPermission())) {
+                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                                new DeleteConfirmationCommand("local", sender, args).execute();
+                                                                            });
+                                                                        } else {
+                                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                                        }
+                                                                    }
+
+                                                                    if (Objects.equals(args.get("action"), "delete")) {
+                                                                        if (sender.hasPermission(Permissions.LOCAL_DELETE.getPermission())) {
+                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                                new DeleteCommand("local", sender, args).execute();
+                                                                            });
+                                                                        } else {
+                                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                                        }
+                                                                    }
+
+                                                                    if (Objects.equals(args.get("action"), "toZIPConfirmation")) {
+                                                                        if (sender.hasPermission(Permissions.LOCAL_TO_ZIP.getPermission())) {
+                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                                new ToZIPConfirmationCommand(sender, args).execute();
+                                                                            });
+                                                                        } else {
+                                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                                        }
+                                                                    }
+
+                                                                    if (Objects.equals(args.get("action"), "toZIP")) {
+                                                                        if (sender.hasPermission(Permissions.LOCAL_TO_ZIP.getPermission())) {
+                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                                new ToZIPCommand(sender, args).execute();
+                                                                            });
+                                                                        } else {
+                                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                                        }
+                                                                    }
+
+                                                                    if (Objects.equals(args.get("action"), "unZIPConfirmation")) {
+                                                                        if (sender.hasPermission(Permissions.LOCAL_UNZIP.getPermission())) {
+                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                                new UnZIPConfirmationCommand(sender, args).execute();
+                                                                            });
+                                                                        } else {
+                                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                                        }
+                                                                    }
+
+                                                                    if (Objects.equals(args.get("action"), "unZIP")) {
+                                                                        if (sender.hasPermission(Permissions.LOCAL_UNZIP.getPermission())) {
+                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                                new UnZIPCommand(sender, args).execute();
+                                                                            });
+                                                                        } else {
+                                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                                        }
+                                                                    }
+
+                                                                    if (Objects.equals(args.get("action"), "copyToSftpConfirmation")) {
+                                                                        if (sender.hasPermission(Permissions.LOCAL_COPY_TO_SFTP.getPermission())) {
+                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                                new CopyToSftpConfirmationCommand(sender, args).execute();
+                                                                            });
+                                                                        } else {
+                                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                                        }
+                                                                    }
+
+                                                                    if (Objects.equals(args.get("action"), "copyToSftp")) {
+                                                                        if (sender.hasPermission(Permissions.LOCAL_COPY_TO_SFTP.getPermission())) {
+                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                                new CopyToSftpCommand(sender, args).execute();
+                                                                            });
+                                                                        } else {
+                                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                                        }
+                                                                    }
+
+                                                                    if (Objects.equals(args.get("action"), "copyToFtpConfirmation")) {
+                                                                        if (sender.hasPermission(Permissions.LOCAL_COPY_TO_FTP.getPermission())) {
+                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                                new CopyToFtpConfirmationCommand(sender, args).execute();
+                                                                            });
+                                                                        } else {
+                                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                                        }
+                                                                    }
+
+                                                                    if (Objects.equals(args.get("action"), "copyToFtp")) {
+                                                                        if (sender.hasPermission(Permissions.LOCAL_COPY_TO_FTP.getPermission())) {
+                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                                new CopyToFtpCommand(sender, args).execute();
+                                                                            });
+                                                                        } else {
+                                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                                        }
+                                                                    }
+                                                                })
+                                                        )
+                                        )
                         )
 
                         .then(new LiteralArgument("sftp").withRequirement((sender -> {
-                            return Config.getInstance().getSftpConfig().isEnabled();
-                        })).withPermission(Permissions.SFTP_LIST.getPermission())
+                                            return Config.getInstance().getSftpConfig().isEnabled();
+                                        })).withPermission(Permissions.SFTP_LIST.getPermission())
 
-                                .then(new TextArgument("backupName").includeSuggestions(ArgumentSuggestions.stringCollectionAsync((info) -> {
+                                        .then(new TextArgument("backupName").includeSuggestions(ArgumentSuggestions.stringCollectionAsync((info) -> {
 
-                                    return CompletableFuture.supplyAsync(() -> {
-                                        ArrayList<SftpBackup> backups = SftpBackup.getBackups();
-                                        ArrayList<LocalDateTime> backupDateTimes = new ArrayList<>();
+                                                            return CompletableFuture.supplyAsync(() -> {
+                                                                ArrayList<SftpBackup> backups = SftpBackup.getBackups();
+                                                                ArrayList<LocalDateTime> backupDateTimes = new ArrayList<>();
 
-                                        for (SftpBackup backup : backups) {
-                                            backupDateTimes.add(backup.getLocalDateTime());
-                                        }
+                                                                for (SftpBackup backup : backups) {
+                                                                    backupDateTimes.add(backup.getLocalDateTime());
+                                                                }
 
-                                        Utils.sortLocalDateTimeDecrease(backupDateTimes);
+                                                                Utils.sortLocalDateTimeDecrease(backupDateTimes);
 
-                                        ArrayList<String> backupSuggestions = new ArrayList<>();
+                                                                ArrayList<String> backupSuggestions = new ArrayList<>();
 
-                                        for (SftpBackup backup : backups) {
-                                            backupSuggestions.add("\"" + backup.getName() + "\"");
-                                        }
-                                        return backupSuggestions;
-                                    });
-                                }))
-
-                                        .executes((sender, args) -> {
-
-                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                                                new MenuCommand("sftp", sender, args).execute();
-                                            });
-                                        })
-
-                                        .then(new StringArgument("action")
-                                                .replaceSuggestions(ArgumentSuggestions.strings("delete", "copyToLocal"))
-
-                                                .executes((sender, args) -> {
-
-                                                    if (Objects.equals(args.get("action"), "deleteConfirmation")) {
-                                                        if (sender.hasPermission(Permissions.SFTP_DELETE.getPermission())) {
-                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                                                                new DeleteConfirmationCommand("sftp", sender, args).execute();
+                                                                for (SftpBackup backup : backups) {
+                                                                    backupSuggestions.add("\"" + backup.getName() + "\"");
+                                                                }
+                                                                return backupSuggestions;
                                                             });
+                                                        }))
 
-                                                        } else {
-                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
-                                                        }
-                                                    }
+                                                        .executes((sender, args) -> {
 
-                                                    if (Objects.equals(args.get("action"), "delete")) {
-                                                        if (sender.hasPermission(Permissions.SFTP_DELETE.getPermission())) {
                                                             Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                                                                new DeleteCommand("sftp", sender, args).execute();
+                                                                new MenuCommand("sftp", sender, args).execute();
                                                             });
+                                                        })
 
-                                                        } else {
-                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
-                                                        }
-                                                    }
+                                                        .then(new StringArgument("action")
+                                                                .replaceSuggestions(ArgumentSuggestions.strings("delete", "copyToLocal"))
 
-                                                    if (Objects.equals(args.get("action"), "copyToLocalConfirmation")) {
-                                                        if (sender.hasPermission(Permissions.SFTP_COPY_TO_LOCAL.getPermission())) {
-                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                                                                new CopyToLocalConfirmationCommand("sftp", sender, args).execute();
-                                                            });
-                                                        } else {
-                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
-                                                        }
-                                                    }
+                                                                .executes((sender, args) -> {
 
-                                                    if (Objects.equals(args.get("action"), "copyToLocal")) {
-                                                        if (sender.hasPermission(Permissions.SFTP_COPY_TO_LOCAL.getPermission())) {
-                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                                                                new CopyToLocalCommand("sftp", sender, args).execute();
-                                                            });
-                                                        } else {
-                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
-                                                        }
-                                                    }
-                                                })
+                                                                    if (Objects.equals(args.get("action"), "deleteConfirmation")) {
+                                                                        if (sender.hasPermission(Permissions.SFTP_DELETE.getPermission())) {
+                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                                new DeleteConfirmationCommand("sftp", sender, args).execute();
+                                                                            });
+
+                                                                        } else {
+                                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                                        }
+                                                                    }
+
+                                                                    if (Objects.equals(args.get("action"), "delete")) {
+                                                                        if (sender.hasPermission(Permissions.SFTP_DELETE.getPermission())) {
+                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                                new DeleteCommand("sftp", sender, args).execute();
+                                                                            });
+
+                                                                        } else {
+                                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                                        }
+                                                                    }
+
+                                                                    if (Objects.equals(args.get("action"), "copyToLocalConfirmation")) {
+                                                                        if (sender.hasPermission(Permissions.SFTP_COPY_TO_LOCAL.getPermission())) {
+                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                                new CopyToLocalConfirmationCommand("sftp", sender, args).execute();
+                                                                            });
+                                                                        } else {
+                                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                                        }
+                                                                    }
+
+                                                                    if (Objects.equals(args.get("action"), "copyToLocal")) {
+                                                                        if (sender.hasPermission(Permissions.SFTP_COPY_TO_LOCAL.getPermission())) {
+                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                                new CopyToLocalCommand("sftp", sender, args).execute();
+                                                                            });
+                                                                        } else {
+                                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                                        }
+                                                                    }
+                                                                })
+                                                        )
                                         )
-                                )
                         )
 
                         .then(new LiteralArgument("ftp").withRequirement((sender -> {
-                            return Config.getInstance().getFtpConfig().isEnabled();
-                        })).withPermission(Permissions.FTP_LIST.getPermission())
+                                            return Config.getInstance().getFtpConfig().isEnabled();
+                                        })).withPermission(Permissions.FTP_LIST.getPermission())
 
-                                .then(new TextArgument("backupName").includeSuggestions(ArgumentSuggestions.stringCollectionAsync((info) -> {
+                                        .then(new TextArgument("backupName").includeSuggestions(ArgumentSuggestions.stringCollectionAsync((info) -> {
 
-                                            return CompletableFuture.supplyAsync(() -> {
-                                                ArrayList<FtpBackup> backups = FtpBackup.getBackups();
-                                                ArrayList<LocalDateTime> backupDateTimes = new ArrayList<>();
+                                                            return CompletableFuture.supplyAsync(() -> {
+                                                                ArrayList<FtpBackup> backups = FtpBackup.getBackups();
+                                                                ArrayList<LocalDateTime> backupDateTimes = new ArrayList<>();
 
-                                                for (FtpBackup backup : backups) {
-                                                    backupDateTimes.add(backup.getLocalDateTime());
-                                                }
+                                                                for (FtpBackup backup : backups) {
+                                                                    backupDateTimes.add(backup.getLocalDateTime());
+                                                                }
 
-                                                Utils.sortLocalDateTimeDecrease(backupDateTimes);
+                                                                Utils.sortLocalDateTimeDecrease(backupDateTimes);
 
-                                                ArrayList<String> backupSuggestions = new ArrayList<>();
+                                                                ArrayList<String> backupSuggestions = new ArrayList<>();
 
-                                                for (FtpBackup backup : backups) {
-                                                    backupSuggestions.add("\"" + backup.getName() + "\"");
-                                                }
-                                                return backupSuggestions;
-                                            });
-                                        }))
-
-                                        .executes((sender, args) -> {
-
-                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                                                new MenuCommand("ftp", sender, args).execute();
-                                            });
-                                        })
-
-                                        .then(new StringArgument("action")
-                                                .replaceSuggestions(ArgumentSuggestions.strings("delete", "copyToLocal"))
-
-                                                .executes((sender, args) -> {
-
-                                                    if (Objects.equals(args.get("action"), "deleteConfirmation")) {
-                                                        if (sender.hasPermission(Permissions.FTP_DELETE.getPermission())) {
-                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                                                                new DeleteConfirmationCommand("ftp", sender, args).execute();
+                                                                for (FtpBackup backup : backups) {
+                                                                    backupSuggestions.add("\"" + backup.getName() + "\"");
+                                                                }
+                                                                return backupSuggestions;
                                                             });
+                                                        }))
 
-                                                        } else {
-                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
-                                                        }
-                                                    }
+                                                        .executes((sender, args) -> {
 
-                                                    if (Objects.equals(args.get("action"), "delete")) {
-                                                        if (sender.hasPermission(Permissions.FTP_DELETE.getPermission())) {
                                                             Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                                                                new DeleteCommand("ftp", sender, args).execute();
+                                                                new MenuCommand("ftp", sender, args).execute();
                                                             });
+                                                        })
 
-                                                        } else {
-                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
-                                                        }
-                                                    }
+                                                        .then(new StringArgument("action")
+                                                                .replaceSuggestions(ArgumentSuggestions.strings("delete", "copyToLocal"))
 
-                                                    if (Objects.equals(args.get("action"), "copyToLocalConfirmation")) {
-                                                        if (sender.hasPermission(Permissions.FTP_COPY_TO_LOCAL.getPermission())) {
-                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                                                                new CopyToLocalConfirmationCommand("ftp", sender, args).execute();
-                                                            });
-                                                        } else {
-                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
-                                                        }
-                                                    }
+                                                                .executes((sender, args) -> {
 
-                                                    if (Objects.equals(args.get("action"), "copyToLocal")) {
-                                                        if (sender.hasPermission(Permissions.FTP_COPY_TO_LOCAL.getPermission())) {
-                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                                                                new CopyToLocalCommand("ftp", sender, args).execute();
-                                                            });
-                                                        } else {
-                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
-                                                        }
-                                                    }
-                                                })
+                                                                    if (Objects.equals(args.get("action"), "deleteConfirmation")) {
+                                                                        if (sender.hasPermission(Permissions.FTP_DELETE.getPermission())) {
+                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                                new DeleteConfirmationCommand("ftp", sender, args).execute();
+                                                                            });
+
+                                                                        } else {
+                                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                                        }
+                                                                    }
+
+                                                                    if (Objects.equals(args.get("action"), "delete")) {
+                                                                        if (sender.hasPermission(Permissions.FTP_DELETE.getPermission())) {
+                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                                new DeleteCommand("ftp", sender, args).execute();
+                                                                            });
+
+                                                                        } else {
+                                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                                        }
+                                                                    }
+
+                                                                    if (Objects.equals(args.get("action"), "copyToLocalConfirmation")) {
+                                                                        if (sender.hasPermission(Permissions.FTP_COPY_TO_LOCAL.getPermission())) {
+                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                                new CopyToLocalConfirmationCommand("ftp", sender, args).execute();
+                                                                            });
+                                                                        } else {
+                                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                                        }
+                                                                    }
+
+                                                                    if (Objects.equals(args.get("action"), "copyToLocal")) {
+                                                                        if (sender.hasPermission(Permissions.FTP_COPY_TO_LOCAL.getPermission())) {
+                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                                new CopyToLocalCommand("ftp", sender, args).execute();
+                                                                            });
+                                                                        } else {
+                                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                                        }
+                                                                    }
+                                                                })
+                                                        )
                                         )
-                                )
                         )
                 )
         ;
@@ -815,14 +813,14 @@ public class Initialization implements Listener {
 
                 Utils.isUpdatedToLatest = false;
 
-                String message =  "\n" + "-".repeat(75) + "\n";
+                String message = "\n" + "-".repeat(75) + "\n";
 
                 message += "You are using an outdated version of Backuper\nPlease update it to the latest and check the changelist!";
                 for (String downloadLink : Utils.downloadLinks) {
                     message = message.concat("\nDownload link: " + downloadLink);
                 }
 
-                message +=  "\n" + "-".repeat(75);
+                message += "\n" + "-".repeat(75);
 
                 Logger.getLogger().warn(message);
             }
@@ -836,7 +834,7 @@ public class Initialization implements Listener {
 
     public static void sendIssueToGitHub() {
 
-        String message =  "\n" + "-".repeat(75) + "\n";
+        String message = "\n" + "-".repeat(75) + "\n";
         message += "Please, if you find any issues related to the BACKUPER\nCreate an issue using the link: https://github.com/DVDishka/Backuper/issues\n";
         message += "-".repeat(75);
 
@@ -899,14 +897,14 @@ public class Initialization implements Listener {
         if (Config.getInstance().getFtpConfig().isEnabled()) {
             if (FtpUtils.checkConnection(sender)) {
                 Logger.getLogger().log("FTP(S) connection established successfully", sender);
-            } else{
+            } else {
                 Logger.getLogger().warn("Failed to establish FTP(S) connection", sender);
             }
         }
         if (Config.getInstance().getSftpConfig().isEnabled()) {
             if (SftpUtils.checkConnection(sender)) {
                 Logger.getLogger().log("SFTP connection established successfully", sender);
-            } else{
+            } else {
                 Logger.getLogger().warn("Failed to establish SFTP connection", sender);
             }
         }

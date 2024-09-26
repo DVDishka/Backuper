@@ -14,77 +14,86 @@ import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
 
-import java.util.ArrayList;
-
 public class UIUtils {
     public static void returnFailure(String message, CommandSender sender) {
         try {
             sender.sendMessage(Component.text(message).color(NamedTextColor.RED));
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 
     public static void returnFailure(String message, CommandSender sender, TextColor color) {
         try {
             sender.sendMessage(Component.text(message).color(color));
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 
     public static void returnSuccess(String message, CommandSender sender) {
         try {
             sender.sendMessage(Component.text(message));
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 
     public static void returnSuccess(String message, CommandSender sender, TextColor color) {
         try {
             sender.sendMessage(color + message);
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 
     public static void returnWarning(String message, CommandSender sender) {
         try {
             sender.sendMessage(Component.text(message).color(NamedTextColor.RED));
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 
     public static void returnWarning(String message, CommandSender sender, TextColor color) {
         try {
             sender.sendMessage(color + message);
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 
     public static void sendMessage(String message, CommandSender sender) {
         try {
             sender.sendMessage(message);
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 
     public static void cancelSound(CommandSender sender) {
         try {
             Class.forName("net.kyori.adventure.sound.Sound").getMethod("sound");
             sender.playSound(Sound.sound(Sound.sound(Key.key("block.anvil.place"), Sound.Source.MASTER, 50, 1)).build());
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 
     public static void normalSound(CommandSender sender) {
         try {
             Class.forName("net.kyori.adventure.sound.Sound").getMethod("sound");
             sender.playSound(Sound.sound(Sound.sound(Key.key("ui.button.click"), Sound.Source.MASTER, 50, 1)).build());
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 
     public static void successSound(CommandSender sender) {
         try {
             Class.forName("net.kyori.adventure.sound.Sound").getMethod("sound");
             sender.playSound(Sound.sound(Sound.sound(Key.key("entity.player.levelup"), Sound.Source.MASTER, 50, 1)).build());
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 
     public static void notificationSound(CommandSender sender) {
         try {
             Class.forName("net.kyori.adventure.sound.Sound").getMethod("sound");
             sender.playSound(Sound.sound(Sound.sound(Key.key("entity.player.levelup"), Sound.Source.MASTER, 50, 50)).build());
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 
     public static void sendFramedMessage(Component message, CommandSender sender) {
@@ -113,7 +122,8 @@ public class UIUtils {
 
             sender.sendMessage(framedMessage);
 
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 
     public static void sendFramedMessage(Component message, int dashNumber, CommandSender sender) {
@@ -142,7 +152,8 @@ public class UIUtils {
 
             sender.sendMessage(framedMessage);
 
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 
     public static void sendFramedMessage(Component header, Component message, CommandSender sender) {
@@ -181,7 +192,8 @@ public class UIUtils {
 
             sender.sendMessage(framedMessage);
 
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 
     public static void sendFramedMessage(Component header, Component message, int dashNumber, CommandSender sender) {
@@ -220,7 +232,8 @@ public class UIUtils {
 
             sender.sendMessage(framedMessage);
 
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 
     public static void sendBackupAlert(long timeSeconds, String afterBackup) {

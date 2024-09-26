@@ -3,7 +3,6 @@ package ru.dvdishka.backuper.handlers.commands.task.status;
 import dev.jorel.commandapi.executors.CommandArguments;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
-import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
@@ -37,11 +36,9 @@ public class StatusCommand extends Command {
 
         if (progress < 40) {
             color = TextColor.color(190, 0, 27);
-        }
-        else if (progress < 75) {
+        } else if (progress < 75) {
             color = TextColor.color(190, 151, 0);
-        }
-        else {
+        } else {
             color = TextColor.color(0, 156, 61);
         }
 
@@ -75,8 +72,7 @@ public class StatusCommand extends Command {
 
         if (!(sender instanceof ConsoleCommandSender)) {
             sendFramedMessage(message, 15);
-        }
-        else {
+        } else {
             sendFramedMessage(message);
         }
     }
@@ -109,8 +105,7 @@ public class StatusCommand extends Command {
                             .decorate(TextDecoration.BOLD)
                             .color(TextColor.color(0xB02100))
                             .clickEvent(ClickEvent.runCommand("/backuper task cancelConfirmation")));
-        }
-        else {
+        } else {
 
             header = header
                     .append(Component.text("The "))

@@ -4,9 +4,6 @@ import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.handlers.commands.Command;
-import ru.dvdishka.backuper.handlers.commands.Permissions;
-
-import java.util.ArrayList;
 
 import static ru.dvdishka.backuper.handlers.commands.task.cancel.CancelConfirmationCommand.checkPermission;
 
@@ -32,7 +29,7 @@ public class CancelCommand extends Command {
         }
 
         buttonSound();
-        sendMessage("Cancelling " + Backuper.getCurrentTask().getTaskName() +  " task...");
+        sendMessage("Cancelling " + Backuper.getCurrentTask().getTaskName() + " task...");
 
         Backuper.getCurrentTask().cancel();
     }

@@ -4,7 +4,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.backend.classes.LocalBackup;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.config.Config;
@@ -203,8 +202,8 @@ public class BackupTask extends Task {
                 Logger.getLogger().devLog("The Rename \"in progress\" Folder SFTP task has been started");
 
                 SftpUtils.renameFile(SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(),
-                                backupName), SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(),
-                                backupName.replace(" in progress", "")), sender);
+                        backupName), SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(),
+                        backupName.replace(" in progress", "")), sender);
 
                 Logger.getLogger().devLog("The Rename \"in progress\" Folder SFTP task has been finished");
             }
@@ -253,7 +252,8 @@ public class BackupTask extends Task {
 
             try {
                 targetZipOutputStream.close();
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
             Logger.getLogger().warn("Something went wrong while running the task: " + taskName);
             Logger.getLogger().warn(e.getMessage());

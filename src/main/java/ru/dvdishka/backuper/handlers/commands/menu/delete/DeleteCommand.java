@@ -16,7 +16,7 @@ import ru.dvdishka.backuper.handlers.commands.task.status.StatusCommand;
 
 public class DeleteCommand extends Command {
 
-    private String storage= "";
+    private String storage = "";
 
     public DeleteCommand(String storage, CommandSender sender, CommandArguments arguments) {
         super(sender, arguments);

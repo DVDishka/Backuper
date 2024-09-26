@@ -62,9 +62,13 @@ public class SftpConfig {
         return pathSeparatorSymbol;
     }
 
-    public int getBackupsNumber() {return backupsNumber;}
+    public int getBackupsNumber() {
+        return backupsNumber;
+    }
 
-    public long getBackupsWeight() {return backupsWeight;}
+    public long getBackupsWeight() {
+        return backupsWeight;
+    }
 
     public String getSshConfigFile() {
         return sshConfigFile;

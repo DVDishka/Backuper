@@ -96,7 +96,8 @@ public class SftpGetFileFolderTask extends Task {
             try {
                 sftpChannel.exit();
                 session.disconnect();
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
             if (setLocked) {
                 UIUtils.successSound(sender);
@@ -107,11 +108,13 @@ public class SftpGetFileFolderTask extends Task {
 
             try {
                 sftpChannel.exit();
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
             try {
                 session.disconnect();
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
             if (setLocked) {
                 UIUtils.cancelSound(sender);

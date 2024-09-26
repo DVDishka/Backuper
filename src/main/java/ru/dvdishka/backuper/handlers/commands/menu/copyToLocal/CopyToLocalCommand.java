@@ -90,8 +90,7 @@ public class CopyToLocalCommand extends Command {
         if (storage.equals("sftp")) {
             copyToLocalTask = new SftpGetFileFolderTask(backup.getPath(), inProgressFile,
                     false, true, List.of(Permissions.SFTP_COPY_TO_LOCAL), sender);
-        }
-        else if (storage.equals("ftp")) {
+        } else if (storage.equals("ftp")) {
             copyToLocalTask = new FtpGetFileFolderTask(backup.getPath(), inProgressFile,
                     false, true, List.of(Permissions.FTP_COPY_TO_LOCAL), sender);
         } else {

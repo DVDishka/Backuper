@@ -13,9 +13,6 @@ import ru.dvdishka.backuper.backend.classes.FtpBackup;
 import ru.dvdishka.backuper.backend.classes.SftpBackup;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.handlers.commands.Command;
-import ru.dvdishka.backuper.handlers.commands.Permissions;
-
-import java.util.ArrayList;
 
 public class CopyToLocalConfirmationCommand extends Command {
 

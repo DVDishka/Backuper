@@ -23,7 +23,8 @@ public class SftpProgressMonitor implements com.jcraft.jsch.SftpProgressMonitor 
     }
 
     @Override
-    public void end() {}
+    public void end() {
+    }
 
     public long getCurrentProgress() {
         return currentProgress;

@@ -10,7 +10,6 @@ import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.io.File;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -63,7 +62,8 @@ public class LocalBackup implements Backup {
                 if (localBackup != null) {
                     backups.add(localBackup);
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
         }
         return backups;
     }
@@ -110,8 +110,7 @@ public class LocalBackup implements Backup {
     public String getFileName() {
         if (getFileType().equals("(ZIP)")) {
             return backupName + ".zip";
-        }
-        else {
+        } else {
             return backupName;
         }
     }

@@ -2,14 +2,11 @@ package ru.dvdishka.backuper.backend.config;
 
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
-import ru.dvdishka.backuper.backend.classes.LocalBackup;
 import ru.dvdishka.backuper.backend.common.Logger;
-import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -29,8 +26,7 @@ public class BackwardsCompatibility {
         boolean fixedBackupTime = config.getBoolean("fixedBackupTime", false);
         if (!fixedBackupTime) {
             config.set("backupTime", -1);
-        }
-        else {
+        } else {
             config.set("backupTime", config.getInt("firstBackupTime"));
         }
     }
@@ -102,11 +98,13 @@ public class BackwardsCompatibility {
 
                 try {
                     backupLocalDateTime = LocalDateTime.parse(file.getName().replace(".zip", ""), oldUnixDateTimeFormatter);
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
 
                 try {
                     backupLocalDateTime = LocalDateTime.parse(file.getName().replace(".zip", ""), oldWindowsDateTimeFormatter);
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
 
                 if (backupLocalDateTime != null) {
 

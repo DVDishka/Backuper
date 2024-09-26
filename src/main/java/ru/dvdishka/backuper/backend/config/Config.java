@@ -8,13 +8,11 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.utils.Utils;
-import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.io.File;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -49,6 +47,7 @@ public class Config {
     private LocalConfig localConfig = new LocalConfig();
     private SftpConfig sftpConfig = new SftpConfig();
     private FtpConfig ftpConfig = new FtpConfig();
+    private GoogleDriveConfig googleDriveConfig = new GoogleDriveConfig();
 
     private static Config instance = null;
 
@@ -60,7 +59,8 @@ public class Config {
         return instance;
     }
 
-    private Config() {}
+    private Config() {
+    }
 
     public synchronized void setConfigField(String path, Object value) {
 
@@ -141,6 +141,23 @@ public class Config {
         this.sftpConfig.port = config.getInt("sftp.auth.port", 22);
         this.sftpConfig.useKnownHostsFile = config.getString("sftp.auth.useKnownHostsFile", "false");
         this.sftpConfig.knownHostsFilePath = config.getString("sftp.auth.knownHostsFilePath", "");
+
+        this.googleDriveConfig.enabled = config.getBoolean("googleDrive.enabled", false);
+        this.googleDriveConfig.autoBackup = config.getBoolean("googleDrive.autoBackup", true);
+        this.googleDriveConfig.backupsFolderId = config.getString("googleDrive.backupsFolderId", "");
+        String googleDriveCredentialsFilePath = config.getString("googleDrive.auth.credentialsFilePath", "");
+        try {
+            this.googleDriveConfig.credentialsFile = new File(googleDriveCredentialsFilePath);
+            assert this.googleDriveConfig.credentialsFile.exists();
+        } catch (Exception e) {
+            this.googleDriveConfig.credentialsFile = null;
+            if (this.googleDriveConfig.enabled) {
+                Logger.getLogger().warn("Wrong googleDrive.auth.credentialsFilePath config field", sender);
+                Logger.getLogger().warn(this, e);
+            }
+        }
+        String googleDriveTokenFolder = config.getString("googleDrive.auth.tokensFolderPath", "plugins/Backuper/GoogleDrive/tokens");
+        this.googleDriveConfig.tokensFolder = new File(googleDriveTokenFolder);
 
         this.betterLogging = config.getBoolean("server.betterLogging", false);
         this.fixedBackupTime = this.backupTime > -1;
@@ -240,7 +257,8 @@ public class Config {
                 "local.zipCompressionLevel", "sftp.maxBackupsNumber", "sftp.maxBackupsWeight", "ftp.backupsFolder", "ftp.auth.address", "ftp.auth.port",
                 "ftp.pathSeparatorSymbol", "ftp.auth.password", "ftp.auth.username", "ftp.enabled", "ftp.maxBackupsNumber", "ftp.maxBackupsWeight",
                 "ftp.zipArchive", "ftp.zipCompressionLevel", "server.checkUpdates", "local.autoBackup", "ftp.autoBackup", "sftp.autoBackup",
-                "backup.deleteBrokenBackups", "backup.backupFileNameFormat");
+                "backup.deleteBrokenBackups", "backup.backupFileNameFormat", "googleDrive.enabled", "googleDrive.autoBackup",
+                "googleDrive.auth.tokensFolderPath", "googleDrive.auth.credentialsFilePath", "googleDrive.backupsFolderId");
 
         for (String configField : configFields) {
             if (isConfigFileOk && !config.contains(configField)) {
@@ -307,6 +325,12 @@ public class Config {
             newConfig.set("sftp.auth.port", this.sftpConfig.port);
             newConfig.set("sftp.auth.useKnownHostsFile", this.sftpConfig.useKnownHostsFile);
             newConfig.set("sftp.auth.knownHostsFilePath", this.sftpConfig.knownHostsFilePath);
+
+            newConfig.set("googleDrive.enabled", this.googleDriveConfig.enabled);
+            newConfig.set("googleDrive.autoBackup", this.googleDriveConfig.autoBackup);
+            newConfig.set("googleDrive.backupsFolderId", this.googleDriveConfig.backupsFolderId);
+            newConfig.set("googleDrive.auth.credentialsFilePath", googleDriveCredentialsFilePath);
+            newConfig.set("googleDrive.auth.tokenFolderPath", googleDriveTokenFolder);
 
             newConfig.set("lastBackup", this.lastBackup);
             newConfig.set("lastChange", this.lastChange);
@@ -412,10 +436,16 @@ public class Config {
         return localConfig;
     }
 
-    public FtpConfig getFtpConfig() {return ftpConfig;}
+    public FtpConfig getFtpConfig() {
+        return ftpConfig;
+    }
 
     public SftpConfig getSftpConfig() {
         return sftpConfig;
+    }
+
+    public GoogleDriveConfig getGoogleDriveConfig() {
+        return googleDriveConfig;
     }
 
     public boolean isDeleteBrokenBackups() {

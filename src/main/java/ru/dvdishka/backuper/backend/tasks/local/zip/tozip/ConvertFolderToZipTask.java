@@ -9,7 +9,6 @@ import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 
 public class ConvertFolderToZipTask extends Task {

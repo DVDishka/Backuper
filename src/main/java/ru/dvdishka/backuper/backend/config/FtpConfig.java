@@ -43,13 +43,21 @@ public class FtpConfig {
         return pathSeparatorSymbol;
     }
 
-    public int getBackupsNumber() {return backupsNumber;}
+    public int getBackupsNumber() {
+        return backupsNumber;
+    }
 
-    public long getBackupsWeight() {return backupsWeight;}
+    public long getBackupsWeight() {
+        return backupsWeight;
+    }
 
-    public boolean isZipArchive() {return zipArchive;}
+    public boolean isZipArchive() {
+        return zipArchive;
+    }
 
-    public int getZipCompressionLevel() {return zipCompressionLevel;}
+    public int getZipCompressionLevel() {
+        return zipCompressionLevel;
+    }
 
     public boolean isAutoBackup() {
         return autoBackup;

@@ -167,7 +167,8 @@ public class FtpSendFileFolderTask extends Task {
 
             try {
                 ftp.makeDirectory(remotePath);
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
             for (File file : localDirToSend.listFiles()) {
                 sendFolder(file, FtpUtils.resolve(remotePath, file.getName()));

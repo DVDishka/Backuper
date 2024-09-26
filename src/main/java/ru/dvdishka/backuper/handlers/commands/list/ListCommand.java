@@ -16,7 +16,6 @@ import ru.dvdishka.backuper.backend.classes.SftpBackup;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.handlers.commands.Command;
-import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -88,8 +87,7 @@ public class ListCommand extends Command {
 
         if (!(sender instanceof ConsoleCommandSender)) {
             sendFramedMessage(header, createListMessage(pageNumber, true), 15);
-        }
-        else {
+        } else {
             sendFramedMessage(header, createListMessage(pageNumber, arguments.get("pageNumber") != null), 41);
         }
         buttonSound();
@@ -138,8 +136,8 @@ public class ListCommand extends Command {
 
             pages.get((i - 1) / 10)
                     .add(net.kyori.adventure.text.Component.text(backupFormattedName)
-                    .hoverEvent(hoverEvent)
-                    .clickEvent(clickEvent));
+                            .hoverEvent(hoverEvent)
+                            .clickEvent(clickEvent));
         }
 
         ListCommand.pages = pages;
@@ -231,8 +229,7 @@ public class ListCommand extends Command {
                         .append(Component.text(">".repeat(20))
                                 .decorate(TextDecoration.BOLD)
                                 .color(TextColor.fromHexString("#129c9b")));
-            }
-            else {
+            } else {
                 for (ArrayList<TextComponent> page : pages) {
                     for (TextComponent backupComponent : page) {
 

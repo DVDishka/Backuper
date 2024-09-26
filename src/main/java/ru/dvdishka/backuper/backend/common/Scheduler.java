@@ -3,7 +3,6 @@ package ru.dvdishka.backuper.backend.common;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
-import org.jetbrains.annotations.NotNull;
 import ru.dvdishka.backuper.backend.utils.Utils;
 
 import java.util.concurrent.TimeUnit;

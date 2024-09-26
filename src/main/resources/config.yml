@@ -7,19 +7,19 @@ backup:
   # (true/false) Automatic backup once in a specified period
   autoBackup: true
   # Set a format for backup file names (see java.time docs). It must contain information about both time and date
-  backupFileNameFormat: "dd-MM-yyyy HH-mm-ss"
+  backupFileNameFormat: 'dd-MM-yyyy HH-mm-ss'
   # (Path list) (An example of how to set a list is below) Full directory paths to folders/files that you want to be backed up. Worlds will be backed up automatically, so you do not need to specify world folders there (For example you can specify "plugins", "config")
   # addDirectoryToBackup:
   # - path1
   # - path2
   # - ...
-  addDirectoryToBackup: []
+  addDirectoryToBackup: [ ]
   # (Path list) (An example of how to set a list is below) Full directory paths to folders/files that you want to be excluded from backup. If you want to backup everything from the folder1 except some folder1/file1 you can specify folder1 in addDirectoryToBackup and folder1/file1 in excludeDirectoryFromBackup. (The backupsFolder directory will be excluded automatically to prevent the loop)
   # excludeDirectoryFromBackup:
   # - path1
   # - path2
   # - ...
-  excludeDirectoryFromBackup: []
+  excludeDirectoryFromBackup: [ ]
 
   # (MINUTES > 0 or -1) Backup period. To change this value you need to set backupTime to -1 and autoBackup to true
   backupPeriod: 1440
@@ -54,6 +54,18 @@ local:
   zipArchive: true
   # (0 - 9) archive compression level. A higher value may reduce file size, but may also increase the time required to archive and decompress
   zipCompressionLevel: 5
+
+googleDrive:
+  # (true/false) Enable Google Drive storage to use it via Backuper
+  enabled: false
+  # (true/false) With automatic backup, backups will be saved to specified Google Drive. Works only if 'enabled: true'
+  autoBackup: true
+
+  backupsFolderId: ''
+
+  auth:
+    credentialsFilePath: ''
+    tokensFolderPath: plugins/Backuper/GoogleDrive/tokens
 
 ftp:
   # (true/false) Enable FTP storage to use it via the Backuper

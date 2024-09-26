@@ -5,9 +5,7 @@ import org.bukkit.command.ConsoleCommandSender;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
-import ru.dvdishka.backuper.handlers.commands.Permissions;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 
 public class Logger {
@@ -27,7 +25,8 @@ public class Logger {
         if (!(sender instanceof ConsoleCommandSender)) {
             try {
                 UIUtils.sendMessage(text, sender);
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
         }
     }
 
@@ -45,7 +44,8 @@ public class Logger {
             if (!(sender instanceof ConsoleCommandSender)) {
                 try {
                     UIUtils.sendMessage(text, sender);
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
             }
         }
     }
@@ -62,7 +62,8 @@ public class Logger {
         if (!(sender instanceof ConsoleCommandSender)) {
             try {
                 UIUtils.returnWarning(text, sender);
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
         }
     }
 
@@ -77,7 +78,8 @@ public class Logger {
         if (!(sender instanceof ConsoleCommandSender)) {
             try {
                 UIUtils.returnSuccess(text, sender);
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
         }
     }
 

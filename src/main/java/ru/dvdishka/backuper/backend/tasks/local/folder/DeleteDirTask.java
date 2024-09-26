@@ -10,7 +10,6 @@ import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.io.File;
 import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -90,9 +89,7 @@ public class DeleteDirTask extends Task {
             }
 
             incrementCurrentProgress(fileByteSize);
-        }
-
-        else if (dir.isDirectory()) {
+        } else if (dir.isDirectory()) {
 
             for (File file : Objects.requireNonNull(dir.listFiles())) {
 

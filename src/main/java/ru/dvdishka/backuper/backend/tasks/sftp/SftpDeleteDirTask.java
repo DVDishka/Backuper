@@ -76,11 +76,13 @@ public class SftpDeleteDirTask extends Task {
         } finally {
             try {
                 session.disconnect();
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
             try {
                 channelSftp.exit();
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
             Logger.getLogger().devLog("SftpDeleteDir task has been finished");
         }

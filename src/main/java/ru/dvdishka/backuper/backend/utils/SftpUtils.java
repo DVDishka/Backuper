@@ -1,15 +1,10 @@
 package ru.dvdishka.backuper.backend.utils;
 
-import com.jcraft.jsch.ChannelSftp;
-import com.jcraft.jsch.JSch;
-import com.jcraft.jsch.JSchException;
-import com.jcraft.jsch.OpenSSHConfig;
-import com.jcraft.jsch.Session;
+import com.jcraft.jsch.*;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -56,10 +51,12 @@ public class SftpUtils {
 
         try {
             channelSftp.getLeft().disconnect();
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         try {
             channelSftp.getRight().exit();
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         return connected;
     }
@@ -74,7 +71,7 @@ public class SftpUtils {
 
         Session sshSession = null;
         ChannelSftp sftpChannel = null;
-        
+
         try {
             JSch jsch = new JSch();
 
@@ -127,11 +124,13 @@ public class SftpUtils {
 
             try {
                 sshSession.disconnect();
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
             try {
                 sftpChannel.exit();
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
             Logger.getLogger().warn("Failed to connect to SFTP server", sender);
             Logger.getLogger().warn("SftpUtils; createSftpChannel", e);
@@ -162,11 +161,13 @@ public class SftpUtils {
 
             try {
                 session.disconnect();
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
             try {
                 sftpChannel.exit();
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
             Logger.getLogger().warn("Failed to create remote folder + \"" + remoteFolderPath + "\"", sender);
             Logger.getLogger().warn("SftpUtils; createRemoteFolder", e);
@@ -203,11 +204,13 @@ public class SftpUtils {
 
             try {
                 session.disconnect();
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
             try {
                 sftpChannel.exit();
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
             Logger.getLogger().warn("Failed to rename \"" + remoteFilePath + "\" to \"" + newFilePath + "\"", sender);
             Logger.getLogger().warn("SftpUtils; renameRemoteFolder", e);
@@ -243,11 +246,13 @@ public class SftpUtils {
 
             try {
                 session.disconnect();
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
             try {
                 sftpChannel.exit();
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
             Logger.getLogger().warn("Failed to get file list from folder \"" + remoteFolderPath + "\"", sender);
             Logger.getLogger().warn("SftpUtils; ls", e);
@@ -281,11 +286,13 @@ public class SftpUtils {
 
             try {
                 session.disconnect();
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
             try {
                 sftpChannel.exit();
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
             Logger.getLogger().warn("Failed to get dir size \"" + remoteFilePath + "\"", sender);
             Logger.getLogger().warn("SftpUtils; getDirByteSize", e);
