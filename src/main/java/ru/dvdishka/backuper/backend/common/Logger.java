@@ -83,9 +83,9 @@ public class Logger {
         }
     }
 
-    public void devWarn(Object sourceClass, String text) {
+    public void devWarn(Class<?> sourceClass, String text) {
         if (Config.getInstance().isBetterLogging()) {
-            Utils.plugin.getLogger().warning(sourceClass.getClass().getSimpleName() + ": " + text);
+            Utils.plugin.getLogger().warning(sourceClass.getSimpleName() + ": " + text);
         }
     }
 
@@ -95,17 +95,17 @@ public class Logger {
         }
     }
 
-    public void warn(Object sourceClass, Exception exception) {
-        Utils.plugin.getLogger().warning(sourceClass.getClass().getSimpleName() + ": " + exception.getMessage() + "\n" + Arrays.toString(exception.getStackTrace()));
+    public void warn(Class sourceClass, Exception exception) {
+        Utils.plugin.getLogger().warning(sourceClass.getSimpleName() + ": " + exception.getMessage() + "\n" + Arrays.toString(exception.getStackTrace()));
     }
 
     public void warn(String sourceClassName, Exception exception) {
         Utils.plugin.getLogger().warning(sourceClassName + ": " + exception.getMessage() + "\n" + Arrays.toString(exception.getStackTrace()));
     }
 
-    public void devWarn(Object sourceClass, Exception exception) {
+    public void devWarn(Class sourceClass, Exception exception) {
         if (Config.getInstance().isBetterLogging()) {
-            Utils.plugin.getLogger().warning(sourceClass.getClass().getSimpleName() + ": " + exception.getMessage() + "\n" + Arrays.toString(exception.getStackTrace()));
+            Utils.plugin.getLogger().warning(sourceClass.getSimpleName() + ": " + exception.getMessage() + "\n" + Arrays.toString(exception.getStackTrace()));
         }
     }
 

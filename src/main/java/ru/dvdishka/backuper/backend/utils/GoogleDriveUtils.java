@@ -1,7 +1,11 @@
 package ru.dvdishka.backuper.backend.utils;
 
+import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;
+import com.google.api.client.auth.oauth2.AuthorizationCodeRequestUrl;
 import com.google.api.client.auth.oauth2.Credential;
+import com.google.api.client.auth.oauth2.TokenResponse;
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
+import com.google.api.client.extensions.java6.auth.oauth2.VerificationCodeReceiver;
 import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
@@ -11,12 +15,18 @@ import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.gson.GsonFactory;
+import com.google.api.client.util.Preconditions;
 import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.DriveScopes;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.backend.exceptions.NotAuthorizedException;
 
 import java.io.*;
 import java.util.List;
@@ -40,7 +50,39 @@ public class GoogleDriveUtils {
         tokensFolder = Config.getInstance().getGoogleDriveConfig().getTokensFolder();
     }
 
-    public static Drive getService(CommandSender sender) throws IOException {
+    public static Credential returnCredentialIfAuthorized(CommandSender sender) {
+
+        try {
+            GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new FileReader(credentialsFile));
+
+            GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
+                    NET_HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, DRIVE_SCOPES)
+                    .setDataStoreFactory(new FileDataStoreFactory(tokensFolder))
+                    .setAccessType("offline")
+                    .build();
+
+            Credential credential = flow.loadCredential("user");
+
+            if (credential != null
+                    && (credential.getRefreshToken() != null
+                    || credential.getExpiresInSeconds() == null
+                    || credential.getExpiresInSeconds() > 60)) {
+                return credential;
+            }
+            return null;
+
+        } catch (Exception e) {
+            Logger.getLogger().warn("Failed to authorize user in Google Drive");
+            Logger.getLogger().warn(GoogleDriveUtils.class, e);
+            return null;
+        }
+    }
+
+    public static boolean isAuthorized(CommandSender sender) {
+        return returnCredentialIfAuthorized(sender) != null;
+    }
+
+    public static Credential authorizeForced(CommandSender sender) throws IOException {
 
         GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new FileReader(credentialsFile));
 
@@ -51,7 +93,17 @@ public class GoogleDriveUtils {
                 .build();
         // PORT MUST BE UNLOCKED
         LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(8888).build();
-        Credential credential = new AuthorizationCodeInstalledApp(flow, receiver, BROWSER).authorize("user");
+        Credential credential = new MyAuthorizationCodeInstalledApp(flow, receiver).authorizeForced("user", sender);
+
+        return credential;
+    }
+
+    public static Drive getService(CommandSender sender) throws NotAuthorizedException {
+
+        Credential credential = returnCredentialIfAuthorized(sender);
+        if (credential == null) {
+            throw new NotAuthorizedException("googleDrive");
+        }
 
         return new Drive.Builder(NET_HTTP_TRANSPORT, JSON_FACTORY, credential)
                 .setApplicationName(APPLICATION_NAME)
@@ -160,5 +212,66 @@ public class GoogleDriveUtils {
         Logger.getLogger().log("Google Drive: File downloaded", sender);
 
         Logger.getLogger().log("Google Drive: Test finished", sender);
+    }
+}
+
+class MyAuthorizationCodeInstalledApp extends AuthorizationCodeInstalledApp {
+
+    public MyAuthorizationCodeInstalledApp(AuthorizationCodeFlow flow, VerificationCodeReceiver receiver) {
+        super(flow, receiver);
+    }
+
+    protected void onAuthorization(AuthorizationCodeRequestUrl authorizationUrl, CommandSender sender) throws IOException {
+        String url = authorizationUrl.build();
+        Preconditions.checkNotNull(url);
+
+        Component message = Component.empty()
+                .append(Component.text("Login using this link:")
+                        .color(TextColor.fromHexString("#129c9b")))
+                .append(Component.text(url)
+                        .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.OPEN_URL, url))
+                        .decorate(TextDecoration.UNDERLINED));
+
+        sender.sendMessage(message);
+    }
+
+    public Credential authorizeForced(String userId, CommandSender sender) throws IOException {
+        try {
+            Credential credential = getFlow().loadCredential(userId);
+            if (credential != null
+                    && (credential.getRefreshToken() != null
+                    || credential.getExpiresInSeconds() == null
+                    || credential.getExpiresInSeconds() > 60)) {
+                return credential;
+            }
+
+            String redirectUri = getReceiver().getRedirectUri();
+            AuthorizationCodeRequestUrl authorizationUrl =
+                    getFlow().newAuthorizationUrl().setRedirectUri(redirectUri);
+            onAuthorization(authorizationUrl, sender);
+
+            String code = getReceiver().waitForCode();
+            TokenResponse response = getFlow().newTokenRequest(code).setRedirectUri(redirectUri).execute();
+
+            return getFlow().createAndStoreCredential(response, userId);
+        } finally {
+            getReceiver().stop();
+        }
+    }
+
+    public Credential authorize(String userId, CommandSender sender) throws IOException {
+        try {
+            String redirectUri = getReceiver().getRedirectUri();
+            AuthorizationCodeRequestUrl authorizationUrl =
+                    getFlow().newAuthorizationUrl().setRedirectUri(redirectUri);
+            onAuthorization(authorizationUrl, sender);
+
+            String code = getReceiver().waitForCode();
+            TokenResponse response = getFlow().newTokenRequest(code).setRedirectUri(redirectUri).execute();
+
+            return getFlow().createAndStoreCredential(response, userId);
+        } finally {
+            getReceiver().stop();
+        }
     }
 }

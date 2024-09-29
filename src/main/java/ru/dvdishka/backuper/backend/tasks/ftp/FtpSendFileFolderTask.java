@@ -84,13 +84,13 @@ public class FtpSendFileFolderTask extends Task {
             }
 
             Logger.getLogger().warn("Something went wrong when trying to send file/folder from FTP(S) server", sender);
-            Logger.getLogger().warn(this, e);
+            Logger.getLogger().warn(this.getClass(), e);
 
         } finally {
             try {
                 ftp.disconnect();
             } catch (Exception e) {
-                Logger.getLogger().warn(this, e);
+                Logger.getLogger().warn(this.getClass(), e);
             }
 
             Logger.getLogger().devLog("FtpSendFileFolder task has been finished");
@@ -149,8 +149,8 @@ public class FtpSendFileFolderTask extends Task {
                     incrementCurrentProgress(localDirToSend.length());
 
                 } catch (Exception e) {
-                    Logger.getLogger().devWarn(this, "Something went wrong while sending file \"" + localDirToSend.getPath() + "\" to FTP(S) server");
-                    Logger.getLogger().devWarn(this, Arrays.toString(e.getStackTrace()));
+                    Logger.getLogger().devWarn(this.getClass(), "Something went wrong while sending file \"" + localDirToSend.getPath() + "\" to FTP(S) server");
+                    Logger.getLogger().devWarn(this.getClass(), Arrays.toString(e.getStackTrace()));
                 }
             });
             ftpTasks.add(ftpTask);
@@ -159,7 +159,7 @@ public class FtpSendFileFolderTask extends Task {
             } catch (Exception e) {
                 if (!cancelled) {
                     Logger.getLogger().warn("Something went wrong while sending file \"" + localDirToSend.getPath() + "\" to FTP(S) server", sender);
-                    Logger.getLogger().warn(this, e);
+                    Logger.getLogger().warn(this.getClass(), e);
                 }
             }
         }

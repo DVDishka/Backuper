@@ -72,7 +72,7 @@ public class SftpDeleteDirTask extends Task {
                 UIUtils.cancelSound(sender);
             }
             Logger.getLogger().warn("Something went wrong when trying to execute SftpDeleteDir task", sender);
-            Logger.getLogger().warn(this, e);
+            Logger.getLogger().warn(this.getClass(), e);
         } finally {
             try {
                 session.disconnect();
@@ -119,7 +119,7 @@ public class SftpDeleteDirTask extends Task {
             }
         } catch (Exception e) {
             Logger.getLogger().warn("Something went while trying to delete SFTP directory", sender);
-            Logger.getLogger().warn(this, e);
+            Logger.getLogger().warn(this.getClass(), e);
         }
     }
 

@@ -57,7 +57,7 @@ public class DeleteDirTask extends Task {
             }
 
             Logger.getLogger().warn("Something went wrong while running DeleteDirTask", sender);
-            Logger.getLogger().warn(this, e);
+            Logger.getLogger().warn(this.getClass(), e);
         }
     }
 

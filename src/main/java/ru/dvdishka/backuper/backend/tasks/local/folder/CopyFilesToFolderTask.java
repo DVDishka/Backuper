@@ -62,7 +62,7 @@ public class CopyFilesToFolderTask extends Task {
                     CompletableFuture.allOf(copyTasks.toArray(new CompletableFuture[0])).join();
                 } catch (Exception e) {
                     Logger.getLogger().warn("Failed to copy files into target dir", sender);
-                    Logger.getLogger().warn(this, e);
+                    Logger.getLogger().warn(this.getClass(), e);
                 }
             }
 
@@ -79,7 +79,7 @@ public class CopyFilesToFolderTask extends Task {
             }
 
             Logger.getLogger().warn("Something went wrong while running CopyFiles task");
-            Logger.getLogger().warn(this, e);
+            Logger.getLogger().warn(this.getClass(), e);
         }
     }
 
@@ -120,8 +120,8 @@ public class CopyFilesToFolderTask extends Task {
 
                 } catch (Exception e) {
 
-                    Logger.getLogger().devWarn(this, "Something went wrong while trying to copy file! " + sourceDir.getName());
-                    Logger.getLogger().devWarn(this, Arrays.toString(e.getStackTrace()));
+                    Logger.getLogger().devWarn(this.getClass(), "Something went wrong while trying to copy file! " + sourceDir.getName());
+                    Logger.getLogger().devWarn(this.getClass(), Arrays.toString(e.getStackTrace()));
                 }
             });
 

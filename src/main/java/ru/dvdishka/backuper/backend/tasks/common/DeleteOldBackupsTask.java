@@ -64,7 +64,7 @@ public class DeleteOldBackupsTask extends Task {
             }
 
             Logger.getLogger().warn("Something went wrong while running DeleteOldBackups task", sender);
-            Logger.getLogger().warn(this, e);
+            Logger.getLogger().warn(this.getClass(), e);
         }
     }
 
@@ -127,7 +127,7 @@ public class DeleteOldBackupsTask extends Task {
                 backupsFolderByteSize += backup.getByteSize(sender);
             } catch (Exception e) {
                 Logger.getLogger().warn("Failed to get backup byte size", sender);
-                Logger.getLogger().warn(this, e);
+                Logger.getLogger().warn(this.getClass(), e);
             }
         }
 

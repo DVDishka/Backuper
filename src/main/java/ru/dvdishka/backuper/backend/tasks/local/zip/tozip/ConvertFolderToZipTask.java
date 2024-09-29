@@ -79,7 +79,7 @@ public class ConvertFolderToZipTask extends Task {
             }
 
             Logger.getLogger().warn("Something went wrong while running FolderToZip task", sender);
-            Logger.getLogger().warn(this, e);
+            Logger.getLogger().warn(this.getClass(), e);
         }
     }
 

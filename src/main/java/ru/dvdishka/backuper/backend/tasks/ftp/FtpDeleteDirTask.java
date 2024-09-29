@@ -63,12 +63,12 @@ public class FtpDeleteDirTask extends Task {
                 UIUtils.cancelSound(sender);
             }
             Logger.getLogger().warn("Something went wrong when trying to execute FtpDeleteDir task", sender);
-            Logger.getLogger().warn(this, e);
+            Logger.getLogger().warn(this.getClass(), e);
         } finally {
             try {
                 ftp.disconnect();
             } catch (Exception e) {
-                Logger.getLogger().warn(this, e);
+                Logger.getLogger().warn(this.getClass(), e);
             }
 
             Logger.getLogger().devLog("FtpDeleteDir task has been finished");
@@ -119,7 +119,7 @@ public class FtpDeleteDirTask extends Task {
             }
         } catch (Exception e) {
             Logger.getLogger().warn("Something went while trying to delete FTP(S) directory", sender);
-            Logger.getLogger().warn(this, e);
+            Logger.getLogger().warn(this.getClass(), e);
         }
     }
 }

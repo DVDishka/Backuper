@@ -81,7 +81,7 @@ public class AddDirToZipTask extends Task {
                     }
 
                 } catch (Exception e) {
-                    Logger.getLogger().warn(this, e);
+                    Logger.getLogger().warn(this.getClass(), e);
                     Logger.getLogger().warn("AddDirToZip task failed", sender);
 
                     Backuper.unlock();
@@ -97,7 +97,7 @@ public class AddDirToZipTask extends Task {
                     }
 
                 } catch (Exception e) {
-                    Logger.getLogger().warn(this, e);
+                    Logger.getLogger().warn(this.getClass(), e);
                     Logger.getLogger().warn("AddDirToZip task failed", sender);
 
                     Backuper.unlock();
@@ -118,7 +118,7 @@ public class AddDirToZipTask extends Task {
             }
 
             Logger.getLogger().warn("Something went wrong while running AddDirToZIP task", sender);
-            Logger.getLogger().warn(this, e);
+            Logger.getLogger().warn(this.getClass(), e);
         }
     }
 
@@ -173,7 +173,7 @@ public class AddDirToZipTask extends Task {
 
                 Logger.getLogger().warn("Something went wrong while running AddDirToZIP task", sender);
                 Logger.getLogger().warn("Something went wrong while trying to put file in ZIP! " + sourceDir.getName(), sender);
-                Logger.getLogger().warn(this, e);
+                Logger.getLogger().warn(this.getClass(), e);
             }
         }
 

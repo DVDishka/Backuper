@@ -122,7 +122,7 @@ public class SftpGetFileFolderTask extends Task {
             }
 
             Logger.getLogger().warn("Something went wrong when trying to get file from the SFTP channel", sender);
-            Logger.getLogger().warn(this, e);
+            Logger.getLogger().warn(this.getClass(), e);
         } finally {
             Logger.getLogger().devLog("SftpGetFileFolder task has been finished");
         }
@@ -153,8 +153,8 @@ public class SftpGetFileFolderTask extends Task {
                     try {
                         sftpChannel.get(remotePath, localPath.getCanonicalPath(), progressMonitor);
                     } catch (Exception e) {
-                        Logger.getLogger().devWarn(this, "Something went wrong when trying to download file \"" + remotePath + "\" from SFTP server");
-                        Logger.getLogger().devWarn(this, Arrays.toString(e.getStackTrace()));
+                        Logger.getLogger().devWarn(this.getClass(), "Something went wrong when trying to download file \"" + remotePath + "\" from SFTP server");
+                        Logger.getLogger().devWarn(this.getClass(), Arrays.toString(e.getStackTrace()));
                     }
                 });
 
@@ -164,7 +164,7 @@ public class SftpGetFileFolderTask extends Task {
                 } catch (Exception e) {
                     if (!cancelled) {
                         Logger.getLogger().warn("Something went wrong when trying to download file \"" + remotePath + "\" from SFTP server", sender);
-                        Logger.getLogger().warn(this, e);
+                        Logger.getLogger().warn(this.getClass(), e);
                     }
                 }
 
@@ -183,7 +183,7 @@ public class SftpGetFileFolderTask extends Task {
         } catch (Exception e) {
 
             Logger.getLogger().warn("Failed to get file/folder from the SFTP channel", sender);
-            Logger.getLogger().warn(this, e);
+            Logger.getLogger().warn(this.getClass(), e);
         }
     }
 

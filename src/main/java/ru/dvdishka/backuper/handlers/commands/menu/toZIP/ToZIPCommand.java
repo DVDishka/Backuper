@@ -71,7 +71,7 @@ public class ToZIPCommand extends Command {
                 Backuper.unlock();
 
                 Logger.getLogger().warn("Something went wrong while running ToZIP task", sender);
-                Logger.getLogger().warn(this, e);
+                Logger.getLogger().warn(this.getClass(), e);
             }
         });
     }

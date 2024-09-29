@@ -87,7 +87,7 @@ public class UnpackZipTask extends Task {
                 } catch (Exception e) {
 
                     Logger.getLogger().warn("Something went wrong while trying to unpack file", sender);
-                    Logger.getLogger().warn(this, e);
+                    Logger.getLogger().warn(this.getClass(), e);
                 }
 
                 zipInput.closeEntry();
@@ -108,7 +108,7 @@ public class UnpackZipTask extends Task {
             }
 
             Logger.getLogger().warn("Something went wrong while running UnpackZip task", sender);
-            Logger.getLogger().warn(this, e);
+            Logger.getLogger().warn(this.getClass(), e);
         }
     }
 
@@ -135,7 +135,7 @@ public class UnpackZipTask extends Task {
         } catch (Exception e) {
 
             Logger.getLogger().warn("Something went wrong while calculating UnpackZip task maxProgress", sender);
-            Logger.getLogger().warn(this, e);
+            Logger.getLogger().warn(this.getClass(), e);
         }
 
         if (maxProgress <= 0) {

@@ -103,7 +103,7 @@ public class FtpGetFileFolderTask extends Task {
             try {
                 ftp.disconnect();
             } catch (Exception e) {
-                Logger.getLogger().warn(this, e);
+                Logger.getLogger().warn(this.getClass(), e);
             }
 
             Logger.getLogger().devLog("FtpGetFileFolder task has been finished");
@@ -139,7 +139,7 @@ public class FtpGetFileFolderTask extends Task {
                         ftp.retrieveFile(remoteDir, outputStream);
 
                     } catch (Exception e) {
-                        Logger.getLogger().devWarn(this, "Failed to download file \"" + remoteDir + "\" from FTP(S) server");
+                        Logger.getLogger().devWarn(this.getClass(), "Failed to download file \"" + remoteDir + "\" from FTP(S) server");
                         Logger.getLogger().devWarn("FtpGetFileFolder:getFileFolder", Arrays.toString(e.getStackTrace()));
                     }
                     incrementCurrentProgress(currentDir.getSize());
@@ -151,7 +151,7 @@ public class FtpGetFileFolderTask extends Task {
                 } catch (Exception e) {
                     if (!cancelled) {
                         Logger.getLogger().warn("Failed to download file \"" + remoteDir + "\" from FTP(S) server", sender);
-                        Logger.getLogger().warn(this, e);
+                        Logger.getLogger().warn(this.getClass(), e);
                     }
                 }
             }

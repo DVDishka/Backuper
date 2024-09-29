@@ -2,6 +2,7 @@ package ru.dvdishka.backuper;
 
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPIBukkitConfig;
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.dvdishka.backuper.backend.Initialization;
 import ru.dvdishka.backuper.backend.common.Logger;
@@ -69,7 +70,12 @@ public class Backuper extends JavaPlugin {
         Initialization.sendIssueToGitHub();
 
         Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-            GoogleDriveUtils.test(null);
+            try {
+                GoogleDriveUtils.authorizeForced(Bukkit.getConsoleSender());
+                GoogleDriveUtils.test(null);
+            } catch (Exception e) {
+                Logger.getLogger().warn(this.getClass(), e);
+            }
         });
         Logger.getLogger().log("Backuper plugin has been enabled!");
     }

@@ -81,8 +81,8 @@ public class FtpAddLocalDirsToZipTask extends Task {
                 }
 
             } catch (Exception e) {
-                Logger.getLogger().warn(this, e);
                 Logger.getLogger().warn("FtpAddLocalDirToZip task failed", sender);
+                Logger.getLogger().warn(this.getClass(), e);
 
                 Backuper.unlock();
             } finally {
@@ -104,7 +104,7 @@ public class FtpAddLocalDirsToZipTask extends Task {
             }
 
             Logger.getLogger().warn("Something went wrong while running FtpAddLocalDirToZIP task", sender);
-            Logger.getLogger().warn(this, e);
+            Logger.getLogger().warn(this.getClass(), e);
         } finally {
             Logger.getLogger().devLog("FtpAddLocalDirToZip task has been finished");
         }
@@ -161,7 +161,7 @@ public class FtpAddLocalDirsToZipTask extends Task {
 
                 Logger.getLogger().warn("Something went wrong while running FtpAddLocalDirToZIP task", sender);
                 Logger.getLogger().warn("Something went wrong while trying to put file in ZIP! " + sourceDir.getName(), sender);
-                Logger.getLogger().warn(this, e);
+                Logger.getLogger().warn(this.getClass(), e);
             }
         }
 

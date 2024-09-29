@@ -153,7 +153,7 @@ public class Config {
             this.googleDriveConfig.credentialsFile = null;
             if (this.googleDriveConfig.enabled) {
                 Logger.getLogger().warn("Wrong googleDrive.auth.credentialsFilePath config field", sender);
-                Logger.getLogger().warn(this, e);
+                Logger.getLogger().warn(this.getClass(), e);
             }
         }
         String googleDriveTokenFolder = config.getString("googleDrive.auth.tokensFolderPath", "plugins/Backuper/GoogleDrive/tokens");
@@ -175,7 +175,7 @@ public class Config {
             LocalDateTime localDateTime = LocalDateTime.parse(LocalDateTime.now().format(dateTimeFormatter), dateTimeFormatter);
         } catch (Exception e) {
             Logger.getLogger().warn("Wrong backupFileNameFormat format: \"" + backupFileNameFormat + "\", using default \"dd-MM-yyyy HH-mm-ss\" value...");
-            Logger.getLogger().warn(this, e);
+            Logger.getLogger().warn(this.getClass(), e);
             isConfigFileOk = false;
             backupFileNameFormat = "dd-MM-yyyy HH-mm-ss";
         }

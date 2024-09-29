@@ -303,7 +303,7 @@ public class BackupTask extends Task {
             new SetWorldsWritableTask(false, permissions, sender).run();
 
             Logger.getLogger().warn("The Backup task has been finished with an exception!", sender);
-            Logger.getLogger().warn(this, e);
+            Logger.getLogger().warn(this.getClass(), e);
         }
     }
 
@@ -355,7 +355,7 @@ public class BackupTask extends Task {
                 } catch (Exception e) {
 
                     Logger.getLogger().warn("Something went wrong when trying to copy files!", sender);
-                    Logger.getLogger().warn(this, e);
+                    Logger.getLogger().warn(this.getClass(), e);
                 }
             }
 
@@ -396,13 +396,13 @@ public class BackupTask extends Task {
 
                 } catch (Exception e) {
                     Logger.getLogger().warn("Something went wrong when trying to backup an additional directory \"" + additionalDirectoryToBackup + "\"", sender);
-                    Logger.getLogger().warn(this, e);
+                    Logger.getLogger().warn(this.getClass(), e);
                 }
             }
 
         } catch (Exception e) {
             Logger.getLogger().warn("Something went wrong while trying to prepare local backup task");
-            Logger.getLogger().warn(this, e);
+            Logger.getLogger().warn(this.getClass(), e);
         }
     }
 
@@ -434,7 +434,7 @@ public class BackupTask extends Task {
                 } catch (Exception e) {
 
                     Logger.getLogger().warn("Something went wrong when trying to copy files!", sender);
-                    Logger.getLogger().warn(this, e);
+                    Logger.getLogger().warn(this.getClass(), e);
                 }
             }
 
@@ -466,13 +466,13 @@ public class BackupTask extends Task {
 
                 } catch (Exception e) {
                     Logger.getLogger().warn("Something went wrong when trying to backup an additional directory \"" + additionalDirectoryToBackup + "\"", sender);
-                    Logger.getLogger().warn(this, e);
+                    Logger.getLogger().warn(this.getClass(), e);
                 }
             }
 
         } catch (Exception e) {
             Logger.getLogger().warn("Something went wrong while trying to prepare sftp backup task");
-            Logger.getLogger().warn(this, e);
+            Logger.getLogger().warn(this.getClass(), e);
         }
     }
 
@@ -513,7 +513,7 @@ public class BackupTask extends Task {
                 } catch (Exception e) {
 
                     Logger.getLogger().warn("Something went wrong when trying to copy files!", sender);
-                    Logger.getLogger().warn(this, e);
+                    Logger.getLogger().warn(this.getClass(), e);
                 }
             }
 
@@ -550,7 +550,7 @@ public class BackupTask extends Task {
 
                 } catch (Exception e) {
                     Logger.getLogger().warn("Something went wrong when trying to backup an additional directory \"" + additionalDirectoryToBackup + "\"", sender);
-                    Logger.getLogger().warn(this, e);
+                    Logger.getLogger().warn(this.getClass(), e);
                 }
             }
 
@@ -565,7 +565,7 @@ public class BackupTask extends Task {
 
         } catch (Exception e) {
             Logger.getLogger().warn("Something went wrong while trying to prepare FTP(S) backup task");
-            Logger.getLogger().warn(this, e);
+            Logger.getLogger().warn(this.getClass(), e);
         }
     }
 

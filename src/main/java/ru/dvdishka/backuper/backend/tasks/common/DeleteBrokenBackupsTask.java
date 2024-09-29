@@ -60,7 +60,7 @@ public class DeleteBrokenBackupsTask extends Task {
         } catch (Exception e) {
 
             Logger.getLogger().warn("Something went wrong when trying to delete broken backups", sender);
-            Logger.getLogger().warn(this, e);
+            Logger.getLogger().warn(this.getClass(), e);
 
             if (setLocked) {
                 UIUtils.cancelSound(sender);
