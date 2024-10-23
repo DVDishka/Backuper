@@ -84,6 +84,9 @@ public class SftpBackup implements Backup {
         }
     }
 
+    /**
+     * @return Possible values: "(Folder)" "(ZIP)"
+     */
     public String getFileType() {
         if (SftpUtils.ls(Config.getInstance().getSftpConfig().getBackupsFolder(), null).contains(backupName + ".zip")) {
             return "(ZIP)";

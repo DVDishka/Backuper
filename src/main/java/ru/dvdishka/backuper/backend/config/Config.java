@@ -23,7 +23,7 @@ public class Config {
     // hides bugs that may exist with reading the config.
     private File configFile;
 
-    private final String configVersion = "8.0";
+    private final String configVersion = "9.0";
     private long lastBackup;
     private long lastChange;
 
@@ -158,6 +158,8 @@ public class Config {
         }
         String googleDriveTokenFolder = config.getString("googleDrive.auth.tokensFolderPath", "plugins/Backuper/GoogleDrive/tokens");
         this.googleDriveConfig.tokensFolder = new File(googleDriveTokenFolder);
+        this.googleDriveConfig.createBackuperFolder = config.getBoolean("googleDrive.createBackuperFolder", true);
+        this.googleDriveConfig.moveFilesToTrash = config.getBoolean("googleDrive.moveFilesToTrash", false);
 
         this.betterLogging = config.getBoolean("server.betterLogging", false);
         this.fixedBackupTime = this.backupTime > -1;
@@ -258,7 +260,8 @@ public class Config {
                 "ftp.pathSeparatorSymbol", "ftp.auth.password", "ftp.auth.username", "ftp.enabled", "ftp.maxBackupsNumber", "ftp.maxBackupsWeight",
                 "ftp.zipArchive", "ftp.zipCompressionLevel", "server.checkUpdates", "local.autoBackup", "ftp.autoBackup", "sftp.autoBackup",
                 "backup.deleteBrokenBackups", "backup.backupFileNameFormat", "googleDrive.enabled", "googleDrive.autoBackup",
-                "googleDrive.auth.tokensFolderPath", "googleDrive.auth.credentialsFilePath", "googleDrive.backupsFolderId");
+                "googleDrive.auth.tokensFolderPath", "googleDrive.auth.credentialsFilePath", "googleDrive.backupsFolderId", "googleDrive.createBackuperFolder",
+                "googleDrive.moveFilesToTrash");
 
         for (String configField : configFields) {
             if (isConfigFileOk && !config.contains(configField)) {
@@ -331,6 +334,8 @@ public class Config {
             newConfig.set("googleDrive.backupsFolderId", this.googleDriveConfig.backupsFolderId);
             newConfig.set("googleDrive.auth.credentialsFilePath", googleDriveCredentialsFilePath);
             newConfig.set("googleDrive.auth.tokenFolderPath", googleDriveTokenFolder);
+            newConfig.set("googleDrive.createBackuperFolder", this.googleDriveConfig.createBackuperFolder);
+            newConfig.set("googleDrive.moveFileToTrash", this.googleDriveConfig.moveFilesToTrash);
 
             newConfig.set("lastBackup", this.lastBackup);
             newConfig.set("lastChange", this.lastChange);

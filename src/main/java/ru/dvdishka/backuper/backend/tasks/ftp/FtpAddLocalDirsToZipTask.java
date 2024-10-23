@@ -195,6 +195,5 @@ public class FtpAddLocalDirsToZipTask extends Task {
     @Override
     public void cancel() {
         cancelled = true;
-        currentProgress = maxProgress;
     }
 }

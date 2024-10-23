@@ -55,6 +55,6 @@ public class SetWorldsReadOnlyTask extends Task {
 
     @Override
     public void cancel() {
-
+        cancelled = true;
     }
 }

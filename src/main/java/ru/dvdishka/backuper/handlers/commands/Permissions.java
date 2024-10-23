@@ -23,6 +23,10 @@ public enum Permissions {
     FTP_DELETE("backuper.ftp.list.delete"),
     FTP_COPY_TO_LOCAL("backuper.ftp.list.copytolocal"),
 
+    GOOGLE_DRIVE_LIST("backuper.googledrive.list"),
+    GOOGLE_DRIVE_DELETE("backuper.googledrive.list.delete"),
+    GOOGLE_DRIVE_COPY_TO_LOCAL("backuper.googledrive.list.copytolocal"),
+
     CONFIG("backuper.config"),
     RELOAD("backuper.config.reload"),
 

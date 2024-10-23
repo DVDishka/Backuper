@@ -114,8 +114,6 @@ public class FtpSendFileFolderTask extends Task {
         for (CompletableFuture<Void> task : ftpTasks) {
             task.cancel(true);
         }
-
-        currentProgress = maxProgress;
     }
 
     private void sendFolder(File localDirToSend, String remotePath) {

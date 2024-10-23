@@ -6,7 +6,6 @@ import com.jcraft.jsch.Session;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.backend.classes.SftpProgressMonitor;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.utils.SftpUtils;
@@ -222,9 +221,7 @@ public class SftpSendFileFolderTask extends Task {
         cancelled = true;
 
         for (CompletableFuture<Void> sftpTask : sftpTasks) {
-            sftpTask.cancel(false);
+            sftpTask.cancel(true);
         }
-
-        currentProgress = maxProgress;
     }
 }

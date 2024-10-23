@@ -1,5 +1,5 @@
 # DO NOT CHANGE
-configVersion: 8.0
+configVersion: 9.0
 lastBackup: 0
 lastChange: 0
 
@@ -62,6 +62,8 @@ googleDrive:
   autoBackup: true
 
   backupsFolderId: ''
+  createBackuperFolder: true
+  moveFilesToTrash: false
 
   auth:
     credentialsFilePath: ''

@@ -95,6 +95,9 @@ public class LocalBackup implements Backup {
         return Utils.getFileFolderByteSize(new File(backupFilePath));
     }
 
+    /**
+     * @return Possible values: "(Folder)" "(ZIP)"
+     */
     public String getFileType() {
 
         File backupsFolder = new File(Config.getInstance().getLocalConfig().getBackupsFolder());

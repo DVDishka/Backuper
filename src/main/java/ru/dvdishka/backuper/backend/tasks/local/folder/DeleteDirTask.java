@@ -110,7 +110,5 @@ public class DeleteDirTask extends Task {
 
     public void cancel() {
         cancelled = true;
-
-        currentProgress = maxProgress;
     }
 }

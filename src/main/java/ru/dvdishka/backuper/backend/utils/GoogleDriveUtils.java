@@ -9,6 +9,9 @@ import com.google.api.client.extensions.java6.auth.oauth2.VerificationCodeReceiv
 import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
+import com.google.api.client.googleapis.media.MediaHttpDownloaderProgressListener;
+import com.google.api.client.googleapis.media.MediaHttpUploader;
+import com.google.api.client.googleapis.media.MediaHttpUploaderProgressListener;
 import com.google.api.client.http.FileContent;
 import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpRequestInitializer;
@@ -19,16 +22,18 @@ import com.google.api.client.util.Preconditions;
 import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.DriveScopes;
+import com.google.api.services.drive.model.FileList;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
+import ru.dvdishka.backuper.backend.classes.exceptions.NotAuthorizedException;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.exceptions.NotAuthorizedException;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -41,7 +46,6 @@ public class GoogleDriveUtils {
     private static final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
     private static final List<String> DRIVE_SCOPES = List.of(DriveScopes.DRIVE_FILE);
     private static final NetHttpTransport NET_HTTP_TRANSPORT = new NetHttpTransport();
-    private static final AuthorizationCodeInstalledApp.Browser BROWSER = new AuthorizationCodeInstalledApp.DefaultBrowser();
 
     private static final String FOLDER_MIME_TYPE = "application/vnd.google-apps.folder";
 
@@ -93,7 +97,7 @@ public class GoogleDriveUtils {
                 .build();
         // PORT MUST BE UNLOCKED
         LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(8888).build();
-        Credential credential = new MyAuthorizationCodeInstalledApp(flow, receiver).authorizeForced("user", sender);
+        Credential credential = new MyAuthorizationCodeInstalledApp(flow, receiver).authorize("user", true, sender);
 
         return credential;
     }
@@ -118,7 +122,11 @@ public class GoogleDriveUtils {
                 .build();
     }
 
-    public static String uploadFile(File file, String parentFolderId, CommandSender sender) {
+    /**
+     * @param file Local file to upload
+     * @param parentFolderId GoogleDrive parent folder ID or an empty string
+     **/
+    public static String uploadFile(File file, String parentFolderId, MediaHttpUploaderProgressListener progressListener, CommandSender sender) {
 
         if (!file.exists()) {
             Logger.getLogger().warn("File does not exist: " + file.getAbsolutePath(), sender);
@@ -135,10 +143,14 @@ public class GoogleDriveUtils {
             }
             FileContent driveFileContent = new FileContent("", file);
 
-            com.google.api.services.drive.model.File driveFile = service.files()
+            Drive.Files.Create driveFileCreate = service.files()
                     .create(driveFileMeta, driveFileContent)
-                    .setFields("id, parents")
-                    .execute();
+                    .setFields("id, parents");
+            driveFileCreate.getMediaHttpUploader().setChunkSize(MediaHttpUploader.MINIMUM_CHUNK_SIZE);
+            driveFileCreate.getMediaHttpUploader().setProgressListener(progressListener);
+
+            com.google.api.services.drive.model.File driveFile = driveFileCreate.execute();
+
             return driveFile.getId();
 
         } catch (Exception e) {
@@ -155,7 +167,9 @@ public class GoogleDriveUtils {
 
             com.google.api.services.drive.model.File driveFileMeta = new com.google.api.services.drive.model.File();
             driveFileMeta.setName(folderName);
-            driveFileMeta.setParents(List.of(parentFolderId));
+            if (!Objects.equals(parentFolderId, "")) {
+                driveFileMeta.setParents(List.of(parentFolderId));
+            }
             driveFileMeta.setMimeType(FOLDER_MIME_TYPE);
 
             return service.files().create(driveFileMeta).setFields("id, parents").execute().getId();
@@ -167,7 +181,7 @@ public class GoogleDriveUtils {
         }
     }
 
-    public static InputStream downloadFileStream(String fileId, CommandSender sender) {
+    public static InputStream getDownloadFileStream(String fileId, CommandSender sender) {
 
         try {
             Drive service = getService(sender);
@@ -181,17 +195,16 @@ public class GoogleDriveUtils {
         }
     }
 
-    public static void downloadFile(String fileId, File targetFile, CommandSender sender) {
+    public static void downloadFile(String fileId, File targetFile, MediaHttpDownloaderProgressListener progressListener, CommandSender sender) {
 
-        try (InputStream inputStream = downloadFileStream(fileId, sender); OutputStream outputStream = new FileOutputStream(targetFile)) {
-            assert inputStream != null;
+        try (OutputStream outputStream = new FileOutputStream(targetFile)) {
+            Drive service = getService(sender);
 
-            byte[] buffer = new byte[2048];
-            int length;
+            Drive.Files.Get getDriveFile = service.files()
+                    .get(fileId);
+            getDriveFile.getMediaHttpDownloader().setProgressListener(progressListener);
 
-            while ((length = inputStream.read(buffer)) >= 0) {
-                outputStream.write(buffer, 0, length);
-            }
+            getDriveFile.executeMediaAndDownloadTo(outputStream);
 
         } catch (Exception e) {
             Logger.getLogger().warn("Failed to download file from Google Drive", sender);
@@ -199,79 +212,190 @@ public class GoogleDriveUtils {
         }
     }
 
-    public static void test(CommandSender sender) {
+    public static boolean isFolder(String driveFileId, CommandSender sender) throws FileNotFoundException {
 
-        Logger.getLogger().log("Google Drive: Test started", sender);
-
-        Logger.getLogger().log("Google Drive: File uploading test started", sender);
-        String id = uploadFile(new File("plugins/Backuper/29-06-2024 07-26-40.zip"), "", sender);
-        Logger.getLogger().log("Google Drive: File uploaded", sender);
-
-        Logger.getLogger().log("Google Drive: File downloading test started", sender);
-        downloadFile(id, new File("plugins/Backuper/downloaded-29-06-2024 07-26-40.zip"), sender);
-        Logger.getLogger().log("Google Drive: File downloaded", sender);
-
-        Logger.getLogger().log("Google Drive: Test finished", sender);
-    }
-}
-
-class MyAuthorizationCodeInstalledApp extends AuthorizationCodeInstalledApp {
-
-    public MyAuthorizationCodeInstalledApp(AuthorizationCodeFlow flow, VerificationCodeReceiver receiver) {
-        super(flow, receiver);
-    }
-
-    protected void onAuthorization(AuthorizationCodeRequestUrl authorizationUrl, CommandSender sender) throws IOException {
-        String url = authorizationUrl.build();
-        Preconditions.checkNotNull(url);
-
-        Component message = Component.empty()
-                .append(Component.text("Login using this link:")
-                        .color(TextColor.fromHexString("#129c9b")))
-                .append(Component.text(url)
-                        .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.OPEN_URL, url))
-                        .decorate(TextDecoration.UNDERLINED));
-
-        sender.sendMessage(message);
-    }
-
-    public Credential authorizeForced(String userId, CommandSender sender) throws IOException {
         try {
-            Credential credential = getFlow().loadCredential(userId);
-            if (credential != null
-                    && (credential.getRefreshToken() != null
-                    || credential.getExpiresInSeconds() == null
-                    || credential.getExpiresInSeconds() > 60)) {
-                return credential;
+            Drive service = getService(sender);
+            return service.files().get(driveFileId).execute().getMimeType().equals(FOLDER_MIME_TYPE);
+
+        } catch (Exception e) {
+            Logger.getLogger().warn("Failed to get file type from Google Drive", sender);
+            Logger.getLogger().warn(GoogleDriveUtils.class, e);
+            throw new FileNotFoundException();
+        }
+    }
+
+    private static class MyAuthorizationCodeInstalledApp extends AuthorizationCodeInstalledApp {
+
+        public MyAuthorizationCodeInstalledApp(AuthorizationCodeFlow flow, VerificationCodeReceiver receiver) {
+            super(flow, receiver);
+        }
+
+        protected void onAuthorization(AuthorizationCodeRequestUrl authorizationUrl, CommandSender sender) throws IOException {
+            String url = authorizationUrl.build();
+            Preconditions.checkNotNull(url);
+
+            Component message = Component.empty()
+                    .append(Component.text("Login using this link:")
+                            .color(TextColor.fromHexString("#129c9b")))
+                    .append(Component.text(url)
+                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.OPEN_URL, url))
+                            .decorate(TextDecoration.UNDERLINED));
+
+            sender.sendMessage(message);
+        }
+
+        public Credential authorize(String userId, boolean force, CommandSender sender) throws IOException {
+            try {
+                if (!force) {
+                    Credential credential = getFlow().loadCredential(userId);
+                    if (credential != null
+                            && (credential.getRefreshToken() != null
+                            || credential.getExpiresInSeconds() == null
+                            || credential.getExpiresInSeconds() > 60)) {
+                        return credential;
+                    }
+                }
+
+                String redirectUri = getReceiver().getRedirectUri();
+                AuthorizationCodeRequestUrl authorizationUrl =
+                        getFlow().newAuthorizationUrl().setRedirectUri(redirectUri);
+                onAuthorization(authorizationUrl, sender);
+
+                String code = getReceiver().waitForCode();
+                TokenResponse response = getFlow().newTokenRequest(code).setRedirectUri(redirectUri).execute();
+
+                return getFlow().createAndStoreCredential(response, userId);
+            } finally {
+                getReceiver().stop();
+            }
+        }
+    }
+
+    /**
+     * @param driveFileId Parent Google Drive file ID. "drive" to get all drive files. "" to get all files
+     **/
+    public static List<com.google.api.services.drive.model.File> ls(String driveFileId, CommandSender sender) {
+
+        try {
+
+            Drive service = getService(sender);
+            String pageToken = null;
+            ArrayList<com.google.api.services.drive.model.File> driveFiles = new ArrayList<>();
+
+            do {
+
+                Drive.Files.List lsRequest = service.files().list()
+                        .setPageToken(pageToken);
+
+                if (driveFileId != null && driveFileId.equals("drive")) {
+                    lsRequest = lsRequest.setSpaces("drive");
+                }
+
+                if (driveFileId != null && !driveFileId.isEmpty() && !driveFileId.equals("drive")) {
+                    lsRequest = lsRequest.setQ("'" + driveFileId + "'" + " in parents");
+                }
+
+                FileList driveFileList = lsRequest.execute();
+
+                driveFiles.addAll(driveFileList.getFiles());
+
+                pageToken = driveFileList.getNextPageToken();
+
+            } while (pageToken != null);
+
+            return driveFiles;
+
+        } catch (Exception e) {
+            Logger.getLogger().warn("Failed to get files list from Google Drive", sender);
+            Logger.getLogger().warn(GoogleDriveUtils.class, e);
+            return List.of();
+        }
+    }
+
+    public static void renameFile(String fileId, String newName, CommandSender sender) {
+
+        try {
+            Drive service = getService(sender);
+
+            service.files().update(fileId, new com.google.api.services.drive.model.File().setName(newName)).setFields("name").execute();
+
+        } catch (Exception e) {
+            Logger.getLogger().warn("Failed to rename Google Drive file", sender);
+            Logger.getLogger().warn(GoogleDriveUtils.class, e);
+        }
+    }
+
+    public static void deleteFile(String fileId, CommandSender sender) {
+
+        try {
+
+            Drive service = getService(sender);
+
+            if (Config.getInstance().getGoogleDriveConfig().isMoveFilesToTrash()) {
+
+                com.google.api.services.drive.model.File driveFile = service.files().get(fileId).execute().setTrashed(true);
+                service.files().update(fileId, driveFile).execute();
+
+            } else {
+                service.files().delete(fileId).execute();
             }
 
-            String redirectUri = getReceiver().getRedirectUri();
-            AuthorizationCodeRequestUrl authorizationUrl =
-                    getFlow().newAuthorizationUrl().setRedirectUri(redirectUri);
-            onAuthorization(authorizationUrl, sender);
-
-            String code = getReceiver().waitForCode();
-            TokenResponse response = getFlow().newTokenRequest(code).setRedirectUri(redirectUri).execute();
-
-            return getFlow().createAndStoreCredential(response, userId);
-        } finally {
-            getReceiver().stop();
+        } catch (Exception e) {
+            Logger.getLogger().warn("Failed to delete Google Drive file", sender);
+            Logger.getLogger().warn(GoogleDriveUtils.class, e);
         }
     }
 
-    public Credential authorize(String userId, CommandSender sender) throws IOException {
+    public static com.google.api.services.drive.model.File getFileByName(String fileName, String parentId, CommandSender sender) {
         try {
-            String redirectUri = getReceiver().getRedirectUri();
-            AuthorizationCodeRequestUrl authorizationUrl =
-                    getFlow().newAuthorizationUrl().setRedirectUri(redirectUri);
-            onAuthorization(authorizationUrl, sender);
+            String q = "";
 
-            String code = getReceiver().waitForCode();
-            TokenResponse response = getFlow().newTokenRequest(code).setRedirectUri(redirectUri).execute();
+            q += "name = '" + fileName + "'";
 
-            return getFlow().createAndStoreCredential(response, userId);
-        } finally {
-            getReceiver().stop();
+            Drive.Files.List lsRequest = GoogleDriveUtils.getService(sender).files().list();
+
+            if (parentId != null && !parentId.isEmpty()) {
+                q += " and '" + Config.getInstance().getGoogleDriveConfig().getBackupsFolderId() + "' in parents";
+            }
+
+            lsRequest.setQ(q);
+
+            FileList driveFileList = lsRequest.execute();
+            return !driveFileList.getFiles().isEmpty() ? driveFileList.getFiles().get(0) : null;
+
+        } catch (Exception e) {
+            Logger.getLogger().warn("Failed to get fileId from Google Drive. Check if Google Account is linked", sender);
+            Logger.getLogger().warn(GoogleDriveUtils.class, e);
+            return null;
         }
+    }
+
+    public static long getFileSize(String fileId, CommandSender sender) {
+        try {
+            return getService(sender).files().get(fileId).execute().getSize();
+        } catch (Exception e) {
+            Logger.getLogger().warn("Failed to get file size from Google Drive. Check if Google Drive account is linked", sender);
+            Logger.getLogger().warn(GoogleDriveUtils.class, e);
+            return 0;
+        }
+    }
+
+    public static void test(CommandSender sender) {
+
+        /*
+        Logger.getLogger().log("Google Drive: Test started", sender);
+
+        Logger.getLogger().log("Google Drive: ls test started", sender);
+        for (com.google.api.services.drive.model.File driveFile : ls("1b9e-n3eTGFuDcl08-cfylR1ckdeQJaLr", sender)) {
+            Logger.getLogger().warn(driveFile.getName() + " " + driveFile.getId(), sender);
+        }
+        Logger.getLogger().log("Google Drive: ls test finished", sender);
+
+        Logger.getLogger().log("Google Drive: File uploading test started", sender);
+        new GoogleDriveSendFileFolderTask(new File("plugins/Backuper/29-06-2024 07-26-40"), "", true, false, true, List.of(), sender).run();
+        Logger.getLogger().log("Google Drive: File uploaded", sender);
+
+        Logger.getLogger().log("Google Drive: Test finished", sender);*/
     }
 }

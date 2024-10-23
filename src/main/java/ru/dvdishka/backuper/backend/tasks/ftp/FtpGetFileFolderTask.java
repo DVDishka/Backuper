@@ -185,7 +185,5 @@ public class FtpGetFileFolderTask extends Task {
         for (CompletableFuture<Void> task : ftpTasks) {
             task.cancel(true);
         }
-
-        currentProgress = maxProgress;
     }
 }

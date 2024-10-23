@@ -104,6 +104,9 @@ public class FtpBackup implements Backup {
         return getByteSize(sender) / 1024 / 1024;
     }
 
+    /**
+     * @return Possible values: "(Folder)" "(ZIP)"
+     */
     public String getFileType() {
         if (FtpUtils.ls(Config.getInstance().getFtpConfig().getBackupsFolder(), null).contains(backupName + ".zip")) {
             return "(ZIP)";

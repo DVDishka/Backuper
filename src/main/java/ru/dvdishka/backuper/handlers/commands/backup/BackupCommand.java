@@ -8,10 +8,7 @@ import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.common.BackupTask;
-import ru.dvdishka.backuper.backend.utils.FtpUtils;
-import ru.dvdishka.backuper.backend.utils.SftpUtils;
-import ru.dvdishka.backuper.backend.utils.UIUtils;
-import ru.dvdishka.backuper.backend.utils.Utils;
+import ru.dvdishka.backuper.backend.utils.*;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
 import ru.dvdishka.backuper.handlers.commands.task.status.StatusCommand;
@@ -29,6 +26,7 @@ public class BackupCommand extends Command {
     private boolean isLocal = false;
     private boolean isFtp = false;
     private boolean isSftp = false;
+    private boolean isGoogleDrive = false;
 
     public BackupCommand(CommandSender sender, CommandArguments args, String afterBackup) {
 
@@ -48,6 +46,9 @@ public class BackupCommand extends Command {
             }
             if (s.equals("sftp")) {
                 isSftp = true;
+            }
+            if (s.equals("googleDrive")) {
+                isGoogleDrive = true;
             }
         }
     }
@@ -70,6 +71,9 @@ public class BackupCommand extends Command {
             if (s.equals("sftp")) {
                 isSftp = true;
             }
+            if (s.equals("googleDrive")) {
+                isGoogleDrive = true;
+            }
         }
     }
 
@@ -87,7 +91,7 @@ public class BackupCommand extends Command {
             return;
         }
 
-        if (!isLocal && !isFtp && !isSftp) {
+        if (!isLocal && !isFtp && !isSftp && !isGoogleDrive) {
             cancelSound();
             returnFailure("Wrong storage types!");
             return;
@@ -108,6 +112,12 @@ public class BackupCommand extends Command {
         if (isSftp && !SftpUtils.checkConnection(sender)) {
             cancelSound();
             returnFailure("SFTP storage is disabled or unavailable!");
+            return;
+        }
+
+        if (isGoogleDrive && (!Config.getInstance().getGoogleDriveConfig().isEnabled() || !GoogleDriveUtils.isAuthorized(sender))) {
+            cancelSound();
+            returnFailure("Google Drive storage is disabled or account is not linked!");
             return;
         }
 
@@ -136,7 +146,7 @@ public class BackupCommand extends Command {
             StatusCommand.sendTaskStartedMessage("Backup", sender);
 
             Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                new BackupTask(afterBackup, false, isLocal, isFtp, isSftp, true, backupPermissions, sender).run();
+                new BackupTask(afterBackup, false, isLocal, isFtp, isSftp, isGoogleDrive, true, backupPermissions, sender).run();
                 sendMessage("Backup task completed");
             });
 

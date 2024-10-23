@@ -30,6 +30,7 @@ import ru.dvdishka.backuper.backend.tasks.common.DeleteOldBackupsTask;
 import ru.dvdishka.backuper.backend.utils.*;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
 import ru.dvdishka.backuper.handlers.commands.backup.BackupCommand;
+import ru.dvdishka.backuper.handlers.commands.googleDrive.GoogleDriveLinkCommand;
 import ru.dvdishka.backuper.handlers.commands.list.ListCommand;
 import ru.dvdishka.backuper.handlers.commands.menu.MenuCommand;
 import ru.dvdishka.backuper.handlers.commands.menu.copyToFtp.CopyToFtpCommand;
@@ -234,19 +235,33 @@ public class Initialization implements Listener {
                                             if (Config.getInstance().getSftpConfig().isEnabled()) {
                                                 suggestions.add("sftp");
                                             }
+                                            if (Config.getInstance().getGoogleDriveConfig().isEnabled()) {
+                                                suggestions.add("googleDrive");
+                                            }
+                                            int storageCount = suggestions.size();
 
-                                            if (Config.getInstance().getLocalConfig().isEnabled() && Config.getInstance().getFtpConfig().isEnabled()) {
-                                                suggestions.add("local-ftp");
-                                            }
-                                            if (Config.getInstance().getLocalConfig().isEnabled() && Config.getInstance().getSftpConfig().isEnabled()) {
-                                                suggestions.add("local-sftp");
-                                            }
-                                            if (Config.getInstance().getFtpConfig().isEnabled() && Config.getInstance().getSftpConfig().isEnabled()) {
-                                                suggestions.add("ftp-sftp");
+                                            for (int i = 0; i < storageCount; i++) {
+                                                for (int j = i + 1; j < storageCount; j++) {
+                                                    suggestions.add(suggestions.get(i) + "-" + suggestions.get(j));
+                                                }
                                             }
 
-                                            if (Config.getInstance().getLocalConfig().isEnabled() && Config.getInstance().getSftpConfig().isEnabled() && Config.getInstance().getFtpConfig().isEnabled()) {
-                                                suggestions.add("local-ftp-sftp");
+                                            for (int i = 0; i < storageCount; i++) {
+                                                for (int j = i + 1; j < storageCount; j++) {
+                                                    for (int k = j + 1; k < storageCount; k++) {
+                                                        suggestions.add(suggestions.get(i) + "-" + suggestions.get(j) + "-" + suggestions.get(k));
+                                                    }
+                                                }
+                                            }
+
+                                            for (int i = 0; i < storageCount; i++) {
+                                                for (int j = i + 1; j < storageCount; j++) {
+                                                    for (int k = j + 1; k < storageCount; k++) {
+                                                        for (int l = k + 1; l < storageCount; l++) {
+                                                            suggestions.add(suggestions.get(i) + "-" + suggestions.get(j) + "-" + suggestions.get(k));
+                                                        }
+                                                    }
+                                                }
                                             }
 
                                             return suggestions;
@@ -754,6 +769,22 @@ public class Initialization implements Listener {
                 )
         ;
         backupTaskCommandTree.register();
+
+        CommandTree backupGoogleDriveCommandTree = new CommandTree("backuper").withPermission(Permissions.BACKUPER.getPermission());
+        backupGoogleDriveCommandTree
+                .then(new LiteralArgument("googleDrive").withRequirement((sender) -> Config.getInstance().getGoogleDriveConfig().isEnabled())
+                        .then(new LiteralArgument("link")
+
+                                .executes((sender, args) -> {
+
+                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                        new GoogleDriveLinkCommand(sender, args).execute();
+                                    });
+                                })
+                        )
+                )
+        ;
+        backupGoogleDriveCommandTree.register();
     }
 
     public static void initEventHandlers() {

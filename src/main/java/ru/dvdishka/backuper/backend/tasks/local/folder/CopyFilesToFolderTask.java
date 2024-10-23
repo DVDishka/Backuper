@@ -161,7 +161,5 @@ public class CopyFilesToFolderTask extends Task {
         for (CompletableFuture<Void> task : copyTasks) {
             task.cancel(true);
         }
-
-        currentProgress = maxProgress;
     }
 }

@@ -66,6 +66,19 @@ permissions:
               backuper.ftp.list.copytolocal:
                 default: op
 
+      backuper.googledrive.*:
+        default: false
+        children:
+          backuper.googledrive.list.*:
+            default: false
+            children:
+              backuper.googledrive.list:
+                default: op
+              backuper.googledrive.list.delete:
+                default: op
+              backuper.googledrive.list.copytolocal:
+                default: op
+
       backuper.config.*:
         default: false
         children:

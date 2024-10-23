@@ -1,6 +1,6 @@
-package ru.dvdishka.backuper.backend.classes;
+package ru.dvdishka.backuper.backend.tasks.sftp;
 
-public class SftpProgressMonitor implements com.jcraft.jsch.SftpProgressMonitor {
+class SftpProgressMonitor implements com.jcraft.jsch.SftpProgressMonitor {
 
     private int operationCode;
     private String sourceDir;

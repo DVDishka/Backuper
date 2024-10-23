@@ -6,7 +6,6 @@ import com.jcraft.jsch.SftpATTRS;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.backend.classes.SftpProgressMonitor;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.Task;
@@ -196,7 +195,7 @@ public class SftpGetFileFolderTask extends Task {
 
         long currentProgress = 0;
 
-        for (ru.dvdishka.backuper.backend.classes.SftpProgressMonitor progressMonitor : progressMonitors) {
+        for (SftpProgressMonitor progressMonitor : progressMonitors) {
             currentProgress += progressMonitor.getCurrentProgress();
         }
 
@@ -215,7 +214,5 @@ public class SftpGetFileFolderTask extends Task {
         for (CompletableFuture<Void> task : sftpTasks) {
             task.cancel(true);
         }
-
-        currentProgress = dirSize;
     }
 }

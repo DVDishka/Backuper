@@ -10,13 +10,11 @@ import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.tasks.ftp.FtpAddLocalDirsToZipTask;
 import ru.dvdishka.backuper.backend.tasks.ftp.FtpSendFileFolderTask;
+import ru.dvdishka.backuper.backend.tasks.googleDrive.GoogleDriveSendFileFolderTask;
 import ru.dvdishka.backuper.backend.tasks.local.folder.CopyFilesToFolderTask;
 import ru.dvdishka.backuper.backend.tasks.local.zip.tozip.AddDirToZipTask;
 import ru.dvdishka.backuper.backend.tasks.sftp.SftpSendFileFolderTask;
-import ru.dvdishka.backuper.backend.utils.FtpUtils;
-import ru.dvdishka.backuper.backend.utils.SftpUtils;
-import ru.dvdishka.backuper.backend.utils.UIUtils;
-import ru.dvdishka.backuper.backend.utils.Utils;
+import ru.dvdishka.backuper.backend.utils.*;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.io.File;
@@ -36,12 +34,14 @@ public class BackupTask extends Task {
     private final boolean isLocal;
     private boolean isFtp;
     private boolean isSftp;
+    private boolean isGoogleDrive;
 
     private final long deleteProgressMultiplier = 1;
     private final long copyProgressMultiplier = 5;
     private final long zipProgressMultiplier = 10;
     private final long sendSftpProgressMultiplier = 10;
     private final long sendFtpProgressMultiplier = 10;
+    private final long sendGoogleDriveProgressMultiplier = 10;
     private final long zipFtpProgressMultiplier = 15;
 
     private File backupDir;
@@ -51,6 +51,9 @@ public class BackupTask extends Task {
 
     private List<Task> tasks = new ArrayList<>();
 
+    /**
+     * Storage will be used if it is enabled and autoBackup for this storage is enabled too
+     **/
     public BackupTask(String afterBackup, boolean isAutoBackup, boolean setLocked, List<Permissions> permission, CommandSender sender) {
 
         super(taskName, setLocked, permission, sender);
@@ -59,9 +62,10 @@ public class BackupTask extends Task {
         this.isLocal = Config.getInstance().getLocalConfig().isAutoBackup() && Config.getInstance().getLocalConfig().isEnabled();
         this.isFtp = Config.getInstance().getFtpConfig().isAutoBackup() && Config.getInstance().getFtpConfig().isEnabled();
         this.isSftp = Config.getInstance().getSftpConfig().isAutoBackup() && Config.getInstance().getSftpConfig().isEnabled();
+        this.isGoogleDrive = Config.getInstance().getGoogleDriveConfig().isAutoBackup() && Config.getInstance().getGoogleDriveConfig().isEnabled();
     }
 
-    public BackupTask(String afterBackup, boolean isAutoBackup, boolean isLocal, boolean isFtp, boolean isSftp, boolean setLocked, List<Permissions> permission, CommandSender sender) {
+    public BackupTask(String afterBackup, boolean isAutoBackup, boolean isLocal, boolean isFtp, boolean isSftp, boolean isGoogleDrive, boolean setLocked, List<Permissions> permission, CommandSender sender) {
 
         super(taskName, setLocked, permission, sender);
         this.afterBackup = afterBackup.toUpperCase();
@@ -69,6 +73,7 @@ public class BackupTask extends Task {
         this.isLocal = isLocal;
         this.isFtp = isFtp;
         this.isSftp = isSftp;
+        this.isGoogleDrive = isGoogleDrive;
     }
 
 
@@ -122,6 +127,10 @@ public class BackupTask extends Task {
                 Logger.getLogger().warn("Failed to connect to SFTP server during the backup task. Skipping this storage...", sender);
                 isSftp = false;
             }
+            if (!cancelled && isGoogleDrive && !GoogleDriveUtils.isAuthorized(sender)) {
+                Logger.getLogger().warn("Failed to connect to Google Drive or Google account is not linked!", sender);
+                isGoogleDrive = false;
+            }
 
             Logger.getLogger().devLog("Backup task has been started");
 
@@ -130,6 +139,9 @@ public class BackupTask extends Task {
                     continue;
                 }
                 if (task instanceof SftpSendFileFolderTask && !isSftp) {
+                    continue;
+                }
+                if (task instanceof GoogleDriveSendFileFolderTask && !isGoogleDrive) {
                     continue;
                 }
                 if (!cancelled || task instanceof SetWorldsWritableTask) {
@@ -206,6 +218,21 @@ public class BackupTask extends Task {
                         backupName.replace(" in progress", "")), sender);
 
                 Logger.getLogger().devLog("The Rename \"in progress\" Folder SFTP task has been finished");
+            }
+
+            // RENAME GOOGLE DRIVE TASK
+            if (!cancelled && isGoogleDrive) {
+
+                Logger.getLogger().devLog("The Rename \"in progress\" Folder GoogleDrive task has been started");
+
+                try {
+                    GoogleDriveUtils.renameFile(GoogleDriveUtils.getFileByName(backupName, Config.getInstance().getGoogleDriveConfig().getBackupsFolderId(), sender).getId(), backupName.replace(" in progress", ""), sender);
+                } catch (Exception e) {
+                    Logger.getLogger().warn("Failed to rename Google Drive file " + backupName, sender);
+                    Logger.getLogger().warn(this.getClass(), e);
+                }
+
+                Logger.getLogger().devLog("The Rename \"in progress\" Folder GoogleDrive task has been finished");
             }
 
             // UPDATE VARIABLES
@@ -290,6 +317,9 @@ public class BackupTask extends Task {
             }
             if (!cancelled && isSftp) {
                 prepareSftpTask();
+            }
+            if (!cancelled && isGoogleDrive) {
+                prepareGoogleDriveTask();
             }
 
             tasks.add(new SetWorldsWritableTask(false, permissions, sender));
@@ -569,6 +599,76 @@ public class BackupTask extends Task {
         }
     }
 
+    public void prepareGoogleDriveTask() {
+
+        try {
+
+            if (cancelled) {
+                return;
+            }
+
+            String backupDriveFileId = GoogleDriveUtils.createFolder(backupName, Config.getInstance().getGoogleDriveConfig().getBackupsFolderId(), sender);
+
+            for (World world : Bukkit.getWorlds()) {
+
+                if (cancelled) {
+                    break;
+                }
+
+                File worldDir = world.getWorldFolder();
+
+                try {
+                    Task task = new GoogleDriveSendFileFolderTask(worldDir, backupDriveFileId, true,
+                            false, false, permissions, sender);
+                    task.prepareTask();
+
+                    tasks.add(task);
+
+                } catch (Exception e) {
+
+                    Logger.getLogger().warn("Something went wrong when trying to copy files!", sender);
+                    Logger.getLogger().warn(this.getClass(), e);
+                }
+            }
+
+            for (String additionalDirectoryToBackup : Config.getInstance().getAddDirectoryToBackup()) {
+
+                try {
+
+                    if (cancelled) {
+                        break;
+                    }
+
+                    File additionalDirectoryToBackupFile = Paths.get(additionalDirectoryToBackup).toFile();
+                    boolean isExcludedDirectory = Utils.isExcludedDirectory(additionalDirectoryToBackupFile, sender);
+
+                    if (!additionalDirectoryToBackupFile.exists()) {
+                        Logger.getLogger().warn("addDirectoryToBackup \"" + additionalDirectoryToBackupFile.getPath() + "\" does not exist!");
+                        continue;
+                    }
+
+                    if (isExcludedDirectory) {
+                        continue;
+                    }
+
+                    Task task = new GoogleDriveSendFileFolderTask(additionalDirectoryToBackupFile, backupDriveFileId,
+                            true, false, false, permissions, sender);
+                    task.prepareTask();
+
+                    tasks.add(task);
+
+                } catch (Exception e) {
+                    Logger.getLogger().warn("Something went wrong when trying to backup an additional directory \"" + additionalDirectoryToBackup + "\"", sender);
+                    Logger.getLogger().warn(this.getClass(), e);
+                }
+            }
+
+        } catch (Exception e) {
+            Logger.getLogger().warn("Something went wrong while trying to prepare Google Drive backup task");
+            Logger.getLogger().warn(this.getClass(), e);
+        }
+    }
+
     @Override
     public long getTaskCurrentProgress() {
 
@@ -600,6 +700,9 @@ public class BackupTask extends Task {
             }
             if (task instanceof FtpAddLocalDirsToZipTask) {
                 taskProgressMultiplier = zipFtpProgressMultiplier;
+            }
+            if (task instanceof GoogleDriveSendFileFolderTask) {
+                taskProgressMultiplier = sendGoogleDriveProgressMultiplier;
             }
 
             currentProgress += currentTaskProgress * taskProgressMultiplier;
@@ -635,6 +738,9 @@ public class BackupTask extends Task {
             }
             if (task instanceof FtpAddLocalDirsToZipTask) {
                 taskProgressMultiplier = zipFtpProgressMultiplier;
+            }
+            if (task instanceof GoogleDriveSendFileFolderTask) {
+                taskProgressMultiplier = sendGoogleDriveProgressMultiplier;
             }
 
             maxProgress += maxTaskProgress * taskProgressMultiplier;

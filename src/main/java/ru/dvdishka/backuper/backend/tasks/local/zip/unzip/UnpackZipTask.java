@@ -146,6 +146,5 @@ public class UnpackZipTask extends Task {
     @Override
     public void cancel() {
         cancelled = true;
-        currentProgress = maxProgress;
     }
 }

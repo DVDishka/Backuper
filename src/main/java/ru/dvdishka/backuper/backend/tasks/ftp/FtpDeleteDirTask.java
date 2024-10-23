@@ -84,7 +84,6 @@ public class FtpDeleteDirTask extends Task {
     @Override
     public void cancel() {
         cancelled = true;
-        currentProgress = maxProgress;
     }
 
     private void deleteDir(String remoteDirToDelete) {
