@@ -90,7 +90,7 @@ public class GoogleDriveGetFileFolderTask extends Task {
     @Override
     public void prepareTask() {
         try {
-            dirSize = GoogleDriveUtils.getFileSize(sourceDirId, sender);
+            dirSize = GoogleDriveUtils.getFileByteSize(sourceDirId, sender);
         } catch (Exception e) {
             Logger.getLogger().warn("Failed to get directory size from Google Drive", e);
             Logger.getLogger().warn(this.getClass(), e);

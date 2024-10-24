@@ -69,14 +69,14 @@ public class Backuper extends JavaPlugin {
         Initialization.checkPluginVersion();
         Initialization.sendIssueToGitHub();
 
-        /*Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+        Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
             try {
                 GoogleDriveUtils.returnCredentialIfAuthorized(Bukkit.getConsoleSender());
                 GoogleDriveUtils.test(null);
             } catch (Exception e) {
                 Logger.getLogger().warn(this.getClass(), e);
             }
-        });*/
+        });
         Logger.getLogger().log("Backuper plugin has been enabled!");
     }
 

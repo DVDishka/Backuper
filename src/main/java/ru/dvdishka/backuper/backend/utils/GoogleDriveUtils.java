@@ -33,9 +33,7 @@ import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class GoogleDriveUtils {
 
@@ -76,7 +74,7 @@ public class GoogleDriveUtils {
             return null;
 
         } catch (Exception e) {
-            Logger.getLogger().warn("Failed to authorize user in Google Drive");
+            Logger.getLogger().warn("Failed to authorize user in Google Drive", sender);
             Logger.getLogger().warn(GoogleDriveUtils.class, e);
             return null;
         }
@@ -136,7 +134,11 @@ public class GoogleDriveUtils {
         try {
             Drive service = getService(sender);
 
+            Map<String, String> fileAppProperties = new HashMap<>();
+            //fileAppProperties.put("backuper", "true");
+
             com.google.api.services.drive.model.File driveFileMeta = new com.google.api.services.drive.model.File();
+            driveFileMeta.setAppProperties(fileAppProperties);
             driveFileMeta.setName(file.getName());
             if (!Objects.equals(parentFolderId, "")) {
                 driveFileMeta.setParents(List.of(parentFolderId));
@@ -145,7 +147,7 @@ public class GoogleDriveUtils {
 
             Drive.Files.Create driveFileCreate = service.files()
                     .create(driveFileMeta, driveFileContent)
-                    .setFields("id, parents");
+                    .setFields("id, parents, appProperties");
             driveFileCreate.getMediaHttpUploader().setChunkSize(MediaHttpUploader.MINIMUM_CHUNK_SIZE);
             driveFileCreate.getMediaHttpUploader().setProgressListener(progressListener);
 
@@ -165,14 +167,18 @@ public class GoogleDriveUtils {
         try {
             Drive service = getService(sender);
 
+            Map<String, String> fileAppProperties = new HashMap<>();
+            //fileAppProperties.put("backuper", "true");
+
             com.google.api.services.drive.model.File driveFileMeta = new com.google.api.services.drive.model.File();
             driveFileMeta.setName(folderName);
+            driveFileMeta.setAppProperties(fileAppProperties);
             if (!Objects.equals(parentFolderId, "")) {
                 driveFileMeta.setParents(List.of(parentFolderId));
             }
             driveFileMeta.setMimeType(FOLDER_MIME_TYPE);
 
-            return service.files().create(driveFileMeta).setFields("id, parents").execute().getId();
+            return service.files().create(driveFileMeta).setFields("appProperties, id, parents").execute().getId();
 
         } catch (Exception e) {
             Logger.getLogger().warn("Failed to create folder in Google Drive", sender);
@@ -216,7 +222,10 @@ public class GoogleDriveUtils {
 
         try {
             Drive service = getService(sender);
-            return service.files().get(driveFileId).execute().getMimeType().equals(FOLDER_MIME_TYPE);
+            return service.files().get(driveFileId)
+                    .execute()
+                    .getMimeType()
+                    .equals(FOLDER_MIME_TYPE);
 
         } catch (Exception e) {
             Logger.getLogger().warn("Failed to get file type from Google Drive", sender);
@@ -287,13 +296,15 @@ public class GoogleDriveUtils {
 
                 Drive.Files.List lsRequest = service.files().list()
                         .setPageToken(pageToken);
+                String q = "appProperties has { key='backuper' and value='true' }";
 
                 if (driveFileId != null && driveFileId.equals("drive")) {
                     lsRequest = lsRequest.setSpaces("drive");
                 }
 
                 if (driveFileId != null && !driveFileId.isEmpty() && !driveFileId.equals("drive")) {
-                    lsRequest = lsRequest.setQ("'" + driveFileId + "'" + " in parents");
+                    q += " and '" + driveFileId + "'" + " in parents";
+                    lsRequest = lsRequest.setQ(q);
                 }
 
                 FileList driveFileList = lsRequest.execute();
@@ -318,7 +329,10 @@ public class GoogleDriveUtils {
         try {
             Drive service = getService(sender);
 
-            service.files().update(fileId, new com.google.api.services.drive.model.File().setName(newName)).setFields("name").execute();
+            service.files().update(fileId, new com.google.api.services.drive.model.File()
+                    .setName(newName))
+                    .setFields("name")
+                    .execute();
 
         } catch (Exception e) {
             Logger.getLogger().warn("Failed to rename Google Drive file", sender);
@@ -335,7 +349,7 @@ public class GoogleDriveUtils {
             if (Config.getInstance().getGoogleDriveConfig().isMoveFilesToTrash()) {
 
                 com.google.api.services.drive.model.File driveFile = service.files().get(fileId).execute().setTrashed(true);
-                service.files().update(fileId, driveFile).execute();
+                service.files().update(fileId, driveFile).setFields("trashed").execute();
 
             } else {
                 service.files().delete(fileId).execute();
@@ -352,6 +366,7 @@ public class GoogleDriveUtils {
             String q = "";
 
             q += "name = '" + fileName + "'";
+            q += " and appProperties has { key='backuper' and value='true' }";
 
             Drive.Files.List lsRequest = GoogleDriveUtils.getService(sender).files().list();
 
@@ -371,9 +386,23 @@ public class GoogleDriveUtils {
         }
     }
 
-    public static long getFileSize(String fileId, CommandSender sender) {
+    public static long getFileByteSize(String fileId, CommandSender sender) {
         try {
-            return getService(sender).files().get(fileId).execute().getSize();
+
+            if (isFolder(fileId, sender)) {
+
+                long size = 0;
+
+                for (com.google.api.services.drive.model.File file : ls(fileId, sender)) {
+                    size += getFileByteSize(file.getId(), sender);
+                }
+
+                return size;
+
+            } else {
+                return getService(sender).files().get(fileId).execute().getSize();
+            }
+
         } catch (Exception e) {
             Logger.getLogger().warn("Failed to get file size from Google Drive. Check if Google Drive account is linked", sender);
             Logger.getLogger().warn(GoogleDriveUtils.class, e);

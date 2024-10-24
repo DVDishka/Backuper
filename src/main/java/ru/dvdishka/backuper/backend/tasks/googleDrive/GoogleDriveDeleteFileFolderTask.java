@@ -59,7 +59,7 @@ public class GoogleDriveDeleteFileFolderTask extends Task {
     @Override
     public void prepareTask() {
         isTaskPrepared = true;
-        maxProgress = GoogleDriveUtils.getFileSize(driveFileId, sender);
+        maxProgress = GoogleDriveUtils.getFileByteSize(driveFileId, sender);
     }
 
     @Override
@@ -81,7 +81,7 @@ public class GoogleDriveDeleteFileFolderTask extends Task {
                 }
             }
             else {
-                long fileSize = GoogleDriveUtils.getFileSize(currentDriveFileId, sender);
+                long fileSize = GoogleDriveUtils.getFileByteSize(currentDriveFileId, sender);
                 GoogleDriveUtils.deleteFile(currentDriveFileId, sender);
                 incrementCurrentProgress(fileSize);
             }
