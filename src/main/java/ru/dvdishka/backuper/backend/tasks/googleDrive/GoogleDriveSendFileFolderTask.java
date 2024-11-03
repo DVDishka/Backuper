@@ -20,16 +20,17 @@ public class GoogleDriveSendFileFolderTask extends Task {
 
     private static final String taskName = "GoogleDriveSendFolder";
 
-    private String targetFolderId;
+    private final String targetFolderId;
     private final File sourceDir;
     private final boolean forceExcludedDirs;
     private final boolean createRootDirInTargetDir;
+    private final String rootDirInTargetDirName;
 
     private long dirSize = 0;
     private final ArrayList<CompletableFuture<Void>> tasks = new ArrayList<>();
     private final ArrayList<GoogleDriveUploadProgressListener> progressListeners = new ArrayList<>();
 
-    public GoogleDriveSendFileFolderTask(File sourceDir, String targetDirId, boolean createRootDirInTargetDir,
+    public GoogleDriveSendFileFolderTask(File sourceDir, String targetDirId, String rootDirInTargetDirName, boolean createRootDirInTargetDir,
                                          boolean forceExcludedDirs, boolean setLocked, List<Permissions> permissions,
                                          CommandSender sender) {
         super(taskName, setLocked, permissions, sender);
@@ -38,6 +39,7 @@ public class GoogleDriveSendFileFolderTask extends Task {
         this.targetFolderId = targetDirId;
         this.createRootDirInTargetDir = createRootDirInTargetDir;
         this.forceExcludedDirs = forceExcludedDirs;
+        this.rootDirInTargetDirName = rootDirInTargetDirName;
     }
 
     @Override
@@ -61,12 +63,8 @@ public class GoogleDriveSendFileFolderTask extends Task {
                 return;
             }
 
-            if (!cancelled && createRootDirInTargetDir) {
-                targetFolderId = GoogleDriveUtils.createFolder(sourceDir.getName(), targetFolderId, sender);
-            }
-
             if (!cancelled) {
-                sendFolder(sourceDir, targetFolderId);
+                sendFolder(sourceDir, targetFolderId, true);
             }
 
             if (setLocked) {
@@ -98,7 +96,7 @@ public class GoogleDriveSendFileFolderTask extends Task {
         }
     }
 
-    private void sendFolder(File localDirToSend, String remoteFolderId) {
+    private void sendFolder(File localDirToSend, String remoteFolderId, boolean firstDir) {
 
         if (cancelled) {
             return;
@@ -126,7 +124,11 @@ public class GoogleDriveSendFileFolderTask extends Task {
                 progressListeners.add(progressListener);
 
                 CompletableFuture<Void> task = CompletableFuture.runAsync(() -> {
-                    GoogleDriveUtils.uploadFile(localDirToSend, currentRemoteFolderId, progressListener, sender);
+                    if (!firstDir) {
+                        GoogleDriveUtils.uploadFile(localDirToSend, currentRemoteFolderId, progressListener, sender);
+                    } else {
+                        GoogleDriveUtils.uploadFile(localDirToSend, rootDirInTargetDirName, currentRemoteFolderId, progressListener, sender);
+                    }
                 });
 
                 tasks.add(task);
@@ -147,10 +149,16 @@ public class GoogleDriveSendFileFolderTask extends Task {
         }
         if (localDirToSend.isDirectory() && localDirToSend.listFiles() != null) {
 
-            remoteFolderId = GoogleDriveUtils.createFolder(localDirToSend.getName(), remoteFolderId, sender);
+            if (createRootDirInTargetDir || !firstDir) {
+                if (firstDir) {
+                    remoteFolderId = GoogleDriveUtils.createFolder(rootDirInTargetDirName, remoteFolderId, sender);
+                } else {
+                    remoteFolderId = GoogleDriveUtils.createFolder(localDirToSend.getName(), remoteFolderId, sender);
+                }
+            }
 
             for (File file : localDirToSend.listFiles()) {
-                sendFolder(file, remoteFolderId);
+                sendFolder(file, remoteFolderId, false);
             }
         }
     }

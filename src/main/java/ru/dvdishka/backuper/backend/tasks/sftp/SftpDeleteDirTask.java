@@ -34,12 +34,12 @@ public class SftpDeleteDirTask extends Task {
     public void run() {
 
         try {
-            if (!isTaskPrepared) {
-                prepareTask();
-            }
-
             if (setLocked) {
                 Backuper.lock(this);
+            }
+
+            if (!isTaskPrepared) {
+                prepareTask();
             }
 
             Logger.getLogger().devLog("SftpDeleteDir task has been started");

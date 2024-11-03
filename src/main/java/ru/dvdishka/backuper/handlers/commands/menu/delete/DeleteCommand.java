@@ -3,13 +3,11 @@ package ru.dvdishka.backuper.handlers.commands.menu.delete;
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.backend.classes.Backup;
-import ru.dvdishka.backuper.backend.classes.FtpBackup;
-import ru.dvdishka.backuper.backend.classes.LocalBackup;
-import ru.dvdishka.backuper.backend.classes.SftpBackup;
+import ru.dvdishka.backuper.backend.classes.*;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.backend.utils.GoogleDriveUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.handlers.commands.task.status.StatusCommand;
@@ -31,15 +29,22 @@ public class DeleteCommand extends Command {
 
         if (storage.equals("local") && !Config.getInstance().getLocalConfig().isEnabled() ||
                 storage.equals("sftp") && !Config.getInstance().getSftpConfig().isEnabled() ||
-                storage.equals("ftp") && !Config.getInstance().getFtpConfig().isEnabled()) {
+                storage.equals("ftp") && !Config.getInstance().getFtpConfig().isEnabled() ||
+                storage.equals("googleDrive") && (!Config.getInstance().getGoogleDriveConfig().isEnabled() ||
+                        !GoogleDriveUtils.isAuthorized(sender))) {
             cancelSound();
-            returnFailure(storage + " storage is disabled!");
+            if (!storage.equals("googleDrive")) {
+                returnFailure(storage + " storage is disabled!");
+            } else {
+                returnFailure(storage + " storage is disabled or Google account is not linked!");
+            }
             return;
         }
 
         if (storage.equals("local") && !LocalBackup.checkBackupExistenceByName(backupName) ||
                 storage.equals("sftp") && !SftpBackup.checkBackupExistenceByName(backupName) ||
-                storage.equals("ftp") && !FtpBackup.checkBackupExistenceByName(backupName)) {
+                storage.equals("ftp") && !FtpBackup.checkBackupExistenceByName(backupName) ||
+                storage.equals("googleDrive") && !GoogleDriveBackup.checkBackupExistenceByName(backupName)) {
             cancelSound();
             returnFailure("Backup does not exist!");
             return;
@@ -62,6 +67,9 @@ public class DeleteCommand extends Command {
         if (storage.equals("ftp")) {
             backup = FtpBackup.getInstance(backupName);
         }
+        if (storage.equals("googleDrive")) {
+            backup = GoogleDriveBackup.getInstance(backupName);
+        }
 
         buttonSound();
 
@@ -72,7 +80,6 @@ public class DeleteCommand extends Command {
         Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
 
             try {
-
                 finalBackup.delete(true, sender);
                 successSound();
                 sendMessage("Delete task completed");
@@ -80,6 +87,7 @@ public class DeleteCommand extends Command {
             } catch (Exception e) {
 
                 Logger.getLogger().warn("Delete task has been finished with an exception!", sender);
+                Logger.getLogger().warn(this.getClass(), e);
                 cancelSound();
             }
         });

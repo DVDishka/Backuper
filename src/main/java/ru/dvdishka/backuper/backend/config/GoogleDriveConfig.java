@@ -9,7 +9,6 @@ public class GoogleDriveConfig {
 
     boolean enabled;
     boolean autoBackup;
-    File credentialsFile;
     File tokensFolder;
     String backupsFolderId;
     boolean createBackuperFolder;
@@ -21,10 +20,6 @@ public class GoogleDriveConfig {
 
     public boolean isAutoBackup() {
         return autoBackup;
-    }
-
-    public File getCredentialsFile() {
-        return credentialsFile;
     }
 
     public File getTokensFolder() {

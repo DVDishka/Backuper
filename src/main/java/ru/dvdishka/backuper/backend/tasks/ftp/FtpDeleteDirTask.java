@@ -31,12 +31,12 @@ public class FtpDeleteDirTask extends Task {
 
         try {
 
-            if (!isTaskPrepared) {
-                prepareTask();
-            }
-
             if (setLocked) {
                 Backuper.lock(this);
+            }
+
+            if (!isTaskPrepared) {
+                prepareTask();
             }
 
             Logger.getLogger().devLog("FtpDeleteDir task started");

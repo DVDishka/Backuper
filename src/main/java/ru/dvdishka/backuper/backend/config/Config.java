@@ -145,17 +145,6 @@ public class Config {
         this.googleDriveConfig.enabled = config.getBoolean("googleDrive.enabled", false);
         this.googleDriveConfig.autoBackup = config.getBoolean("googleDrive.autoBackup", true);
         this.googleDriveConfig.backupsFolderId = config.getString("googleDrive.backupsFolderId", "");
-        String googleDriveCredentialsFilePath = config.getString("googleDrive.auth.credentialsFilePath", "");
-        try {
-            this.googleDriveConfig.credentialsFile = new File(googleDriveCredentialsFilePath);
-            assert this.googleDriveConfig.credentialsFile.exists();
-        } catch (Exception e) {
-            this.googleDriveConfig.credentialsFile = null;
-            if (this.googleDriveConfig.enabled) {
-                Logger.getLogger().warn("Wrong googleDrive.auth.credentialsFilePath config field", sender);
-                Logger.getLogger().warn(this.getClass(), e);
-            }
-        }
         String googleDriveTokenFolder = config.getString("googleDrive.auth.tokensFolderPath", "plugins/Backuper/GoogleDrive/tokens");
         this.googleDriveConfig.tokensFolder = new File(googleDriveTokenFolder);
         this.googleDriveConfig.createBackuperFolder = config.getBoolean("googleDrive.createBackuperFolder", true);
@@ -260,7 +249,7 @@ public class Config {
                 "ftp.pathSeparatorSymbol", "ftp.auth.password", "ftp.auth.username", "ftp.enabled", "ftp.maxBackupsNumber", "ftp.maxBackupsWeight",
                 "ftp.zipArchive", "ftp.zipCompressionLevel", "server.checkUpdates", "local.autoBackup", "ftp.autoBackup", "sftp.autoBackup",
                 "backup.deleteBrokenBackups", "backup.backupFileNameFormat", "googleDrive.enabled", "googleDrive.autoBackup",
-                "googleDrive.auth.tokensFolderPath", "googleDrive.auth.credentialsFilePath", "googleDrive.backupsFolderId", "googleDrive.createBackuperFolder",
+                "googleDrive.auth.tokensFolderPath", "googleDrive.backupsFolderId", "googleDrive.createBackuperFolder",
                 "googleDrive.moveFilesToTrash");
 
         for (String configField : configFields) {
@@ -332,7 +321,6 @@ public class Config {
             newConfig.set("googleDrive.enabled", this.googleDriveConfig.enabled);
             newConfig.set("googleDrive.autoBackup", this.googleDriveConfig.autoBackup);
             newConfig.set("googleDrive.backupsFolderId", this.googleDriveConfig.backupsFolderId);
-            newConfig.set("googleDrive.auth.credentialsFilePath", googleDriveCredentialsFilePath);
             newConfig.set("googleDrive.auth.tokenFolderPath", googleDriveTokenFolder);
             newConfig.set("googleDrive.createBackuperFolder", this.googleDriveConfig.createBackuperFolder);
             newConfig.set("googleDrive.moveFileToTrash", this.googleDriveConfig.moveFilesToTrash);

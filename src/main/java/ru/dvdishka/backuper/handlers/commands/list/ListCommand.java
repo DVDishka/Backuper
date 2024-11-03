@@ -9,12 +9,10 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
-import ru.dvdishka.backuper.backend.classes.Backup;
-import ru.dvdishka.backuper.backend.classes.FtpBackup;
-import ru.dvdishka.backuper.backend.classes.LocalBackup;
-import ru.dvdishka.backuper.backend.classes.SftpBackup;
+import ru.dvdishka.backuper.backend.classes.*;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.backend.utils.GoogleDriveUtils;
 import ru.dvdishka.backuper.handlers.commands.Command;
 
 import java.io.File;
@@ -40,9 +38,15 @@ public class ListCommand extends Command {
 
         if (storage.equals("local") && !Config.getInstance().getLocalConfig().isEnabled() ||
                 storage.equals("sftp") && !Config.getInstance().getSftpConfig().isEnabled() ||
-                storage.equals("ftp") && !Config.getInstance().getFtpConfig().isEnabled()) {
+                storage.equals("ftp") && !Config.getInstance().getFtpConfig().isEnabled() ||
+                storage.equals("googleDrive") && (!Config.getInstance().getGoogleDriveConfig().isEnabled() ||
+                        !GoogleDriveUtils.isAuthorized(sender))) {
             cancelSound();
-            returnFailure(storage + " storage is disabled!");
+            if (!storage.equals("googleDrive")) {
+                returnFailure(storage + " storage is disabled!");
+            } else {
+                returnFailure(storage + " storage is disabled or Google account is not linked!");
+            }
             return;
         }
 
@@ -105,6 +109,9 @@ public class ListCommand extends Command {
         }
         if (storage.equals("ftp")) {
             backups = getSortedDecreaseFtpBackupList();
+        }
+        if (storage.equals("googleDrive")) {
+            backups = getSortedDecreaseGoogleDriveBackupList();
         }
 
         if (backups == null) {
@@ -268,48 +275,32 @@ public class ListCommand extends Command {
     private ArrayList<Backup> getSortedDecreaseLocalBackupList() {
 
         ArrayList<Backup> backups = new ArrayList<>(LocalBackup.getBackups());
-
-        for (int firstBackupsIndex = 0; firstBackupsIndex < backups.size(); firstBackupsIndex++) {
-
-            for (int secondBackupsIndex = firstBackupsIndex; secondBackupsIndex < backups.size(); secondBackupsIndex++) {
-
-                if (backups.get(firstBackupsIndex).getLocalDateTime().isBefore(backups.get(secondBackupsIndex).getLocalDateTime())) {
-
-                    Backup save = backups.get(firstBackupsIndex);
-
-                    backups.set(firstBackupsIndex, backups.get(secondBackupsIndex));
-                    backups.set(secondBackupsIndex, save);
-                }
-            }
-        }
-
+        sortBackupsDecrease(backups);
         return backups;
     }
 
     private ArrayList<Backup> getSortedDecreaseFtpBackupList() {
 
         ArrayList<Backup> backups = new ArrayList<>(FtpBackup.getBackups());
-
-        for (int firstBackupsIndex = 0; firstBackupsIndex < backups.size(); firstBackupsIndex++) {
-
-            for (int secondBackupsIndex = firstBackupsIndex; secondBackupsIndex < backups.size(); secondBackupsIndex++) {
-
-                if (backups.get(firstBackupsIndex).getLocalDateTime().isBefore(backups.get(secondBackupsIndex).getLocalDateTime())) {
-
-                    Backup save = backups.get(firstBackupsIndex);
-
-                    backups.set(firstBackupsIndex, backups.get(secondBackupsIndex));
-                    backups.set(secondBackupsIndex, save);
-                }
-            }
-        }
-
+        sortBackupsDecrease(backups);
         return backups;
     }
 
     private ArrayList<Backup> getSortedDecreaseSftpBackupList() {
 
         ArrayList<Backup> backups = new ArrayList<>(SftpBackup.getBackups());
+        sortBackupsDecrease(backups);
+        return backups;
+    }
+
+    private ArrayList<Backup> getSortedDecreaseGoogleDriveBackupList() {
+
+        ArrayList<Backup> backups = new ArrayList<>(GoogleDriveBackup.getBackups());
+        sortBackupsDecrease(backups);
+        return backups;
+    }
+
+    private void sortBackupsDecrease(ArrayList<Backup> backups) {
 
         for (int firstBackupsIndex = 0; firstBackupsIndex < backups.size(); firstBackupsIndex++) {
 
@@ -324,7 +315,5 @@ public class ListCommand extends Command {
                 }
             }
         }
-
-        return backups;
     }
 }

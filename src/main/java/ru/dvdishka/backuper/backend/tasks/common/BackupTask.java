@@ -618,8 +618,8 @@ public class BackupTask extends Task {
                 File worldDir = world.getWorldFolder();
 
                 try {
-                    Task task = new GoogleDriveSendFileFolderTask(worldDir, backupDriveFileId, true,
-                            false, false, permissions, sender);
+                    Task task = new GoogleDriveSendFileFolderTask(worldDir, backupDriveFileId, worldDir.getName(),
+                            true, false, false, permissions, sender);
                     task.prepareTask();
 
                     tasks.add(task);
@@ -651,7 +651,7 @@ public class BackupTask extends Task {
                         continue;
                     }
 
-                    Task task = new GoogleDriveSendFileFolderTask(additionalDirectoryToBackupFile, backupDriveFileId,
+                    Task task = new GoogleDriveSendFileFolderTask(additionalDirectoryToBackupFile, backupDriveFileId, additionalDirectoryToBackupFile.getName(),
                             true, false, false, permissions, sender);
                     task.prepareTask();
 

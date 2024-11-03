@@ -50,7 +50,7 @@ public class DeleteBrokenBackupsTask extends Task {
             }
 
             if (setLocked) {
-                Logger.getLogger().log("DeleteBrokenBackups task completed");
+                Logger.getLogger().log("DeleteBrokenBackups task completed", sender);
                 UIUtils.successSound(sender);
                 Backuper.unlock();
             }

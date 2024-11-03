@@ -10,8 +10,10 @@ import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.classes.Backup;
 import ru.dvdishka.backuper.backend.classes.FtpBackup;
+import ru.dvdishka.backuper.backend.classes.GoogleDriveBackup;
 import ru.dvdishka.backuper.backend.classes.SftpBackup;
 import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.backend.utils.GoogleDriveUtils;
 import ru.dvdishka.backuper.handlers.commands.Command;
 
 public class CopyToLocalConfirmationCommand extends Command {
@@ -28,10 +30,22 @@ public class CopyToLocalConfirmationCommand extends Command {
 
         String backupName = (String) arguments.get("backupName");
 
-        if (storage.equals("sftp") && !Config.getInstance().getLocalConfig().isEnabled() ||
-                storage.equals("ftp") && !Config.getInstance().getFtpConfig().isEnabled()) {
+        if (!Config.getInstance().getLocalConfig().isEnabled()) {
             cancelSound();
-            returnFailure("Local storage is disabled");
+            returnFailure("Local storage is disabled!");
+            return;
+        }
+
+        if (storage.equals("sftp") && !Config.getInstance().getSftpConfig().isEnabled() ||
+                storage.equals("ftp") && !Config.getInstance().getFtpConfig().isEnabled() ||
+                storage.equals("googleDrive") && (!Config.getInstance().getGoogleDriveConfig().isEnabled() ||
+                        !GoogleDriveUtils.isAuthorized(sender))) {
+            cancelSound();
+            if (!storage.equals("googleDrive")) {
+                returnFailure(storage + " storage is disabled!");
+            } else {
+                returnFailure(storage + " storage is disabled or Google account is not linked!");
+            }
             return;
         }
 
@@ -42,6 +56,9 @@ public class CopyToLocalConfirmationCommand extends Command {
         }
         if (storage.equals("ftp")) {
             backup = FtpBackup.getInstance(backupName);
+        }
+        if (storage.equals("googleDrive")) {
+            backup = GoogleDriveBackup.getInstance(backupName);
         }
 
         if (backup == null) {

@@ -14,6 +14,7 @@ public enum Permissions {
     LOCAL_DELETE("backuper.local.list.delete"),
     LOCAL_COPY_TO_SFTP("backuper.local.list.copytosftp"),
     LOCAL_COPY_TO_FTP("backuper.local.list.copytoftp"),
+    LOCAL_COPY_TO_GOOGLE_DRIVE("backuper.local.list.copytogoogledrive"),
 
     SFTP_LIST("backuper.sftp.list"),
     SFTP_DELETE("backuper.sftp.list.delete"),

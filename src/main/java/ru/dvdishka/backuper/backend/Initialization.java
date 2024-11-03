@@ -18,6 +18,7 @@ import org.bukkit.event.server.ServerLoadEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.classes.FtpBackup;
+import ru.dvdishka.backuper.backend.classes.GoogleDriveBackup;
 import ru.dvdishka.backuper.backend.classes.LocalBackup;
 import ru.dvdishka.backuper.backend.classes.SftpBackup;
 import ru.dvdishka.backuper.backend.common.Logger;
@@ -35,6 +36,8 @@ import ru.dvdishka.backuper.handlers.commands.list.ListCommand;
 import ru.dvdishka.backuper.handlers.commands.menu.MenuCommand;
 import ru.dvdishka.backuper.handlers.commands.menu.copyToFtp.CopyToFtpCommand;
 import ru.dvdishka.backuper.handlers.commands.menu.copyToFtp.CopyToFtpConfirmationCommand;
+import ru.dvdishka.backuper.handlers.commands.menu.copyToGoogleDrive.CopyToGoogleDriveCommand;
+import ru.dvdishka.backuper.handlers.commands.menu.copyToGoogleDrive.CopyToGoogleDriveConfirmationCommand;
 import ru.dvdishka.backuper.handlers.commands.menu.copyToLocal.CopyToLocalCommand;
 import ru.dvdishka.backuper.handlers.commands.menu.copyToLocal.CopyToLocalConfirmationCommand;
 import ru.dvdishka.backuper.handlers.commands.menu.copyToSftp.CopyToSftpCommand;
@@ -380,6 +383,28 @@ public class Initialization implements Listener {
                                                 })
                                         )
                         )
+
+                        .then(new LiteralArgument("googleDrive")
+                                .withRequirement((sender -> Config.getInstance().getGoogleDriveConfig().isEnabled() && GoogleDriveUtils.isAuthorized(null)))
+                                .withPermission(Permissions.GOOGLE_DRIVE_LIST.getPermission())
+
+                                        .executes((sender, args) -> {
+
+                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                new ListCommand("googleDrive", sender, args).execute();
+                                            });
+                                        })
+
+                                        .then(new IntegerArgument("pageNumber")
+
+                                                .executes((sender, args) -> {
+
+                                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                        new ListCommand("googleDrive", sender, args).execute();
+                                                    });
+                                                })
+                                        )
+                        )
                 )
         ;
         backupListCommandTree.register();
@@ -458,6 +483,10 @@ public class Initialization implements Listener {
                                                                         }
                                                                         if (Config.getInstance().getSftpConfig().isEnabled()) {
                                                                             suggestions.add("copyToSftp");
+                                                                        }
+                                                                        if (Config.getInstance().getGoogleDriveConfig().isEnabled() &&
+                                                                                GoogleDriveUtils.isAuthorized(null)) {
+                                                                            suggestions.add("copyToGoogleDrive");
                                                                         }
                                                                     } catch (Exception ignored) {
                                                                     }
@@ -561,6 +590,26 @@ public class Initialization implements Listener {
                                                                         if (sender.hasPermission(Permissions.LOCAL_COPY_TO_FTP.getPermission())) {
                                                                             Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
                                                                                 new CopyToFtpCommand(sender, args).execute();
+                                                                            });
+                                                                        } else {
+                                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                                        }
+                                                                    }
+
+                                                                    if (Objects.equals(args.get("action"), "copyToGoogleDriveConfirmation")) {
+                                                                        if (sender.hasPermission(Permissions.LOCAL_COPY_TO_GOOGLE_DRIVE.getPermission())) {
+                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                                new CopyToGoogleDriveConfirmationCommand(sender, args).execute();
+                                                                            });
+                                                                        } else {
+                                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                                        }
+                                                                    }
+
+                                                                    if (Objects.equals(args.get("action"), "copyToGoogleDrive")) {
+                                                                        if (sender.hasPermission(Permissions.LOCAL_COPY_TO_GOOGLE_DRIVE.getPermission())) {
+                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                                new CopyToGoogleDriveCommand(sender, args).execute();
                                                                             });
                                                                         } else {
                                                                             UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
@@ -727,6 +776,89 @@ public class Initialization implements Listener {
                                                                         if (sender.hasPermission(Permissions.FTP_COPY_TO_LOCAL.getPermission())) {
                                                                             Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
                                                                                 new CopyToLocalCommand("ftp", sender, args).execute();
+                                                                            });
+                                                                        } else {
+                                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                                        }
+                                                                    }
+                                                                })
+                                                        )
+                                        )
+                        )
+
+                        .then(new LiteralArgument("googleDrive")
+                                .withRequirement((sender -> Config.getInstance().getGoogleDriveConfig().isEnabled() && GoogleDriveUtils.isAuthorized(null)))
+                                .withPermission(Permissions.GOOGLE_DRIVE_LIST.getPermission())
+
+                                        .then(new TextArgument("backupName").includeSuggestions(ArgumentSuggestions.stringCollectionAsync((info) -> {
+
+                                                            return CompletableFuture.supplyAsync(() -> {
+                                                                ArrayList<GoogleDriveBackup> backups = GoogleDriveBackup.getBackups();
+                                                                ArrayList<LocalDateTime> backupDateTimes = new ArrayList<>();
+
+                                                                for (GoogleDriveBackup backup : backups) {
+                                                                    backupDateTimes.add(backup.getLocalDateTime());
+                                                                }
+
+                                                                Utils.sortLocalDateTimeDecrease(backupDateTimes);
+
+                                                                ArrayList<String> backupSuggestions = new ArrayList<>();
+
+                                                                for (GoogleDriveBackup backup : backups) {
+                                                                    backupSuggestions.add("\"" + backup.getName() + "\"");
+                                                                }
+                                                                return backupSuggestions;
+                                                            });
+                                                        }))
+
+                                                        .executes((sender, args) -> {
+
+                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                new MenuCommand("googleDrive", sender, args).execute();
+                                                            });
+                                                        })
+
+                                                        .then(new StringArgument("action")
+                                                                .replaceSuggestions(ArgumentSuggestions.strings("delete", "copyToLocal"))
+
+                                                                .executes((sender, args) -> {
+
+                                                                    if (Objects.equals(args.get("action"), "deleteConfirmation")) {
+                                                                        if (sender.hasPermission(Permissions.GOOGLE_DRIVE_DELETE.getPermission())) {
+                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                                new DeleteConfirmationCommand("googleDrive", sender, args).execute();
+                                                                            });
+
+                                                                        } else {
+                                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                                        }
+                                                                    }
+
+                                                                    if (Objects.equals(args.get("action"), "delete")) {
+                                                                        if (sender.hasPermission(Permissions.GOOGLE_DRIVE_DELETE.getPermission())) {
+                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                                new DeleteCommand("googleDrive", sender, args).execute();
+                                                                            });
+
+                                                                        } else {
+                                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                                        }
+                                                                    }
+
+                                                                    if (Objects.equals(args.get("action"), "copyToLocalConfirmation")) {
+                                                                        if (sender.hasPermission(Permissions.GOOGLE_DRIVE_COPY_TO_LOCAL.getPermission())) {
+                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                                new CopyToLocalConfirmationCommand("googleDrive", sender, args).execute();
+                                                                            });
+                                                                        } else {
+                                                                            UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);
+                                                                        }
+                                                                    }
+
+                                                                    if (Objects.equals(args.get("action"), "copyToLocal")) {
+                                                                        if (sender.hasPermission(Permissions.GOOGLE_DRIVE_COPY_TO_LOCAL.getPermission())) {
+                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                                new CopyToLocalCommand("googleDrive", sender, args).execute();
                                                                             });
                                                                         } else {
                                                                             UIUtils.returnFailure("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", sender);

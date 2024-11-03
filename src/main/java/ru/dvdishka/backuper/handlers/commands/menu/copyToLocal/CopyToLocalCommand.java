@@ -3,16 +3,15 @@ package ru.dvdishka.backuper.handlers.commands.menu.copyToLocal;
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.backend.classes.Backup;
-import ru.dvdishka.backuper.backend.classes.FtpBackup;
-import ru.dvdishka.backuper.backend.classes.LocalBackup;
-import ru.dvdishka.backuper.backend.classes.SftpBackup;
+import ru.dvdishka.backuper.backend.classes.*;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.tasks.ftp.FtpGetFileFolderTask;
+import ru.dvdishka.backuper.backend.tasks.googleDrive.GoogleDriveGetFileFolderTask;
 import ru.dvdishka.backuper.backend.tasks.sftp.SftpGetFileFolderTask;
+import ru.dvdishka.backuper.backend.utils.GoogleDriveUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
@@ -33,16 +32,22 @@ public class CopyToLocalCommand extends Command {
     @Override
     public void execute() {
 
-        if (storage.equals("sftp") && !Config.getInstance().getSftpConfig().isEnabled() ||
-                storage.equals("ftp") && !Config.getInstance().getFtpConfig().isEnabled()) {
+        if (!Config.getInstance().getLocalConfig().isEnabled()) {
             cancelSound();
-            returnFailure(storage + " storage is disabled");
+            returnFailure("Local storage is disabled!");
             return;
         }
 
-        if (!Config.getInstance().getLocalConfig().isEnabled()) {
+        if (storage.equals("sftp") && !Config.getInstance().getSftpConfig().isEnabled() ||
+                storage.equals("ftp") && !Config.getInstance().getFtpConfig().isEnabled() ||
+                storage.equals("googleDrive") && (!Config.getInstance().getGoogleDriveConfig().isEnabled() ||
+                        !GoogleDriveUtils.isAuthorized(sender))) {
             cancelSound();
-            returnFailure("Local storage is disabled");
+            if (!storage.equals("googleDrive")) {
+                returnFailure(storage + " storage is disabled!");
+            } else {
+                returnFailure(storage + " storage is disabled or Google account is not linked!");
+            }
             return;
         }
 
@@ -53,6 +58,9 @@ public class CopyToLocalCommand extends Command {
         }
         if (storage.equals("ftp")) {
             backup = FtpBackup.getInstance((String) arguments.get("backupName"));
+        }
+        if (storage.equals("googleDrive")) {
+            backup = GoogleDriveBackup.getInstance((String) arguments.get("backupName"));
         }
 
         if (backup == null) {
@@ -87,15 +95,18 @@ public class CopyToLocalCommand extends Command {
         }
         File inProgressFile = new File(Config.getInstance().getLocalConfig().getBackupsFolder(), inProgressName);
 
-        if (storage.equals("sftp")) {
-            copyToLocalTask = new SftpGetFileFolderTask(backup.getPath(), inProgressFile,
+        copyToLocalTask = switch (storage) {
+            case "sftp" -> new SftpGetFileFolderTask(backup.getPath(), inProgressFile,
                     false, true, List.of(Permissions.SFTP_COPY_TO_LOCAL), sender);
-        } else if (storage.equals("ftp")) {
-            copyToLocalTask = new FtpGetFileFolderTask(backup.getPath(), inProgressFile,
+
+            case "ftp" -> new FtpGetFileFolderTask(backup.getPath(), inProgressFile,
                     false, true, List.of(Permissions.FTP_COPY_TO_LOCAL), sender);
-        } else {
-            copyToLocalTask = null;
-        }
+
+            case "googleDrive" -> new GoogleDriveGetFileFolderTask(backup.getPath(), inProgressFile,
+                    false, true, List.of(Permissions.GOOGLE_DRIVE_COPY_TO_LOCAL), sender);
+
+            default -> null;
+        };
 
         final String backupFileName = backup.getFileName();
 

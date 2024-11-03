@@ -39,6 +39,10 @@ permissions:
                 default: op
               backuper.local.list.copytosftp:
                 default: op
+              backuper.local.list.copytoftp:
+                default: op
+              backuper.local.list.copytogoogledrive:
+                default: op
 
       backuper.sftp.*:
         default: false

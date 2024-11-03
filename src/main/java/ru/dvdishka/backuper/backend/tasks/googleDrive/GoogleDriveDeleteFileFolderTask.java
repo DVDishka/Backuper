@@ -27,12 +27,12 @@ public class GoogleDriveDeleteFileFolderTask extends Task {
     public void run() {
         try {
 
-            if (!isTaskPrepared) {
-                prepareTask();
-            }
-
             if (setLocked) {
                 Backuper.lock(this);
+            }
+
+            if (!isTaskPrepared) {
+                prepareTask();
             }
 
             Logger.getLogger().devLog(taskName + " task started");
@@ -79,6 +79,7 @@ public class GoogleDriveDeleteFileFolderTask extends Task {
                 for (File file : GoogleDriveUtils.ls(currentDriveFileId, sender)) {
                     deleteDir(file.getId());
                 }
+                GoogleDriveUtils.deleteFile(currentDriveFileId, sender);
             }
             else {
                 long fileSize = GoogleDriveUtils.getFileByteSize(currentDriveFileId, sender);

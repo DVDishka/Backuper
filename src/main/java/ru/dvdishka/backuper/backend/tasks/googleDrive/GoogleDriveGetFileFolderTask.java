@@ -2,7 +2,6 @@ package ru.dvdishka.backuper.backend.tasks.googleDrive;
 
 import com.google.api.client.googleapis.media.MediaHttpDownloader;
 import com.google.api.client.googleapis.media.MediaHttpDownloaderProgressListener;
-import com.google.api.services.drive.Drive;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.common.Logger;
@@ -12,6 +11,7 @@ import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -58,14 +58,8 @@ public class GoogleDriveGetFileFolderTask extends Task {
 
             Logger.getLogger().devLog(taskName + " task has been started");
 
-            if (createRootDirInTargetDir) {
-
-                Drive service = GoogleDriveUtils.getService(sender);
-                targetDir = new File(targetDir, service.files().get(sourceDirId).execute().getName());
-            }
-
             if (!cancelled) {
-                getRemoteDir(sourceDirId, targetDir);
+                getRemoteDir(sourceDirId, targetDir, true);
             }
 
             if (setLocked) {
@@ -97,7 +91,7 @@ public class GoogleDriveGetFileFolderTask extends Task {
         }
     }
 
-    private void getRemoteDir(String driveFileId, File localPath) {
+    private void getRemoteDir(String driveFileId, File localPath, boolean firstDir) {
 
         if (cancelled) {
             return;
@@ -133,15 +127,22 @@ public class GoogleDriveGetFileFolderTask extends Task {
 
             } else {
 
+                Path newPath = localPath.toPath();
                 localPath.mkdirs();
+
                 for (com.google.api.services.drive.model.File driveEntry : GoogleDriveUtils.ls(driveFileId, sender)) {
-                    getRemoteDir(driveEntry.getDriveId(), localPath.toPath().resolve(driveEntry.getName()).toFile());
+
+                    if (createRootDirInTargetDir || !firstDir) {
+                        newPath = localPath.toPath().resolve(driveEntry.getName());
+                    }
+
+                    getRemoteDir(driveEntry.getId(), newPath.toFile(), false);
                 }
             }
 
         } catch (Exception e) {
 
-            Logger.getLogger().warn("Failed to get file/folder from the SFTP channel", sender);
+            Logger.getLogger().warn("Failed to get file/folder from Google Drive", sender);
             Logger.getLogger().warn(this.getClass(), e);
         }
     }

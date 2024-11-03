@@ -27,6 +27,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import org.apache.commons.io.IOUtils;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.classes.exceptions.NotAuthorizedException;
 import ru.dvdishka.backuper.backend.common.Logger;
@@ -37,7 +38,6 @@ import java.util.*;
 
 public class GoogleDriveUtils {
 
-    private static File credentialsFile;
     private static File tokensFolder;
 
     private static final String APPLICATION_NAME = "BACKUPER";
@@ -48,14 +48,17 @@ public class GoogleDriveUtils {
     private static final String FOLDER_MIME_TYPE = "application/vnd.google-apps.folder";
 
     public static void init() {
-        credentialsFile = Config.getInstance().getGoogleDriveConfig().getCredentialsFile();
         tokensFolder = Config.getInstance().getGoogleDriveConfig().getTokensFolder();
     }
 
     public static Credential returnCredentialIfAuthorized(CommandSender sender) {
 
         try {
-            GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new FileReader(credentialsFile));
+            GoogleClientSecrets clientSecrets = JSON_FACTORY
+                    .fromString(ObfuscateUtils
+                            .decrypt(IOUtils
+                                    .toString((Utils.plugin.getResource("google_cred.txt")))),
+                            GoogleClientSecrets.class);
 
             GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
                     NET_HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, DRIVE_SCOPES)
@@ -86,7 +89,11 @@ public class GoogleDriveUtils {
 
     public static Credential authorizeForced(CommandSender sender) throws IOException {
 
-        GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new FileReader(credentialsFile));
+        GoogleClientSecrets clientSecrets = JSON_FACTORY
+                .fromString(ObfuscateUtils
+                                .decrypt(IOUtils
+                                        .toString((Utils.plugin.getResource("google_cred.txt")))),
+                        GoogleClientSecrets.class);
 
         GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
                 NET_HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, DRIVE_SCOPES)
@@ -135,11 +142,54 @@ public class GoogleDriveUtils {
             Drive service = getService(sender);
 
             Map<String, String> fileAppProperties = new HashMap<>();
-            //fileAppProperties.put("backuper", "true");
+            fileAppProperties.put("backuper", "true");
 
             com.google.api.services.drive.model.File driveFileMeta = new com.google.api.services.drive.model.File();
             driveFileMeta.setAppProperties(fileAppProperties);
             driveFileMeta.setName(file.getName());
+            if (!Objects.equals(parentFolderId, "")) {
+                driveFileMeta.setParents(List.of(parentFolderId));
+            }
+            FileContent driveFileContent = new FileContent("", file);
+
+            Drive.Files.Create driveFileCreate = service.files()
+                    .create(driveFileMeta, driveFileContent)
+                    .setFields("id, parents, appProperties");
+            driveFileCreate.getMediaHttpUploader().setChunkSize(MediaHttpUploader.MINIMUM_CHUNK_SIZE);
+            driveFileCreate.getMediaHttpUploader().setProgressListener(progressListener);
+
+            com.google.api.services.drive.model.File driveFile = driveFileCreate.execute();
+
+            return driveFile.getId();
+
+        } catch (Exception e) {
+            Logger.getLogger().warn("Failed to upload file to Google Drive", sender);
+            Logger.getLogger().warn(GoogleDriveUtils.class, e);
+            return null;
+        }
+    }
+
+    /**
+     * @param file Local file to upload
+     * @param fileName GoogleDrive new file name
+     * @param parentFolderId GoogleDrive parent folder ID or an empty string
+     **/
+    public static String uploadFile(File file, String fileName, String parentFolderId, MediaHttpUploaderProgressListener progressListener, CommandSender sender) {
+
+        if (!file.exists()) {
+            Logger.getLogger().warn("File does not exist: " + file.getAbsolutePath(), sender);
+            return null;
+        }
+
+        try {
+            Drive service = getService(sender);
+
+            Map<String, String> fileAppProperties = new HashMap<>();
+            fileAppProperties.put("backuper", "true");
+
+            com.google.api.services.drive.model.File driveFileMeta = new com.google.api.services.drive.model.File();
+            driveFileMeta.setAppProperties(fileAppProperties);
+            driveFileMeta.setName(fileName);
             if (!Objects.equals(parentFolderId, "")) {
                 driveFileMeta.setParents(List.of(parentFolderId));
             }
@@ -168,7 +218,7 @@ public class GoogleDriveUtils {
             Drive service = getService(sender);
 
             Map<String, String> fileAppProperties = new HashMap<>();
-            //fileAppProperties.put("backuper", "true");
+            fileAppProperties.put("backuper", "true");
 
             com.google.api.services.drive.model.File driveFileMeta = new com.google.api.services.drive.model.File();
             driveFileMeta.setName(folderName);
@@ -400,7 +450,9 @@ public class GoogleDriveUtils {
                 return size;
 
             } else {
-                return getService(sender).files().get(fileId).execute().getSize();
+                com.google.api.services.drive.model.File driveFile = getService(sender).files().get(fileId).setFields("size").execute();
+                Long size = driveFile.getSize();
+                return size != null ? size : 0;
             }
 
         } catch (Exception e) {

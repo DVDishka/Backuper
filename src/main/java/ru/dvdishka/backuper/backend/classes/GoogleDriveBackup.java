@@ -107,7 +107,7 @@ public class GoogleDriveBackup implements Backup {
 
     @Override
     public long getByteSize(CommandSender sender) {
-        return getDriveFile(sender).getSize();
+        return GoogleDriveUtils.getFileByteSize(getDriveFile(sender).getId(), sender);
     }
 
     @Override
