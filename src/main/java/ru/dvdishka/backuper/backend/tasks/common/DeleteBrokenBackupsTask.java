@@ -6,9 +6,11 @@ import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.tasks.ftp.FtpDeleteDirTask;
+import ru.dvdishka.backuper.backend.tasks.googleDrive.GoogleDriveDeleteFileFolderTask;
 import ru.dvdishka.backuper.backend.tasks.local.folder.DeleteDirTask;
 import ru.dvdishka.backuper.backend.tasks.sftp.SftpDeleteDirTask;
 import ru.dvdishka.backuper.backend.utils.FtpUtils;
+import ru.dvdishka.backuper.backend.utils.GoogleDriveUtils;
 import ru.dvdishka.backuper.backend.utils.SftpUtils;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
@@ -76,7 +78,8 @@ public class DeleteBrokenBackupsTask extends Task {
             return;
         }
 
-        if (Config.getInstance().getLocalConfig().isEnabled()) {
+        if (Config.getInstance().getLocalConfig().isEnabled() &&
+                !cancelled) {
 
             File backupsFolder = new File(Config.getInstance().getLocalConfig().getBackupsFolder());
 
@@ -97,7 +100,9 @@ public class DeleteBrokenBackupsTask extends Task {
             }
         }
 
-        if (Config.getInstance().getFtpConfig().isEnabled()) {
+        if (Config.getInstance().getFtpConfig().isEnabled() &&
+                !cancelled) {
+
             if (FtpUtils.checkConnection(sender)) {
 
                 ArrayList<String> files = FtpUtils.ls(Config.getInstance().getFtpConfig().getBackupsFolder(), sender);
@@ -118,7 +123,9 @@ public class DeleteBrokenBackupsTask extends Task {
             }
         }
 
-        if (Config.getInstance().getSftpConfig().isEnabled()) {
+        if (Config.getInstance().getSftpConfig().isEnabled() &&
+                !cancelled) {
+
             if (SftpUtils.checkConnection(sender)) {
 
                 ArrayList<String> files = SftpUtils.ls(Config.getInstance().getSftpConfig().getBackupsFolder(), sender);
@@ -136,6 +143,24 @@ public class DeleteBrokenBackupsTask extends Task {
 
             } else {
                 Logger.getLogger().warn("Failed to establish SFTP connection");
+            }
+        }
+
+        if (Config.getInstance().getGoogleDriveConfig().isEnabled() &&
+                GoogleDriveUtils.isAuthorized(null) &&
+                !cancelled) {
+
+            List<com.google.api.services.drive.model.File> files = GoogleDriveUtils.ls(Config.getInstance().getGoogleDriveConfig().getBackupsFolderId(), sender);
+
+            for (com.google.api.services.drive.model.File file : files) {
+
+                if (cancelled) {
+                    return;
+                }
+
+                if (file.getName().replace(".zip", "").endsWith(" in progress")) {
+                    tasks.add(new GoogleDriveDeleteFileFolderTask(file.getDriveId(), false, permissions, sender));
+                }
             }
         }
     }

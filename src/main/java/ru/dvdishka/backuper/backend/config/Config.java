@@ -149,6 +149,8 @@ public class Config {
         this.googleDriveConfig.tokensFolder = new File(googleDriveTokenFolder);
         this.googleDriveConfig.createBackuperFolder = config.getBoolean("googleDrive.createBackuperFolder", true);
         this.googleDriveConfig.moveFilesToTrash = config.getBoolean("googleDrive.moveFilesToTrash", false);
+        this.googleDriveConfig.backupsNumber = config.getInt("googleDrive.maxBackupsNumber", 0);
+        this.googleDriveConfig.backupsWeight = config.getLong("googleDrive.maxBackupsWeight", 0);
 
         this.betterLogging = config.getBoolean("server.betterLogging", false);
         this.fixedBackupTime = this.backupTime > -1;
@@ -250,7 +252,7 @@ public class Config {
                 "ftp.zipArchive", "ftp.zipCompressionLevel", "server.checkUpdates", "local.autoBackup", "ftp.autoBackup", "sftp.autoBackup",
                 "backup.deleteBrokenBackups", "backup.backupFileNameFormat", "googleDrive.enabled", "googleDrive.autoBackup",
                 "googleDrive.auth.tokensFolderPath", "googleDrive.backupsFolderId", "googleDrive.createBackuperFolder",
-                "googleDrive.moveFilesToTrash");
+                "googleDrive.moveFilesToTrash", "googleDrive.maxBackupsWeight", "googleDrive.maxBackupsNumber");
 
         for (String configField : configFields) {
             if (isConfigFileOk && !config.contains(configField)) {
@@ -324,6 +326,8 @@ public class Config {
             newConfig.set("googleDrive.auth.tokenFolderPath", googleDriveTokenFolder);
             newConfig.set("googleDrive.createBackuperFolder", this.googleDriveConfig.createBackuperFolder);
             newConfig.set("googleDrive.moveFileToTrash", this.googleDriveConfig.moveFilesToTrash);
+            newConfig.set("googleDrive.maxBackupsWeight", this.googleDriveConfig.backupsWeight);
+            newConfig.set("googleDrive.maxBackupsNumber", this.googleDriveConfig.backupsNumber);
 
             newConfig.set("lastBackup", this.lastBackup);
             newConfig.set("lastChange", this.lastChange);

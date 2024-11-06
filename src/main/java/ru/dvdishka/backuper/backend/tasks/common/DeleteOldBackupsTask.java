@@ -2,13 +2,11 @@ package ru.dvdishka.backuper.backend.tasks.common;
 
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.backend.classes.Backup;
-import ru.dvdishka.backuper.backend.classes.FtpBackup;
-import ru.dvdishka.backuper.backend.classes.LocalBackup;
-import ru.dvdishka.backuper.backend.classes.SftpBackup;
+import ru.dvdishka.backuper.backend.classes.*;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.Task;
+import ru.dvdishka.backuper.backend.utils.GoogleDriveUtils;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
@@ -84,6 +82,9 @@ public class DeleteOldBackupsTask extends Task {
             if (Config.getInstance().getSftpConfig().isEnabled()) {
                 deleteBackups("sftp");
             }
+            if (Config.getInstance().getGoogleDriveConfig().isEnabled() && GoogleDriveUtils.isAuthorized(null)) {
+                deleteBackups("googleDrive");
+            }
 
         } catch (Exception e) {
 
@@ -121,6 +122,9 @@ public class DeleteOldBackupsTask extends Task {
         if (storage.equals("ftp")) {
             backups.addAll(FtpBackup.getBackups());
         }
+        if (storage.equals("googleDrive")) {
+            backups.addAll(GoogleDriveBackup.getBackups());
+        }
 
         for (Backup backup : backups) {
             try {
@@ -139,7 +143,8 @@ public class DeleteOldBackupsTask extends Task {
 
         if (storage.equals("local") && Config.getInstance().getLocalConfig().getBackupsNumber() != 0 ||
                 storage.equals("sftp") && Config.getInstance().getSftpConfig().getBackupsNumber() != 0 ||
-                storage.equals("ftp") && Config.getInstance().getFtpConfig().getBackupsNumber() != 0) {
+                storage.equals("ftp") && Config.getInstance().getFtpConfig().getBackupsNumber() != 0 ||
+                storage.equals("googleDrive") && Config.getInstance().getGoogleDriveConfig().getBackupsNumber() != 0) {
 
             int backupsToDelete = backups.size();
             if (storage.equals("local")) {
@@ -150,6 +155,9 @@ public class DeleteOldBackupsTask extends Task {
             }
             if (storage.equals("ftp")) {
                 backupsToDelete -= Config.getInstance().getFtpConfig().getBackupsNumber();
+            }
+            if (storage.equals("googleDrive")) {
+                backupsToDelete -= Config.getInstance().getGoogleDriveConfig().getBackupsNumber();
             }
 
             for (LocalDateTime fileName : backupDateTimes) {
@@ -190,7 +198,8 @@ public class DeleteOldBackupsTask extends Task {
 
         if (storage.equals("local") && Config.getInstance().getLocalConfig().getBackupsWeight() != 0 ||
                 storage.equals("sftp") && Config.getInstance().getSftpConfig().getBackupsWeight() != 0 ||
-                storage.equals("ftp") && Config.getInstance().getFtpConfig().getBackupsWeight() != 0) {
+                storage.equals("ftp") && Config.getInstance().getFtpConfig().getBackupsWeight() != 0 ||
+                storage.equals("googleDrive") && Config.getInstance().getGoogleDriveConfig().getBackupsWeight() != 0) {
 
 
             long bytesToDelete = backupsFolderByteSize;
@@ -202,6 +211,9 @@ public class DeleteOldBackupsTask extends Task {
             }
             if (storage.equals("ftp")) {
                 bytesToDelete -= Config.getInstance().getFtpConfig().getBackupsWeight();
+            }
+            if (storage.equals("googleDrive")) {
+                bytesToDelete -= Config.getInstance().getGoogleDriveConfig().getBackupsWeight();
             }
 
             for (LocalDateTime fileName : backupDateTimes) {
