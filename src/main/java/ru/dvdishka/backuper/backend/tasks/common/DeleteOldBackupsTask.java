@@ -104,7 +104,11 @@ public class DeleteOldBackupsTask extends Task {
 
     private void deleteBackups(String storage) {
 
-        if (cancelled) {
+        if (cancelled ||
+                storage.equals("local") && Config.getInstance().getLocalConfig().getBackupsNumber() == 0 && Config.getInstance().getLocalConfig().getBackupsWeight() == 0 ||
+                storage.equals("ftp") && Config.getInstance().getFtpConfig().getBackupsNumber() == 0 && Config.getInstance().getFtpConfig().getBackupsWeight() == 0 ||
+                storage.equals("sftp") && Config.getInstance().getSftpConfig().getBackupsNumber() == 0 && Config.getInstance().getSftpConfig().getBackupsWeight() == 0 ||
+                storage.equals("googleDrive") && Config.getInstance().getGoogleDriveConfig().getBackupsNumber() == 0 && Config.getInstance().getGoogleDriveConfig().getBackupsWeight() == 0) {
             return;
         }
 

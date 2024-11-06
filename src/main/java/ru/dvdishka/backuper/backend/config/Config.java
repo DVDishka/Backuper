@@ -150,7 +150,7 @@ public class Config {
         this.googleDriveConfig.createBackuperFolder = config.getBoolean("googleDrive.createBackuperFolder", true);
         this.googleDriveConfig.moveFilesToTrash = config.getBoolean("googleDrive.moveFilesToTrash", false);
         this.googleDriveConfig.backupsNumber = config.getInt("googleDrive.maxBackupsNumber", 0);
-        this.googleDriveConfig.backupsWeight = config.getLong("googleDrive.maxBackupsWeight", 0);
+        this.googleDriveConfig.backupsWeight = config.getLong("googleDrive.maxBackupsWeight", 0) * 1_048_576L;
 
         this.betterLogging = config.getBoolean("server.betterLogging", false);
         this.fixedBackupTime = this.backupTime > -1;
@@ -326,7 +326,7 @@ public class Config {
             newConfig.set("googleDrive.auth.tokenFolderPath", googleDriveTokenFolder);
             newConfig.set("googleDrive.createBackuperFolder", this.googleDriveConfig.createBackuperFolder);
             newConfig.set("googleDrive.moveFileToTrash", this.googleDriveConfig.moveFilesToTrash);
-            newConfig.set("googleDrive.maxBackupsWeight", this.googleDriveConfig.backupsWeight);
+            newConfig.set("googleDrive.maxBackupsWeight", this.googleDriveConfig.backupsWeight / 1_048_576L);
             newConfig.set("googleDrive.maxBackupsNumber", this.googleDriveConfig.backupsNumber);
 
             newConfig.set("lastBackup", this.lastBackup);
