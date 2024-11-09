@@ -1,4 +1,4 @@
-package ru.dvdishka.backuper.backend.classes;
+package ru.dvdishka.backuper.backend.backup;
 
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.config.Config;
@@ -11,12 +11,12 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.function.Supplier;
 
-public class FtpBackup implements Backup {
-
-    private String backupName;
+public class FtpBackup extends Backup {
 
     private static HashMap<String, FtpBackup> backups = new HashMap<>();
+    private static HashMap<String, Long> cachedBackupsSize = new HashMap<>();
 
     private FtpBackup(String backupName) {
         this.backupName = backupName;
@@ -72,11 +72,8 @@ public class FtpBackup implements Backup {
         return backups;
     }
 
-    public void delete(boolean setLocked, CommandSender sender) {
-        getDeleteTask(setLocked, sender).run();
-    }
-
-    public Task getDeleteTask(boolean setLocked, CommandSender sender) {
+    @Override
+    Task getDirectDeleteTask(boolean setLocked, CommandSender sender) {
         return new FtpDeleteDirTask(getPath(), setLocked, List.of(Permissions.FTP_DELETE), sender);
     }
 
@@ -97,7 +94,14 @@ public class FtpBackup implements Backup {
     }
 
     public long getByteSize(CommandSender sender) {
-        return FtpUtils.getDirByteSize(getPath(), sender);
+
+        if (cachedBackupsSize.containsKey(backupName)) {
+            return cachedBackupsSize.get(backupName);
+        }
+
+        long size = FtpUtils.getDirByteSize(getPath(), sender);
+        cachedBackupsSize.put(backupName, size);
+        return size;
     }
 
     public long getMbSize(CommandSender sender) {

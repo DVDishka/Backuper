@@ -2,7 +2,7 @@ package ru.dvdishka.backuper.backend.tasks.common;
 
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.backend.classes.*;
+import ru.dvdishka.backuper.backend.backup.*;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.Task;

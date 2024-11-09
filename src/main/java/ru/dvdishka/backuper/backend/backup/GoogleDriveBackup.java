@@ -1,4 +1,4 @@
-package ru.dvdishka.backuper.backend.classes;
+package ru.dvdishka.backuper.backend.backup;
 
 import com.google.api.services.drive.model.File;
 import org.bukkit.command.CommandSender;
@@ -14,9 +14,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class GoogleDriveBackup implements Backup {
-
-    private String backupName;
+public class GoogleDriveBackup extends Backup {
 
     private static HashMap<String, GoogleDriveBackup> backups = new HashMap<>();
 
@@ -86,12 +84,7 @@ public class GoogleDriveBackup implements Backup {
     }
 
     @Override
-    public void delete(boolean setLocked, CommandSender sender) {
-        getDeleteTask(setLocked, sender).run();
-    }
-
-    @Override
-    public Task getDeleteTask(boolean setLocked, CommandSender sender) {
+    Task getDirectDeleteTask(boolean setLocked, CommandSender sender) {
         return new GoogleDriveDeleteFileFolderTask(getDriveFile(sender).getId(), setLocked, List.of(Permissions.GOOGLE_DRIVE_DELETE), sender);
     }
 
@@ -107,7 +100,13 @@ public class GoogleDriveBackup implements Backup {
 
     @Override
     public long getByteSize(CommandSender sender) {
-        return GoogleDriveUtils.getFileByteSize(getDriveFile(sender).getId(), sender);
+        if (cachedBackupsSize.containsKey(backupName)) {
+            return cachedBackupsSize.get(backupName);
+        }
+
+        long size = GoogleDriveUtils.getFileByteSize(getDriveFile(sender).getId(), sender);
+        cachedBackupsSize.put(backupName, size);
+        return size;
     }
 
     @Override

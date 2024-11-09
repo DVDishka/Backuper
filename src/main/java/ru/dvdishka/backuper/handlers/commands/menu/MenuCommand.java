@@ -8,7 +8,7 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
-import ru.dvdishka.backuper.backend.classes.*;
+import ru.dvdishka.backuper.backend.backup.*;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.utils.GoogleDriveUtils;
 import ru.dvdishka.backuper.handlers.commands.Command;

@@ -1,4 +1,4 @@
-package ru.dvdishka.backuper.backend.classes;
+package ru.dvdishka.backuper.backend.backup;
 
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.common.Logger;
@@ -15,9 +15,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
-public class LocalBackup implements Backup {
+public class LocalBackup extends Backup {
 
-    private String backupName;
     private LocalDateTime backupLocalDateTime;
 
     private static HashMap<String, LocalBackup> backups = new HashMap();
@@ -83,6 +82,10 @@ public class LocalBackup implements Backup {
 
     public long getByteSize(CommandSender sender) {
 
+        if (cachedBackupsSize.containsKey(backupName)) {
+            return cachedBackupsSize.get(backupName);
+        }
+
         File backupsFolder = new File(Config.getInstance().getLocalConfig().getBackupsFolder());
         String backupFilePath;
 
@@ -92,7 +95,9 @@ public class LocalBackup implements Backup {
             backupFilePath = backupsFolder.toPath().resolve(backupName).toFile().getPath() + ".zip";
         }
 
-        return Utils.getFileFolderByteSize(new File(backupFilePath));
+        long size = Utils.getFileFolderByteSize(new File(backupFilePath));
+        cachedBackupsSize.put(backupName, size);
+        return size;
     }
 
     /**
@@ -162,11 +167,8 @@ public class LocalBackup implements Backup {
                 backupsFolder.toPath().resolve(backupName + ".zip").toFile().exists();
     }
 
-    public void delete(boolean setLocked, CommandSender sender) {
-        getDeleteTask(setLocked, sender).run();
-    }
-
-    public Task getDeleteTask(boolean setLocked, CommandSender sender) {
+    @Override
+    Task getDirectDeleteTask(boolean setLocked, CommandSender sender) {
         return new DeleteDirTask(this.getFile(), setLocked, List.of(Permissions.LOCAL_DELETE), sender);
     }
 }

@@ -1,4 +1,4 @@
-package ru.dvdishka.backuper.backend.classes;
+package ru.dvdishka.backuper.backend.backup;
 
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.config.Config;
@@ -12,9 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class SftpBackup implements Backup {
-
-    private String backupName;
+public class SftpBackup extends Backup {
 
     private static HashMap<String, SftpBackup> backups = new HashMap<>();
 
@@ -94,11 +92,8 @@ public class SftpBackup implements Backup {
         return "(Folder)";
     }
 
-    public void delete(boolean setLocked, CommandSender sender) {
-        getDeleteTask(setLocked, sender).run();
-    }
-
-    public Task getDeleteTask(boolean setLocked, CommandSender sender) {
+    @Override
+    Task getDirectDeleteTask(boolean setLocked, CommandSender sender) {
         return new SftpDeleteDirTask(getPath(), setLocked, List.of(Permissions.SFTP_DELETE), sender);
     }
 
@@ -107,7 +102,12 @@ public class SftpBackup implements Backup {
     }
 
     public long getByteSize(CommandSender sender) {
-        return SftpUtils.getDirByteSize(SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), getFileName()), sender);
+        if (cachedBackupsSize.containsKey(backupName)) {
+            return cachedBackupsSize.get(backupName);
+        }
+        long size =  SftpUtils.getDirByteSize(SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), getFileName()), sender);
+        cachedBackupsSize.put(backupName, size);
+        return size;
     }
 
     public long getMbSize(CommandSender sender) {

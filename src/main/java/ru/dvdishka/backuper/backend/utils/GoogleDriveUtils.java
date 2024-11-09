@@ -29,7 +29,7 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.apache.commons.io.IOUtils;
 import org.bukkit.command.CommandSender;
-import ru.dvdishka.backuper.backend.classes.exceptions.NotAuthorizedException;
+import ru.dvdishka.backuper.backend.exceptions.NotAuthorizedException;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
 
