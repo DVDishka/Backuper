@@ -23,6 +23,7 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collector;
 import java.util.stream.Stream;
 import java.util.zip.ZipOutputStream;
 
@@ -678,7 +679,7 @@ public class BackupTask extends Task {
         // if contains "*" add all Files from "."
         if(Config.getInstance().getAddDirectoryToBackup().contains("*")){
             // Remove the "*" from the list
-            List<String> list = Config.getInstance().getAddDirectoryToBackup().stream().filter(directory -> !directory.equals("*")).toList();
+            List<String> list = Config.getInstance().getAddDirectoryToBackup().stream().filter(directory -> !directory.equals("*")).collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
             // Add all files from "."
             File file = new File(".");
             for (String subFile: file.list()) {
