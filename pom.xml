@@ -101,13 +101,13 @@
         <dependency>
             <groupId>org.bstats</groupId>
             <artifactId>bstats-bukkit</artifactId>
-            <version>3.1.0</version>
+            <version>3.1.1</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>dev.jorel</groupId>
             <artifactId>commandapi-bukkit-shade</artifactId>
-            <version>9.5.3</version>
+            <version>9.6.1</version>
         </dependency>
         <dependency>
             <groupId>io.papermc.paper</groupId>
