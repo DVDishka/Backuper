@@ -6,7 +6,7 @@
 
     <groupId>ru.dvdishka</groupId>
     <artifactId>Backuper</artifactId>
-    <version>3.1.0</version>
+    <version>3.1.2</version>
     <packaging>jar</packaging>
 
     <name>Backuper</name>
@@ -101,7 +101,7 @@
         <dependency>
             <groupId>org.bstats</groupId>
             <artifactId>bstats-bukkit</artifactId>
-            <version>3.1.1</version>
+            <version>3.1.0</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
