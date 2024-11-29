@@ -202,7 +202,7 @@
 * `/backuper menu <storage> <backupName> unZIP` - **only for LOCAL storage** - Command to convert the specified backup from a ZIP archive to a folder
 * `/backuper menu <storage> <backupName> copyToFtp` - **only for LOCAL storage** - Command to copy the specified backup to **FTP** storage from **local** storage
 * `/backuper menu <storage> <backupName> copyToSftp` - **only for LOCAL storage** - Command to copy the specified backup to **SFTP** storage from **local** storage
-* `/backuper menu <storage> <backupName> copyToLocal` - **only for FTP/SFTP storage** - Command to copy the specified backup to **SFTP** storage from **local** storage
+* `/backuper menu <storage> <backupName> copyToLocal` - **only for FTP/SFTP storage** - Command to copy the specified backup to **LOCAL** storage from **FTP/SFTP** storage
 
 
 
