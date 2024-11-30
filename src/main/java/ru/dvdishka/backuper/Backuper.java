@@ -46,20 +46,22 @@ public class Backuper extends JavaPlugin {
         Utils.plugin = this;
 
         File pluginDir = new File("plugins/Backuper");
-        File backupsDir = new File("plugins/Backuper/Backups");
         File configFile = new File("plugins/Backuper/config.yml");
-
+        
         if (!pluginDir.exists() && !pluginDir.mkdirs()) {
-
+            
             Logger.getLogger().warn("Can not create plugins/Backuper dir!");
         }
-
+        
+        
+        Initialization.initConfig(configFile, null);
+        File backupsDir = new File(Config.getInstance().getLocalConfig().getBackupsFolder());
         if (!backupsDir.exists() && !backupsDir.mkdirs()) {
 
             Logger.getLogger().warn("Can not create plugins/Backuper/Backups dir!");
         }
 
-        Initialization.initConfig(configFile, null);
+
         Initialization.checkStorages(null);
         Initialization.unifyBackupNameFormat(null);
         Initialization.initBStats(this);
@@ -69,14 +71,16 @@ public class Backuper extends JavaPlugin {
         Initialization.checkPluginVersion();
         Initialization.sendIssueToGitHub();
 
-        Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-            try {
-                GoogleDriveUtils.returnCredentialIfAuthorized(Bukkit.getConsoleSender());
-                GoogleDriveUtils.test(null);
-            } catch (Exception e) {
-                Logger.getLogger().warn(this.getClass(), e);
-            }
-        });
+        if(Config.getInstance().getGoogleDriveConfig().isEnabled()) {
+            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                try {
+                    GoogleDriveUtils.returnCredentialIfAuthorized(Bukkit.getConsoleSender());
+                    GoogleDriveUtils.test(null);
+                } catch (Exception e) {
+                    Logger.getLogger().warn(this.getClass(), e);
+                }
+            });
+        }
         Logger.getLogger().log("Backuper plugin has been enabled!");
     }
 
