@@ -9,6 +9,7 @@ import com.google.api.client.extensions.java6.auth.oauth2.VerificationCodeReceiv
 import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.googleapis.media.MediaHttpDownloaderProgressListener;
 import com.google.api.client.googleapis.media.MediaHttpUploader;
 import com.google.api.client.googleapis.media.MediaHttpUploaderProgressListener;
@@ -72,6 +73,27 @@ public class GoogleDriveUtils {
                     && (credential.getRefreshToken() != null
                     || credential.getExpiresInSeconds() == null
                     || credential.getExpiresInSeconds() > 60)) {
+                try {
+
+                    Drive service = new Drive.Builder(NET_HTTP_TRANSPORT, JSON_FACTORY, credential)
+                            .setApplicationName(APPLICATION_NAME)
+                            .setHttpRequestInitializer(new HttpRequestInitializer() {
+                                @Override
+                                public void initialize(HttpRequest httpRequest) throws IOException {
+                                    credential.initialize(httpRequest);
+                                    httpRequest.setConnectTimeout(300 * 60000);
+                                    httpRequest.setReadTimeout(300 * 60000);
+                                }
+                            })
+                            .build();
+
+                    service.files().get("test").execute();
+
+                } catch (GoogleJsonResponseException e) {
+                    if (e.getStatusCode() != 404) {
+                        return null;
+                    }
+                }
                 return credential;
             }
             return null;

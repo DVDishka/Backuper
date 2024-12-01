@@ -51,7 +51,7 @@ public class CopyToLocalCommand extends Command {
             return;
         }
 
-        Backup backup = null;
+        ExternalBackup backup = null;
 
         if (storage.equals("sftp")) {
             backup = SftpBackup.getInstance((String) arguments.get("backupName"));
@@ -87,38 +87,10 @@ public class CopyToLocalCommand extends Command {
 
         StatusCommand.sendTaskStartedMessage("CopyToLocal", sender);
 
-        final Task copyToLocalTask;
-
-        String inProgressName = backup.getName() + " in progress";
-        if (backup.getFileType().equals("(ZIP)")) {
-            inProgressName += ".zip";
-        }
-        File inProgressFile = new File(Config.getInstance().getLocalConfig().getBackupsFolder(), inProgressName);
-
-        copyToLocalTask = switch (storage) {
-            case "sftp" -> new SftpGetFileFolderTask(backup.getPath(), inProgressFile,
-                    false, true, List.of(Permissions.SFTP_COPY_TO_LOCAL), sender);
-
-            case "ftp" -> new FtpGetFileFolderTask(backup.getPath(), inProgressFile,
-                    false, true, List.of(Permissions.FTP_COPY_TO_LOCAL), sender);
-
-            case "googleDrive" -> new GoogleDriveGetFileFolderTask(backup.getPath(), inProgressFile,
-                    false, true, List.of(Permissions.GOOGLE_DRIVE_COPY_TO_LOCAL), sender);
-
-            default -> null;
-        };
-
-        final String backupFileName = backup.getFileName();
+        final Task copyToLocalTask = backup.getCopyToLocalTask(true, sender);
 
         Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
             copyToLocalTask.run();
-
-            if (!copyToLocalTask.isCancelled()) {
-                if (!inProgressFile.renameTo(new File(Config.getInstance().getLocalConfig().getBackupsFolder(), backupFileName))) {
-                    Logger.getLogger().warn("Failed to rename local file: \"" + inProgressFile.getAbsolutePath() + "\" to \"" +
-                            new File(Config.getInstance().getLocalConfig().getBackupsFolder(), backupFileName).getAbsolutePath() + "\"", sender);
-                }
-            }
 
             sendMessage("CopyToLocal task completed");
         });

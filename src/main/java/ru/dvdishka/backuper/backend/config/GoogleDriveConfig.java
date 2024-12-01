@@ -13,7 +13,6 @@ public class GoogleDriveConfig {
     String backupsFolderId;
     boolean createBackuperFolder;
     boolean moveFilesToTrash;
-    int maxBackupsNumber;
     int backupsNumber;
     long backupsWeight;
 
@@ -52,10 +51,6 @@ public class GoogleDriveConfig {
 
     public boolean isMoveFilesToTrash() {
         return moveFilesToTrash;
-    }
-
-    public int getMaxBackupsNumber() {
-        return maxBackupsNumber;
     }
 
     public int getBackupsNumber() {

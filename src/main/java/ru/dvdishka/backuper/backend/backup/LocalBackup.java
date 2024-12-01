@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
-public class LocalBackup extends Backup {
+public class LocalBackup extends ExternalBackup {
 
     private LocalDateTime backupLocalDateTime;
 
@@ -75,16 +75,7 @@ public class LocalBackup extends Backup {
         return backupLocalDateTime;
     }
 
-    public long getMbSize(CommandSender sender) {
-
-        return getByteSize(sender) / 1024 / 1024;
-    }
-
-    public long getByteSize(CommandSender sender) {
-
-        if (cachedBackupsSize.containsKey(backupName)) {
-            return cachedBackupsSize.get(backupName);
-        }
+    long calculateByteSize(CommandSender sender) {
 
         File backupsFolder = new File(Config.getInstance().getLocalConfig().getBackupsFolder());
         String backupFilePath;
@@ -96,7 +87,6 @@ public class LocalBackup extends Backup {
         }
 
         long size = Utils.getFileFolderByteSize(new File(backupFilePath));
-        cachedBackupsSize.put(backupName, size);
         return size;
     }
 

@@ -159,7 +159,7 @@ public class DeleteBrokenBackupsTask extends Task {
                 }
 
                 if (file.getName().replace(".zip", "").endsWith(" in progress")) {
-                    tasks.add(new GoogleDriveDeleteFileFolderTask(file.getDriveId(), false, permissions, sender));
+                    tasks.add(new GoogleDriveDeleteFileFolderTask(file.getId(), false, permissions, sender));
                 }
             }
         }

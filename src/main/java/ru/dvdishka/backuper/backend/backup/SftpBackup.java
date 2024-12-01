@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class SftpBackup extends Backup {
+public class SftpBackup extends ExternalBackup {
 
     private static HashMap<String, SftpBackup> backups = new HashMap<>();
 
@@ -101,17 +101,9 @@ public class SftpBackup extends Backup {
         return LocalDateTime.parse(backupName, Config.getInstance().getDateTimeFormatter());
     }
 
-    public long getByteSize(CommandSender sender) {
-        if (cachedBackupsSize.containsKey(backupName)) {
-            return cachedBackupsSize.get(backupName);
-        }
+    long calculateByteSize(CommandSender sender) {
         long size =  SftpUtils.getDirByteSize(SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), getFileName()), sender);
-        cachedBackupsSize.put(backupName, size);
         return size;
-    }
-
-    public long getMbSize(CommandSender sender) {
-        return getByteSize(sender) / 1024 / 1024;
     }
 
     public String getPath() {

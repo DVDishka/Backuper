@@ -135,5 +135,10 @@
             <artifactId>google-api-services-drive</artifactId>
             <version>v3-rev20220815-2.0.0</version>
         </dependency>
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>3.1.8</version>
+        </dependency>
     </dependencies>
 </project>

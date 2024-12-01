@@ -48,7 +48,7 @@ public class CopyToFtpConfirmationCommand extends Command {
 
         buttonSound();
 
-        long backupSize = backup.getByteSize(sender) / 1024;
+        long backupSize = backup.getMbSize(sender);
         String zipFolderBackup = backup.getFileType();
 
         Component header = Component.empty();

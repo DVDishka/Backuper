@@ -1,5 +1,7 @@
 package ru.dvdishka.backuper.backend.backup;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.common.Logger;
@@ -10,14 +12,13 @@ import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 public abstract class Backup {
 
     String backupName;
 
-    HashMap<String, Long> cachedBackupsSize = new HashMap<>();
+    static final Cache<String, Long> cachedBackupsSize = Caffeine.newBuilder().build();
 
     public BackupDeleteTask getDeleteTask(boolean setLocked, CommandSender sender) {
         return new BackupDeleteTask(this, setLocked, sender);
@@ -37,9 +38,15 @@ public abstract class Backup {
         return getLocalDateTime().format(Config.getInstance().getDateTimeFormatter());
     }
 
-    public abstract long getByteSize(CommandSender sender);
+    abstract long calculateByteSize(CommandSender sender);
 
-    public abstract long getMbSize(CommandSender sender);
+    public long getByteSize(CommandSender sender) {
+        return cachedBackupsSize.get(this.getName(), (key) -> calculateByteSize(sender));
+    }
+
+    public long getMbSize(CommandSender sender) {
+        return getByteSize(sender) / 1024 / 1024;
+    }
 
     public abstract String getFileType();
 
@@ -103,8 +110,10 @@ public abstract class Backup {
                     prepareTask();
                 }
 
-                deleteBackupTask.run();
-                backup.cachedBackupsSize.remove(backup.getName());
+                if (!cancelled) {
+                    deleteBackupTask.run();
+                }
+                backup.cachedBackupsSize.invalidate(backup.getName());
 
                 if (setLocked) {
                     UIUtils.successSound(sender);
