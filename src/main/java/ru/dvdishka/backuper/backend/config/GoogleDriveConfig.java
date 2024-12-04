@@ -12,9 +12,9 @@ public class GoogleDriveConfig {
     File tokensFolder;
     String backupsFolderId;
     boolean createBackuperFolder;
-    boolean moveFilesToTrash;
     int backupsNumber;
     long backupsWeight;
+    int authPort;
 
     public boolean isEnabled() {
         return enabled;
@@ -49,10 +49,6 @@ public class GoogleDriveConfig {
         }
     }
 
-    public boolean isMoveFilesToTrash() {
-        return moveFilesToTrash;
-    }
-
     public int getBackupsNumber() {
         return backupsNumber;
     }
@@ -60,4 +56,6 @@ public class GoogleDriveConfig {
     public long getBackupsWeight() {
         return backupsWeight;
     }
+
+    public int getAuthPort() {return authPort;}
 }

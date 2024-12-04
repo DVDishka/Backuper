@@ -148,9 +148,9 @@ public class Config {
         String googleDriveTokenFolder = config.getString("googleDrive.auth.tokensFolderPath", "plugins/Backuper/GoogleDrive/tokens");
         this.googleDriveConfig.tokensFolder = new File(googleDriveTokenFolder);
         this.googleDriveConfig.createBackuperFolder = config.getBoolean("googleDrive.createBackuperFolder", true);
-        this.googleDriveConfig.moveFilesToTrash = config.getBoolean("googleDrive.moveFilesToTrash", false);
         this.googleDriveConfig.backupsNumber = config.getInt("googleDrive.maxBackupsNumber", 0);
         this.googleDriveConfig.backupsWeight = config.getLong("googleDrive.maxBackupsWeight", 0) * 1_048_576L;
+        this.googleDriveConfig.authPort = config.getInt("googleDrive.auth.port", 8888);
 
         this.betterLogging = config.getBoolean("server.betterLogging", false);
         this.fixedBackupTime = this.backupTime > -1;
@@ -252,7 +252,7 @@ public class Config {
                 "ftp.zipArchive", "ftp.zipCompressionLevel", "server.checkUpdates", "local.autoBackup", "ftp.autoBackup", "sftp.autoBackup",
                 "backup.deleteBrokenBackups", "backup.backupFileNameFormat", "googleDrive.enabled", "googleDrive.autoBackup",
                 "googleDrive.auth.tokensFolderPath", "googleDrive.backupsFolderId", "googleDrive.createBackuperFolder",
-                "googleDrive.moveFilesToTrash", "googleDrive.maxBackupsWeight", "googleDrive.maxBackupsNumber");
+                "googleDrive.maxBackupsWeight", "googleDrive.maxBackupsNumber", "googleDrive.auth.port");
 
         for (String configField : configFields) {
             if (isConfigFileOk && !config.contains(configField)) {
@@ -324,8 +324,8 @@ public class Config {
             newConfig.set("googleDrive.autoBackup", this.googleDriveConfig.autoBackup);
             newConfig.set("googleDrive.backupsFolderId", this.googleDriveConfig.backupsFolderId);
             newConfig.set("googleDrive.auth.tokenFolderPath", googleDriveTokenFolder);
+            newConfig.set("googleDrive.auth.port", this.googleDriveConfig.authPort);
             newConfig.set("googleDrive.createBackuperFolder", this.googleDriveConfig.createBackuperFolder);
-            newConfig.set("googleDrive.moveFileToTrash", this.googleDriveConfig.moveFilesToTrash);
             newConfig.set("googleDrive.maxBackupsWeight", this.googleDriveConfig.backupsWeight / 1_048_576L);
             newConfig.set("googleDrive.maxBackupsNumber", this.googleDriveConfig.backupsNumber);
 

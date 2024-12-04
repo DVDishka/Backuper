@@ -83,6 +83,7 @@ public class GoogleDriveGetFileFolderTask extends Task {
 
     @Override
     public void prepareTask() {
+        isTaskPrepared = true;
         try {
             dirSize = GoogleDriveUtils.getFileByteSize(sourceDirId, sender);
         } catch (Exception e) {
@@ -130,13 +131,12 @@ public class GoogleDriveGetFileFolderTask extends Task {
                 Path newPath = localPath.toPath();
                 localPath.mkdirs();
 
+                if (firstDir && createRootDirInTargetDir) {
+                    newPath = newPath.resolve(GoogleDriveUtils.getFileName(driveFileId, sender));
+                }
+
                 for (com.google.api.services.drive.model.File driveEntry : GoogleDriveUtils.ls(driveFileId, sender)) {
-
-                    if (createRootDirInTargetDir || !firstDir) {
-                        newPath = localPath.toPath().resolve(driveEntry.getName());
-                    }
-
-                    getRemoteDir(driveEntry.getId(), newPath.toFile(), false);
+                    getRemoteDir(driveEntry.getId(), newPath.resolve(driveEntry.getName()).toFile(), false);
                 }
             }
 

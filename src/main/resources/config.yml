@@ -63,7 +63,6 @@ googleDrive:
 
   backupsFolderId: ''
   createBackuperFolder: true
-  moveFilesToTrash: false
 
   # (>= 0) Max backups in backups folder, 0 to make it unlimited
   maxBackupsNumber: 0
@@ -71,8 +70,8 @@ googleDrive:
   maxBackupsWeight: 0
 
   auth:
-    credentialsFilePath: ''
     tokensFolderPath: plugins/Backuper/GoogleDrive/tokens
+    port: 8888
 
 ftp:
   # (true/false) Enable FTP storage to use it via the Backuper

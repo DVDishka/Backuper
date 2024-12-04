@@ -93,6 +93,8 @@ public class GoogleDriveUtils {
                     if (e.getStatusCode() != 404) {
                         return null;
                     }
+                } catch (Exception e) {
+                    return null;
                 }
                 return credential;
             }
@@ -123,7 +125,7 @@ public class GoogleDriveUtils {
                 .setAccessType("offline")
                 .build();
         // PORT MUST BE UNLOCKED
-        LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(8888).build();
+        LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(Config.getInstance().getGoogleDriveConfig().getAuthPort()).build();
         Credential credential = new MyAuthorizationCodeInstalledApp(flow, receiver).authorize("user", true, sender);
 
         return credential;
@@ -417,15 +419,7 @@ public class GoogleDriveUtils {
         try {
 
             Drive service = getService(sender);
-
-            if (Config.getInstance().getGoogleDriveConfig().isMoveFilesToTrash()) {
-
-                com.google.api.services.drive.model.File driveFile = service.files().get(fileId).execute().setTrashed(true);
-                service.files().update(fileId, driveFile).setFields("trashed").execute();
-
-            } else {
-                service.files().delete(fileId).execute();
-            }
+            service.files().delete(fileId).execute();
 
         } catch (Exception e) {
             Logger.getLogger().warn("Failed to delete Google Drive file", sender);
@@ -484,21 +478,15 @@ public class GoogleDriveUtils {
         }
     }
 
-    public static void test(CommandSender sender) {
+    public static String getFileName(String fileId, CommandSender sender) {
+        try {
 
-        /*
-        Logger.getLogger().log("Google Drive: Test started", sender);
+            return getService(sender).files().get(fileId).setFields("name").execute().getName();
 
-        Logger.getLogger().log("Google Drive: ls test started", sender);
-        for (com.google.api.services.drive.model.File driveFile : ls("1b9e-n3eTGFuDcl08-cfylR1ckdeQJaLr", sender)) {
-            Logger.getLogger().warn(driveFile.getName() + " " + driveFile.getId(), sender);
+        } catch (Exception e) {
+            Logger.getLogger().warn("Failed to get file name from Google Drive. Check if Google Drive account is linked", sender);
+            Logger.getLogger().warn(GoogleDriveUtils.class, e);
+            return "";
         }
-        Logger.getLogger().log("Google Drive: ls test finished", sender);
-
-        Logger.getLogger().log("Google Drive: File uploading test started", sender);
-        new GoogleDriveSendFileFolderTask(new File("plugins/Backuper/29-06-2024 07-26-40"), "", true, false, true, List.of(), sender).run();
-        Logger.getLogger().log("Google Drive: File uploaded", sender);
-
-        Logger.getLogger().log("Google Drive: Test finished", sender);*/
     }
 }
