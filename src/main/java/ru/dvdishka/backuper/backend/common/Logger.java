@@ -95,7 +95,7 @@ public class Logger {
         }
     }
 
-    public void warn(Class sourceClass, Exception exception) {
+    public void warn(Class<?> sourceClass, Exception exception) {
         Utils.plugin.getLogger().warning(sourceClass.getSimpleName() + ": " + exception.getMessage() + "\n" + Arrays.toString(exception.getStackTrace()));
     }
 
@@ -103,7 +103,7 @@ public class Logger {
         Utils.plugin.getLogger().warning(sourceClassName + ": " + exception.getMessage() + "\n" + Arrays.toString(exception.getStackTrace()));
     }
 
-    public void devWarn(Class sourceClass, Exception exception) {
+    public void devWarn(Class<?> sourceClass, Exception exception) {
         if (Config.getInstance().isBetterLogging()) {
             Utils.plugin.getLogger().warning(sourceClass.getSimpleName() + ": " + exception.getMessage() + "\n" + Arrays.toString(exception.getStackTrace()));
         }

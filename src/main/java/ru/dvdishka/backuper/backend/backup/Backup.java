@@ -12,13 +12,37 @@ import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public abstract class Backup {
 
     String backupName;
 
-    static final Cache<String, Long> cachedBackupsSize = Caffeine.newBuilder().build();
+    static final HashMap<Class<?>, Cache<String, Long>> cachedBackupsSize = new HashMap<>();
+
+    static {
+        cachedBackupsSize.put(LocalBackup.class, Caffeine.newBuilder().build());
+        cachedBackupsSize.put(FtpBackup.class, Caffeine.newBuilder().build());
+        cachedBackupsSize.put(SftpBackup.class, Caffeine.newBuilder().build());
+        cachedBackupsSize.put(GoogleDriveBackup.class, Caffeine.newBuilder().build());
+    }
+
+    private Class<?> getSpicialClass() {
+        if (this instanceof LocalBackup) {
+            return LocalBackup.class;
+        }
+        if (this instanceof FtpBackup) {
+            return FtpBackup.class;
+        }
+        if (this instanceof SftpBackup) {
+            return SftpBackup.class;
+        }
+        if (this instanceof GoogleDriveBackup) {
+            return GoogleDriveBackup.class;
+        }
+        return Backup.class;
+    }
 
     public BackupDeleteTask getDeleteTask(boolean setLocked, CommandSender sender) {
         return new BackupDeleteTask(this, setLocked, sender);
@@ -41,7 +65,7 @@ public abstract class Backup {
     abstract long calculateByteSize(CommandSender sender);
 
     public long getByteSize(CommandSender sender) {
-        return cachedBackupsSize.get(this.getName(), (key) -> calculateByteSize(sender));
+        return cachedBackupsSize.get(getSpicialClass()).get(this.getName(), (key) -> calculateByteSize(sender));
     }
 
     public long getMbSize(CommandSender sender) {
@@ -56,7 +80,7 @@ public abstract class Backup {
 
     public class BackupDeleteTask extends Task {
 
-        private static final String taskName = "BackupDeleteTask";
+        private static final String taskName = "BackupDelete";
 
         private Backup backup = null;
         private Task deleteBackupTask = null;
@@ -113,7 +137,7 @@ public abstract class Backup {
                 if (!cancelled) {
                     deleteBackupTask.run();
                 }
-                backup.cachedBackupsSize.invalidate(backup.getName());
+                cachedBackupsSize.get(getSpicialClass()).invalidate(backup.getName());
 
                 if (setLocked) {
                     UIUtils.successSound(sender);

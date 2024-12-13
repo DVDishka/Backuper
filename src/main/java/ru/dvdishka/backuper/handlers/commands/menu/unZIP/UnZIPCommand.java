@@ -61,9 +61,7 @@ public class UnZIPCommand extends Command {
         Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
 
             try {
-
-                new ConvertZipToFolderTask(localBackup.getZIPFile(), true, List.of(Permissions.LOCAL_UNZIP), sender).run();
-
+                localBackup.unZip(true, sender);
                 sendMessage("UnZIP task completed");
 
             } catch (Exception e) {

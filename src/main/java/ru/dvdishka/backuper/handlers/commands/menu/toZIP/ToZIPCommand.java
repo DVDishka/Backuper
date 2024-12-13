@@ -61,8 +61,7 @@ public class ToZIPCommand extends Command {
         Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
             try {
 
-                new ConvertFolderToZipTask(localBackup.getFile(), true, List.of(Permissions.LOCAL_TO_ZIP), sender).run();
-
+                localBackup.toZip(true, sender);
                 sendMessage("ToZIP task completed");
 
             } catch (Exception e) {

@@ -47,7 +47,7 @@ public abstract class ExternalBackup extends Backup {
 
     public class CopyToLocalTask extends Task {
 
-        private static final String taskName = "CopyToLocalTask";
+        private static final String taskName = "CopyToLocal";
 
         private ExternalBackup backup = null;
         private Task copyToLocalTask = null;
