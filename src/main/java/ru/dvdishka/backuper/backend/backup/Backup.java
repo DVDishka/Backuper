@@ -28,7 +28,7 @@ public abstract class Backup {
         cachedBackupsSize.put(GoogleDriveBackup.class, Caffeine.newBuilder().build());
     }
 
-    private Class<?> getSpicialClass() {
+    private Class<?> getSpecialClass() {
         if (this instanceof LocalBackup) {
             return LocalBackup.class;
         }
@@ -65,7 +65,7 @@ public abstract class Backup {
     abstract long calculateByteSize(CommandSender sender);
 
     public long getByteSize(CommandSender sender) {
-        return cachedBackupsSize.get(getSpicialClass()).get(this.getName(), (key) -> calculateByteSize(sender));
+        return cachedBackupsSize.get(getSpecialClass()).get(this.getName(), (key) -> calculateByteSize(sender));
     }
 
     public long getMbSize(CommandSender sender) {
@@ -137,7 +137,7 @@ public abstract class Backup {
                 if (!cancelled) {
                     deleteBackupTask.run();
                 }
-                cachedBackupsSize.get(getSpicialClass()).invalidate(backup.getName());
+                cachedBackupsSize.get(getSpecialClass()).invalidate(backup.getName());
 
                 if (setLocked) {
                     UIUtils.successSound(sender);

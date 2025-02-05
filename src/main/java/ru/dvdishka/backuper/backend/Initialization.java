@@ -2,6 +2,7 @@ package ru.dvdishka.backuper.backend;
 
 import dev.jorel.commandapi.CommandTree;
 import dev.jorel.commandapi.arguments.*;
+import dev.jorel.commandapi.executors.CommandArguments;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -11,6 +12,7 @@ import org.bstats.bukkit.Metrics;
 import org.bstats.charts.SimplePie;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -62,6 +64,7 @@ import java.net.HttpURLConnection;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -83,6 +86,40 @@ public class Initialization implements Listener {
         bStats.addCustomChart(new SimplePie("sftp_storage", () -> Config.getInstance().getSftpConfig().isEnabled() ? "enabled" : "disabled"));
 
         Logger.getLogger().log("BStats initialization completed");
+    }
+
+    public static void indexStorages(CommandSender sender) {
+
+        Logger.getLogger().log("Indexing storages...");
+
+        if (Config.getInstance().getLocalConfig().isEnabled()) {
+            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                Logger.getLogger().devLog("Indexing local storage...");
+                new ListCommand("local", false, sender, new CommandArguments(new Objects[]{}, new HashMap<String, Object>(), new String[]{}, new HashMap<String, String>(), "")).execute();
+                Logger.getLogger().devLog("Local storage has been indexed");
+            });
+        }
+        if (Config.getInstance().getFtpConfig().isEnabled()) {
+            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                Logger.getLogger().devLog("Indexing FTP storage...");
+                new ListCommand("ftp", false, sender, new CommandArguments(new Objects[]{}, new HashMap<String, Object>(), new String[]{}, new HashMap<String, String>(), "")).execute();
+                Logger.getLogger().devLog("FTP storage has been indexed");
+            });
+        }
+        if (Config.getInstance().getSftpConfig().isEnabled()) {
+            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                Logger.getLogger().devLog("Indexing SFTP storage...");
+                new ListCommand("sftp", false, sender, new CommandArguments(new Objects[]{}, new HashMap<String, Object>(), new String[]{}, new HashMap<String, String>(), "")).execute();
+                Logger.getLogger().devLog("SFTP storage has been indexed");
+            });
+        }
+        if (Config.getInstance().getGoogleDriveConfig().isEnabled() && GoogleDriveUtils.isAuthorized(sender)) {
+            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                Logger.getLogger().devLog("Indexing GoogleDrive storage...");
+                new ListCommand("googleDrive", false, sender, new CommandArguments(new Objects[]{}, new HashMap<String, Object>(), new String[]{}, new HashMap<String, String>(), "")).execute();
+                Logger.getLogger().devLog("GoogleDrive storage has been indexed");
+            });
+        }
     }
 
     public static void initAutoBackup(CommandSender sender) {
@@ -214,6 +251,8 @@ public class Initialization implements Listener {
         FtpUtils.init();
         SftpUtils.init();
         GoogleDriveUtils.init();
+
+        Initialization.indexStorages(sender);
 
         Logger.getLogger().log("Config loading completed", sender);
     }
@@ -902,21 +941,26 @@ public class Initialization implements Listener {
         ;
         backupTaskCommandTree.register();
 
-        CommandTree backupGoogleDriveCommandTree = new CommandTree("backuper").withPermission(Permissions.BACKUPER.getPermission());
-        backupGoogleDriveCommandTree
-                .then(new LiteralArgument("googleDrive").withRequirement((sender) -> Config.getInstance().getGoogleDriveConfig().isEnabled())
-                        .then(new LiteralArgument("link")
+        CommandTree backupAccountCommandTree = new CommandTree("backuper").withPermission(Permissions.BACKUPER.getPermission());
+        backupAccountCommandTree
+                .then(new LiteralArgument("account")
+                        .then(new LiteralArgument("googleDrive")
+                                .withRequirement((sender) -> Config.getInstance().getGoogleDriveConfig().isEnabled())
+                                .withPermission(Permissions.GOOGLE_DRIVE_ACCOUNT.getPermission())
 
-                                .executes((sender, args) -> {
+                                .then(new LiteralArgument("link")
 
-                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                                        new GoogleDriveLinkCommand(sender, args).execute();
-                                    });
-                                })
+                                        .executes((sender, args) -> {
+
+                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                new GoogleDriveLinkCommand(sender, args).execute();
+                                            });
+                                        })
+                                )
                         )
                 )
         ;
-        backupGoogleDriveCommandTree.register();
+        backupAccountCommandTree.register();
     }
 
     public static void initEventHandlers() {
@@ -973,46 +1017,75 @@ public class Initialization implements Listener {
                 Utils.isUpdatedToLatest = true;
                 Logger.getLogger().log("You are using the latest version of the BACKUPER!");
             } else {
-
                 Utils.isUpdatedToLatest = false;
-
-                String message = "\n" + "-".repeat(75) + "\n";
-
-                message += "You are using an outdated version of Backuper\nPlease update it to the latest and check the changelist!";
-                for (String downloadLink : Utils.downloadLinks) {
-                    message = message.concat("\nDownload link: " + downloadLink);
-                }
-
-                message += "\n" + "-".repeat(75);
-
-                Logger.getLogger().warn(message);
             }
 
         } catch (Exception e) {
 
-            Logger.getLogger().warn("Failed to check Backuper updates!");
-            Logger.getLogger().warn("Initialization", e);
+            Logger.getLogger().warn("Failed to check the Backuper updates!");
+            Logger.getLogger().warn(Initialization.class, e);
         }
     }
 
     public static void sendIssueToGitHub() {
 
         String message = "\n" + "-".repeat(75) + "\n";
-        message += "Please, if you find any issues related to the BACKUPER\nCreate an issue using the link: https://github.com/DVDishka/Backuper/issues\n";
+        message += "Please, if you find any issues related to the Backuper\nCreate an issue using the link: https://github.com/DVDishka/Backuper/issues\n";
         message += "-".repeat(75);
 
         Logger.getLogger().log(message);
     }
 
-    @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event) {
+    public static void sendGoogleAccountCheckResult(CommandSender sender) {
 
-        if (event.getPlayer().isOp() && !Utils.isUpdatedToLatest) {
+        if (sender.isOp() && Config.getInstance().getGoogleDriveConfig().isEnabled() && !GoogleDriveUtils.isAuthorized(null)) {
 
             Component message = Component.empty();
 
+            if (sender instanceof ConsoleCommandSender) {
+                message = message.appendNewline();
+            }
+
             message = message
-                    .append(Component.text("------------------------------------------")
+                    .append(sender instanceof ConsoleCommandSender ? Component.text("-".repeat(75)) : Component.text("------------------------------------------")
+                            .decorate(TextDecoration.BOLD)
+                            .color(TextColor.color(0xE3A013)))
+                    .append(Component.newline());
+
+            message = message
+                    .append(Component.text("Google Drive storage is enabled, but Google account is not linked!")
+                            .decorate(TextDecoration.BOLD)
+                            .color(NamedTextColor.RED))
+                    .append(Component.newline())
+                    .append(Component.text("Use ")
+                            .decorate(TextDecoration.BOLD)
+                            .color(NamedTextColor.RED))
+                    .append(Component.text("/backuper account googleDrive link")
+                            .decorate(TextDecoration.UNDERLINED)
+                            .clickEvent(ClickEvent.suggestCommand("/backuper account googleDrive link")));
+
+            message = message
+                    .appendNewline()
+                    .append(sender instanceof ConsoleCommandSender ? Component.text("-".repeat(75)) : Component.text("------------------------------------------")
+                            .decorate(TextDecoration.BOLD)
+                            .color(TextColor.color(0xE3A013)));
+
+            sender.sendMessage(message);
+        }
+    }
+
+    public static void sendPluginVersionCheckResult(CommandSender sender) {
+
+        if (sender.isOp() && !Utils.isUpdatedToLatest) {
+
+            Component message = Component.empty();
+
+            if (sender instanceof ConsoleCommandSender) {
+                message = message.appendNewline();
+            }
+
+            message = message
+                    .append(sender instanceof ConsoleCommandSender ? Component.text("-".repeat(75)) : Component.text("------------------------------------------")
                             .decorate(TextDecoration.BOLD)
                             .color(TextColor.color(0xE3A013)))
                     .append(Component.newline());
@@ -1028,7 +1101,7 @@ public class Initialization implements Listener {
                 message = message.append(Component.newline());
 
                 message = message
-                        .append(Component.text("Download link: " + Utils.downloadLinksName.get(downloadLinkNumber))
+                        .append(Component.text("Download link: " + (sender instanceof ConsoleCommandSender ? downloadLink : Utils.downloadLinksName.get(downloadLinkNumber)))
                                 .clickEvent(ClickEvent.openUrl(downloadLink))
                                 .decorate(TextDecoration.UNDERLINED));
 
@@ -1036,13 +1109,19 @@ public class Initialization implements Listener {
             }
 
             message = message
-                    .append(Component.newline())
-                    .append(Component.text("------------------------------------------")
+                    .appendNewline()
+                    .append(sender instanceof ConsoleCommandSender ? Component.text("-".repeat(75)) : Component.text("------------------------------------------")
                             .decorate(TextDecoration.BOLD)
                             .color(TextColor.color(0xE3A013)));
 
-            event.getPlayer().sendMessage(message);
+            sender.sendMessage(message);
         }
+    }
+
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        sendPluginVersionCheckResult(event.getPlayer());
+        sendGoogleAccountCheckResult(event.getPlayer());
     }
 
     @EventHandler

@@ -81,7 +81,7 @@ ftp:
 
   # (Path) FTP server directory where backups will be stored
   backupsFolder: ''
-  # (Symbol) Path separator symbol used on FTP SERVER. For example '/' on UNIX systems and '\' on windows
+  # (Symbol) Path separator symbol used on FTP SERVER. For example '/' on UNIX systems. (It is usually '/' even on Windows servers, so change it to '\' only if it does not works with '/')
   pathSeparatorSymbol: /
 
   # (>= 0) Max backups in backups folder, 0 to make it unlimited

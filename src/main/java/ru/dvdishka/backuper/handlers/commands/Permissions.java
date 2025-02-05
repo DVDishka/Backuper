@@ -27,6 +27,7 @@ public enum Permissions {
     GOOGLE_DRIVE_LIST("backuper.googledrive.list"),
     GOOGLE_DRIVE_DELETE("backuper.googledrive.list.delete"),
     GOOGLE_DRIVE_COPY_TO_LOCAL("backuper.googledrive.list.copytolocal"),
+    GOOGLE_DRIVE_ACCOUNT("backuper.googledrive.account"),
 
     CONFIG("backuper.config"),
     RELOAD("backuper.config.reload"),

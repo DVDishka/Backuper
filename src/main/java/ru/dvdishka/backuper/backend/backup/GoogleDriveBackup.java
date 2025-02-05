@@ -23,8 +23,8 @@ public class GoogleDriveBackup extends ExternalBackup {
             .build(GoogleDriveBackup::getInstance);
     private static final Cache<String, ArrayList<GoogleDriveBackup>> backupList = Caffeine
             .newBuilder()
-            .expireAfterWrite(30, TimeUnit.SECONDS)
-            .expireAfterAccess(30, TimeUnit.SECONDS)
+            .expireAfterWrite(1, TimeUnit.SECONDS)
+            .expireAfterAccess(1, TimeUnit.SECONDS)
             .build();
 
     private GoogleDriveBackup(String backupName) {

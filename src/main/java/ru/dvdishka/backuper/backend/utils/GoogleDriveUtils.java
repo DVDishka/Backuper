@@ -30,9 +30,9 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.apache.commons.io.IOUtils;
 import org.bukkit.command.CommandSender;
-import ru.dvdishka.backuper.backend.exceptions.NotAuthorizedException;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.backend.exceptions.NotAuthorizedException;
 
 import java.io.*;
 import java.util.*;
@@ -45,6 +45,7 @@ public class GoogleDriveUtils {
     private static final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
     private static final List<String> DRIVE_SCOPES = List.of(DriveScopes.DRIVE_FILE);
     private static final NetHttpTransport NET_HTTP_TRANSPORT = new NetHttpTransport();
+    private static LocalServerReceiver current_receiver = null;
 
     private static final String FOLDER_MIME_TYPE = "application/vnd.google-apps.folder";
 
@@ -124,8 +125,16 @@ public class GoogleDriveUtils {
                 .setDataStoreFactory(new FileDataStoreFactory(tokensFolder))
                 .setAccessType("offline")
                 .build();
+
+        try {
+            current_receiver.stop();
+            Logger.getLogger().log("The previous link for authorization is no longer relevant");
+        } catch (Exception ignored) {}
+
         // PORT MUST BE UNLOCKED
         LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(Config.getInstance().getGoogleDriveConfig().getAuthPort()).build();
+        current_receiver = receiver;
+
         Credential credential = new MyAuthorizationCodeInstalledApp(flow, receiver).authorize("user", true, sender);
 
         return credential;
@@ -346,7 +355,14 @@ public class GoogleDriveUtils {
                 onAuthorization(authorizationUrl, sender);
 
                 String code = getReceiver().waitForCode();
-                TokenResponse response = getFlow().newTokenRequest(code).setRedirectUri(redirectUri).execute();
+                TokenResponse response;
+                try {
+                    response = getFlow().newTokenRequest(code).setRedirectUri(redirectUri).execute();
+                } catch (Exception e) {
+                    Logger.getLogger().warn("Google authorization failed. If you have just generated new authorization link just ignore this message, it is about the old one");
+                    Logger.getLogger().devWarn(GoogleDriveUtils.class, e);
+                    return null;
+                }
 
                 return getFlow().createAndStoreCredential(response, userId);
             } finally {

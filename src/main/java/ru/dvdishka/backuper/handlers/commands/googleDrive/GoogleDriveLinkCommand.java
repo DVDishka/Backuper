@@ -16,8 +16,9 @@ public class GoogleDriveLinkCommand extends Command {
     public void execute() {
 
         try {
-            GoogleDriveUtils.authorizeForced(sender);
-            returnSuccess("Google account authorization completed");
+            if (GoogleDriveUtils.authorizeForced(sender) != null) {
+                returnSuccess("Google account authorization completed");
+            }
         } catch (Exception e) {
             Logger.getLogger().warn("Failed to link Google account", sender);
             Logger.getLogger().warn(this.getClass(), e);

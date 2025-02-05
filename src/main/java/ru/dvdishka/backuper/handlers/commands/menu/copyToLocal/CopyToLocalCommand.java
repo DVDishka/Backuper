@@ -4,21 +4,13 @@ import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.backup.*;
-import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.Task;
-import ru.dvdishka.backuper.backend.tasks.ftp.FtpGetFileFolderTask;
-import ru.dvdishka.backuper.backend.tasks.googleDrive.GoogleDriveGetFileFolderTask;
-import ru.dvdishka.backuper.backend.tasks.sftp.SftpGetFileFolderTask;
 import ru.dvdishka.backuper.backend.utils.GoogleDriveUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.handlers.commands.Command;
-import ru.dvdishka.backuper.handlers.commands.Permissions;
 import ru.dvdishka.backuper.handlers.commands.task.status.StatusCommand;
-
-import java.io.File;
-import java.util.List;
 
 public class CopyToLocalCommand extends Command {
 
