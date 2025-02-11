@@ -16,6 +16,7 @@ import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.server.ServerLoadEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.dvdishka.backuper.Backuper;
@@ -84,6 +85,7 @@ public class Initialization implements Listener {
         bStats.addCustomChart(new SimplePie("local_storage", () -> Config.getInstance().getLocalConfig().isEnabled() ? "enabled" : "disabled"));
         bStats.addCustomChart(new SimplePie("ftp_storage", () -> Config.getInstance().getFtpConfig().isEnabled() ? "enabled" : "disabled"));
         bStats.addCustomChart(new SimplePie("sftp_storage", () -> Config.getInstance().getSftpConfig().isEnabled() ? "enabled" : "disabled"));
+        bStats.addCustomChart(new SimplePie("google_drive_storage", () -> Config.getInstance().getGoogleDriveConfig().isEnabled() ? "enabled" : "disabled"));
 
         Logger.getLogger().log("BStats initialization completed");
     }
@@ -1118,6 +1120,7 @@ public class Initialization implements Listener {
         }
     }
 
+    // Send plugin version and google account warnings if player is an operator
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         sendPluginVersionCheckResult(event.getPlayer());

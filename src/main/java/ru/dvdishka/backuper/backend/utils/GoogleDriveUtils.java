@@ -1,12 +1,8 @@
 package ru.dvdishka.backuper.backend.utils;
 
 import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;
-import com.google.api.client.auth.oauth2.AuthorizationCodeRequestUrl;
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.auth.oauth2.TokenResponse;
-import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
-import com.google.api.client.extensions.java6.auth.oauth2.VerificationCodeReceiver;
-import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
@@ -19,16 +15,18 @@ import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.gson.GsonFactory;
-import com.google.api.client.util.Preconditions;
 import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.DriveScopes;
 import com.google.api.services.drive.model.FileList;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.client.fluent.Request;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
@@ -41,11 +39,12 @@ public class GoogleDriveUtils {
 
     private static File tokensFolder;
 
+    private static final String authServiceUrl = "https://auth.backuper-mc.com";
+
     private static final String APPLICATION_NAME = "BACKUPER";
     private static final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
     private static final List<String> DRIVE_SCOPES = List.of(DriveScopes.DRIVE_FILE);
     private static final NetHttpTransport NET_HTTP_TRANSPORT = new NetHttpTransport();
-    private static LocalServerReceiver current_receiver = null;
 
     private static final String FOLDER_MIME_TYPE = "application/vnd.google-apps.folder";
 
@@ -124,18 +123,10 @@ public class GoogleDriveUtils {
                 NET_HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, DRIVE_SCOPES)
                 .setDataStoreFactory(new FileDataStoreFactory(tokensFolder))
                 .setAccessType("offline")
+                .setApprovalPrompt("force")
                 .build();
 
-        try {
-            current_receiver.stop();
-            Logger.getLogger().log("The previous link for authorization is no longer relevant");
-        } catch (Exception ignored) {}
-
-        // PORT MUST BE UNLOCKED
-        LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(Config.getInstance().getGoogleDriveConfig().getAuthPort()).build();
-        current_receiver = receiver;
-
-        Credential credential = new MyAuthorizationCodeInstalledApp(flow, receiver).authorize("user", true, sender);
+        Credential credential = new MyAuthorizationCodeInstalledApp(flow).authorize("user", true, sender);
 
         return credential;
     }
@@ -317,57 +308,110 @@ public class GoogleDriveUtils {
         }
     }
 
-    private static class MyAuthorizationCodeInstalledApp extends AuthorizationCodeInstalledApp {
+    private static class MyAuthorizationCodeInstalledApp {
 
-        public MyAuthorizationCodeInstalledApp(AuthorizationCodeFlow flow, VerificationCodeReceiver receiver) {
-            super(flow, receiver);
+        private AuthorizationCodeFlow flow;
+
+        public MyAuthorizationCodeInstalledApp(AuthorizationCodeFlow flow) {
+            this.flow = flow;
         }
 
-        protected void onAuthorization(AuthorizationCodeRequestUrl authorizationUrl, CommandSender sender) throws IOException {
-            String url = authorizationUrl.build();
-            Preconditions.checkNotNull(url);
+        protected void onAuthorization(String id, CommandSender sender) {
+
+            String url = authServiceUrl + "/authgd?id=" + id;
 
             Component message = Component.empty()
                     .append(Component.text("Login using this link:")
                             .color(TextColor.fromHexString("#129c9b")))
+                    .appendSpace()
                     .append(Component.text(url)
                             .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.OPEN_URL, url))
                             .decorate(TextDecoration.UNDERLINED));
+
+
 
             sender.sendMessage(message);
         }
 
         public Credential authorize(String userId, boolean force, CommandSender sender) throws IOException {
-            try {
-                if (!force) {
-                    Credential credential = getFlow().loadCredential(userId);
-                    if (credential != null
-                            && (credential.getRefreshToken() != null
-                            || credential.getExpiresInSeconds() == null
-                            || credential.getExpiresInSeconds() > 60)) {
-                        return credential;
-                    }
+
+            if (!force) {
+                Credential credential = flow.loadCredential(userId);
+                if (credential != null
+                        && (credential.getRefreshToken() != null
+                        || credential.getExpiresInSeconds() == null
+                        || credential.getExpiresInSeconds() > 60)) {
+                    return credential;
                 }
-
-                String redirectUri = getReceiver().getRedirectUri();
-                AuthorizationCodeRequestUrl authorizationUrl =
-                        getFlow().newAuthorizationUrl().setRedirectUri(redirectUri);
-                onAuthorization(authorizationUrl, sender);
-
-                String code = getReceiver().waitForCode();
-                TokenResponse response;
-                try {
-                    response = getFlow().newTokenRequest(code).setRedirectUri(redirectUri).execute();
-                } catch (Exception e) {
-                    Logger.getLogger().warn("Google authorization failed. If you have just generated new authorization link just ignore this message, it is about the old one");
-                    Logger.getLogger().devWarn(GoogleDriveUtils.class, e);
-                    return null;
-                }
-
-                return getFlow().createAndStoreCredential(response, userId);
-            } finally {
-                getReceiver().stop();
             }
+
+            String id = generateId(sender);
+            onAuthorization(id, sender);
+            String response = null;
+
+            // Get token from authGD service
+            int t = 0;
+            try {
+                while (t < 300) {
+
+                    String result;
+                    // AuthGD is down
+                    try {
+                        result = Request.Get(authServiceUrl + "/getgd?id=" + id).execute().returnContent().asString();
+                    } catch (Exception e) {
+                        Logger.getLogger().warn("Google authentication failed. Probably backuper-mc.com is down, inform developer on GitHub");
+                        Logger.getLogger().devWarn(this.getClass(), e);
+                        return null;
+                    }
+
+                    if (!result.equals("null") && !result.equals("wrong")) {
+                        response = result;
+                        break;
+                    }
+
+                    Thread.sleep(1000);
+                    t++;
+                }
+            } catch (Exception e) {
+                Logger.getLogger().warn("Failed to get authGD server response", sender);
+                Logger.getLogger().warn(this.getClass(), e);
+                return null;
+            }
+
+            if (t >= 300) {
+                Logger.getLogger().warn("Failed to pass Google authentication because of timeout");
+                return null;
+            }
+
+            Gson gson = new GsonBuilder().create();
+            HashMap<String, Object> responseJson = gson.fromJson(response, HashMap.class);
+
+            TokenResponse tokenResponse = new TokenResponse();
+            tokenResponse.setAccessToken((String) responseJson.get("access_token"));
+            tokenResponse.setScope((String) responseJson.get("scope"));
+            tokenResponse.setTokenType((String) responseJson.get("token_type"));
+            tokenResponse.setExpiresInSeconds(((Double) responseJson.get("expires_in")).longValue());
+            tokenResponse.setRefreshToken((String) responseJson.get("refresh_token"));
+
+            return flow.createAndStoreCredential(tokenResponse, userId);
+        }
+
+        private String generateId(CommandSender sender) {
+
+            StringBuilder id = new StringBuilder();
+            Random rand = new Random();
+            for (int i = 0; i < 16; i++) {
+                int r = rand.nextInt(0, 62);
+
+                if (r < 10) {
+                    id.append((char) ('0' + r));
+                } else if (r - 10 < 26) {
+                    id.append((char) ('A' + r - 10));
+                } else {
+                    id.append((char) ('a' + r - 36));
+                }
+            }
+            return id.toString();
         }
     }
 
