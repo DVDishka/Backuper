@@ -1,5 +1,7 @@
 package ru.dvdishka.backuper.backend.backup;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.common.Logger;
@@ -17,7 +19,30 @@ public abstract class Backup {
 
     String backupName;
 
-    HashMap<String, Long> cachedBackupsSize = new HashMap<>();
+    static final HashMap<Class<?>, Cache<String, Long>> cachedBackupsSize = new HashMap<>();
+
+    static {
+        cachedBackupsSize.put(LocalBackup.class, Caffeine.newBuilder().build());
+        cachedBackupsSize.put(FtpBackup.class, Caffeine.newBuilder().build());
+        cachedBackupsSize.put(SftpBackup.class, Caffeine.newBuilder().build());
+        cachedBackupsSize.put(GoogleDriveBackup.class, Caffeine.newBuilder().build());
+    }
+
+    private Class<?> getSpecialClass() {
+        if (this instanceof LocalBackup) {
+            return LocalBackup.class;
+        }
+        if (this instanceof FtpBackup) {
+            return FtpBackup.class;
+        }
+        if (this instanceof SftpBackup) {
+            return SftpBackup.class;
+        }
+        if (this instanceof GoogleDriveBackup) {
+            return GoogleDriveBackup.class;
+        }
+        return Backup.class;
+    }
 
     public BackupDeleteTask getDeleteTask(boolean setLocked, CommandSender sender) {
         return new BackupDeleteTask(this, setLocked, sender);
@@ -37,9 +62,15 @@ public abstract class Backup {
         return getLocalDateTime().format(Config.getInstance().getDateTimeFormatter());
     }
 
-    public abstract long getByteSize(CommandSender sender);
+    abstract long calculateByteSize(CommandSender sender);
 
-    public abstract long getMbSize(CommandSender sender);
+    public long getByteSize(CommandSender sender) {
+        return cachedBackupsSize.get(getSpecialClass()).get(this.getName(), (key) -> calculateByteSize(sender));
+    }
+
+    public long getMbSize(CommandSender sender) {
+        return getByteSize(sender) / 1024 / 1024;
+    }
 
     public abstract String getFileType();
 
@@ -49,7 +80,7 @@ public abstract class Backup {
 
     public class BackupDeleteTask extends Task {
 
-        private static final String taskName = "BackupDeleteTask";
+        private static final String taskName = "BackupDelete";
 
         private Backup backup = null;
         private Task deleteBackupTask = null;
@@ -103,8 +134,10 @@ public abstract class Backup {
                     prepareTask();
                 }
 
-                deleteBackupTask.run();
-                backup.cachedBackupsSize.remove(backup.getName());
+                if (!cancelled) {
+                    deleteBackupTask.run();
+                }
+                cachedBackupsSize.get(getSpecialClass()).invalidate(backup.getName());
 
                 if (setLocked) {
                     UIUtils.successSound(sender);

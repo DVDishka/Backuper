@@ -34,7 +34,9 @@ public class StatusCommand extends Command {
         long progress = Backuper.getCurrentTask().getTaskPercentProgress();
         TextColor color;
 
-        if (progress < 40) {
+        if (progress == 0) {
+            color = TextColor.color(190, 20, 255);
+        } else if (progress < 40) {
             color = TextColor.color(190, 0, 27);
         } else if (progress < 75) {
             color = TextColor.color(190, 151, 0);
@@ -51,7 +53,7 @@ public class StatusCommand extends Command {
                 .append(Component.newline())
                 .append(Component.text("Task progress:"))
                 .append(Component.space())
-                .append(Component.text(progress + "%")
+                .append(Component.text(progress == 0 ? "Preparing..." : (progress + "%"))
                         .decorate(TextDecoration.BOLD)
                         .color(color));
 

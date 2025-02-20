@@ -53,7 +53,7 @@ public class CopyToGoogleDriveConfirmationCommand extends Command {
 
         buttonSound();
 
-        long backupSize = localBackup.getByteSize(sender) / 1024;
+        long backupSize = localBackup.getMbSize(sender);
         String zipFolderBackup = localBackup.getFileType();
 
         Component header = Component.empty();

@@ -87,7 +87,7 @@ public class GoogleDriveDeleteFileFolderTask extends Task {
                 incrementCurrentProgress(fileSize);
             }
         } catch (Exception e) {
-            Logger.getLogger().warn("Something went while trying to delete FTP(S) directory", sender);
+            Logger.getLogger().warn("Something went while trying to delete file from Google Drive", sender);
             Logger.getLogger().warn(this.getClass(), e);
         }
     }

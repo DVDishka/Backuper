@@ -1,5 +1,7 @@
 package ru.dvdishka.backuper.backend.backup;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.api.services.drive.model.File;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.common.Logger;
@@ -11,12 +13,19 @@ import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
-public class GoogleDriveBackup extends Backup {
+public class GoogleDriveBackup extends ExternalBackup {
 
-    private static HashMap<String, GoogleDriveBackup> backups = new HashMap<>();
+    private static final Cache<String, GoogleDriveBackup> backups = Caffeine
+            .newBuilder()
+            .build(GoogleDriveBackup::getInstance);
+    private static final Cache<String, ArrayList<GoogleDriveBackup>> backupList = Caffeine
+            .newBuilder()
+            .expireAfterWrite(1, TimeUnit.SECONDS)
+            .expireAfterAccess(1, TimeUnit.SECONDS)
+            .build();
 
     private GoogleDriveBackup(String backupName) {
         this.backupName = backupName;
@@ -27,12 +36,7 @@ public class GoogleDriveBackup extends Backup {
         if (!checkBackupExistenceByName(backupName)) {
             return null;
         }
-        if (backups.containsKey(backupName)) {
-            return backups.get(backupName);
-        }
-        GoogleDriveBackup backup = new GoogleDriveBackup(backupName);
-        backups.put(backupName, backup);
-        return backup;
+        return backups.get(backupName, GoogleDriveBackup::new);
     }
 
     public static ArrayList<GoogleDriveBackup> getBackups() {
@@ -41,18 +45,20 @@ public class GoogleDriveBackup extends Backup {
             return new ArrayList<>();
         }
 
-        ArrayList<GoogleDriveBackup> backups = new ArrayList<>();
-        for (File driveFile : GoogleDriveUtils.ls(Config.getInstance().getGoogleDriveConfig().getBackupsFolderId(), null)) {
-            try {
-                GoogleDriveBackup backup = getInstance(driveFile.getName());
+        return backupList.get("all", (key) -> {
 
-                if (backup != null) {
-                    backups.add(backup);
-                }
-            } catch (Exception e) {
+            ArrayList<GoogleDriveBackup> backups = new ArrayList<>();
+            for (File driveFile : GoogleDriveUtils.ls(Config.getInstance().getGoogleDriveConfig().getBackupsFolderId(), null)) {
+                try {
+                    GoogleDriveBackup backup = getInstance(driveFile.getName());
+
+                    if (backup != null) {
+                        backups.add(backup);
+                    }
+                } catch (Exception ignored) {}
             }
-        }
-        return backups;
+            return backups;
+        });
     }
 
     public static boolean checkBackupExistenceByName(String backupName) {
@@ -99,19 +105,9 @@ public class GoogleDriveBackup extends Backup {
     }
 
     @Override
-    public long getByteSize(CommandSender sender) {
-        if (cachedBackupsSize.containsKey(backupName)) {
-            return cachedBackupsSize.get(backupName);
-        }
-
+    long calculateByteSize(CommandSender sender) {
         long size = GoogleDriveUtils.getFileByteSize(getDriveFile(sender).getId(), sender);
-        cachedBackupsSize.put(backupName, size);
         return size;
-    }
-
-    @Override
-    public long getMbSize(CommandSender sender) {
-        return getByteSize(sender) / 1024 / 1024;
     }
 
     /**

@@ -23,6 +23,7 @@ public class ListCommand extends Command {
 
     public static ArrayList<ArrayList<TextComponent>> pages;
     private String storage;
+    private boolean sendResult = true;
 
     private HashMap<String, Long> backupNameMbSize = new HashMap<>();
     private HashMap<String, String> backupNameFileType = new HashMap<>();
@@ -31,6 +32,13 @@ public class ListCommand extends Command {
         super(sender, arguments);
 
         this.storage = storage;
+    }
+
+    public ListCommand(String storage, boolean sendResult, CommandSender sender, CommandArguments arguments) {
+        super(sender, arguments);
+
+        this.storage = storage;
+        this.sendResult = sendResult;
     }
 
     @Override
@@ -59,14 +67,18 @@ public class ListCommand extends Command {
             }
         }
 
-        sendMessage("Creating a list of backups may take some time...");
+        if (sendResult) {
+            sendMessage("Creating a list of backups may take some time...");
+        }
         buttonSound();
 
         // PAGE UPDATING HAPPENS THERE
         int listPageCount = getListPageCount();
 
         if (listPageCount == 0) {
-            returnFailure("There are no backups yet!");
+            if (sendResult) {
+                returnFailure("There are no backups yet!");
+            }
             cancelSound();
             return;
         }
@@ -74,7 +86,9 @@ public class ListCommand extends Command {
         int pageNumber = (Integer) arguments.getOrDefault("pageNumber", 1);
 
         if (pageNumber < 1 || pageNumber > listPageCount) {
-            returnFailure("Invalid page number!");
+            if (sendResult) {
+                returnFailure("Invalid page number!");
+            }
             cancelSound();
             return;
         }
@@ -89,10 +103,12 @@ public class ListCommand extends Command {
                         .color(TextColor.fromHexString("#129c9b"))
                         .decorate(TextDecoration.BOLD));
 
-        if (!(sender instanceof ConsoleCommandSender)) {
-            sendFramedMessage(header, createListMessage(pageNumber, true), 15);
-        } else {
-            sendFramedMessage(header, createListMessage(pageNumber, arguments.get("pageNumber") != null), 41);
+        if (sendResult) {
+            if (!(sender instanceof ConsoleCommandSender)) {
+                sendFramedMessage(header, createListMessage(pageNumber, true), 15);
+            } else {
+                sendFramedMessage(header, createListMessage(pageNumber, arguments.get("pageNumber") != null), 41);
+            }
         }
         buttonSound();
     }

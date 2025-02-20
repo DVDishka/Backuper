@@ -73,6 +73,8 @@ permissions:
       backuper.googledrive.*:
         default: false
         children:
+          backuper.googledrive.account:
+            default: op
           backuper.googledrive.list.*:
             default: false
             children:
@@ -96,6 +98,3 @@ permissions:
 
       backuper.backup_alert:
         default: true
-
-      backuper.account.google:
-        default: op

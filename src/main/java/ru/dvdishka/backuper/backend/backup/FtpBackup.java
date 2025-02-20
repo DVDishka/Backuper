@@ -11,12 +11,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.function.Supplier;
 
-public class FtpBackup extends Backup {
+public class FtpBackup extends ExternalBackup {
 
     private static HashMap<String, FtpBackup> backups = new HashMap<>();
-    private static HashMap<String, Long> cachedBackupsSize = new HashMap<>();
 
     private FtpBackup(String backupName) {
         this.backupName = backupName;
@@ -93,19 +91,9 @@ public class FtpBackup extends Backup {
         }
     }
 
-    public long getByteSize(CommandSender sender) {
-
-        if (cachedBackupsSize.containsKey(backupName)) {
-            return cachedBackupsSize.get(backupName);
-        }
-
+    long calculateByteSize(CommandSender sender) {
         long size = FtpUtils.getDirByteSize(getPath(), sender);
-        cachedBackupsSize.put(backupName, size);
         return size;
-    }
-
-    public long getMbSize(CommandSender sender) {
-        return getByteSize(sender) / 1024 / 1024;
     }
 
     /**

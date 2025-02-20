@@ -61,9 +61,10 @@ googleDrive:
   # (true/false) With automatic backup, backups will be saved to specified Google Drive. Works only if 'enabled: true'
   autoBackup: true
 
+  # Google Drive folder ID where backups will be stored
   backupsFolderId: ''
+  # Do you want the Backuper to create its own folder in specified in `backupsFolderId` directory to store backups there
   createBackuperFolder: true
-  moveFilesToTrash: false
 
   # (>= 0) Max backups in backups folder, 0 to make it unlimited
   maxBackupsNumber: 0
@@ -71,7 +72,7 @@ googleDrive:
   maxBackupsWeight: 0
 
   auth:
-    credentialsFilePath: ''
+    # Directory where you want to store your Google authentication tokens
     tokensFolderPath: plugins/Backuper/GoogleDrive/tokens
 
 ftp:
@@ -82,7 +83,7 @@ ftp:
 
   # (Path) FTP server directory where backups will be stored
   backupsFolder: ''
-  # (Symbol) Path separator symbol used on FTP SERVER. For example '/' on UNIX systems and '\' on windows
+  # (Symbol) Path separator symbol used on FTP SERVER. For example '/' on UNIX systems. (It is usually '/' even on Windows servers, so change it to '\' only if it does not works with '/')
   pathSeparatorSymbol: /
 
   # (>= 0) Max backups in backups folder, 0 to make it unlimited
