@@ -178,13 +178,13 @@ public class Config {
             this.backupTime = -1;
         }
 
-        if (this.alertTimeBeforeRestart >= this.backupPeriod * 60L) {
+        if (this.alertTimeBeforeRestart >= this.backupPeriod * 60L && this.backupPeriod != -1) {
             Logger.getLogger().warn("Failed to load config value!");
             Logger.getLogger().warn("alertTimeBeforeRestart must be < backupPeriod * 60, using backupPeriod * 60 - 1 value...");
             this.alertTimeBeforeRestart = this.backupPeriod * 60L - 1L;
         }
 
-        if (this.backupPeriod <= 0) {
+        if (this.backupPeriod <= 0 && this.backupPeriod != -1) {
             Logger.getLogger().warn("Failed to load config value!");
             Logger.getLogger().warn("backup.backupPeriod must be > 0, using default 1440 value...");
             this.backupPeriod = 1440;

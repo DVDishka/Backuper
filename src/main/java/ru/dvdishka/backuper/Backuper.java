@@ -45,20 +45,22 @@ public class Backuper extends JavaPlugin {
         Utils.plugin = this;
 
         File pluginDir = new File("plugins/Backuper");
-        File backupsDir = new File("plugins/Backuper/Backups");
         File configFile = new File("plugins/Backuper/config.yml");
-
+        
         if (!pluginDir.exists() && !pluginDir.mkdirs()) {
-
+            
             Logger.getLogger().warn("Can not create plugins/Backuper dir!");
         }
-
+        
+        
+        Initialization.initConfig(configFile, null);
+        File backupsDir = new File(Config.getInstance().getLocalConfig().getBackupsFolder());
         if (!backupsDir.exists() && !backupsDir.mkdirs()) {
 
             Logger.getLogger().warn("Can not create plugins/Backuper/Backups dir!");
         }
 
-        Initialization.initConfig(configFile, null);
+
         Initialization.checkStorages(null);
         Initialization.unifyBackupNameFormat(null);
         Initialization.initBStats(this);
@@ -67,7 +69,6 @@ public class Backuper extends JavaPlugin {
         Initialization.checkDependencies();
         Initialization.checkPluginVersion();
         Initialization.sendIssueToGitHub();
-
         Initialization.sendPluginVersionCheckResult(this.getServer().getConsoleSender());
         Initialization.sendGoogleAccountCheckResult(this.getServer().getConsoleSender());
 

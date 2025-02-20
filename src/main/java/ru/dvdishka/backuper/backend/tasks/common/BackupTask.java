@@ -23,6 +23,8 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collector;
+import java.util.stream.Stream;
 import java.util.zip.ZipOutputStream;
 
 public class BackupTask extends Task {
@@ -357,39 +359,8 @@ public class BackupTask extends Task {
                 targetZipOutputStream = new ZipOutputStream(new FileOutputStream(backupDir.getPath() + ".zip"));
             }
 
-            for (World world : Bukkit.getWorlds()) {
 
-                if (cancelled) {
-                    break;
-                }
-
-                File worldDir = world.getWorldFolder();
-
-                try {
-
-                    if (Config.getInstance().getLocalConfig().isZipArchive()) {
-
-                        Task task = new AddDirToZipTask(worldDir, targetZipOutputStream, true, false, false, permissions, sender);
-                        task.prepareTask();
-
-                        tasks.add(task);
-
-                    } else {
-
-                        Task task = new CopyFilesToFolderTask(worldDir, backupDir, true, false, false, permissions, sender);
-                        task.prepareTask();
-
-                        tasks.add(task);
-                    }
-
-                } catch (Exception e) {
-
-                    Logger.getLogger().warn("Something went wrong when trying to copy files!", sender);
-                    Logger.getLogger().warn(this.getClass(), e);
-                }
-            }
-
-            for (String additionalDirectoryToBackup : Config.getInstance().getAddDirectoryToBackup()) {
+            for (String additionalDirectoryToBackup : getAddDirectoryToBackup()) {
 
                 if (cancelled) {
                     break;
@@ -446,29 +417,8 @@ public class BackupTask extends Task {
 
             SftpUtils.createFolder(SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), backupName), sender);
 
-            for (World world : Bukkit.getWorlds()) {
 
-                if (cancelled) {
-                    break;
-                }
-
-                File worldDir = world.getWorldFolder();
-
-                try {
-                    Task task = new SftpSendFileFolderTask(worldDir, SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(),
-                            backupName), true, false, false, permissions, sender);
-                    task.prepareTask();
-
-                    tasks.add(task);
-
-                } catch (Exception e) {
-
-                    Logger.getLogger().warn("Something went wrong when trying to copy files!", sender);
-                    Logger.getLogger().warn(this.getClass(), e);
-                }
-            }
-
-            for (String additionalDirectoryToBackup : Config.getInstance().getAddDirectoryToBackup()) {
+            for (String additionalDirectoryToBackup : getDirectoryToBackup()) {
 
                 try {
 
@@ -520,34 +470,8 @@ public class BackupTask extends Task {
 
             ArrayList<File> dirsToAddToZip = new ArrayList<>();
 
-            for (World world : Bukkit.getWorlds()) {
 
-                if (cancelled) {
-                    break;
-                }
-
-                File worldDir = world.getWorldFolder();
-
-                try {
-                    if (!Config.getInstance().getFtpConfig().isZipArchive()) {
-
-                        Task task = new FtpSendFileFolderTask(worldDir, FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(),
-                                backupName), true, false, false, permissions, sender);
-                        task.prepareTask();
-
-                        tasks.add(task);
-                    } else {
-                        dirsToAddToZip.add(worldDir);
-                    }
-
-                } catch (Exception e) {
-
-                    Logger.getLogger().warn("Something went wrong when trying to copy files!", sender);
-                    Logger.getLogger().warn(this.getClass(), e);
-                }
-            }
-
-            for (String additionalDirectoryToBackup : Config.getInstance().getAddDirectoryToBackup()) {
+            for (String additionalDirectoryToBackup : getDirectoryToBackup()) {
 
                 try {
 
@@ -609,29 +533,8 @@ public class BackupTask extends Task {
 
             String backupDriveFileId = GoogleDriveUtils.createFolder(backupName, Config.getInstance().getGoogleDriveConfig().getBackupsFolderId(), sender);
 
-            for (World world : Bukkit.getWorlds()) {
 
-                if (cancelled) {
-                    break;
-                }
-
-                File worldDir = world.getWorldFolder();
-
-                try {
-                    Task task = new GoogleDriveSendFileFolderTask(worldDir, backupDriveFileId, worldDir.getName(),
-                            true, false, false, permissions, sender);
-                    task.prepareTask();
-
-                    tasks.add(task);
-
-                } catch (Exception e) {
-
-                    Logger.getLogger().warn("Something went wrong when trying to copy files!", sender);
-                    Logger.getLogger().warn(this.getClass(), e);
-                }
-            }
-
-            for (String additionalDirectoryToBackup : Config.getInstance().getAddDirectoryToBackup()) {
+            for (String additionalDirectoryToBackup : getDirectoryToBackup()) {
 
                 try {
 
@@ -755,6 +658,36 @@ public class BackupTask extends Task {
 
         for (Task task : tasks) {
             task.cancel();
+        }
+    }
+
+    /**
+     * Return all the directories to backup (worlds + add directories).
+     * It might contain directory that does not exist or that need to be excluded
+     */
+    private List<String> getDirectoryToBackup(){
+        // return the 2 lists (worlds & add directories) merged and without duplicates
+        return Stream.concat(getWorldsDirectoryToBackup().stream(), getAddDirectoryToBackup().stream()).distinct().toList();
+    }
+
+    private List<String> getWorldsDirectoryToBackup() {
+        // Get the path of all worlds as a list of strings
+        return Bukkit.getWorlds().stream().map(world -> world.getWorldFolder().getPath()).toList();
+    }
+
+    private List<String> getAddDirectoryToBackup() {
+        // if contains "*" add all Files from "."
+        if(Config.getInstance().getAddDirectoryToBackup().contains("*")){
+            // Remove the "*" from the list
+            List<String> list = Config.getInstance().getAddDirectoryToBackup().stream().filter(directory -> !directory.equals("*")).collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
+            // Add all files from "."
+            File file = new File(".");
+            for (String subFile: file.list()) {
+                list.add(subFile);
+            }
+            return list;
+        }else{
+            return Config.getInstance().getAddDirectoryToBackup();
         }
     }
 }
