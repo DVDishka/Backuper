@@ -133,7 +133,7 @@ public class SftpUtils {
             }
 
             Logger.getLogger().warn("Failed to connect to SFTP server", sender);
-            Logger.getLogger().warn("SftpUtils; createSftpChannel", e);
+            Logger.getLogger().devWarn("SftpUtils; createSftpChannel", e);
 
             return null;
         }

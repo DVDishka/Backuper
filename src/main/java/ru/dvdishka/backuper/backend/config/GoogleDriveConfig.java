@@ -4,17 +4,17 @@ import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.utils.GoogleDriveUtils;
 
 import java.io.File;
+import java.util.HashMap;
 
 public class GoogleDriveConfig {
 
     boolean enabled;
     boolean autoBackup;
-    File tokensFolder;
+    File tokenFolder;
     String backupsFolderId;
     boolean createBackuperFolder;
     int backupsNumber;
     long backupsWeight;
-    int authPort;
 
     public boolean isEnabled() {
         return enabled;
@@ -24,8 +24,8 @@ public class GoogleDriveConfig {
         return autoBackup;
     }
 
-    public File getTokensFolder() {
-        return tokensFolder;
+    public File getTokenFolder() {
+        return tokenFolder;
     }
 
     public String getBackupsFolderId() {
@@ -33,14 +33,16 @@ public class GoogleDriveConfig {
             return backupsFolderId;
         }
 
-        for (com.google.api.services.drive.model.File driveFile : GoogleDriveUtils.ls(backupsFolderId, null)) {
+        for (com.google.api.services.drive.model.File driveFile : GoogleDriveUtils.ls(backupsFolderId, "appProperties has { key='root' and value='true' }", null)) {
             if (driveFile.getName().equals("Backuper")) {
                 return driveFile.getId();
             }
         }
 
         try {
-            return GoogleDriveUtils.createFolder("Backuper", backupsFolderId, null);
+            HashMap<String, String> properties = new HashMap<>();
+            properties.put("root", "true");
+            return GoogleDriveUtils.createFolder("Backuper", backupsFolderId, properties, null);
 
         } catch (Exception e) {
             Logger.getLogger().warn("Failed to create Backuper folder in Google Drive. Check if Google Drive account is linked");
@@ -56,6 +58,4 @@ public class GoogleDriveConfig {
     public long getBackupsWeight() {
         return backupsWeight;
     }
-
-    public int getAuthPort() {return authPort;}
 }

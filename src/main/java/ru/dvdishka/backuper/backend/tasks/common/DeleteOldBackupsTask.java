@@ -73,16 +73,16 @@ public class DeleteOldBackupsTask extends Task {
 
         try {
 
-            if (Config.getInstance().getLocalConfig().isEnabled()) {
+            if (!cancelled && Config.getInstance().getLocalConfig().isEnabled()) {
                 deleteBackups("local");
             }
-            if (Config.getInstance().getFtpConfig().isEnabled()) {
+            if (!cancelled && Config.getInstance().getFtpConfig().isEnabled()) {
                 deleteBackups("ftp");
             }
-            if (Config.getInstance().getSftpConfig().isEnabled()) {
+            if (!cancelled && Config.getInstance().getSftpConfig().isEnabled()) {
                 deleteBackups("sftp");
             }
-            if (Config.getInstance().getGoogleDriveConfig().isEnabled() && GoogleDriveUtils.isAuthorized(null)) {
+            if (!cancelled && Config.getInstance().getGoogleDriveConfig().isEnabled() && GoogleDriveUtils.isAuthorized(null)) {
                 deleteBackups("googleDrive");
             }
 
@@ -130,7 +130,16 @@ public class DeleteOldBackupsTask extends Task {
             backups.addAll(GoogleDriveBackup.getBackups());
         }
 
+        if (cancelled) {
+            return;
+        }
+
         for (Backup backup : backups) {
+
+            if (cancelled) {
+                return;
+            }
+
             try {
                 backupsFolderByteSize += backup.getByteSize(sender);
             } catch (Exception e) {

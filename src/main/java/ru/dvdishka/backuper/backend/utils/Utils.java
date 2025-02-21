@@ -126,7 +126,8 @@ public class Utils {
         try {
 
             if (path.toPath().startsWith(new File(Config.getInstance().getLocalConfig().getBackupsFolder()).toPath()) ||
-                    path.toPath().startsWith(new File("plugins/Backuper/Backups/").toPath())) {
+                    path.toPath().startsWith(new File("plugins/Backuper/Backups/").toPath()) ||
+                    path.toPath().startsWith(new File("./" + Config.getInstance().getLocalConfig().getBackupsFolder()).toPath())) {
                 return true;
             }
 

@@ -1,6 +1,5 @@
 package ru.dvdishka.backuper.backend.utils;
 
-import org.apache.commons.net.PrintCommandListener;
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPFile;
@@ -10,7 +9,6 @@ import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -51,7 +49,7 @@ public class FtpUtils {
 
         } catch (Exception e) {
 
-            Logger.getLogger().warn("FtpUtils; checkConnection", e);
+            Logger.getLogger().devWarn(FtpUtils.class, e);
             return false;
         }
     }
@@ -69,8 +67,9 @@ public class FtpUtils {
 
             FTPClient ftp = new FTPClient();
 
+            // Enable FTP logging
             if (Config.getInstance().isBetterLogging()) {
-                ftp.addProtocolCommandListener(new PrintCommandListener(new PrintWriter(System.out)));
+                //ftp.addProtocolCommandListener(new PrintCommandListener(new PrintWriter(System.out)));
             }
 
             ftp.setConnectTimeout(10 * 1000);
@@ -171,34 +170,6 @@ public class FtpUtils {
     public static long getDirByteSize(String remoteFilePath, CommandSender sender) {
 
         FTPClient ftp = FtpUtils.getClient(sender);
-
-        if (ftp == null) {
-            return 0;
-        }
-
-        try {
-
-            long size = getFileFolderByteSize(ftp, remoteFilePath, sender);
-
-            return size;
-
-        } catch (Exception e) {
-
-            Logger.getLogger().warn("Failed to get dir size \"" + remoteFilePath + "\" from FTP(S) server", sender);
-            Logger.getLogger().warn("FtpUtils; getDirByteSize", e);
-
-            return 0;
-
-        } finally {
-            try {
-                ftp.disconnect();
-            } catch (Exception e) {
-                Logger.getLogger().warn("FtpUtils; renameFile", e);
-            }
-        }
-    }
-
-    public static long getDirByteSize(FTPClient ftp, String remoteFilePath, CommandSender sender) {
 
         if (ftp == null) {
             return 0;

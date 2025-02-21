@@ -1,9 +1,10 @@
 package ru.dvdishka.backuper.backend.tasks.common;
 
 import org.bukkit.Bukkit;
-import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
+import ru.dvdishka.backuper.backend.backup.Backup;
+import ru.dvdishka.backuper.backend.backup.StorageType;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.config.Config;
@@ -23,7 +24,6 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collector;
 import java.util.stream.Stream;
 import java.util.zip.ZipOutputStream;
 
@@ -41,13 +41,15 @@ public class BackupTask extends Task {
     private final long deleteProgressMultiplier = 1;
     private final long copyProgressMultiplier = 5;
     private final long zipProgressMultiplier = 10;
-    private final long sendSftpProgressMultiplier = 10;
-    private final long sendFtpProgressMultiplier = 10;
-    private final long sendGoogleDriveProgressMultiplier = 10;
-    private final long zipFtpProgressMultiplier = 15;
+    private final long sendSftpProgressMultiplier = 15;
+    private final long sendFtpProgressMultiplier = 15;
+    private final long sendGoogleDriveProgressMultiplier = 40;
+    private final long zipFtpProgressMultiplier = 20;
 
     private File backupDir;
-    private File backupsDir;
+    /**
+     * May contain " in progress" part
+     */
     private String backupName;
     private ZipOutputStream targetZipOutputStream = null;
 
@@ -136,7 +138,10 @@ public class BackupTask extends Task {
 
             Logger.getLogger().devLog("Backup task has been started");
 
+            long localBackupByteSize = 0, ftpBackupByteSize = 0, sftpBackupByteSize = 0, googleDriveBackupByteSize = 0;
+
             for (Task task : tasks) {
+                // Check if storage is enabled
                 if ((task instanceof FtpAddLocalDirsToZipTask || task instanceof FtpSendFileFolderTask) && !isFtp) {
                     continue;
                 }
@@ -146,8 +151,27 @@ public class BackupTask extends Task {
                 if (task instanceof GoogleDriveSendFileFolderTask && !isGoogleDrive) {
                     continue;
                 }
+                if ((task instanceof CopyFilesToFolderTask || task instanceof AddDirToZipTask) && !isLocal) {
+                    continue;
+                }
+
+                // Run task
                 if (!cancelled || task instanceof SetWorldsWritableTask) {
                     task.run();
+                }
+
+                // Calculate new backup size
+                if (!cancelled && (task instanceof CopyFilesToFolderTask)) {
+                    localBackupByteSize += task.getTaskCurrentProgress();
+                }
+                if (!cancelled && (task instanceof FtpSendFileFolderTask)) {
+                    ftpBackupByteSize += task.getTaskCurrentProgress();
+                }
+                if (!cancelled && (task instanceof SftpSendFileFolderTask)) {
+                    sftpBackupByteSize += task.getTaskCurrentProgress();
+                }
+                if (!cancelled && (task instanceof GoogleDriveSendFileFolderTask)) {
+                    googleDriveBackupByteSize += task.getTaskCurrentProgress();
                 }
             }
 
@@ -187,6 +211,10 @@ public class BackupTask extends Task {
                             }
                             attempts++;
                         }
+
+                        // Add new backup size to cache (ONLY IF NOT ZIP. ZIP SIZE IS NOT COUNTED)
+                        Backup.addCalculatedBackupSize(StorageType.LOCAL, backupName.replace(" in progress", ""), localBackupByteSize);
+                        Logger.getLogger().devLog("New LOCAL backup size has been cached");
                     }
                     Logger.getLogger().devLog("The Rename \"in progress\" Folder/ZIP local task has been finished");
                 }
@@ -208,6 +236,12 @@ public class BackupTask extends Task {
                         backupName.replace(" in progress", "") + fileType), sender);
 
                 Logger.getLogger().devLog("The Rename \"in progress\" Folder FTP(S) task has been finished");
+
+                if (!Config.getInstance().getFtpConfig().isZipArchive()) {
+                    // Add new backup size to cache (ONLY IF NOT ZIP. ZIP SIZE IS NOT COUNTED)
+                    Backup.addCalculatedBackupSize(StorageType.FTP, backupName.replace(" in progress", ""), ftpBackupByteSize);
+                    Logger.getLogger().devLog("New SFTP backup size has been cached");
+                }
             }
 
             // RENAME SFTP TASK
@@ -220,6 +254,10 @@ public class BackupTask extends Task {
                         backupName.replace(" in progress", "")), sender);
 
                 Logger.getLogger().devLog("The Rename \"in progress\" Folder SFTP task has been finished");
+
+                // Add new backup size to cache
+                Backup.addCalculatedBackupSize(StorageType.SFTP, backupName.replace(" in progress", ""), sftpBackupByteSize);
+                Logger.getLogger().devLog("New SFTP backup size has been cached");
             }
 
             // RENAME GOOGLE DRIVE TASK
@@ -235,6 +273,10 @@ public class BackupTask extends Task {
                 }
 
                 Logger.getLogger().devLog("The Rename \"in progress\" Folder GoogleDrive task has been finished");
+
+                // Add new backup size to cache
+                Backup.addCalculatedBackupSize(StorageType.GOOGLE_DRIVE, backupName.replace(" in progress", ""), googleDriveBackupByteSize);
+                Logger.getLogger().devLog("New GOOGLE_DRIVE backup size has been cached");
             }
 
             // UPDATE VARIABLES
@@ -348,7 +390,6 @@ public class BackupTask extends Task {
             }
 
             this.backupDir = new File(Config.getInstance().getLocalConfig().getBackupsFolder()).toPath().resolve(backupName).toFile();
-            this.backupsDir = new File(Config.getInstance().getLocalConfig().getBackupsFolder());
 
             if (!Config.getInstance().getLocalConfig().isZipArchive() && !backupDir.mkdir()) {
 
@@ -360,7 +401,7 @@ public class BackupTask extends Task {
             }
 
 
-            for (String additionalDirectoryToBackup : getAddDirectoryToBackup()) {
+            for (String additionalDirectoryToBackup : getDirectoryToBackup()) {
 
                 if (cancelled) {
                     break;
@@ -667,12 +708,14 @@ public class BackupTask extends Task {
      */
     private List<String> getDirectoryToBackup(){
         // return the 2 lists (worlds & add directories) merged and without duplicates
-        return Stream.concat(getWorldsDirectoryToBackup().stream(), getAddDirectoryToBackup().stream()).distinct().toList();
+        List<String> list = Stream.concat(getWorldsDirectoryToBackup().stream(), getAddDirectoryToBackup().stream()).distinct().toList();
+        return list;
     }
 
     private List<String> getWorldsDirectoryToBackup() {
         // Get the path of all worlds as a list of strings
-        return Bukkit.getWorlds().stream().map(world -> world.getWorldFolder().getPath()).toList();
+        List<String> list = Bukkit.getWorlds().stream().map(world -> world.getWorldFolder().getPath()).toList();
+        return list;
     }
 
     private List<String> getAddDirectoryToBackup() {
@@ -682,12 +725,13 @@ public class BackupTask extends Task {
             List<String> list = Config.getInstance().getAddDirectoryToBackup().stream().filter(directory -> !directory.equals("*")).collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
             // Add all files from "."
             File file = new File(".");
-            for (String subFile: file.list()) {
-                list.add(subFile);
+            for (File subFile: file.listFiles()) {
+                list.add(subFile.getPath());
             }
             return list;
         }else{
-            return Config.getInstance().getAddDirectoryToBackup();
+            List<String> list = Config.getInstance().getAddDirectoryToBackup().stream().map(addDirectory -> new File(addDirectory).getPath()).toList();
+            return list;
         }
     }
 }

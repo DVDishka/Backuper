@@ -10,16 +10,16 @@ backup:
   backupFileNameFormat: 'dd-MM-yyyy HH-mm-ss'
   # (Path list) (An example of how to set a list is below) Full directory paths to folders/files that you want to be backed up. Worlds will be backed up automatically, so you do not need to specify world folders there (For example you can specify "plugins", "config") You can also specify all files with "*".
   # addDirectoryToBackup:
-  # - path1
-  # - path2
+  # - 'path1'
+  # - 'path2'
   # - ...
-  addDirectoryToBackup: [ ]
+  addDirectoryToBackup: []
   # (Path list) (An example of how to set a list is below) Full directory paths to folders/files that you want to be excluded from backup. If you want to backup everything from the folder1 except some folder1/file1 you can specify folder1 in addDirectoryToBackup and folder1/file1 in excludeDirectoryFromBackup. (The backupsFolder directory will be excluded automatically to prevent the loop)
   # excludeDirectoryFromBackup:
-  # - path1
-  # - path2
+  # - 'path1'
+  # - 'path2'
   # - ...
-  excludeDirectoryFromBackup: [ ]
+  excludeDirectoryFromBackup: []
 
   # (MINUTES > 0 or -1) Backup period. To change this value you need to set backupTime to -1 and autoBackup to true
   backupPeriod: 1440
@@ -43,7 +43,7 @@ local:
   autoBackup: true
 
   # (Path) Full directory where backups will be stored
-  backupsFolder: plugins/Backuper/Backups
+  backupsFolder: ./plugins/Backuper/Backups
 
   # (>= 0) Max backups in backups folder, 0 to make it unlimited
   maxBackupsNumber: 0
@@ -73,7 +73,7 @@ googleDrive:
 
   auth:
     # Directory where you want to store your Google authentication tokens
-    tokensFolderPath: plugins/Backuper/GoogleDrive/tokens
+    tokenFolderPath: ./plugins/Backuper/GoogleDrive/tokens
 
 ftp:
   # (true/false) Enable FTP storage to use it via the Backuper
@@ -82,7 +82,7 @@ ftp:
   autoBackup: true
 
   # (Path) FTP server directory where backups will be stored
-  backupsFolder: ''
+  backupsFolder: ./
   # (Symbol) Path separator symbol used on FTP SERVER. For example '/' on UNIX systems. (It is usually '/' even on Windows servers, so change it to '\' only if it does not works with '/')
   pathSeparatorSymbol: /
 
@@ -113,7 +113,7 @@ sftp:
   autoBackup: true
 
   # (Path) SFTP server directory where backups will be stored
-  backupsFolder: ''
+  backupsFolder: ./
   # (Symbol) Path separator symbol used on SFTP SERVER. For example '/' on UNIX systems and '\' on windows
   pathSeparatorSymbol: /
 

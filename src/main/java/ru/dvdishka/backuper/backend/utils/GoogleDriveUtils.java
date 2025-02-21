@@ -49,7 +49,7 @@ public class GoogleDriveUtils {
     private static final String FOLDER_MIME_TYPE = "application/vnd.google-apps.folder";
 
     public static void init() {
-        tokensFolder = Config.getInstance().getGoogleDriveConfig().getTokensFolder();
+        tokensFolder = Config.getInstance().getGoogleDriveConfig().getTokenFolder();
     }
 
     public static Credential returnCredentialIfAuthorized(CommandSender sender) {
@@ -236,17 +236,16 @@ public class GoogleDriveUtils {
         }
     }
 
-    public static String createFolder(String folderName, String parentFolderId, CommandSender sender) {
+    public static String createFolder(String folderName, String parentFolderId, Map<String, String> properties, CommandSender sender) {
 
         try {
             Drive service = getService(sender);
 
-            Map<String, String> fileAppProperties = new HashMap<>();
-            fileAppProperties.put("backuper", "true");
+            properties.put("backuper", "true");
 
             com.google.api.services.drive.model.File driveFileMeta = new com.google.api.services.drive.model.File();
             driveFileMeta.setName(folderName);
-            driveFileMeta.setAppProperties(fileAppProperties);
+            driveFileMeta.setAppProperties(properties);
             if (!Objects.equals(parentFolderId, "")) {
                 driveFileMeta.setParents(List.of(parentFolderId));
             }
@@ -259,6 +258,10 @@ public class GoogleDriveUtils {
             Logger.getLogger().warn(GoogleDriveUtils.class, e);
             return null;
         }
+    }
+
+    public static String createFolder(String folderName, String parentFolderId, CommandSender sender) {
+        return createFolder(folderName, parentFolderId, new HashMap<>(), sender);
     }
 
     public static InputStream getDownloadFileStream(String fileId, CommandSender sender) {
@@ -417,8 +420,9 @@ public class GoogleDriveUtils {
 
     /**
      * @param driveFileId Parent Google Drive file ID. "drive" to get all drive files. "" to get all files
+     * @param query Additional parameters to find some file faster. "appProperties has { key='backuper' and value='true' }" will be added in query string any way
      **/
-    public static List<com.google.api.services.drive.model.File> ls(String driveFileId, CommandSender sender) {
+    public static List<com.google.api.services.drive.model.File> ls(String driveFileId, String query, CommandSender sender) {
 
         try {
 
@@ -431,6 +435,9 @@ public class GoogleDriveUtils {
                 Drive.Files.List lsRequest = service.files().list()
                         .setPageToken(pageToken);
                 String q = "appProperties has { key='backuper' and value='true' }";
+                if (query != null) {
+                    q += " and " + query;
+                }
 
                 if (driveFileId != null && driveFileId.equals("drive")) {
                     lsRequest = lsRequest.setSpaces("drive");
@@ -438,8 +445,8 @@ public class GoogleDriveUtils {
 
                 if (driveFileId != null && !driveFileId.isEmpty() && !driveFileId.equals("drive")) {
                     q += " and '" + driveFileId + "'" + " in parents";
-                    lsRequest = lsRequest.setQ(q);
                 }
+                lsRequest = lsRequest.setQ(q);
 
                 FileList driveFileList = lsRequest.execute();
 
@@ -456,6 +463,13 @@ public class GoogleDriveUtils {
             Logger.getLogger().warn(GoogleDriveUtils.class, e);
             return List.of();
         }
+    }
+
+    /**
+     * @param driveFileId Parent Google Drive file ID. "drive" to get all drive files. "" to get all files
+     **/
+    public static List<com.google.api.services.drive.model.File> ls(String driveFileId, CommandSender sender) {
+        return ls(driveFileId, null, sender);
     }
 
     public static void renameFile(String fileId, String newName, CommandSender sender) {

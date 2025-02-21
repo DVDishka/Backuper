@@ -16,7 +16,6 @@ import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.server.ServerLoadEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.dvdishka.backuper.Backuper;
@@ -302,7 +301,7 @@ public class Initialization implements Listener {
                                                 for (int j = i + 1; j < storageCount; j++) {
                                                     for (int k = j + 1; k < storageCount; k++) {
                                                         for (int l = k + 1; l < storageCount; l++) {
-                                                            suggestions.add(suggestions.get(i) + "-" + suggestions.get(j) + "-" + suggestions.get(k));
+                                                            suggestions.add(suggestions.get(i) + "-" + suggestions.get(j) + "-" + suggestions.get(k) + "-" + suggestions.get(l));
                                                         }
                                                     }
                                                 }

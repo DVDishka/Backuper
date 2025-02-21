@@ -44,10 +44,10 @@ public class Config {
     private String backupFileNameFormat;
     private DateTimeFormatter dateTimeFormatter;
 
-    private LocalConfig localConfig = new LocalConfig();
-    private SftpConfig sftpConfig = new SftpConfig();
-    private FtpConfig ftpConfig = new FtpConfig();
-    private GoogleDriveConfig googleDriveConfig = new GoogleDriveConfig();
+    private final LocalConfig localConfig = new LocalConfig();
+    private final SftpConfig sftpConfig = new SftpConfig();
+    private final FtpConfig ftpConfig = new FtpConfig();
+    private final GoogleDriveConfig googleDriveConfig = new GoogleDriveConfig();
 
     private static Config instance = null;
 
@@ -145,8 +145,8 @@ public class Config {
         this.googleDriveConfig.enabled = config.getBoolean("googleDrive.enabled", false);
         this.googleDriveConfig.autoBackup = config.getBoolean("googleDrive.autoBackup", true);
         this.googleDriveConfig.backupsFolderId = config.getString("googleDrive.backupsFolderId", "");
-        String googleDriveTokenFolder = config.getString("googleDrive.auth.tokensFolderPath", "plugins/Backuper/GoogleDrive/tokens");
-        this.googleDriveConfig.tokensFolder = new File(googleDriveTokenFolder);
+        String googleDriveTokenFolder = config.getString("googleDrive.auth.tokenFolderPath", "plugins/Backuper/GoogleDrive/tokens");
+        this.googleDriveConfig.tokenFolder = new File(googleDriveTokenFolder);
         this.googleDriveConfig.createBackuperFolder = config.getBoolean("googleDrive.createBackuperFolder", true);
         this.googleDriveConfig.backupsNumber = config.getInt("googleDrive.maxBackupsNumber", 0);
         this.googleDriveConfig.backupsWeight = config.getLong("googleDrive.maxBackupsWeight", 0) * 1_048_576L;
@@ -250,7 +250,7 @@ public class Config {
                 "ftp.pathSeparatorSymbol", "ftp.auth.password", "ftp.auth.username", "ftp.enabled", "ftp.maxBackupsNumber", "ftp.maxBackupsWeight",
                 "ftp.zipArchive", "ftp.zipCompressionLevel", "server.checkUpdates", "local.autoBackup", "ftp.autoBackup", "sftp.autoBackup",
                 "backup.deleteBrokenBackups", "backup.backupFileNameFormat", "googleDrive.enabled", "googleDrive.autoBackup",
-                "googleDrive.auth.tokensFolderPath", "googleDrive.backupsFolderId", "googleDrive.createBackuperFolder",
+                "googleDrive.auth.tokenFolderPath", "googleDrive.backupsFolderId", "googleDrive.createBackuperFolder",
                 "googleDrive.maxBackupsWeight", "googleDrive.maxBackupsNumber");
 
         for (String configField : configFields) {

@@ -19,29 +19,33 @@ public abstract class Backup {
 
     String backupName;
 
-    static final HashMap<Class<?>, Cache<String, Long>> cachedBackupsSize = new HashMap<>();
+    static final HashMap<StorageType, Cache<String, Long>> cachedBackupsSize = new HashMap<>();
 
     static {
-        cachedBackupsSize.put(LocalBackup.class, Caffeine.newBuilder().build());
-        cachedBackupsSize.put(FtpBackup.class, Caffeine.newBuilder().build());
-        cachedBackupsSize.put(SftpBackup.class, Caffeine.newBuilder().build());
-        cachedBackupsSize.put(GoogleDriveBackup.class, Caffeine.newBuilder().build());
+        cachedBackupsSize.put(StorageType.LOCAL, Caffeine.newBuilder().build());
+        cachedBackupsSize.put(StorageType.FTP, Caffeine.newBuilder().build());
+        cachedBackupsSize.put(StorageType.SFTP, Caffeine.newBuilder().build());
+        cachedBackupsSize.put(StorageType.GOOGLE_DRIVE, Caffeine.newBuilder().build());
     }
 
-    private Class<?> getSpecialClass() {
+    private StorageType getStorageType() {
         if (this instanceof LocalBackup) {
-            return LocalBackup.class;
+            return StorageType.LOCAL;
         }
         if (this instanceof FtpBackup) {
-            return FtpBackup.class;
+            return StorageType.FTP;
         }
         if (this instanceof SftpBackup) {
-            return SftpBackup.class;
+            return StorageType.SFTP;
         }
         if (this instanceof GoogleDriveBackup) {
-            return GoogleDriveBackup.class;
+            return StorageType.GOOGLE_DRIVE;
         }
-        return Backup.class;
+        return StorageType.NULL;
+    }
+
+    public static void addCalculatedBackupSize(StorageType storageType, String backupName, long byteSize) {
+        cachedBackupsSize.get(storageType).put(backupName, byteSize);
     }
 
     public BackupDeleteTask getDeleteTask(boolean setLocked, CommandSender sender) {
@@ -65,7 +69,7 @@ public abstract class Backup {
     abstract long calculateByteSize(CommandSender sender);
 
     public long getByteSize(CommandSender sender) {
-        return cachedBackupsSize.get(getSpecialClass()).get(this.getName(), (key) -> calculateByteSize(sender));
+        return cachedBackupsSize.get(getStorageType()).get(this.getName(), (key) -> calculateByteSize(sender));
     }
 
     public long getMbSize(CommandSender sender) {
@@ -137,7 +141,7 @@ public abstract class Backup {
                 if (!cancelled) {
                     deleteBackupTask.run();
                 }
-                cachedBackupsSize.get(getSpecialClass()).invalidate(backup.getName());
+                cachedBackupsSize.get(getStorageType()).invalidate(backup.getName());
 
                 if (setLocked) {
                     UIUtils.successSound(sender);
