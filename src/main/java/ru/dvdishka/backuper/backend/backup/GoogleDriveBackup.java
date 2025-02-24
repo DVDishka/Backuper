@@ -14,6 +14,7 @@ import ru.dvdishka.backuper.handlers.commands.Permissions;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 public class GoogleDriveBackup extends ExternalBackup {
@@ -23,8 +24,8 @@ public class GoogleDriveBackup extends ExternalBackup {
             .build(GoogleDriveBackup::getInstance);
     private static final Cache<String, ArrayList<GoogleDriveBackup>> backupList = Caffeine
             .newBuilder()
-            .expireAfterWrite(1, TimeUnit.SECONDS)
-            .expireAfterAccess(1, TimeUnit.SECONDS)
+            .expireAfterWrite(5, TimeUnit.SECONDS)
+            .expireAfterAccess(5, TimeUnit.SECONDS)
             .build();
 
     private GoogleDriveBackup(String backupName) {
@@ -32,6 +33,8 @@ public class GoogleDriveBackup extends ExternalBackup {
     }
 
     public static GoogleDriveBackup getInstance(String backupName) {
+
+        backupName = backupName.replace(".zip", "");
 
         if (!checkBackupExistenceByName(backupName)) {
             return null;
@@ -50,7 +53,7 @@ public class GoogleDriveBackup extends ExternalBackup {
             ArrayList<GoogleDriveBackup> backups = new ArrayList<>();
             for (File driveFile : GoogleDriveUtils.ls(Config.getInstance().getGoogleDriveConfig().getBackupsFolderId(), null)) {
                 try {
-                    GoogleDriveBackup backup = getInstance(driveFile.getName());
+                    GoogleDriveBackup backup = getInstance(driveFile.getName().replace(".zip", ""));
 
                     if (backup != null) {
                         backups.add(backup);
@@ -76,7 +79,7 @@ public class GoogleDriveBackup extends ExternalBackup {
         try {
             List<File> backupDriveFiles = GoogleDriveUtils.ls(Config.getInstance().getGoogleDriveConfig().getBackupsFolderId(), null);
             for (File backupDriveFile : backupDriveFiles) {
-                if (backupDriveFile.getName().equals(backupName)) {
+                if (backupDriveFile.getName().replace(".zip", "").equals(backupName)) {
                     return true;
                 }
             }
@@ -119,7 +122,8 @@ public class GoogleDriveBackup extends ExternalBackup {
      */
     @Override
     public String getFileType() {
-        return "(Folder)";
+        return GoogleDriveUtils.getFileByName(backupName + ".zip",
+                Config.getInstance().getGoogleDriveConfig().getBackupsFolderId(), null) != null ? "(ZIP)" : "(Folder)";
     }
 
     @Override
@@ -138,7 +142,7 @@ public class GoogleDriveBackup extends ExternalBackup {
     public File getDriveFile(CommandSender sender) {
 
         try {
-            return GoogleDriveUtils.getFileByName(backupName,
+            return GoogleDriveUtils.getFileByName(backupName + (Objects.equals(getFileType(), "(ZIP)") ? ".zip" : ""),
                     Config.getInstance().getGoogleDriveConfig().getBackupsFolderId(),
                     sender);
         } catch (Exception e) {

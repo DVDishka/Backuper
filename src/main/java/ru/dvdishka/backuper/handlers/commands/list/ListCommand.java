@@ -170,6 +170,7 @@ public class ListCommand extends Command {
 
         Component message = Component.empty();
 
+        // For console
         if (!(sender instanceof ConsoleCommandSender)) {
 
             message = message
@@ -204,6 +205,7 @@ public class ListCommand extends Command {
                             .color(TextColor.fromHexString("#129c9b"))
                             .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list " + storage + " " + (pageNumber + 1))));
 
+        // For players
         } else {
 
             int backupIndex = 1;
