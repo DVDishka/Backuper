@@ -21,13 +21,13 @@ import java.util.concurrent.CompletableFuture;
 
 public class FtpSendFileFolderTask extends Task {
 
-    private static String taskName = "FtpSendFileFolder";
+    private static final String taskName = "FtpSendFileFolder";
 
-    private File localDirToSend;
-    private boolean createRootDirInTargetDir;
+    private final File localDirToSend;
+    private final boolean createRootDirInTargetDir;
     private String remoteTargetDir;
-    private boolean forceExcludedDirs;
-    private ArrayList<CompletableFuture<Void>> ftpTasks = new ArrayList<>();
+    private final boolean forceExcludedDirs;
+    private final ArrayList<CompletableFuture<Void>> ftpTasks = new ArrayList<>();
 
     private FTPClient ftp;
 

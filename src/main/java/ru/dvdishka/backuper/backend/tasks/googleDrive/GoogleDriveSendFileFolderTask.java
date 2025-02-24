@@ -65,6 +65,14 @@ public class GoogleDriveSendFileFolderTask extends Task {
 
             if (!cancelled) {
                 sendFolder(sourceDir, targetFolderId, true);
+                try {
+                    CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0])).join();
+                } catch (Exception e) {
+                    if (!cancelled) {
+                        Logger.getLogger().warn(taskName + " task failed", sender);
+                        Logger.getLogger().warn(this.getClass(), e);
+                    }
+                }
             }
 
             if (setLocked) {
@@ -132,14 +140,6 @@ public class GoogleDriveSendFileFolderTask extends Task {
                 });
 
                 tasks.add(task);
-                try {
-                    task.join();
-                } catch (Exception e) {
-                    if (!cancelled) {
-                        Logger.getLogger().warn("Failed to upload file \"" + localDirToSend.getAbsolutePath() + "\" to Google Drive", sender);
-                        Logger.getLogger().warn(this.getClass(), e);
-                    }
-                }
 
             } catch (Exception e) {
 

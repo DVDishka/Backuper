@@ -94,31 +94,39 @@ public class Initialization implements Listener {
         Logger.getLogger().log("Indexing storages...");
 
         if (Config.getInstance().getLocalConfig().isEnabled()) {
-            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                Logger.getLogger().devLog("Indexing local storage...");
-                new ListCommand("local", false, sender, new CommandArguments(new Objects[]{}, new HashMap<String, Object>(), new String[]{}, new HashMap<String, String>(), "")).execute();
-                Logger.getLogger().devLog("Local storage has been indexed");
+            CompletableFuture.runAsync(() -> {
+                try {
+                    Logger.getLogger().devLog("Indexing local storage...");
+                    new ListCommand("local", false, sender, new CommandArguments(new Objects[]{}, new HashMap<String, Object>(), new String[]{}, new HashMap<String, String>(), "")).execute();
+                    Logger.getLogger().devLog("Local storage has been indexed");
+                } catch (Exception ignored) {}
             });
         }
         if (Config.getInstance().getFtpConfig().isEnabled()) {
-            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+            CompletableFuture.runAsync(() -> {
                 Logger.getLogger().devLog("Indexing FTP storage...");
                 new ListCommand("ftp", false, sender, new CommandArguments(new Objects[]{}, new HashMap<String, Object>(), new String[]{}, new HashMap<String, String>(), "")).execute();
                 Logger.getLogger().devLog("FTP storage has been indexed");
             });
         }
         if (Config.getInstance().getSftpConfig().isEnabled()) {
-            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                Logger.getLogger().devLog("Indexing SFTP storage...");
-                new ListCommand("sftp", false, sender, new CommandArguments(new Objects[]{}, new HashMap<String, Object>(), new String[]{}, new HashMap<String, String>(), "")).execute();
-                Logger.getLogger().devLog("SFTP storage has been indexed");
+            CompletableFuture.runAsync(() -> {
+                try {
+                    Logger.getLogger().devLog("Indexing SFTP storage...");
+                    new ListCommand("sftp", false, sender, new CommandArguments(new Objects[]{}, new HashMap<String, Object>(), new String[]{}, new HashMap<String, String>(), "")).execute();
+                    Logger.getLogger().devLog("SFTP storage has been indexed");
+                } catch (Exception e) {
+                    Logger.getLogger().devWarn(Initialization.class, e);
+                }
             });
         }
         if (Config.getInstance().getGoogleDriveConfig().isEnabled() && GoogleDriveUtils.isAuthorized(sender)) {
-            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                Logger.getLogger().devLog("Indexing GoogleDrive storage...");
-                new ListCommand("googleDrive", false, sender, new CommandArguments(new Objects[]{}, new HashMap<String, Object>(), new String[]{}, new HashMap<String, String>(), "")).execute();
-                Logger.getLogger().devLog("GoogleDrive storage has been indexed");
+            CompletableFuture.runAsync(() -> {
+                try {
+                    Logger.getLogger().devLog("Indexing GoogleDrive storage...");
+                    new ListCommand("googleDrive", false, sender, new CommandArguments(new Objects[]{}, new HashMap<String, Object>(), new String[]{}, new HashMap<String, String>(), "")).execute();
+                    Logger.getLogger().devLog("GoogleDrive storage has been indexed");
+                } catch (Exception ignored) {}
             });
         }
     }

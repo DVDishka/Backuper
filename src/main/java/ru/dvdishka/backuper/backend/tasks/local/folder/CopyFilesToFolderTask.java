@@ -18,12 +18,12 @@ import java.util.concurrent.CompletableFuture;
 
 public class CopyFilesToFolderTask extends Task {
 
-    private static String taskName = "CopyFiles";
+    private static final String taskName = "CopyFiles";
 
     private final File sourceDirToCopy;
     private final File targetDir;
-    private boolean forceExcludedDirs = false;
-    private boolean createRootDirInTargetDir = true;
+    private final boolean forceExcludedDirs;
+    private final boolean createRootDirInTargetDir;
 
     private final ArrayList<CompletableFuture<Void>> copyTasks = new ArrayList<>();
 
@@ -45,7 +45,7 @@ public class CopyFilesToFolderTask extends Task {
         }
 
         try {
-            Logger.getLogger().devLog("CopyFiles task has been started");
+            Logger.getLogger().devLog(taskName + " task has been started");
 
             if (!isTaskPrepared) {
                 prepareTask();
@@ -78,7 +78,7 @@ public class CopyFilesToFolderTask extends Task {
                 Backuper.unlock();
             }
 
-            Logger.getLogger().warn("Something went wrong while running CopyFiles task");
+            Logger.getLogger().warn("Something went wrong while running " + taskName + " task");
             Logger.getLogger().warn(this.getClass(), e);
         }
     }

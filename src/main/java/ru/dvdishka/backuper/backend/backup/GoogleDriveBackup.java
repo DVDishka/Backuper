@@ -106,8 +106,12 @@ public class GoogleDriveBackup extends ExternalBackup {
 
     @Override
     long calculateByteSize(CommandSender sender) {
-        long size = GoogleDriveUtils.getFileByteSize(getDriveFile(sender).getId(), sender);
-        return size;
+        try {
+            long size = GoogleDriveUtils.getFileByteSize(getDriveFile(sender).getId(), sender);
+            return size;
+        } catch (Exception e) {
+            return 0;
+        }
     }
 
     /**
@@ -138,8 +142,6 @@ public class GoogleDriveBackup extends ExternalBackup {
                     Config.getInstance().getGoogleDriveConfig().getBackupsFolderId(),
                     sender);
         } catch (Exception e) {
-            Logger.getLogger().warn("Failed to connect to GoogleDrive or a Google account is not connected", sender);
-            Logger.getLogger().warn(GoogleDriveBackup.class, e);
             return null;
         }
     }

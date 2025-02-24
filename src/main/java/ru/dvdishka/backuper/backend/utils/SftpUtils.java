@@ -245,12 +245,12 @@ public class SftpUtils {
         } catch (Exception e) {
 
             try {
-                session.disconnect();
+                sftpChannel.exit();
             } catch (Exception ignored) {
             }
 
             try {
-                sftpChannel.exit();
+                session.disconnect();
             } catch (Exception ignored) {
             }
 

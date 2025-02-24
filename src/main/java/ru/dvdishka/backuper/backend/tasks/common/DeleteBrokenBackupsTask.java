@@ -78,8 +78,7 @@ public class DeleteBrokenBackupsTask extends Task {
             return;
         }
 
-        if (Config.getInstance().getLocalConfig().isEnabled() &&
-                !cancelled) {
+        if (Config.getInstance().getLocalConfig().isEnabled() && !cancelled) {
 
             File backupsFolder = new File(Config.getInstance().getLocalConfig().getBackupsFolder());
 
@@ -94,14 +93,15 @@ public class DeleteBrokenBackupsTask extends Task {
                     }
 
                     if (file.getName().replace(".zip", "").endsWith(" in progress")) {
-                        tasks.add(new DeleteDirTask(file, false, permissions, sender));
+                        Task task = new DeleteDirTask(file, false, permissions, sender);
+                        task.prepareTask();
+                        tasks.add(task);
                     }
                 }
             }
         }
 
-        if (Config.getInstance().getFtpConfig().isEnabled() &&
-                !cancelled) {
+        if (Config.getInstance().getFtpConfig().isEnabled() && !cancelled) {
 
             if (FtpUtils.checkConnection(sender)) {
 
@@ -114,7 +114,9 @@ public class DeleteBrokenBackupsTask extends Task {
                     }
 
                     if (file.replace(".zip", "").endsWith(" in progress")) {
-                        tasks.add(new FtpDeleteDirTask(FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(), file), false, permissions, sender));
+                        Task task = new FtpDeleteDirTask(FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(), file), false, permissions, sender);
+                        task.prepareTask();
+                        tasks.add(task);
                     }
                 }
 
@@ -123,8 +125,7 @@ public class DeleteBrokenBackupsTask extends Task {
             }
         }
 
-        if (Config.getInstance().getSftpConfig().isEnabled() &&
-                !cancelled) {
+        if (Config.getInstance().getSftpConfig().isEnabled() && !cancelled) {
 
             if (SftpUtils.checkConnection(sender)) {
 
@@ -137,7 +138,9 @@ public class DeleteBrokenBackupsTask extends Task {
                     }
 
                     if (file.replace(".zip", "").endsWith(" in progress")) {
-                        tasks.add(new SftpDeleteDirTask(FtpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), file), false, permissions, sender));
+                        Task task = new SftpDeleteDirTask(FtpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), file), false, permissions, sender);
+                        task.prepareTask();
+                        tasks.add(task);
                     }
                 }
 
@@ -146,9 +149,7 @@ public class DeleteBrokenBackupsTask extends Task {
             }
         }
 
-        if (Config.getInstance().getGoogleDriveConfig().isEnabled() &&
-                GoogleDriveUtils.isAuthorized(null) &&
-                !cancelled) {
+        if (Config.getInstance().getGoogleDriveConfig().isEnabled() && GoogleDriveUtils.isAuthorized(null) && !cancelled) {
 
             List<com.google.api.services.drive.model.File> files = GoogleDriveUtils.ls(Config.getInstance().getGoogleDriveConfig().getBackupsFolderId(), sender);
 
@@ -159,7 +160,9 @@ public class DeleteBrokenBackupsTask extends Task {
                 }
 
                 if (file.getName().replace(".zip", "").endsWith(" in progress")) {
-                    tasks.add(new GoogleDriveDeleteFileFolderTask(file.getId(), false, permissions, sender));
+                    Task task = new GoogleDriveDeleteFileFolderTask(file.getId(), false, permissions, sender);
+                    task.prepareTask();
+                    tasks.add(task);
                 }
             }
         }

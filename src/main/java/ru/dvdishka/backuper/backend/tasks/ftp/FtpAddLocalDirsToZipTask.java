@@ -25,13 +25,13 @@ public class FtpAddLocalDirsToZipTask extends Task {
     private static final String taskName = "FtpAddLocalDirToZip";
 
     private String targetZipPath;
-    private final ArrayList<File> sourceDirsToAdd;
+    private final List<File> sourceDirsToAdd;
 
     private FTPClient ftpClient = null;
     private boolean forceExcludedDirs;
     private boolean createRootDirInTargetZIP;
 
-    public FtpAddLocalDirsToZipTask(ArrayList<File> sourceDirsToAdd, String targetZipPath, boolean createRootDirInTargetZIP,
+    public FtpAddLocalDirsToZipTask(List<File> sourceDirsToAdd, String targetZipPath, boolean createRootDirInTargetZIP,
                                     boolean forceExcludedDirs, boolean setLocked, List<Permissions> permission, CommandSender sender) {
 
         super(taskName, setLocked, permission, sender);
@@ -50,7 +50,7 @@ public class FtpAddLocalDirsToZipTask extends Task {
         }
 
         try {
-            Logger.getLogger().devLog("FtpAddLocalDirToZip task has been started");
+            Logger.getLogger().devLog(taskName + " task has been started");
 
             if (!isTaskPrepared) {
                 prepareTask();
@@ -103,7 +103,7 @@ public class FtpAddLocalDirsToZipTask extends Task {
                 Backuper.unlock();
             }
 
-            Logger.getLogger().warn("Something went wrong while running FtpAddLocalDirToZIP task", sender);
+            Logger.getLogger().warn("Something went wrong while running " + taskName + " task", sender);
             Logger.getLogger().warn(this.getClass(), e);
         } finally {
             Logger.getLogger().devLog("FtpAddLocalDirToZip task has been finished");
@@ -130,7 +130,7 @@ public class FtpAddLocalDirsToZipTask extends Task {
             }
         }
 
-        if (sourceDir.isFile()) {
+        if (!cancelled && sourceDir.isFile()) {
 
             try {
 

@@ -59,7 +59,6 @@ public class Backuper extends JavaPlugin {
             Logger.getLogger().warn("Can not create plugins/Backuper/Backups dir!");
         }
 
-
         Initialization.checkStorages(null);
         Initialization.unifyBackupNameFormat(null);
         Initialization.initBStats(this);
@@ -81,9 +80,8 @@ public class Backuper extends JavaPlugin {
 
     public void onDisable() {
 
-        new SetWorldsWritableTask(false, List.of(), null).run();
-
         Scheduler.cancelTasks(this);
+        new SetWorldsWritableTask(false, List.of(), null).run();
 
         Config.getInstance().setConfigField("lastBackup", Config.getInstance().getLastBackup());
         Config.getInstance().setConfigField("lastChange", Config.getInstance().getLastChange());

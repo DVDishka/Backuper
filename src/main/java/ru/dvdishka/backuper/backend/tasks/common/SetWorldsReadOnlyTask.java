@@ -18,7 +18,7 @@ public class SetWorldsReadOnlyTask extends Task {
 
     private final boolean force;
 
-    public SetWorldsReadOnlyTask(boolean force, boolean setLocked, ArrayList<Permissions> permission, CommandSender sender) {
+    public SetWorldsReadOnlyTask(boolean force, boolean setLocked, List<Permissions> permission, CommandSender sender) {
         super(taskName, setLocked, permission, sender);
         this.force = force;
     }

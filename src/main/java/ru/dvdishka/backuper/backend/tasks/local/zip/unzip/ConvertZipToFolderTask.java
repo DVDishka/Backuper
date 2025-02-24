@@ -45,15 +45,11 @@ public class ConvertZipToFolderTask extends Task {
             }
 
             if (!cancelled) {
-                Logger.getLogger().devLog("UnpackZip task has been started");
                 unpackZipTask.run();
-                Logger.getLogger().devLog("UnpackZip task has been finished");
             }
 
             if (!cancelled) {
-                Logger.getLogger().devLog("DeleteDir task has been started");
                 deleteDirTask.run();
-                Logger.getLogger().devLog("DeleteDir task has been started");
             }
 
             if (!cancelled) {

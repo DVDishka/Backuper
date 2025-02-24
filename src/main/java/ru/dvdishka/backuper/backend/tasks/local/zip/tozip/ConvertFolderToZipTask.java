@@ -38,22 +38,18 @@ public class ConvertFolderToZipTask extends Task {
 
         try {
 
-            Logger.getLogger().devLog("FolderToZip task has been started");
+            Logger.getLogger().devLog(taskName + " task has been started");
 
             if (!isTaskPrepared) {
                 prepareTask();
             }
 
             if (!cancelled) {
-                Logger.getLogger().devLog("Pack To Zip task has been started");
                 addDirToZipTask.run();
-                Logger.getLogger().devLog("Pack To Zip task has been finished");
             }
 
             if (!cancelled) {
-                Logger.getLogger().devLog("Delete Folder task has been started");
                 deleteDirTask.run();
-                Logger.getLogger().devLog("Delete Folder task has been finished");
             }
 
             if (!cancelled) {
@@ -88,7 +84,7 @@ public class ConvertFolderToZipTask extends Task {
 
         this.isTaskPrepared = true;
 
-        addDirToZipTask = new AddDirToZipTask(sourceFolderDir, new File(sourceFolderDir.getPath() + " in progress.zip"), false, true, false, permissions, sender);
+        addDirToZipTask = new AddDirToZipTask(List.of(sourceFolderDir), new File(sourceFolderDir.getPath() + " in progress.zip"), false, true, false, permissions, sender);
         addDirToZipTask.prepareTask();
 
         deleteDirTask = new DeleteDirTask(sourceFolderDir, false, permissions, sender);

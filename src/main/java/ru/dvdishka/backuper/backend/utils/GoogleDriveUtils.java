@@ -101,7 +101,7 @@ public class GoogleDriveUtils {
             return null;
 
         } catch (Exception e) {
-            Logger.getLogger().warn("Failed to authorize user in Google Drive", sender);
+            Logger.getLogger().warn(GoogleDriveUtils.class, "Failed to authorize user in Google Drive", sender);
             Logger.getLogger().warn(GoogleDriveUtils.class, e);
             return null;
         }
@@ -135,7 +135,7 @@ public class GoogleDriveUtils {
 
         Credential credential = returnCredentialIfAuthorized(sender);
         if (credential == null) {
-            throw new NotAuthorizedException("googleDrive");
+            return null;
         }
 
         return new Drive.Builder(NET_HTTP_TRANSPORT, JSON_FACTORY, credential)
@@ -156,41 +156,7 @@ public class GoogleDriveUtils {
      * @param parentFolderId GoogleDrive parent folder ID or an empty string
      **/
     public static String uploadFile(File file, String parentFolderId, MediaHttpUploaderProgressListener progressListener, CommandSender sender) {
-
-        if (!file.exists()) {
-            Logger.getLogger().warn("File does not exist: " + file.getAbsolutePath(), sender);
-            return null;
-        }
-
-        try {
-            Drive service = getService(sender);
-
-            Map<String, String> fileAppProperties = new HashMap<>();
-            fileAppProperties.put("backuper", "true");
-
-            com.google.api.services.drive.model.File driveFileMeta = new com.google.api.services.drive.model.File();
-            driveFileMeta.setAppProperties(fileAppProperties);
-            driveFileMeta.setName(file.getName());
-            if (!Objects.equals(parentFolderId, "")) {
-                driveFileMeta.setParents(List.of(parentFolderId));
-            }
-            FileContent driveFileContent = new FileContent("", file);
-
-            Drive.Files.Create driveFileCreate = service.files()
-                    .create(driveFileMeta, driveFileContent)
-                    .setFields("id, parents, appProperties");
-            driveFileCreate.getMediaHttpUploader().setChunkSize(MediaHttpUploader.MINIMUM_CHUNK_SIZE);
-            driveFileCreate.getMediaHttpUploader().setProgressListener(progressListener);
-
-            com.google.api.services.drive.model.File driveFile = driveFileCreate.execute();
-
-            return driveFile.getId();
-
-        } catch (Exception e) {
-            Logger.getLogger().warn("Failed to upload file to Google Drive", sender);
-            Logger.getLogger().warn(GoogleDriveUtils.class, e);
-            return null;
-        }
+        return uploadFile(file, file.getName(), parentFolderId, progressListener, sender);
     }
 
     /**
@@ -201,7 +167,7 @@ public class GoogleDriveUtils {
     public static String uploadFile(File file, String fileName, String parentFolderId, MediaHttpUploaderProgressListener progressListener, CommandSender sender) {
 
         if (!file.exists()) {
-            Logger.getLogger().warn("File does not exist: " + file.getAbsolutePath(), sender);
+            Logger.getLogger().warn(GoogleDriveUtils.class, "File does not exist: " + file.getAbsolutePath(), sender);
             return null;
         }
 
@@ -230,7 +196,7 @@ public class GoogleDriveUtils {
             return driveFile.getId();
 
         } catch (Exception e) {
-            Logger.getLogger().warn("Failed to upload file to Google Drive", sender);
+            Logger.getLogger().warn(GoogleDriveUtils.class, "Failed to upload file to Google Drive", sender);
             Logger.getLogger().warn(GoogleDriveUtils.class, e);
             return null;
         }
@@ -254,7 +220,7 @@ public class GoogleDriveUtils {
             return service.files().create(driveFileMeta).setFields("appProperties, id, parents").execute().getId();
 
         } catch (Exception e) {
-            Logger.getLogger().warn("Failed to create folder in Google Drive", sender);
+            Logger.getLogger().warn(GoogleDriveUtils.class, "Failed to create folder in Google Drive", sender);
             Logger.getLogger().warn(GoogleDriveUtils.class, e);
             return null;
         }
@@ -272,7 +238,7 @@ public class GoogleDriveUtils {
             return service.files().get(fileId).executeMediaAsInputStream();
 
         } catch (Exception e) {
-            Logger.getLogger().warn("Failed to download file from Google Drive", sender);
+            Logger.getLogger().warn(GoogleDriveUtils.class, "Failed to download file from Google Drive", sender);
             Logger.getLogger().warn(GoogleDriveUtils.class, e);
             return null;
         }
@@ -290,7 +256,7 @@ public class GoogleDriveUtils {
             getDriveFile.executeMediaAndDownloadTo(outputStream);
 
         } catch (Exception e) {
-            Logger.getLogger().warn("Failed to download file from Google Drive", sender);
+            Logger.getLogger().warn(GoogleDriveUtils.class, "Failed to download file from Google Drive", sender);
             Logger.getLogger().warn(GoogleDriveUtils.class, e);
         }
     }
@@ -305,7 +271,7 @@ public class GoogleDriveUtils {
                     .equals(FOLDER_MIME_TYPE);
 
         } catch (Exception e) {
-            Logger.getLogger().warn("Failed to get file type from Google Drive", sender);
+            Logger.getLogger().warn(GoogleDriveUtils.class, "Failed to get file type from Google Drive", sender);
             Logger.getLogger().warn(GoogleDriveUtils.class, e);
             throw new FileNotFoundException();
         }
@@ -362,7 +328,7 @@ public class GoogleDriveUtils {
                     try {
                         result = Request.Get(authServiceUrl + "/getgd?id=" + id).execute().returnContent().asString();
                     } catch (Exception e) {
-                        Logger.getLogger().warn("Google authentication failed. Probably backuper-mc.com is down, inform developer on GitHub");
+                        Logger.getLogger().warn(GoogleDriveUtils.class, "Google authentication failed. Probably backuper-mc.com is down, inform developer on GitHub", sender);
                         Logger.getLogger().devWarn(this.getClass(), e);
                         return null;
                     }
@@ -376,13 +342,13 @@ public class GoogleDriveUtils {
                     t++;
                 }
             } catch (Exception e) {
-                Logger.getLogger().warn("Failed to get authGD server response", sender);
+                Logger.getLogger().warn(GoogleDriveUtils.class, "Failed to get authGD server response", sender);
                 Logger.getLogger().warn(this.getClass(), e);
                 return null;
             }
 
             if (t >= 300) {
-                Logger.getLogger().warn("Failed to pass Google authentication because of timeout");
+                Logger.getLogger().warn(GoogleDriveUtils.class, "Failed to pass Google authentication because of timeout", sender);
                 return null;
             }
 
@@ -459,7 +425,7 @@ public class GoogleDriveUtils {
             return driveFiles;
 
         } catch (Exception e) {
-            Logger.getLogger().warn("Failed to get files list from Google Drive", sender);
+            Logger.getLogger().warn(GoogleDriveUtils.class, "Failed to get files list from Google Drive", sender);
             Logger.getLogger().warn(GoogleDriveUtils.class, e);
             return List.of();
         }
@@ -483,7 +449,7 @@ public class GoogleDriveUtils {
                     .execute();
 
         } catch (Exception e) {
-            Logger.getLogger().warn("Failed to rename Google Drive file", sender);
+            Logger.getLogger().warn(GoogleDriveUtils.class, "Failed to rename Google Drive file", sender);
             Logger.getLogger().warn(GoogleDriveUtils.class, e);
         }
     }
@@ -496,7 +462,7 @@ public class GoogleDriveUtils {
             service.files().delete(fileId).execute();
 
         } catch (Exception e) {
-            Logger.getLogger().warn("Failed to delete Google Drive file", sender);
+            Logger.getLogger().warn(GoogleDriveUtils.class, "Failed to delete Google Drive file", sender);
             Logger.getLogger().warn(GoogleDriveUtils.class, e);
         }
     }
@@ -520,7 +486,7 @@ public class GoogleDriveUtils {
             return !driveFileList.getFiles().isEmpty() ? driveFileList.getFiles().get(0) : null;
 
         } catch (Exception e) {
-            Logger.getLogger().warn("Failed to get fileId from Google Drive. Check if Google Account is linked", sender);
+            Logger.getLogger().warn(GoogleDriveUtils.class, "Failed to get fileId from Google Drive. Check if Google Account is linked", sender);
             Logger.getLogger().warn(GoogleDriveUtils.class, e);
             return null;
         }
@@ -546,7 +512,7 @@ public class GoogleDriveUtils {
             }
 
         } catch (Exception e) {
-            Logger.getLogger().warn("Failed to get file size from Google Drive. Check if Google Drive account is linked", sender);
+            Logger.getLogger().warn(GoogleDriveUtils.class, "Failed to get file size from Google Drive. Check if Google Drive account is linked", sender);
             Logger.getLogger().warn(GoogleDriveUtils.class, e);
             return 0;
         }
@@ -558,7 +524,7 @@ public class GoogleDriveUtils {
             return getService(sender).files().get(fileId).setFields("name").execute().getName();
 
         } catch (Exception e) {
-            Logger.getLogger().warn("Failed to get file name from Google Drive. Check if Google Drive account is linked", sender);
+            Logger.getLogger().warn(GoogleDriveUtils.class, "Failed to get file name from Google Drive. Check if Google Drive account is linked", sender);
             Logger.getLogger().warn(GoogleDriveUtils.class, e);
             return "";
         }

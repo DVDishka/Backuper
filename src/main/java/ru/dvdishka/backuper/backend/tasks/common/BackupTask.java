@@ -19,13 +19,12 @@ import ru.dvdishka.backuper.backend.utils.*;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
-import java.util.zip.ZipOutputStream;
 
 public class BackupTask extends Task {
 
@@ -38,7 +37,7 @@ public class BackupTask extends Task {
     private boolean isSftp;
     private boolean isGoogleDrive;
 
-    private final long deleteProgressMultiplier = 1;
+    private final long deleteProgressMultiplier = 3;
     private final long copyProgressMultiplier = 5;
     private final long zipProgressMultiplier = 10;
     private final long sendSftpProgressMultiplier = 15;
@@ -46,12 +45,10 @@ public class BackupTask extends Task {
     private final long sendGoogleDriveProgressMultiplier = 40;
     private final long zipFtpProgressMultiplier = 20;
 
-    private File backupDir;
     /**
      * May contain " in progress" part
      */
     private String backupName;
-    private ZipOutputStream targetZipOutputStream = null;
 
     private List<Task> tasks = new ArrayList<>();
 
@@ -140,6 +137,12 @@ public class BackupTask extends Task {
 
             long localBackupByteSize = 0, ftpBackupByteSize = 0, sftpBackupByteSize = 0, googleDriveBackupByteSize = 0;
 
+            List<CompletableFuture<Void>> taskFutures = new ArrayList<>();
+
+            // Lock world folders if it is necessary
+            if (!cancelled) {
+                new SetWorldsReadOnlyTask(false, permissions, sender).run();
+            }
             for (Task task : tasks) {
                 // Check if storage is enabled
                 if ((task instanceof FtpAddLocalDirsToZipTask || task instanceof FtpSendFileFolderTask) && !isFtp) {
@@ -155,42 +158,44 @@ public class BackupTask extends Task {
                     continue;
                 }
 
-                // Run task
-                if (!cancelled || task instanceof SetWorldsWritableTask) {
-                    task.run();
+                // Start task paralleled
+                if (!cancelled) {
+                    taskFutures.add(CompletableFuture.runAsync(task::run));
                 }
 
                 // Calculate new backup size
                 if (!cancelled && (task instanceof CopyFilesToFolderTask)) {
-                    localBackupByteSize += task.getTaskCurrentProgress();
+                    localBackupByteSize += task.getTaskMaxProgress();
                 }
                 if (!cancelled && (task instanceof FtpSendFileFolderTask)) {
-                    ftpBackupByteSize += task.getTaskCurrentProgress();
+                    ftpBackupByteSize += task.getTaskMaxProgress();
                 }
                 if (!cancelled && (task instanceof SftpSendFileFolderTask)) {
-                    sftpBackupByteSize += task.getTaskCurrentProgress();
+                    sftpBackupByteSize += task.getTaskMaxProgress();
                 }
                 if (!cancelled && (task instanceof GoogleDriveSendFileFolderTask)) {
-                    googleDriveBackupByteSize += task.getTaskCurrentProgress();
+                    googleDriveBackupByteSize += task.getTaskMaxProgress();
                 }
             }
 
+            // Wait for all tasks
+            CompletableFuture.allOf(taskFutures.toArray(new CompletableFuture[0])).join();
+
+            // Unlock world folders anyway
+            new SetWorldsWritableTask(false, permissions, sender).run();
+
             if (!cancelled && isLocal) {
 
-                if (Config.getInstance().getLocalConfig().isZipArchive()) {
-                    try {
-                        targetZipOutputStream.close();
-                    } catch (Exception ignored) {
-                    }
-                }
+                File backupDir = new File(Config.getInstance().getLocalConfig().getBackupsFolder()).toPath().resolve(Config.getInstance().getLocalConfig().isZipArchive() ? backupName + ".zip" :  backupName).toFile();
 
                 // RENAME LOCAL TASK
                 {
+
                     Logger.getLogger().devLog("The Rename \"in progress\" Folder/ZIP local task has been started");
                     if (Config.getInstance().getLocalConfig().isZipArchive()) {
 
-                        File oldZipFile = new File(Config.getInstance().getLocalConfig().getBackupsFolder()).toPath().resolve(backupDir.getName() + ".zip").toFile();
-                        File newZipFile = new File(Config.getInstance().getLocalConfig().getBackupsFolder()).toPath().resolve(backupDir.getName().replace(" in progress", "") + ".zip").toFile();
+                        File oldZipFile = new File(Config.getInstance().getLocalConfig().getBackupsFolder()).toPath().resolve(backupDir.getName()).toFile();
+                        File newZipFile = new File(Config.getInstance().getLocalConfig().getBackupsFolder()).toPath().resolve(backupDir.getName().replace(" in progress", "")).toFile();
 
                         int attempts = 0;
                         while (!oldZipFile.renameTo(newZipFile) && attempts < 1000000) {
@@ -288,9 +293,15 @@ public class BackupTask extends Task {
 
             // DELETE OLD BACKUPS TASK MUST BE RAN AFTER RENAMING
             if (!cancelled) {
-                new DeleteOldBackupsTask(false, permissions, sender).run();
+
+                Task deleteOldBackupTask = new DeleteOldBackupsTask(false, permissions, sender);
+                tasks.add(deleteOldBackupTask);
+                deleteOldBackupTask.run();
+
                 if (Config.getInstance().isDeleteBrokenBackups()) {
-                    new DeleteBrokenBackupsTask(false, permissions, sender).run();
+                    Task deleteBrokeBackupsTask = new DeleteBrokenBackupsTask(false, permissions, sender);
+                    tasks.add(deleteBrokeBackupsTask);
+                    deleteBrokeBackupsTask.run();
                 }
             }
 
@@ -321,11 +332,6 @@ public class BackupTask extends Task {
 
         } catch (Exception e) {
 
-            try {
-                targetZipOutputStream.close();
-            } catch (Exception ignored) {
-            }
-
             Logger.getLogger().warn("Something went wrong while running the task: " + taskName);
             Logger.getLogger().warn(e.getMessage());
 
@@ -349,10 +355,6 @@ public class BackupTask extends Task {
 
             this.backupName = LocalDateTime.now().format(Config.getInstance().getDateTimeFormatter()) + " in progress";
 
-            if (!cancelled) {
-                tasks.add(new SetWorldsReadOnlyTask(false, permissions, sender));
-            }
-
             if (!cancelled && isLocal) {
                 prepareLocalTask();
             }
@@ -365,8 +367,6 @@ public class BackupTask extends Task {
             if (!cancelled && isGoogleDrive) {
                 prepareGoogleDriveTask();
             }
-
-            tasks.add(new SetWorldsWritableTask(false, permissions, sender));
 
         } catch (Exception e) {
 
@@ -389,27 +389,24 @@ public class BackupTask extends Task {
                 return;
             }
 
-            this.backupDir = new File(Config.getInstance().getLocalConfig().getBackupsFolder()).toPath().resolve(backupName).toFile();
+            File backupDir = new File(Config.getInstance().getLocalConfig().getBackupsFolder()).toPath().resolve(Config.getInstance().getLocalConfig().isZipArchive() ? backupName + ".zip" :  backupName).toFile();
 
             if (!Config.getInstance().getLocalConfig().isZipArchive() && !backupDir.mkdir()) {
 
                 Logger.getLogger().warn("Can not create " + backupDir.getPath() + " dir!", sender);
             }
 
-            if (Config.getInstance().getLocalConfig().isZipArchive()) {
-                targetZipOutputStream = new ZipOutputStream(new FileOutputStream(backupDir.getPath() + ".zip"));
-            }
+            ArrayList<File> dirsToAddToZip = new ArrayList<>();
 
-
-            for (String additionalDirectoryToBackup : getDirectoryToBackup()) {
-
-                if (cancelled) {
-                    break;
-                }
+            for (String directoryToBackup : getDirectoriesToBackup()) {
 
                 try {
 
-                    File additionalDirectoryToBackupFile = Paths.get(additionalDirectoryToBackup).toFile();
+                    if (cancelled) {
+                        break;
+                    }
+
+                    File additionalDirectoryToBackupFile = Paths.get(directoryToBackup).toFile();
                     boolean isExcludedDirectory = Utils.isExcludedDirectory(additionalDirectoryToBackupFile, sender);
 
                     if (!additionalDirectoryToBackupFile.exists()) {
@@ -421,25 +418,28 @@ public class BackupTask extends Task {
                         continue;
                     }
 
-                    if (Config.getInstance().getLocalConfig().isZipArchive()) {
-
-                        Task task = new AddDirToZipTask(additionalDirectoryToBackupFile, targetZipOutputStream, true, false, false, permissions, sender);
-                        task.prepareTask();
-
-                        tasks.add(task);
-
-                    } else {
+                    if (!Config.getInstance().getLocalConfig().isZipArchive()) {
 
                         Task task = new CopyFilesToFolderTask(additionalDirectoryToBackupFile, backupDir, true, false, false, permissions, sender);
                         task.prepareTask();
 
                         tasks.add(task);
-                    }
 
+                    } else {
+                        dirsToAddToZip.add(additionalDirectoryToBackupFile);
+                    }
                 } catch (Exception e) {
-                    Logger.getLogger().warn("Something went wrong when trying to backup an additional directory \"" + additionalDirectoryToBackup + "\"", sender);
+                    Logger.getLogger().warn("Something went wrong when trying to backup an additional directory \"" + directoryToBackup + "\"", sender);
                     Logger.getLogger().warn(this.getClass(), e);
                 }
+            }
+
+            if (Config.getInstance().getLocalConfig().isZipArchive()) {
+
+                Task task = new AddDirToZipTask(dirsToAddToZip, backupDir, true, false, false, permissions, sender);
+                task.prepareTask();
+
+                tasks.add(task);
             }
 
         } catch (Exception e) {
@@ -459,7 +459,7 @@ public class BackupTask extends Task {
             SftpUtils.createFolder(SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), backupName), sender);
 
 
-            for (String additionalDirectoryToBackup : getDirectoryToBackup()) {
+            for (String directoryToBackup : getDirectoriesToBackup()) {
 
                 try {
 
@@ -467,7 +467,7 @@ public class BackupTask extends Task {
                         break;
                     }
 
-                    File additionalDirectoryToBackupFile = Paths.get(additionalDirectoryToBackup).toFile();
+                    File additionalDirectoryToBackupFile = Paths.get(directoryToBackup).toFile();
                     boolean isExcludedDirectory = Utils.isExcludedDirectory(additionalDirectoryToBackupFile, sender);
 
                     if (!additionalDirectoryToBackupFile.exists()) {
@@ -486,7 +486,7 @@ public class BackupTask extends Task {
                     tasks.add(task);
 
                 } catch (Exception e) {
-                    Logger.getLogger().warn("Something went wrong when trying to backup an additional directory \"" + additionalDirectoryToBackup + "\"", sender);
+                    Logger.getLogger().warn("Something went wrong when trying to backup an additional directory \"" + directoryToBackup + "\"", sender);
                     Logger.getLogger().warn(this.getClass(), e);
                 }
             }
@@ -511,8 +511,7 @@ public class BackupTask extends Task {
 
             ArrayList<File> dirsToAddToZip = new ArrayList<>();
 
-
-            for (String additionalDirectoryToBackup : getDirectoryToBackup()) {
+            for (String directoryToBackup : getDirectoriesToBackup()) {
 
                 try {
 
@@ -520,7 +519,7 @@ public class BackupTask extends Task {
                         break;
                     }
 
-                    File additionalDirectoryToBackupFile = Paths.get(additionalDirectoryToBackup).toFile();
+                    File additionalDirectoryToBackupFile = Paths.get(directoryToBackup).toFile();
                     boolean isExcludedDirectory = Utils.isExcludedDirectory(additionalDirectoryToBackupFile, sender);
 
                     if (!additionalDirectoryToBackupFile.exists()) {
@@ -544,7 +543,7 @@ public class BackupTask extends Task {
                     }
 
                 } catch (Exception e) {
-                    Logger.getLogger().warn("Something went wrong when trying to backup an additional directory \"" + additionalDirectoryToBackup + "\"", sender);
+                    Logger.getLogger().warn("Something went wrong when trying to backup an additional directory \"" + directoryToBackup + "\"", sender);
                     Logger.getLogger().warn(this.getClass(), e);
                 }
             }
@@ -575,7 +574,7 @@ public class BackupTask extends Task {
             String backupDriveFileId = GoogleDriveUtils.createFolder(backupName, Config.getInstance().getGoogleDriveConfig().getBackupsFolderId(), sender);
 
 
-            for (String additionalDirectoryToBackup : getDirectoryToBackup()) {
+            for (String directoryToBackup : getDirectoriesToBackup()) {
 
                 try {
 
@@ -583,7 +582,7 @@ public class BackupTask extends Task {
                         break;
                     }
 
-                    File additionalDirectoryToBackupFile = Paths.get(additionalDirectoryToBackup).toFile();
+                    File additionalDirectoryToBackupFile = Paths.get(directoryToBackup).toFile();
                     boolean isExcludedDirectory = Utils.isExcludedDirectory(additionalDirectoryToBackupFile, sender);
 
                     if (!additionalDirectoryToBackupFile.exists()) {
@@ -602,7 +601,7 @@ public class BackupTask extends Task {
                     tasks.add(task);
 
                 } catch (Exception e) {
-                    Logger.getLogger().warn("Something went wrong when trying to backup an additional directory \"" + additionalDirectoryToBackup + "\"", sender);
+                    Logger.getLogger().warn("Something went wrong when trying to backup an additional directory \"" + directoryToBackup + "\"", sender);
                     Logger.getLogger().warn(this.getClass(), e);
                 }
             }
@@ -706,7 +705,7 @@ public class BackupTask extends Task {
      * Return all the directories to backup (worlds + add directories).
      * It might contain directory that does not exist or that need to be excluded
      */
-    private List<String> getDirectoryToBackup(){
+    private List<String> getDirectoriesToBackup(){
         // return the 2 lists (worlds & add directories) merged and without duplicates
         List<String> list = Stream.concat(getWorldsDirectoryToBackup().stream(), getAddDirectoryToBackup().stream()).distinct().toList();
         return list;
