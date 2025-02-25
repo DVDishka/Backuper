@@ -84,7 +84,7 @@ public class Initialization implements Listener {
         bStats.addCustomChart(new SimplePie("local_storage", () -> Config.getInstance().getLocalConfig().isEnabled() ? "enabled" : "disabled"));
         bStats.addCustomChart(new SimplePie("ftp_storage", () -> Config.getInstance().getFtpConfig().isEnabled() ? "enabled" : "disabled"));
         bStats.addCustomChart(new SimplePie("sftp_storage", () -> Config.getInstance().getSftpConfig().isEnabled() ? "enabled" : "disabled"));
-        bStats.addCustomChart(new SimplePie("google_drive_storage", () -> Config.getInstance().getGoogleDriveConfig().isEnabled() ? "enabled" : "disabled"));
+        bStats.addCustomChart(new SimplePie("google_drive_storage", () -> Config.getInstance().getGoogleDriveConfig().isEnabled() && GoogleDriveUtils.isAuthorized(null) ? "enabled" : "disabled"));
 
         Logger.getLogger().log("BStats initialization completed");
     }

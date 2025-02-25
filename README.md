@@ -2,9 +2,9 @@
 
 # Backuper
 
-<img height="128" src="images/backuper_logo.png" width="128" alt=""/>
+<img height="128" src="images/backuper_logo.svg" width="128" alt=""/>
 
-## _Simple backup plugin for Paper/Folia with FTP/SFTP support_
+## Simple backup plugin for Paper/Folia with **FTP/GOOGLE DRIVE/SFTP** support
 
 ---
 
@@ -14,6 +14,7 @@
 
 ## Pages
 
+* [<img width="20px" src="images/backuper_logo.svg"></img>](https://backuper-mc.com)[Backuper](https://backuper-mc.com)
 * [<img width="20px" src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"></img>](https://github.com/DVDishka/Backuper)[ GitHub](https://github.com/DVDishka/Backuper)
 * [<img width="20px" src="https://i.imgur.com/o104U27.png"></img>](https://modrinth.com/plugin/backuper)[ Modrinth](https://modrinth.com/plugin/backuper)
 * [<img width="20px" src="https://i.imgur.com/QJnHi37.png"></img>](https://hangar.papermc.io/Collagen/Backuper)[ Hangar](https://hangar.papermc.io/Collagen/Backuper)
@@ -27,7 +28,7 @@
 * **X** - Changing **X** number means some breaking changes without backward compatibility. This means that before switching to this version you should check the `Incompatible version changes` paragraph
 * **Y** - Changing **Y** number means that the version contains significant changes with backward compatibility
 * **Z** - Changing **Z** number means that the version contains minor changes or improvements with backward compatibility
-* **A** - Changing **A** number means that the version contains bugfixes or security/stability improvements. Usually these are hotfixes
+* **A** - Changing **A** letter means that the version contains bugfixes or security/stability improvements. Usually these are hotfixes
 
 ---
 
@@ -52,12 +53,19 @@
 1. Automatic backups are enabled by default. To change backup interval change `backup.backupPeriod` option. To disable automatic backups change `backup.autoBackup` option
 2. If you want to make your backups one time a day at specific time change `backup.backupTime` option
 3. If you want to restart your server after automatic backup use `backup.afterBackup` option
-4. To set the maximum number of backups to store change `local.maxBackupsNumber`/`ftp.maxBackupsNumber`/`sftp.maxBackupsNumber`
-5. To set the maximum weight of backups to store change `local.maxBackupsWeight`/`ftp.maxBackupsWeight`/`sftp.maxBackupsWeight`
+4. To set the maximum number of backups to store change `local.maxBackupsNumber`/`ftp.maxBackupsNumber`/`sftp.maxBackupsNumber`/`googleDrive.maxBackupsNumber`
+5. To set the maximum weight of backups to store change `local.maxBackupsWeight`/`ftp.maxBackupsWeight`/`sftp.maxBackupsWeight`/`googleDrive.maxBackupsWeight`
 
-**To setup FTP/SFTP storage check the `Configuration` section below**
+**To set up FTP/GOOGLE DRIVE/SFTP storage check the `Configuration` section below**
 
 **To configure the plugin, it is best to look at the full `Configuration` section, there are many useful options there**
+
+---
+
+## Google Drive setup
+
+1. Enable Google Drive storage and customize settings in **config.yml**. (Check `Configuration/GOOGLE DRIVE storage settings` section)
+2. Link your Google Account to the Backuper using `/backuper account googleDrive link` command
 
 ---
 
@@ -109,6 +117,29 @@
 
 * `Zip archive` - **(true/false)** - Do you want to store backups in ZIP archives in local storage?
 * `Zip compression level` - **(0 - 9)** - archive compression level. A higher value may reduce file size, but may also increase the time required to archive and decompress
+
+### GOOGLE DRIVE storage settings
+
+* `Enabled` - **(true/false)** - Enable GOOGLE DRIVE storage to use it via the Backuper
+* `Auto Backup` - **(true/false)** - With automatic backup, backups will be saved to specified local storage. Works only if `googleDrive.enabled: true` and `backup.autoBackup: true`
+
+
+
+* `Backups folder ID` - **(ID)** - GOOGLE DRIVE folder ID where backups will be stored
+* `Create Backuper Folder` - **(true/false)** - Do you want the Backuper to create its own folder in specified in `backupsFolderId` directory to store backups there
+
+
+
+* `Max backups number` - **(>= 1 or 0)** - Maximum number of backups to be kept in GOOGLE DRIVE storage **(0 - unlimited)**
+* `Max backup weight` - **(>= 1 or 0)** - Maximum weight of backups that will be stored in GOOGLE DRIVE storage **(MB)** **(0 - unlimited)**
+
+
+
+#### Authentication
+
+* `Token Folder Path` - **(Path)** - Directory where you want to store your Google authentication tokens
+
+
 
 ### FTP storage settings
 
@@ -188,7 +219,9 @@
 
 ## Commands
 
-#### The `storage` argument is responsible for the storages such as **local**, **FTP**, **SFTP**. To use these arguments storages must be enabled, the separator sign is `-`. **(Example: `local`, `ftp-sftp`, `local-ftp-sftp`)**
+#### The `storage` argument is responsible for the storages such as **local**, **GOOGLE DRIVE**, **FTP**, **SFTP**. To use these arguments storages must be enabled. The separator sign to use multiple storages at one command is `-`. **(Example: `local`, `ftp-googleDrive`, `local-ftp-sftp`)**
+
+#### The `service` argument is responsible for the storage provider services such as **GOOGLE DRIVE**. To use these arguments corresponding storages must be enabled
 
 * `/backuper backup <storage> <stopRestartServer>` - Command to backup the server manually. The `stopRestartServer` argument means what the server will do after restart. The `stopRestartServer` argument can be `stop` or `restart`, also you can use it **without an argument**
 * `/backuper backup <storage> <delay> <stopRestartServer>` - Command to backup the server manually with a delay **(delay in seconds > 0)**. `stopRestartServer` and `storage` arguments are the same as in command above and it is also **optional**
@@ -202,7 +235,12 @@
 * `/backuper menu <storage> <backupName> unZIP` - **only for LOCAL storage** - Command to convert the specified backup from a ZIP archive to a folder
 * `/backuper menu <storage> <backupName> copyToFtp` - **only for LOCAL storage** - Command to copy the specified backup to **FTP** storage from **local** storage
 * `/backuper menu <storage> <backupName> copyToSftp` - **only for LOCAL storage** - Command to copy the specified backup to **SFTP** storage from **local** storage
-* `/backuper menu <storage> <backupName> copyToLocal` - **only for FTP/SFTP storage** - Command to copy the specified backup to **LOCAL** storage from **FTP/SFTP** storage
+* `/backuper menu <storage> <backupName> copyToGoogleDrive` - **only for LOCAL storage** - Command to copy the specified backup to **GOOGLE DRIVE** storage from **local** storage
+* `/backuper menu <storage> <backupName> copyToLocal` - **only for FTP/GOOGLE DRIVE/SFTP storage** - Command to copy the specified backup to **LOCAL** storage from **FTP/GOOGLE DRIVE/SFTP** storage
+
+
+
+* `/backuper account <service> link` - Command to link the `service` account to use this storage provider via the Backuper
 
 
 
@@ -233,6 +271,18 @@
 * `backuper.local.list.delete` - Permission to delete backups in local storage (`backuper.local.list` permission required)
 * `backuper.local.list.copytoftp` - Permission to copy backups from local to FTP storage (`backuper.local.list` permission required)
 * `backuper.local.list.copytosftp` - Permission to copy backups from local to SFTP storage (`backuper.local.list` permission required)
+
+
+
+### GOOGLE DRIVE storage permissions
+
+* `backuper.googledrive.account` - Permission to manage linked Google account (use link command)
+
+
+
+* `backuper.googledrive.list` - Permission to use `/backuper list googleDrive` and `/backuper menu googleDrive` commands
+* `backuper.googledrive.list.delete` - Permission to delete backups in GOOGLE DRIVE storage (`backuper.googleDrive.list` permission required)
+* `backuper.googledrive.list.copytolocal` - Permission to copy backups from GOOGLE DRIVE to local storage (`backuper.googleDrive.list` permission required)
 
 
 

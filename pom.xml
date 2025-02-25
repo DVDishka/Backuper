@@ -6,12 +6,12 @@
 
     <groupId>ru.dvdishka</groupId>
     <artifactId>Backuper</artifactId>
-    <version>3.1.0</version>
+    <version>3.2.0</version>
     <packaging>jar</packaging>
 
     <name>Backuper</name>
 
-    <description>Backuper plugin for spigot</description>
+    <description>Backuper plugin for Paper/Folia</description>
     <properties>
         <java.version>16</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -107,7 +107,7 @@
         <dependency>
             <groupId>dev.jorel</groupId>
             <artifactId>commandapi-bukkit-shade</artifactId>
-            <version>9.6.1</version>
+            <version>9.7.0</version>
         </dependency>
         <dependency>
             <groupId>io.papermc.paper</groupId>
