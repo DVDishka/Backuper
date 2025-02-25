@@ -5,7 +5,7 @@ import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.util.List;
 
-import static com.google.common.primitives.Doubles.min;
+import static java.lang.Math.min;
 
 public abstract class Task {
 
