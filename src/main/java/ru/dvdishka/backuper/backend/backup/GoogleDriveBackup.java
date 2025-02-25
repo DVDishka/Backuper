@@ -14,6 +14,7 @@ import ru.dvdishka.backuper.handlers.commands.Permissions;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -109,11 +110,40 @@ public class GoogleDriveBackup extends ExternalBackup {
 
     @Override
     long calculateByteSize(CommandSender sender) {
+
+        try {
+            File driveFile = GoogleDriveUtils.getService(sender).files().get(getPath()).setFields("appProperties").execute();
+
+            Map<String, String> appProperties = driveFile.getAppProperties();
+
+            if (appProperties.get("size") != null) {
+                return Long.parseLong(driveFile.getAppProperties().get("size"));
+            }
+        } catch (Exception ignored) {}
+
         try {
             long size = GoogleDriveUtils.getFileByteSize(getDriveFile(sender).getId(), sender);
+            saveSizeToFileProperties(size, sender);
             return size;
         } catch (Exception e) {
             return 0;
+        }
+    }
+
+    /**
+     * Puts given size to file`s appProperties
+     * @param byteSize
+     * @param sender
+     */
+    public void saveSizeToFileProperties(long byteSize, CommandSender sender) {
+
+        try {
+
+            GoogleDriveUtils.addProperty(getDriveFile(sender).getId(), "size", String.valueOf(byteSize), sender);
+
+        } catch (Exception e) {
+            Logger.getLogger().warn("Failed to save backup size to Google Drive", sender);
+            Logger.getLogger().warn(GoogleDriveBackup.class, e);
         }
     }
 
@@ -139,6 +169,11 @@ public class GoogleDriveBackup extends ExternalBackup {
         return getDriveFile(null).getId();
     }
 
+    /**
+     * Returns null if there is this backup does not exist
+     * @param sender
+     * @return
+     */
     public File getDriveFile(CommandSender sender) {
 
         try {

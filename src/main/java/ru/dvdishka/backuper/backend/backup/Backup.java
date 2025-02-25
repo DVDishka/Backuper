@@ -44,8 +44,18 @@ public abstract class Backup {
         return StorageType.NULL;
     }
 
-    public static void addCalculatedBackupSize(StorageType storageType, String backupName, long byteSize) {
+    /**
+     * Use only with existing backups
+     * @param storageType
+     * @param backupName
+     * @param byteSize
+     */
+    public static void saveBackupSizeToCache(StorageType storageType, String backupName, long byteSize) {
         cachedBackupsSize.get(storageType).put(backupName, byteSize);
+
+        if (storageType == StorageType.GOOGLE_DRIVE) {
+            GoogleDriveBackup.getInstance(backupName).saveSizeToFileProperties(byteSize, null);
+        }
     }
 
     public BackupDeleteTask getDeleteTask(boolean setLocked, CommandSender sender) {

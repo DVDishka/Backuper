@@ -3,8 +3,10 @@ package ru.dvdishka.backuper.handlers.commands.menu.copyToGoogleDrive;
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
+import ru.dvdishka.backuper.backend.backup.Backup;
 import ru.dvdishka.backuper.backend.backup.GoogleDriveBackup;
 import ru.dvdishka.backuper.backend.backup.LocalBackup;
+import ru.dvdishka.backuper.backend.backup.StorageType;
 import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.Task;
@@ -84,6 +86,7 @@ public class CopyToGoogleDriveCommand extends Command {
                         GoogleDriveUtils.getFileByName(inProgressName, Config.getInstance().getGoogleDriveConfig().getBackupsFolderId(), sender).getId(),
                         localBackup.getFileName(),
                         sender);
+                Backup.saveBackupSizeToCache(StorageType.GOOGLE_DRIVE, localBackup.getName(), task.getTaskMaxProgress());
             }
 
             sendMessage("CopyToGoogleDrive task completed");

@@ -159,6 +159,25 @@ public class GoogleDriveUtils {
         return uploadFile(file, file.getName(), parentFolderId, progressListener, sender);
     }
 
+    public static void addProperty(String fileId, String key, String value, CommandSender sender) {
+
+        try {
+            Drive service = getService(sender);
+
+            Map<String, String> appProperties = service.files().get(fileId).setFields("appProperties").execute().getAppProperties();
+
+            appProperties.put(key, value);
+
+            service.files().update(fileId, new com.google.api.services.drive.model.File()
+                            .setAppProperties(appProperties))
+                    .setFields("appProperties")
+                    .execute();
+        } catch (Exception e) {
+            Logger.getLogger().warn("Failed to add property to file: " + fileId, sender);
+            Logger.getLogger().warn(GoogleDriveUtils.class, e);
+        }
+    }
+
     /**
      * @param file Local file to upload
      * @param fileName GoogleDrive new file name

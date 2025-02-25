@@ -218,7 +218,7 @@ public class BackupTask extends Task {
                         }
 
                         // Add new backup size to cache (ONLY IF NOT ZIP. ZIP SIZE IS NOT COUNTED)
-                        Backup.addCalculatedBackupSize(StorageType.LOCAL, backupName.replace(" in progress", ""), localBackupByteSize);
+                        Backup.saveBackupSizeToCache(StorageType.LOCAL, backupName.replace(" in progress", ""), localBackupByteSize);
                         Logger.getLogger().devLog("New LOCAL backup size has been cached");
                     }
                     Logger.getLogger().devLog("The Rename \"in progress\" Folder/ZIP local task has been finished");
@@ -240,13 +240,13 @@ public class BackupTask extends Task {
                         backupName + fileType), FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(),
                         backupName.replace(" in progress", "") + fileType), sender);
 
-                Logger.getLogger().devLog("The Rename \"in progress\" Folder FTP(S) task has been finished");
-
                 if (!Config.getInstance().getFtpConfig().isZipArchive()) {
                     // Add new backup size to cache (ONLY IF NOT ZIP. ZIP SIZE IS NOT COUNTED)
-                    Backup.addCalculatedBackupSize(StorageType.FTP, backupName.replace(" in progress", ""), ftpBackupByteSize);
+                    Backup.saveBackupSizeToCache(StorageType.FTP, backupName.replace(" in progress", ""), ftpBackupByteSize);
                     Logger.getLogger().devLog("New SFTP backup size has been cached");
                 }
+
+                Logger.getLogger().devLog("The Rename \"in progress\" Folder FTP(S) task has been finished");
             }
 
             // RENAME SFTP TASK
@@ -258,11 +258,11 @@ public class BackupTask extends Task {
                         backupName), SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(),
                         backupName.replace(" in progress", "")), sender);
 
-                Logger.getLogger().devLog("The Rename \"in progress\" Folder SFTP task has been finished");
-
                 // Add new backup size to cache
-                Backup.addCalculatedBackupSize(StorageType.SFTP, backupName.replace(" in progress", ""), sftpBackupByteSize);
+                Backup.saveBackupSizeToCache(StorageType.SFTP, backupName.replace(" in progress", ""), sftpBackupByteSize);
                 Logger.getLogger().devLog("New SFTP backup size has been cached");
+
+                Logger.getLogger().devLog("The Rename \"in progress\" Folder SFTP task has been finished");
             }
 
             // RENAME GOOGLE DRIVE TASK
@@ -272,16 +272,16 @@ public class BackupTask extends Task {
 
                 try {
                     GoogleDriveUtils.renameFile(GoogleDriveUtils.getFileByName(backupName, Config.getInstance().getGoogleDriveConfig().getBackupsFolderId(), sender).getId(), backupName.replace(" in progress", ""), sender);
+
+                    // Add new backup size to cache. NECESSARY TO DO AFTER RENAMING
+                    Backup.saveBackupSizeToCache(StorageType.GOOGLE_DRIVE, backupName.replace(" in progress", ""), googleDriveBackupByteSize);
+                    Logger.getLogger().devLog("New GOOGLE_DRIVE backup size has been cached");
                 } catch (Exception e) {
                     Logger.getLogger().warn("Failed to rename Google Drive file " + backupName, sender);
                     Logger.getLogger().warn(this.getClass(), e);
                 }
 
                 Logger.getLogger().devLog("The Rename \"in progress\" Folder GoogleDrive task has been finished");
-
-                // Add new backup size to cache
-                Backup.addCalculatedBackupSize(StorageType.GOOGLE_DRIVE, backupName.replace(" in progress", ""), googleDriveBackupByteSize);
-                Logger.getLogger().devLog("New GOOGLE_DRIVE backup size has been cached");
             }
 
             // UPDATE VARIABLES

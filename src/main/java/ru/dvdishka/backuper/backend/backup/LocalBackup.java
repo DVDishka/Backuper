@@ -226,7 +226,7 @@ public class LocalBackup extends ExternalBackup {
                 if (!cancelled) {
                     toZipTask.run();
                 }
-                cachedBackupsSize.get(LocalBackup.class).invalidate(backup.getName());
+                cachedBackupsSize.get(StorageType.LOCAL).invalidate(backup.getName());
 
                 if (setLocked) {
                     UIUtils.successSound(sender);
@@ -322,7 +322,7 @@ public class LocalBackup extends ExternalBackup {
                 if (!cancelled) {
                     unZipTask.run();
                 }
-                cachedBackupsSize.get(LocalBackup.class).invalidate(backup.getName());
+                cachedBackupsSize.get(StorageType.LOCAL).invalidate(backup.getName());
 
                 if (setLocked) {
                     UIUtils.successSound(sender);
