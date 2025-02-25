@@ -266,6 +266,7 @@ public class GoogleDriveUtils {
         try {
             Drive service = getService(sender);
             return service.files().get(driveFileId)
+                    .setFields("mimeType")
                     .execute()
                     .getMimeType()
                     .equals(FOLDER_MIME_TYPE);
@@ -289,17 +290,18 @@ public class GoogleDriveUtils {
 
             String url = authServiceUrl + "/authgd?id=" + id;
 
+            Component header = Component.empty()
+                    .append(Component.text("Account linking"));
+
             Component message = Component.empty()
-                    .append(Component.text("Login using this link:")
+                    .append(Component.text("Log in to your Google Account:")
                             .color(TextColor.fromHexString("#129c9b")))
-                    .appendSpace()
+                    .append(Component.space())
                     .append(Component.text(url)
                             .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.OPEN_URL, url))
                             .decorate(TextDecoration.UNDERLINED));
 
-
-
-            sender.sendMessage(message);
+            UIUtils.sendFramedMessage(header, message, sender);
         }
 
         public Credential authorize(String userId, boolean force, CommandSender sender) throws IOException {

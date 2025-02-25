@@ -2,7 +2,7 @@
 
 # Backuper
 
-<img height="128" src="images/backuper_logo.svg" width="128" alt=""/>
+<img height="128" src="https://raw.githubusercontent.com/DVDishka/Backuper/refs/heads/master/images/backuper_logo.svg" width="128" alt=""/>
 
 ## Simple backup plugin for Paper/Folia with **FTP/GOOGLE DRIVE/SFTP** support
 
@@ -14,7 +14,7 @@
 
 ## Pages
 
-* [<img width="20px" src="images/backuper_logo.svg"></img>](https://backuper-mc.com)[Backuper](https://backuper-mc.com)
+* [<img width="20px" src="https://raw.githubusercontent.com/DVDishka/Backuper/refs/heads/master/images/backuper_logo.svg"></img>](https://backuper-mc.com)[ Backuper](https://backuper-mc.com)
 * [<img width="20px" src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"></img>](https://github.com/DVDishka/Backuper)[ GitHub](https://github.com/DVDishka/Backuper)
 * [<img width="20px" src="https://i.imgur.com/o104U27.png"></img>](https://modrinth.com/plugin/backuper)[ Modrinth](https://modrinth.com/plugin/backuper)
 * [<img width="20px" src="https://i.imgur.com/QJnHi37.png"></img>](https://hangar.papermc.io/Collagen/Backuper)[ Hangar](https://hangar.papermc.io/Collagen/Backuper)

@@ -1052,7 +1052,7 @@ public class Initialization implements Listener {
             Component message = Component.empty();
 
             if (sender instanceof ConsoleCommandSender) {
-                message = message.appendNewline();
+                message = message.append(Component.newline());
             }
 
             message = message
@@ -1074,7 +1074,7 @@ public class Initialization implements Listener {
                             .clickEvent(ClickEvent.suggestCommand("/backuper account googleDrive link")));
 
             message = message
-                    .appendNewline()
+                    .append(Component.newline())
                     .append(sender instanceof ConsoleCommandSender ? Component.text("-".repeat(75)) : Component.text("------------------------------------------")
                             .decorate(TextDecoration.BOLD)
                             .color(TextColor.color(0xE3A013)));
@@ -1090,7 +1090,7 @@ public class Initialization implements Listener {
             Component message = Component.empty();
 
             if (sender instanceof ConsoleCommandSender) {
-                message = message.appendNewline();
+                message = message.append(Component.newline());
             }
 
             message = message
@@ -1118,7 +1118,7 @@ public class Initialization implements Listener {
             }
 
             message = message
-                    .appendNewline()
+                    .append(Component.newline())
                     .append(sender instanceof ConsoleCommandSender ? Component.text("-".repeat(75)) : Component.text("------------------------------------------")
                             .decorate(TextDecoration.BOLD)
                             .color(TextColor.color(0xE3A013)));
