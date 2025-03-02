@@ -19,10 +19,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.server.ServerLoadEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.backend.backup.FtpBackup;
-import ru.dvdishka.backuper.backend.backup.GoogleDriveBackup;
-import ru.dvdishka.backuper.backend.backup.LocalBackup;
-import ru.dvdishka.backuper.backend.backup.SftpBackup;
+import ru.dvdishka.backuper.backend.backup.*;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.config.BackwardsCompatibility;
@@ -59,6 +56,7 @@ import ru.dvdishka.backuper.handlers.worldchangecatch.WorldChangeCatcherNew;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.time.LocalDateTime;
@@ -1159,6 +1157,30 @@ public class Initialization implements Listener {
             } else {
                 Logger.getLogger().warn("Failed to establish SFTP connection", sender);
             }
+        }
+    }
+
+    public static void loadSizeCache(CommandSender sender) {
+
+        try {
+            File sizeCacheFile = new File("plugins/Backuper/sizeCache.json");
+            FileReader reader = new FileReader(sizeCacheFile);
+
+            StringBuilder json = new StringBuilder();
+            char[] buffer = new char[1024];
+            int length;
+
+            while ((length = reader.read(buffer)) != -1) {
+                json.append(new String(buffer, 0, length));
+            }
+
+            reader.close();
+
+            Backup.loadSizeCache(json.toString(), sender);
+
+        } catch (Exception e) {
+            Logger.getLogger().warn("Failed to load backups size cache", sender);
+            Logger.getLogger().warn(Initialization.class, e);
         }
     }
 }

@@ -4,11 +4,13 @@
 
 <img height="128" src="https://raw.githubusercontent.com/DVDishka/Backuper/refs/heads/master/images/backuper_logo.svg" width="128" alt=""/>
 
-## Simple backup plugin for Paper/Folia with **FTP/GOOGLE DRIVE/SFTP** support
+## Simple backup plugin for Paper/Folia<br>With **FTP/GOOGLE DRIVE/SFTP** support
 
 ---
 
 [![bStats Graph Data](https://bstats.org/signatures/bukkit/Backuper.svg)](https://bstats.org/plugin/bukkit/Backuper)
+
+---
 
 </div>
 
