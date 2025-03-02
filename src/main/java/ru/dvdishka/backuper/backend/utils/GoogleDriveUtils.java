@@ -38,6 +38,7 @@ import java.util.*;
 public class GoogleDriveUtils {
 
     private static File tokensFolder;
+    private static Credential credential = null;
 
     private static final String authServiceUrl = "https://auth.backuper-mc.com";
 
@@ -55,6 +56,11 @@ public class GoogleDriveUtils {
     public static Credential returnCredentialIfAuthorized(CommandSender sender) {
 
         try {
+
+            if (credential != null) {
+                return credential;
+            }
+
             GoogleClientSecrets clientSecrets = JSON_FACTORY
                     .fromString(ObfuscateUtils
                             .decrypt(IOUtils
@@ -67,7 +73,7 @@ public class GoogleDriveUtils {
                     .setAccessType("offline")
                     .build();
 
-            Credential credential = flow.loadCredential("user");
+            credential = flow.loadCredential("user");
 
             if (credential != null
                     && (credential.getRefreshToken() != null
@@ -131,14 +137,24 @@ public class GoogleDriveUtils {
         return credential;
     }
 
-    public static Drive getService(CommandSender sender) throws NotAuthorizedException {
+    private static Drive drive = null;
+
+    /**
+     * @return Drive service or null if Google Drive is not authorized. It caches first taken service and returns cached value for next invocations
+     * @param sender
+     */
+    public static Drive getService(CommandSender sender) {
+
+        if (drive != null) {
+            return drive;
+        }
 
         Credential credential = returnCredentialIfAuthorized(sender);
         if (credential == null) {
             return null;
         }
 
-        return new Drive.Builder(NET_HTTP_TRANSPORT, JSON_FACTORY, credential)
+        drive = new Drive.Builder(NET_HTTP_TRANSPORT, JSON_FACTORY, credential)
                 .setApplicationName(APPLICATION_NAME)
                 .setHttpRequestInitializer(new HttpRequestInitializer() {
                     @Override
@@ -149,6 +165,8 @@ public class GoogleDriveUtils {
                     }
                 })
                 .build();
+
+        return drive;
     }
 
     /**

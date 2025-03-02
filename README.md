@@ -4,11 +4,13 @@
 
 <img height="128" src="https://raw.githubusercontent.com/DVDishka/Backuper/refs/heads/master/images/backuper_logo.svg" width="128" alt=""/>
 
-## Simple backup plugin for Paper/Folia with **FTP/GOOGLE DRIVE/SFTP** support
+## Simple backup plugin for Paper/Folia<br>With **FTP/GOOGLE DRIVE/SFTP** support
 
 ---
 
 [![bStats Graph Data](https://bstats.org/signatures/bukkit/Backuper.svg)](https://bstats.org/plugin/bukkit/Backuper)
+
+---
 
 </div>
 
@@ -206,6 +208,10 @@
 
 * `Alert time before restart` - **(> 0 or -1)** - A notification about the server restart will be sent to all players on the server `alertTimeBeforeRestart` seconds before the restart. -1 to disable notifications
 * `Alert only server restart` - **(true/false)** - Notifications will be sent only if the server will be restarted or stopped after the backup
+
+
+
+* `Size cache file` - **(Path)** - Backup size cache file path
 
 
 

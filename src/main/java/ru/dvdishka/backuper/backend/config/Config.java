@@ -43,6 +43,7 @@ public class Config {
     private boolean deleteBrokenBackups;
     private String backupFileNameFormat;
     private DateTimeFormatter dateTimeFormatter;
+    private File sizeCacheFile;
 
     private final LocalConfig localConfig = new LocalConfig();
     private final SftpConfig sftpConfig = new SftpConfig();
@@ -151,6 +152,7 @@ public class Config {
         this.googleDriveConfig.backupsNumber = config.getInt("googleDrive.maxBackupsNumber", 0);
         this.googleDriveConfig.backupsWeight = config.getLong("googleDrive.maxBackupsWeight", 0) * 1_048_576L;
 
+        this.sizeCacheFile = new File(config.getString("server.sizeCacheFile", "./plugins/Backuper/sizeCache.json"));
         this.betterLogging = config.getBoolean("server.betterLogging", false);
         this.fixedBackupTime = this.backupTime > -1;
         this.addDirectoryToBackup = config.getStringList("backup.addDirectoryToBackup");
@@ -251,7 +253,7 @@ public class Config {
                 "ftp.zipArchive", "ftp.zipCompressionLevel", "server.checkUpdates", "local.autoBackup", "ftp.autoBackup", "sftp.autoBackup",
                 "backup.deleteBrokenBackups", "backup.backupFileNameFormat", "googleDrive.enabled", "googleDrive.autoBackup",
                 "googleDrive.auth.tokenFolderPath", "googleDrive.backupsFolderId", "googleDrive.createBackuperFolder",
-                "googleDrive.maxBackupsWeight", "googleDrive.maxBackupsNumber");
+                "googleDrive.maxBackupsWeight", "googleDrive.maxBackupsNumber", "server.sizeCacheFile");
 
         for (String configField : configFields) {
             if (isConfigFileOk && !config.contains(configField)) {
@@ -330,6 +332,7 @@ public class Config {
             newConfig.set("lastBackup", this.lastBackup);
             newConfig.set("lastChange", this.lastChange);
 
+            newConfig.set("server.sizeCacheFile", this.sizeCacheFile.getPath());
             newConfig.set("server.betterLogging", this.betterLogging);
             newConfig.set("server.alertTimeBeforeRestart", this.alertTimeBeforeRestart);
             newConfig.set("server.alertOnlyServerRestart", this.alertOnlyServerRestart);
@@ -449,5 +452,9 @@ public class Config {
 
     public DateTimeFormatter getDateTimeFormatter() {
         return dateTimeFormatter;
+    }
+
+    public File getSizeCacheFile() {
+        return sizeCacheFile;
     }
 }

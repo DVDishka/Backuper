@@ -125,13 +125,13 @@ sftp:
   auth:
     # (Address) SFTP server address
     address: ''
-    # (Port) FTP server port
+    # (Port) SFTP server port
     port: 22
     # (password/key) SFTP server authentication type
     authType: password
-    # (Username) FTP server username to use for authentication
+    # (Username) SFTP server username to use for authentication
     username: ''
-    # (Password) FTP server password to use for authentication
+    # (Password) SFTP server password to use for authentication
     password: ''
     # (Absolute Path) Local path to key file if 'authType: key'
     keyFilePath: ''
@@ -145,6 +145,9 @@ server:
   alertTimeBeforeRestart: 60
   # (true/false) Notifications will be sent only if the server will be restarted or stopped after the backup
   alertOnlyServerRestart: true
+
+  # (Path) Size cache file
+  sizeCacheFile: ./plugins/Backuper/sizeCache.json
 
   # (true/false) Check for new versions of the Backuper to stay up to date
   checkUpdates: true

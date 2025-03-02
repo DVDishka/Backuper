@@ -2,6 +2,9 @@ package ru.dvdishka.backuper.backend.backup;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.common.Logger;
@@ -10,22 +13,64 @@ import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
 
+import java.lang.reflect.Type;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Stream;
 
 public abstract class Backup {
 
     String backupName;
 
-    static final HashMap<StorageType, Cache<String, Long>> cachedBackupsSize = new HashMap<>();
+    public static HashMap<StorageType, Cache<String, Long>> cachedBackupsSize = new HashMap<>();
+
+    private static Gson gson = new GsonBuilder().serializeNulls().setPrettyPrinting().create();
 
     static {
         cachedBackupsSize.put(StorageType.LOCAL, Caffeine.newBuilder().build());
         cachedBackupsSize.put(StorageType.FTP, Caffeine.newBuilder().build());
         cachedBackupsSize.put(StorageType.SFTP, Caffeine.newBuilder().build());
         cachedBackupsSize.put(StorageType.GOOGLE_DRIVE, Caffeine.newBuilder().build());
+        cachedBackupsSize.put(StorageType.NULL, Caffeine.newBuilder().build());
+    }
+
+    public static String getSizeCacheJson(CommandSender sender) {
+
+        HashMap<StorageType, ConcurrentMap<String, Long>> jsonedCache = new HashMap<>();
+
+        for (StorageType storageType : StorageType.values()) {
+            jsonedCache.put(storageType, cachedBackupsSize.get(storageType).asMap());
+        }
+
+        String json = gson.toJson(jsonedCache);
+        return json;
+    }
+
+    public static void loadSizeCache(String json, CommandSender sender) {
+        try {
+            if (json.isEmpty()) {
+                return;
+            }
+
+            Type typeToken = new TypeToken<HashMap<StorageType, HashMap<String, Long>>>() {}.getType();
+            HashMap<StorageType, HashMap<String, Long>> jsonedCache = gson.fromJson(json, typeToken);
+
+            for (StorageType storageType : StorageType.values()) {
+                for (Map.Entry<String, Long> entry : jsonedCache.get(storageType).entrySet()) {
+                    cachedBackupsSize.get(storageType).put(entry.getKey(), entry.getValue());
+                }
+            }
+
+            Logger.getLogger().devLog("Size cache has been loaded successfully", sender);
+        } catch (Exception e) {
+            Logger.getLogger().warn("Failed to load size cache", sender);
+            Logger.getLogger().warn(Backup.class, e);
+        }
     }
 
     private StorageType getStorageType() {

@@ -4,6 +4,7 @@ import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPIBukkitConfig;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.dvdishka.backuper.backend.Initialization;
+import ru.dvdishka.backuper.backend.backup.Backup;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.config.Config;
@@ -12,6 +13,7 @@ import ru.dvdishka.backuper.backend.tasks.common.SetWorldsWritableTask;
 import ru.dvdishka.backuper.backend.utils.Utils;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.util.List;
 
 public class Backuper extends JavaPlugin {
@@ -45,14 +47,14 @@ public class Backuper extends JavaPlugin {
 
         File pluginDir = new File("plugins/Backuper");
         File configFile = new File("plugins/Backuper/config.yml");
-        
+
         if (!pluginDir.exists() && !pluginDir.mkdirs()) {
             
             Logger.getLogger().warn("Can not create plugins/Backuper dir!");
         }
         
-        
         Initialization.initConfig(configFile, null);
+        Initialization.loadSizeCache(null);
         File backupsDir = new File(Config.getInstance().getLocalConfig().getBackupsFolder());
         if (!backupsDir.exists() && !backupsDir.mkdirs()) {
 
@@ -80,6 +82,8 @@ public class Backuper extends JavaPlugin {
 
     public void onDisable() {
 
+        saveSizeCache();
+
         Scheduler.cancelTasks(this);
         new SetWorldsWritableTask(false, List.of(), null).run();
 
@@ -89,5 +93,20 @@ public class Backuper extends JavaPlugin {
         CommandAPI.onDisable();
 
         Logger.getLogger().log("Backuper plugin has been disabled!");
+    }
+
+    private void saveSizeCache() {
+
+        try {
+            File sizeCachceFile = Config.getInstance().getSizeCacheFile();
+
+            FileWriter writer = new FileWriter(sizeCachceFile);
+            writer.write(Backup.getSizeCacheJson(null));
+            writer.close();
+
+        } catch (Exception e) {
+            Logger.getLogger().warn("Failed to save size cache to disk!");
+            Logger.getLogger().warn(this.getClass(), e);
+        }
     }
 }
