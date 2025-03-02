@@ -53,6 +53,10 @@ public abstract class Backup {
 
     public static void loadSizeCache(String json, CommandSender sender) {
         try {
+            if (json.isEmpty()) {
+                return;
+            }
+
             Type typeToken = new TypeToken<HashMap<StorageType, HashMap<String, Long>>>() {}.getType();
             HashMap<StorageType, HashMap<String, Long>> jsonedCache = gson.fromJson(json, typeToken);
 
@@ -65,6 +69,7 @@ public abstract class Backup {
             Logger.getLogger().devLog("Size cache has been loaded successfully", sender);
         } catch (Exception e) {
             Logger.getLogger().warn("Failed to load size cache", sender);
+            Logger.getLogger().warn(Backup.class, e);
         }
     }
 

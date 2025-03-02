@@ -259,8 +259,6 @@ public class Initialization implements Listener {
         SftpUtils.init();
         GoogleDriveUtils.init();
 
-        Initialization.indexStorages(sender);
-
         Logger.getLogger().log("Config loading completed", sender);
     }
 
@@ -1163,7 +1161,16 @@ public class Initialization implements Listener {
     public static void loadSizeCache(CommandSender sender) {
 
         try {
-            File sizeCacheFile = new File("plugins/Backuper/sizeCache.json");
+            File sizeCacheFile = Config.getInstance().getSizeCacheFile();
+
+            try {
+                if (!sizeCacheFile.exists() && !sizeCacheFile.createNewFile()) {
+                    Logger.getLogger().warn("Can not create " + sizeCacheFile.getPath() + " file!");
+                }
+            } catch (Exception e) {
+                Logger.getLogger().warn("Can not create " + sizeCacheFile.getPath() + " file!");
+            }
+
             FileReader reader = new FileReader(sizeCacheFile);
 
             StringBuilder json = new StringBuilder();

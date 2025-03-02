@@ -146,6 +146,9 @@ server:
   # (true/false) Notifications will be sent only if the server will be restarted or stopped after the backup
   alertOnlyServerRestart: true
 
+  # (Path) Size cache file
+  sizeCacheFile: ./plugins/Backuper/sizeCache.json
+
   # (true/false) Check for new versions of the Backuper to stay up to date
   checkUpdates: true
 

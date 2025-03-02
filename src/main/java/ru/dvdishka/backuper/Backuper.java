@@ -47,27 +47,18 @@ public class Backuper extends JavaPlugin {
 
         File pluginDir = new File("plugins/Backuper");
         File configFile = new File("plugins/Backuper/config.yml");
-        File sizeCacheFile = new File("plugins/Backuper/sizeCache.json");
-        
+
         if (!pluginDir.exists() && !pluginDir.mkdirs()) {
             
             Logger.getLogger().warn("Can not create plugins/Backuper dir!");
         }
         
-        Initialization.loadSizeCache(null);
         Initialization.initConfig(configFile, null);
+        Initialization.loadSizeCache(null);
         File backupsDir = new File(Config.getInstance().getLocalConfig().getBackupsFolder());
         if (!backupsDir.exists() && !backupsDir.mkdirs()) {
 
             Logger.getLogger().warn("Can not create plugins/Backuper/Backups dir!");
-        }
-
-        try {
-            if (!sizeCacheFile.exists() && !sizeCacheFile.createNewFile()) {
-                Logger.getLogger().warn("Can not create plugins/Backuper/Backups/sizeCache.json file!");
-            }
-        } catch (Exception e) {
-            Logger.getLogger().warn("Can not create plugins/Backuper/Backups/sizeCache.json file!");
         }
 
         Initialization.checkStorages(null);
@@ -107,7 +98,7 @@ public class Backuper extends JavaPlugin {
     private void saveSizeCache() {
 
         try {
-            File sizeCachceFile = new File("plugins/Backuper/sizeCache.json");
+            File sizeCachceFile = Config.getInstance().getSizeCacheFile();
 
             FileWriter writer = new FileWriter(sizeCachceFile);
             writer.write(Backup.getSizeCacheJson(null));
