@@ -153,6 +153,9 @@ server:
   # (Path) Size cache file
   sizeCacheFile: ./plugins/Backuper/sizeCache.json
 
+  # (Path) Size cache file
+  sizeCacheFile: ./plugins/Backuper/sizeCache.json
+
   # (true/false) Check for new versions of the Backuper to stay up to date
   checkUpdates: true
 
