@@ -9,7 +9,6 @@ import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class SetWorldsReadOnlyTask extends Task {

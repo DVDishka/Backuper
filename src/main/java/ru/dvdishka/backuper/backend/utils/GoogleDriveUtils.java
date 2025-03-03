@@ -30,7 +30,6 @@ import org.apache.http.client.fluent.Request;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.exceptions.NotAuthorizedException;
 
 import java.io.*;
 import java.util.*;
@@ -93,7 +92,8 @@ public class GoogleDriveUtils {
                             })
                             .build();
 
-                    service.files().get("test").execute();
+                    com.google.api.services.drive.model.File driveFile = service.files().get("").execute();
+                    driveFile.getName();
 
                 } catch (GoogleJsonResponseException e) {
                     if (e.getStatusCode() != 404) {

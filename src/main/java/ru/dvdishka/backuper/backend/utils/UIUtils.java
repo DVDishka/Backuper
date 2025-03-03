@@ -238,22 +238,18 @@ public class UIUtils {
 
     public static void sendBackupAlert(long timeSeconds, String afterBackup) {
 
-        String action = "backed\nup ";
         boolean restart = false;
 
         if (afterBackup.equals("STOP")) {
-            Logger.getLogger().log("Server will be backed up and stopped in " + timeSeconds + " second(s)");
-            action = "backed\nup and restarted\n";
+            Logger.getLogger().log(Config.getInstance().getAlertBackupRestartMessage().formatted(timeSeconds));
             restart = true;
         }
         if (afterBackup.equals("RESTART")) {
-            Logger.getLogger().log("Server will be backed up and restarted in " + timeSeconds + " second(s)");
-            action = "backed\nup and restarted\n";
+            Logger.getLogger().log(Config.getInstance().getAlertBackupRestartMessage().formatted(timeSeconds));
             restart = true;
         }
         if (afterBackup.equals("NOTHING")) {
-            Logger.getLogger().log("Server will be backed up in " + timeSeconds + " second(s)");
-            action = "backed\nup ";
+            Logger.getLogger().log(Config.getInstance().getAlertBackupMessage().formatted(timeSeconds));
         }
 
         for (Player player : Bukkit.getOnlinePlayers()) {
@@ -273,11 +269,9 @@ public class UIUtils {
                 Component message = Component.empty();
 
                 message = message
-                        .append(Component.text("Server will be " + action + "in "))
-                        .append(Component.text(timeSeconds)
-                                .color(NamedTextColor.RED)
-                                .decorate(TextDecoration.BOLD))
-                        .append(Component.text(" second(s)"));
+                        .append(Component.text((
+                                restart ? Config.getInstance().getAlertBackupRestartMessage() : Config.getInstance().getAlertBackupMessage()
+                        ).formatted(timeSeconds)));
 
                 sendFramedMessage(header, message, 15, player);
                 notificationSound(player);
