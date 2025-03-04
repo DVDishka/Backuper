@@ -208,6 +208,8 @@
 
 * `Alert time before restart` - **(> 0 or -1)** - A notification about the server restart will be sent to all players on the server `alertTimeBeforeRestart` seconds before the restart. -1 to disable notifications
 * `Alert only server restart` - **(true/false)** - Notifications will be sent only if the server will be restarted or stopped after the backup
+* `Alert backup message` - **(String)** - Backup alert message. (%d is a seconds number placeholder)
+* `Alert backup restart message` - **(String)** - Backup and restart alert message. (%d is a seconds number placeholder)
 
 
 
@@ -231,7 +233,6 @@
 
 * `/backuper backup <storage> <stopRestartServer>` - Command to backup the server manually. The `stopRestartServer` argument means what the server will do after restart. The `stopRestartServer` argument can be `stop` or `restart`, also you can use it **without an argument**
 * `/backuper backup <storage> <delay> <stopRestartServer>` - Command to backup the server manually with a delay **(delay in seconds > 0)**. `stopRestartServer` and `storage` arguments are the same as in command above and it is also **optional**
-
 
 
 * `/backuper list <storage>` - Command to view the list of backups **(click on a backup to open its menu)**

@@ -44,6 +44,8 @@ public class Config {
     private String backupFileNameFormat;
     private DateTimeFormatter dateTimeFormatter;
     private File sizeCacheFile;
+    private String alertBackupMessage;
+    private String alertBackupRestartMessage;
 
     private final LocalConfig localConfig = new LocalConfig();
     private final SftpConfig sftpConfig = new SftpConfig();
@@ -152,6 +154,8 @@ public class Config {
         this.googleDriveConfig.backupsNumber = config.getInt("googleDrive.maxBackupsNumber", 0);
         this.googleDriveConfig.backupsWeight = config.getLong("googleDrive.maxBackupsWeight", 0) * 1_048_576L;
 
+        this.alertBackupMessage = config.getString("server.alertBackupMessage", "Server will be backed up in %d second(s)");
+        this.alertBackupRestartMessage = config.getString("server.alertBackupRestartMessage", "Server will be backed up and restarted in %d second(s)");
         this.sizeCacheFile = new File(config.getString("server.sizeCacheFile", "./plugins/Backuper/sizeCache.json"));
         this.betterLogging = config.getBoolean("server.betterLogging", false);
         this.fixedBackupTime = this.backupTime > -1;
@@ -253,7 +257,7 @@ public class Config {
                 "ftp.zipArchive", "ftp.zipCompressionLevel", "server.checkUpdates", "local.autoBackup", "ftp.autoBackup", "sftp.autoBackup",
                 "backup.deleteBrokenBackups", "backup.backupFileNameFormat", "googleDrive.enabled", "googleDrive.autoBackup",
                 "googleDrive.auth.tokenFolderPath", "googleDrive.backupsFolderId", "googleDrive.createBackuperFolder",
-                "googleDrive.maxBackupsWeight", "googleDrive.maxBackupsNumber", "server.sizeCacheFile");
+                "googleDrive.maxBackupsWeight", "googleDrive.maxBackupsNumber", "server.sizeCacheFile", "server.alertBackupMessage", "server.alertBackupRestartMessage");
 
         for (String configField : configFields) {
             if (isConfigFileOk && !config.contains(configField)) {
@@ -336,6 +340,8 @@ public class Config {
             newConfig.set("server.betterLogging", this.betterLogging);
             newConfig.set("server.alertTimeBeforeRestart", this.alertTimeBeforeRestart);
             newConfig.set("server.alertOnlyServerRestart", this.alertOnlyServerRestart);
+            newConfig.set("server.alertBackupMessage", this.alertBackupMessage);
+            newConfig.set("server.alertBackupRestartMessage", this.alertBackupRestartMessage);
             newConfig.set("server.checkUpdates", this.checkUpdates);
 
             try {
@@ -456,5 +462,13 @@ public class Config {
 
     public File getSizeCacheFile() {
         return sizeCacheFile;
+    }
+
+    public String getAlertBackupMessage() {
+        return alertBackupMessage;
+    }
+
+    public String getAlertBackupRestartMessage() {
+        return alertBackupRestartMessage;
     }
 }
