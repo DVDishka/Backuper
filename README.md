@@ -217,10 +217,6 @@
 
 
 
-* `Size cache file` - **(Path)** - Backup size cache file path
-
-
-
 * `Check updates` - **(true/false)** - Check for new versions of the Backuper to stay up to date
 
 
