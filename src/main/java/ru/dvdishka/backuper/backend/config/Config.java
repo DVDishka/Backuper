@@ -23,7 +23,7 @@ public class Config {
     // hides bugs that may exist with reading the config.
     private File configFile;
 
-    private final String configVersion = "9.0";
+    private final String configVersion = "10.0";
     private long lastBackup;
     private long lastChange;
 
