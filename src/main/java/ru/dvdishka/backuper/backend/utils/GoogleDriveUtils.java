@@ -56,9 +56,7 @@ public class GoogleDriveUtils {
 
         try {
 
-            if (credential != null) {
-                return credential;
-            }
+            boolean checkConnection = credential == null;
 
             GoogleClientSecrets clientSecrets = JSON_FACTORY
                     .fromString(ObfuscateUtils
@@ -69,6 +67,7 @@ public class GoogleDriveUtils {
             GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
                     NET_HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, DRIVE_SCOPES)
                     .setDataStoreFactory(new FileDataStoreFactory(tokensFolder))
+                    .setApprovalPrompt("force")
                     .setAccessType("offline")
                     .build();
 
@@ -78,37 +77,45 @@ public class GoogleDriveUtils {
                     && (credential.getRefreshToken() != null
                     || credential.getExpiresInSeconds() == null
                     || credential.getExpiresInSeconds() > 60)) {
-                try {
 
-                    Drive service = new Drive.Builder(NET_HTTP_TRANSPORT, JSON_FACTORY, credential)
-                            .setApplicationName(APPLICATION_NAME)
-                            .setHttpRequestInitializer(new HttpRequestInitializer() {
-                                @Override
-                                public void initialize(HttpRequest httpRequest) throws IOException {
-                                    credential.initialize(httpRequest);
-                                    httpRequest.setConnectTimeout(300 * 60000);
-                                    httpRequest.setReadTimeout(300 * 60000);
-                                }
-                            })
-                            .build();
+                if (checkConnection) {
+                    try {
 
-                    com.google.api.services.drive.model.File driveFile = service.files().get("").execute();
-                    driveFile.getName();
+                        Drive service = new Drive.Builder(NET_HTTP_TRANSPORT, JSON_FACTORY, credential)
+                                .setApplicationName(APPLICATION_NAME)
+                                .setHttpRequestInitializer(new HttpRequestInitializer() {
+                                    @Override
+                                    public void initialize(HttpRequest httpRequest) throws IOException {
+                                        credential.initialize(httpRequest);
+                                        httpRequest.setConnectTimeout(300 * 60000);
+                                        httpRequest.setReadTimeout(300 * 60000);
+                                    }
+                                })
+                                .build();
 
-                } catch (GoogleJsonResponseException e) {
-                    if (e.getStatusCode() != 404) {
+                        com.google.api.services.drive.model.File driveFile = service.files().get("").execute();
+                        driveFile.getName();
+
+                    } catch (GoogleJsonResponseException e) {
+                        if (e.getStatusCode() != 404) {
+                            credential = null;
+                            return null;
+                        }
+                    } catch (Exception e) {
+                        credential = null;
                         return null;
                     }
-                } catch (Exception e) {
-                    return null;
                 }
+                
                 return credential;
             }
+            credential = null;
             return null;
 
         } catch (Exception e) {
             Logger.getLogger().warn(GoogleDriveUtils.class, "Failed to authorize user in Google Drive", sender);
             Logger.getLogger().warn(GoogleDriveUtils.class, e);
+            credential = null;
             return null;
         }
     }
@@ -118,6 +125,8 @@ public class GoogleDriveUtils {
     }
 
     public static Credential authorizeForced(CommandSender sender) throws IOException {
+
+        credential = null;
 
         GoogleClientSecrets clientSecrets = JSON_FACTORY
                 .fromString(ObfuscateUtils
@@ -132,8 +141,7 @@ public class GoogleDriveUtils {
                 .setApprovalPrompt("force")
                 .build();
 
-        Credential credential = new MyAuthorizationCodeInstalledApp(flow).authorize("user", true, sender);
-
+        credential = new MyAuthorizationCodeInstalledApp(flow).authorize("user", true, sender);
         return credential;
     }
 
@@ -190,6 +198,12 @@ public class GoogleDriveUtils {
                             .setAppProperties(appProperties))
                     .setFields("appProperties")
                     .execute();
+        } catch (GoogleJsonResponseException e) {
+            if (e.getStatusCode() == 401) {
+                credential = null;
+                Logger.getLogger().warn("Failed to authorize user in Google Drive", sender);
+                Logger.getLogger().warn(GoogleDriveUtils.class, e);
+            }
         } catch (Exception e) {
             Logger.getLogger().warn("Failed to add property to file: " + fileId, sender);
             Logger.getLogger().warn(GoogleDriveUtils.class, e);
@@ -232,6 +246,13 @@ public class GoogleDriveUtils {
 
             return driveFile.getId();
 
+        } catch (GoogleJsonResponseException e) {
+            if (e.getStatusCode() == 401) {
+                credential = null;
+                Logger.getLogger().warn("Failed to authorize user in Google Drive", sender);
+                Logger.getLogger().warn(GoogleDriveUtils.class, e);
+            }
+            return null;
         } catch (Exception e) {
             Logger.getLogger().warn(GoogleDriveUtils.class, "Failed to upload file to Google Drive", sender);
             Logger.getLogger().warn(GoogleDriveUtils.class, e);
@@ -256,6 +277,13 @@ public class GoogleDriveUtils {
 
             return service.files().create(driveFileMeta).setFields("appProperties, id, parents").execute().getId();
 
+        } catch (GoogleJsonResponseException e) {
+            if (e.getStatusCode() == 401) {
+                credential = null;
+                Logger.getLogger().warn("Failed to authorize user in Google Drive", sender);
+                Logger.getLogger().warn(GoogleDriveUtils.class, e);
+            }
+            return null;
         } catch (Exception e) {
             Logger.getLogger().warn(GoogleDriveUtils.class, "Failed to create folder in Google Drive", sender);
             Logger.getLogger().warn(GoogleDriveUtils.class, e);
@@ -274,6 +302,13 @@ public class GoogleDriveUtils {
 
             return service.files().get(fileId).executeMediaAsInputStream();
 
+        } catch (GoogleJsonResponseException e) {
+            if (e.getStatusCode() == 401) {
+                credential = null;
+                Logger.getLogger().warn("Failed to authorize user in Google Drive", sender);
+                Logger.getLogger().warn(GoogleDriveUtils.class, e);
+            }
+            return null;
         } catch (Exception e) {
             Logger.getLogger().warn(GoogleDriveUtils.class, "Failed to download file from Google Drive", sender);
             Logger.getLogger().warn(GoogleDriveUtils.class, e);
@@ -292,13 +327,19 @@ public class GoogleDriveUtils {
 
             getDriveFile.executeMediaAndDownloadTo(outputStream);
 
+        } catch (GoogleJsonResponseException e) {
+            if (e.getStatusCode() == 401) {
+                credential = null;
+                Logger.getLogger().warn("Failed to authorize user in Google Drive", sender);
+                Logger.getLogger().warn(GoogleDriveUtils.class, e);
+            }
         } catch (Exception e) {
             Logger.getLogger().warn(GoogleDriveUtils.class, "Failed to download file from Google Drive", sender);
             Logger.getLogger().warn(GoogleDriveUtils.class, e);
         }
     }
 
-    public static boolean isFolder(String driveFileId, CommandSender sender) throws FileNotFoundException {
+    public static boolean isFolder(String driveFileId, CommandSender sender) throws FileNotFoundException, GoogleJsonResponseException {
 
         try {
             Drive service = getService(sender);
@@ -308,6 +349,13 @@ public class GoogleDriveUtils {
                     .getMimeType()
                     .equals(FOLDER_MIME_TYPE);
 
+        } catch (GoogleJsonResponseException e) {
+            if (e.getStatusCode() == 401) {
+                credential = null;
+                Logger.getLogger().warn("Failed to authorize user in Google Drive", sender);
+                Logger.getLogger().warn(GoogleDriveUtils.class, e);
+            }
+            throw e;
         } catch (Exception e) {
             Logger.getLogger().warn(GoogleDriveUtils.class, "Failed to get file type from Google Drive", sender);
             Logger.getLogger().warn(GoogleDriveUtils.class, e);
@@ -463,6 +511,13 @@ public class GoogleDriveUtils {
 
             return driveFiles;
 
+        } catch (GoogleJsonResponseException e) {
+            if (e.getStatusCode() == 401) {
+                credential = null;
+                Logger.getLogger().warn("Failed to authorize user in Google Drive", sender);
+                Logger.getLogger().warn(GoogleDriveUtils.class, e);
+            }
+            return List.of();
         } catch (Exception e) {
             Logger.getLogger().warn(GoogleDriveUtils.class, "Failed to get files list from Google Drive", sender);
             Logger.getLogger().warn(GoogleDriveUtils.class, e);
@@ -487,6 +542,12 @@ public class GoogleDriveUtils {
                     .setFields("name")
                     .execute();
 
+        } catch (GoogleJsonResponseException e) {
+            if (e.getStatusCode() == 401) {
+                credential = null;
+                Logger.getLogger().warn("Failed to authorize user in Google Drive", sender);
+                Logger.getLogger().warn(GoogleDriveUtils.class, e);
+            }
         } catch (Exception e) {
             Logger.getLogger().warn(GoogleDriveUtils.class, "Failed to rename Google Drive file", sender);
             Logger.getLogger().warn(GoogleDriveUtils.class, e);
@@ -500,6 +561,12 @@ public class GoogleDriveUtils {
             Drive service = getService(sender);
             service.files().delete(fileId).execute();
 
+        } catch (GoogleJsonResponseException e) {
+            if (e.getStatusCode() == 401) {
+                credential = null;
+                Logger.getLogger().warn("Failed to authorize user in Google Drive", sender);
+                Logger.getLogger().warn(GoogleDriveUtils.class, e);
+            }
         } catch (Exception e) {
             Logger.getLogger().warn(GoogleDriveUtils.class, "Failed to delete Google Drive file", sender);
             Logger.getLogger().warn(GoogleDriveUtils.class, e);
@@ -524,6 +591,13 @@ public class GoogleDriveUtils {
             FileList driveFileList = lsRequest.execute();
             return !driveFileList.getFiles().isEmpty() ? driveFileList.getFiles().get(0) : null;
 
+        } catch (GoogleJsonResponseException e) {
+            if (e.getStatusCode() == 401) {
+                credential = null;
+                Logger.getLogger().warn("Failed to authorize user in Google Drive", sender);
+                Logger.getLogger().warn(GoogleDriveUtils.class, e);
+            }
+            return null;
         } catch (Exception e) {
             Logger.getLogger().warn(GoogleDriveUtils.class, "Failed to get fileId from Google Drive. Check if Google Account is linked", sender);
             Logger.getLogger().warn(GoogleDriveUtils.class, e);
@@ -550,6 +624,13 @@ public class GoogleDriveUtils {
                 return size != null ? size : 0;
             }
 
+        } catch (GoogleJsonResponseException e) {
+            if (e.getStatusCode() == 401) {
+                credential = null;
+                Logger.getLogger().warn("Failed to authorize user in Google Drive", sender);
+                Logger.getLogger().warn(GoogleDriveUtils.class, e);
+            }
+            return 0;
         } catch (Exception e) {
             Logger.getLogger().warn(GoogleDriveUtils.class, "Failed to get file size from Google Drive. Check if Google Drive account is linked", sender);
             Logger.getLogger().warn(GoogleDriveUtils.class, e);
@@ -562,6 +643,13 @@ public class GoogleDriveUtils {
 
             return getService(sender).files().get(fileId).setFields("name").execute().getName();
 
+        } catch (GoogleJsonResponseException e) {
+            if (e.getStatusCode() == 401) {
+                credential = null;
+                Logger.getLogger().warn("Failed to authorize user in Google Drive", sender);
+                Logger.getLogger().warn(GoogleDriveUtils.class, e);
+            }
+            return null;
         } catch (Exception e) {
             Logger.getLogger().warn(GoogleDriveUtils.class, "Failed to get file name from Google Drive. Check if Google Drive account is linked", sender);
             Logger.getLogger().warn(GoogleDriveUtils.class, e);

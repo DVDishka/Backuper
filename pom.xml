@@ -6,12 +6,12 @@
 
     <groupId>ru.dvdishka</groupId>
     <artifactId>Backuper</artifactId>
-    <version>3.2.1a</version>
+    <version>3.2.1b</version>
     <packaging>jar</packaging>
 
     <name>Backuper</name>
 
-    <description>Backuper plugin for Paper/Folia</description>
+    <description>Simple backup plugin for Paper/Folia with FTP/GOOGLE DRIVE/SFTP support</description>
     <properties>
         <java.version>16</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
