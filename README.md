@@ -6,6 +6,10 @@
 
 ## Simple backup plugin for Paper/Folia<br>With **FTP/GOOGLE DRIVE/SFTP** support
 
+![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/DVDishka/Backuper/total?label=GitHub%20Downloads)
+![Modrinth Downloads](https://img.shields.io/modrinth/dt/Backuper?label=Modrinth%20Downloads)
+![Hangar Downloads](https://img.shields.io/hangar/dt/Backuper?label=Hangar%20Downloads)
+
 ---
 
 [![bStats Graph Data](https://bstats.org/signatures/bukkit/Backuper.svg)](https://bstats.org/plugin/bukkit/Backuper)
@@ -65,6 +69,8 @@
 ---
 
 ## Google Drive setup
+
+![Website](https://img.shields.io/website?url=https%3A%2F%2Fbackuper-mc.com&up_message=online&down_message=offline&label=Google%20Drive%20Auth)
 
 1. Enable Google Drive storage and customize settings in **config.yml**. (Check `Configuration/GOOGLE DRIVE storage settings` section)
 2. Link your Google Account to the Backuper using `/backuper account googleDrive link` command
