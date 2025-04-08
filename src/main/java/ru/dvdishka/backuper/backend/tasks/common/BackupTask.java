@@ -14,6 +14,7 @@ import ru.dvdishka.backuper.backend.tasks.ftp.FtpSendFileFolderTask;
 import ru.dvdishka.backuper.backend.tasks.googleDrive.GoogleDriveSendFileFolderTask;
 import ru.dvdishka.backuper.backend.tasks.local.folder.CopyFilesToFolderTask;
 import ru.dvdishka.backuper.backend.tasks.local.zip.tozip.AddDirToZipTask;
+import ru.dvdishka.backuper.backend.tasks.sftp.SftpAddLocalDirsToZipTask;
 import ru.dvdishka.backuper.backend.tasks.sftp.SftpSendFileFolderTask;
 import ru.dvdishka.backuper.backend.utils.*;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
@@ -254,13 +255,21 @@ public class BackupTask extends Task {
 
                 Logger.getLogger().devLog("The Rename \"in progress\" Folder SFTP task has been started");
 
-                SftpUtils.renameFile(SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(),
-                        backupName), SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(),
-                        backupName.replace(" in progress", "")), sender);
+                String fileType = "";
 
-                // Add new backup size to cache
-                Backup.saveBackupSizeToCache(StorageType.SFTP, backupName.replace(" in progress", ""), sftpBackupByteSize);
-                Logger.getLogger().devLog("New SFTP backup size has been cached");
+                if (Config.getInstance().getSftpConfig().isZipArchive()) {
+                    fileType = ".zip";
+                }
+
+                SftpUtils.renameFile(SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(),
+                        backupName + fileType), SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(),
+                        backupName.replace(" in progress", "") + fileType), sender);
+
+                // Add new backup size to cache (ONLY IF NOT ZIP. ZIP SIZE IS NOT COUNTED)
+                if (!Config.getInstance().getSftpConfig().isZipArchive()) {
+                    Backup.saveBackupSizeToCache(StorageType.SFTP, backupName.replace(" in progress", ""), sftpBackupByteSize);
+                    Logger.getLogger().devLog("New SFTP backup size has been cached");
+                }
 
                 Logger.getLogger().devLog("The Rename \"in progress\" Folder SFTP task has been finished");
             }
@@ -456,8 +465,11 @@ public class BackupTask extends Task {
                 return;
             }
 
-            SftpUtils.createFolder(SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), backupName), sender);
+            if (!Config.getInstance().getSftpConfig().isZipArchive()) {
+                SftpUtils.createFolder(SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), backupName), sender);
+            }
 
+            ArrayList<File> dirsToAddToZip = new ArrayList<>();
 
             for (String directoryToBackup : getDirectoriesToBackup()) {
 
@@ -479,16 +491,29 @@ public class BackupTask extends Task {
                         continue;
                     }
 
-                    Task task = new SftpSendFileFolderTask(additionalDirectoryToBackupFile, SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(),
-                            backupName), true, false, false, permissions, sender);
-                    task.prepareTask();
+                    if (!Config.getInstance().getSftpConfig().isZipArchive()) {
+                        Task task = new SftpSendFileFolderTask(additionalDirectoryToBackupFile, SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(),
+                                backupName), true, false, false, permissions, sender);
+                        task.prepareTask();
 
-                    tasks.add(task);
+                        tasks.add(task);
+                    } else {
+                        dirsToAddToZip.add(additionalDirectoryToBackupFile);
+                    }
 
                 } catch (Exception e) {
                     Logger.getLogger().warn("Something went wrong when trying to backup an additional directory \"" + directoryToBackup + "\"", sender);
                     Logger.getLogger().warn(this.getClass(), e);
                 }
+            }
+
+            if (Config.getInstance().getFtpConfig().isZipArchive()) {
+
+                String targetZipPath = SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), backupName + ".zip");
+                Task task = new SftpAddLocalDirsToZipTask(dirsToAddToZip, targetZipPath, true, false, false, permissions, sender);
+                task.prepareTask();
+
+                tasks.add(task);
             }
 
         } catch (Exception e) {

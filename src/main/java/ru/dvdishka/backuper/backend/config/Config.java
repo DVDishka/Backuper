@@ -23,7 +23,7 @@ public class Config {
     // hides bugs that may exist with reading the config.
     private File configFile;
 
-    private final String configVersion = "10.0";
+    private final String configVersion = "11.0";
     private long lastBackup;
     private long lastChange;
 
@@ -136,6 +136,8 @@ public class Config {
         this.sftpConfig.pathSeparatorSymbol = config.getString("sftp.pathSeparatorSymbol", "/");
         this.sftpConfig.backupsNumber = config.getInt("sftp.maxBackupsNumber", 0);
         this.sftpConfig.backupsWeight = config.getLong("sftp.maxBackupsWeight", 0) * 1_048_576L;
+        this.sftpConfig.zipArchive = config.getBoolean("sftp.zipArchive", true);
+        this.sftpConfig.zipCompressionLevel = config.getInt("sftp.zipCompressionLevel", 5);
         this.sftpConfig.keyFilePath = config.getString("sftp.auth.keyFilePath", "");
         this.sftpConfig.authType = config.getString("sftp.auth.authType", "password");
         this.sftpConfig.username = config.getString("sftp.auth.username", "");
@@ -244,6 +246,18 @@ public class Config {
             }
         }
 
+        if (this.sftpConfig.zipCompressionLevel > 9 || this.sftpConfig.zipCompressionLevel < 0) {
+            Logger.getLogger().warn("Failed to load config value!");
+            if (this.sftpConfig.zipCompressionLevel < 0) {
+                Logger.getLogger().warn("sftp.zipCompressionLevel must be >= 0, using 0 value...");
+                this.sftpConfig.zipCompressionLevel = 0;
+            }
+            if (this.sftpConfig.zipCompressionLevel > 9) {
+                Logger.getLogger().warn("sftp.zipCompressionLevel must be <= 9, using 9 value...");
+                this.sftpConfig.zipCompressionLevel = 9;
+            }
+        }
+
         isConfigFileOk = isConfigFileOk && Objects.equals(configVersion, this.configVersion);
 
         List<String> configFields = List.of("backup.backupTime", "backup.backupPeriod", "backup.afterBackup", "local.maxBackupsNumber",
@@ -257,7 +271,8 @@ public class Config {
                 "ftp.zipArchive", "ftp.zipCompressionLevel", "server.checkUpdates", "local.autoBackup", "ftp.autoBackup", "sftp.autoBackup",
                 "backup.deleteBrokenBackups", "backup.backupFileNameFormat", "googleDrive.enabled", "googleDrive.autoBackup",
                 "googleDrive.auth.tokenFolderPath", "googleDrive.backupsFolderId", "googleDrive.createBackuperFolder",
-                "googleDrive.maxBackupsWeight", "googleDrive.maxBackupsNumber", "server.sizeCacheFile", "server.alertBackupMessage", "server.alertBackupRestartMessage");
+                "googleDrive.maxBackupsWeight", "googleDrive.maxBackupsNumber", "server.sizeCacheFile", "server.alertBackupMessage", "server.alertBackupRestartMessage",
+                "sftp.zipCompressionLevel", "sftp.zipArchive");
 
         for (String configField : configFields) {
             if (isConfigFileOk && !config.contains(configField)) {
@@ -313,6 +328,8 @@ public class Config {
             newConfig.set("sftp.pathSeparatorSymbol", this.sftpConfig.pathSeparatorSymbol);
             newConfig.set("sftp.maxBackupsNumber", this.sftpConfig.backupsNumber);
             newConfig.set("sftp.maxBackupsWeight", this.sftpConfig.backupsWeight / 1_048_576L);
+            newConfig.set("sftp.zipArchive", true);
+            newConfig.set("sftp.zipCompressionLevel", 5);
             newConfig.set("sftp.enabled", this.sftpConfig.enabled);
             newConfig.set("sftp.autoBackup", this.sftpConfig.autoBackup);
             newConfig.set("sftp.backupsFolder", this.sftpConfig.backupsFolder);
