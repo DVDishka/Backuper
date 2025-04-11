@@ -1,5 +1,6 @@
 package ru.dvdishka.backuper.backend;
 
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import dev.jorel.commandapi.CommandTree;
 import dev.jorel.commandapi.arguments.*;
 import dev.jorel.commandapi.executors.CommandArguments;
@@ -1154,6 +1155,21 @@ public class Initialization implements Listener {
                 Logger.getLogger().log("SFTP connection established successfully", sender);
             } else {
                 Logger.getLogger().warn("Failed to establish SFTP connection", sender);
+            }
+        }
+        if (Config.getInstance().getGoogleDriveConfig().isEnabled() && GoogleDriveUtils.isAuthorized(sender)) {
+            try {
+                GoogleDriveUtils.getService(sender).files().get(Config.getInstance().getGoogleDriveConfig().getRawBackupFolderId()).execute();
+            } catch (GoogleJsonResponseException e) {
+                if (e.getStatusCode() == 404) {
+                    Logger.getLogger().warn("Wrong folder ID is defined googleDrive.backupsFolderId field in config.yml (File does not exist)", sender);
+                } else {
+                    Logger.getLogger().warn("Failed to access Google Drive backup folder defined googleDrive.backupsFolderId field in config.yml", sender);
+                    Logger.getLogger().warn(Initialization.class, e);
+                }
+            } catch (Exception e) {
+                Logger.getLogger().warn("Failed to access Google Drive backup folder defined googleDrive.backupsFolderId field in config.yml", sender);
+                Logger.getLogger().warn(Initialization.class, e);
             }
         }
     }

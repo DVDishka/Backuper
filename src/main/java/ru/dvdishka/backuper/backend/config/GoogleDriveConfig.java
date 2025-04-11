@@ -28,6 +28,10 @@ public class GoogleDriveConfig {
         return tokenFolder;
     }
 
+    public String getRawBackupFolderId() {
+        return backupsFolderId;
+    }
+
     public String getBackupsFolderId() {
         if (!createBackuperFolder) {
             return backupsFolderId;

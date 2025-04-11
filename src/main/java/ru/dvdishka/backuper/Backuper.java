@@ -55,8 +55,8 @@ public class Backuper extends JavaPlugin {
         
         Initialization.initConfig(configFile, null);
         Initialization.loadSizeCache(null);
-        Initialization.checkStorages(null);
         Initialization.sendGoogleAccountCheckResult(this.getServer().getConsoleSender());
+        Initialization.checkStorages(null);
         Initialization.indexStorages(null);
 
         File backupsDir = new File(Config.getInstance().getLocalConfig().getBackupsFolder());

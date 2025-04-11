@@ -73,7 +73,9 @@ public class FtpAddLocalDirsToZipTask extends Task {
                     }
 
                     if (createRootDirInTargetZIP) {
-                        addDirToZip(targetZipOutputStream, sourceDirToAdd, sourceDirToAdd.getCanonicalFile().getParentFile().toPath());
+                        File parent = sourceDirToAdd.getParentFile();
+                        parent = parent == null ? new File("") : parent;
+                        addDirToZip(targetZipOutputStream, sourceDirToAdd, parent.toPath());
                     } else {
                         addDirToZip(targetZipOutputStream, sourceDirToAdd, sourceDirToAdd.toPath());
                     }

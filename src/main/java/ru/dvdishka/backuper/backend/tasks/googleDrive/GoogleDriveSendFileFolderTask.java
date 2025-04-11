@@ -106,6 +106,11 @@ public class GoogleDriveSendFileFolderTask extends Task {
 
     private void sendFolder(File localDirToSend, String remoteFolderId, boolean firstDir) {
 
+        if (remoteFolderId == null) {
+            Logger.getLogger().warn(this.getClass(), "remoteFolderId is null, let developer know!", sender);
+            return;
+        }
+
         if (cancelled) {
             return;
         }
