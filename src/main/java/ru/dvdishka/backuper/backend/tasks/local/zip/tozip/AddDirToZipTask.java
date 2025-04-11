@@ -68,7 +68,9 @@ public class AddDirToZipTask extends Task {
                     }
 
                     if (createRootDirInTargetZIP) {
-                        addDirToZip(zipOutputStream, sourceDirToAdd, sourceDirToAdd.getParentFile().toPath());
+                        File parent = sourceDirToAdd.getParentFile();
+                        parent = parent == null ? new File("") : parent;
+                        addDirToZip(zipOutputStream, sourceDirToAdd, parent.toPath());
                     } else {
                         addDirToZip(zipOutputStream, sourceDirToAdd, sourceDirToAdd.toPath());
                     }

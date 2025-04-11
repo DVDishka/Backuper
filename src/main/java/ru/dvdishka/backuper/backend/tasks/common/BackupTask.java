@@ -97,7 +97,7 @@ public class BackupTask extends Task {
 
                     Scheduler.getScheduler().runSyncDelayed(Utils.plugin, () -> {
                         Scheduler.cancelTasks(Utils.plugin);
-                        Bukkit.getServer().spigot().restart();
+                        Bukkit.getServer().restart();
                     }, 20);
 
                 } else if (afterBackup.equals("STOP")) {
@@ -327,7 +327,7 @@ public class BackupTask extends Task {
 
                     Scheduler.getScheduler().runSyncDelayed(Utils.plugin, () -> {
                         Scheduler.cancelTasks(Utils.plugin);
-                        Bukkit.getServer().spigot().restart();
+                        Bukkit.getServer().restart();
                     }, 20);
 
                 } else if (afterBackup.equals("STOP")) {
