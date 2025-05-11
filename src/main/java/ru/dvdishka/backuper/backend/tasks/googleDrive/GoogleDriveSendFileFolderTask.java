@@ -194,7 +194,7 @@ public class GoogleDriveSendFileFolderTask extends Task {
         }
     }
 
-    private static class GoogleDriveUploadProgressListener implements MediaHttpUploaderProgressListener {
+    static class GoogleDriveUploadProgressListener implements MediaHttpUploaderProgressListener {
 
         long progress = 0;
 

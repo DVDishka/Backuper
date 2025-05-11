@@ -1159,7 +1159,7 @@ public class Initialization implements Listener {
         }
         if (Config.getInstance().getGoogleDriveConfig().isEnabled() && GoogleDriveUtils.isAuthorized(sender)) {
             try {
-                GoogleDriveUtils.getService(sender).files().get(Config.getInstance().getGoogleDriveConfig().getRawBackupFolderId()).execute();
+                GoogleDriveUtils.getService(sender).files().listLabels(Config.getInstance().getGoogleDriveConfig().getRawBackupFolderId()).execute();
             } catch (GoogleJsonResponseException e) {
                 if (e.getStatusCode() == 404) {
                     Logger.getLogger().warn("Wrong folder ID is defined googleDrive.backupsFolderId field in config.yml (File does not exist)", sender);

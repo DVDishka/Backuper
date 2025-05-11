@@ -11,6 +11,7 @@ import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.tasks.Task;
 import ru.dvdishka.backuper.backend.tasks.ftp.FtpAddLocalDirsToZipTask;
 import ru.dvdishka.backuper.backend.tasks.ftp.FtpSendFileFolderTask;
+import ru.dvdishka.backuper.backend.tasks.googleDrive.GoogleDriveAddLocalDirToZip;
 import ru.dvdishka.backuper.backend.tasks.googleDrive.GoogleDriveSendFileFolderTask;
 import ru.dvdishka.backuper.backend.tasks.local.folder.CopyFilesToFolderTask;
 import ru.dvdishka.backuper.backend.tasks.local.zip.tozip.AddDirToZipTask;
@@ -149,10 +150,10 @@ public class BackupTask extends Task {
                 if ((task instanceof FtpAddLocalDirsToZipTask || task instanceof FtpSendFileFolderTask) && !isFtp) {
                     continue;
                 }
-                if (task instanceof SftpSendFileFolderTask && !isSftp) {
+                if ((task instanceof SftpSendFileFolderTask || task instanceof SftpAddLocalDirsToZipTask) && !isSftp) {
                     continue;
                 }
-                if (task instanceof GoogleDriveSendFileFolderTask && !isGoogleDrive) {
+                if ((task instanceof GoogleDriveSendFileFolderTask || task instanceof GoogleDriveAddLocalDirToZip) && !isGoogleDrive) {
                     continue;
                 }
                 if ((task instanceof CopyFilesToFolderTask || task instanceof AddDirToZipTask) && !isLocal) {
@@ -279,12 +280,20 @@ public class BackupTask extends Task {
 
                 Logger.getLogger().devLog("The Rename \"in progress\" Folder GoogleDrive task has been started");
 
-                try {
-                    GoogleDriveUtils.renameFile(GoogleDriveUtils.getFileByName(backupName, Config.getInstance().getGoogleDriveConfig().getBackupsFolderId(), sender).getId(), backupName.replace(" in progress", ""), sender);
+                String fileType = "";
 
-                    // Add new backup size to cache. NECESSARY TO DO AFTER RENAMING
-                    Backup.saveBackupSizeToCache(StorageType.GOOGLE_DRIVE, backupName.replace(" in progress", ""), googleDriveBackupByteSize);
-                    Logger.getLogger().devLog("New GOOGLE_DRIVE backup size has been cached");
+                if (Config.getInstance().getGoogleDriveConfig().isZipArchive()) {
+                    fileType = ".zip";
+                }
+
+                try {
+                    GoogleDriveUtils.renameFile(GoogleDriveUtils.getFileByName(backupName + fileType, Config.getInstance().getGoogleDriveConfig().getBackupsFolderId(), sender).getId(), backupName.replace(" in progress", "") + fileType, sender);
+
+                    // Add new backup size to cache (ONLY IF NOT ZIP. ZIP SIZE IS NOT COUNTED). NECESSARY TO DO AFTER RENAMING
+                    if (!Config.getInstance().getGoogleDriveConfig().isZipArchive()) {
+                        Backup.saveBackupSizeToCache(StorageType.GOOGLE_DRIVE, backupName.replace(" in progress", ""), googleDriveBackupByteSize);
+                        Logger.getLogger().devLog("New GOOGLE_DRIVE backup size has been cached");
+                    }
                 } catch (Exception e) {
                     Logger.getLogger().warn("Failed to rename Google Drive file " + backupName, sender);
                     Logger.getLogger().warn(this.getClass(), e);
@@ -596,8 +605,12 @@ public class BackupTask extends Task {
                 return;
             }
 
-            String backupDriveFileId = GoogleDriveUtils.createFolder(backupName, Config.getInstance().getGoogleDriveConfig().getBackupsFolderId(), sender);
+            String backupDriveFileId = null;
+            if (!Config.getInstance().getGoogleDriveConfig().isZipArchive()) {
+                backupDriveFileId = GoogleDriveUtils.createFolder(backupName, Config.getInstance().getGoogleDriveConfig().getBackupsFolderId(), sender);
+            }
 
+            ArrayList<File> dirsToAddToZip = new ArrayList<>();
 
             for (String directoryToBackup : getDirectoriesToBackup()) {
 
@@ -619,16 +632,29 @@ public class BackupTask extends Task {
                         continue;
                     }
 
-                    Task task = new GoogleDriveSendFileFolderTask(additionalDirectoryToBackupFile, backupDriveFileId, additionalDirectoryToBackupFile.getName(),
-                            true, false, false, permissions, sender);
-                    task.prepareTask();
+                    if (!Config.getInstance().getGoogleDriveConfig().isZipArchive()) {
 
-                    tasks.add(task);
+                        Task task = new GoogleDriveSendFileFolderTask(additionalDirectoryToBackupFile, backupDriveFileId, additionalDirectoryToBackupFile.getName(),
+                                true, false, false, permissions, sender);
+                        task.prepareTask();
+
+                        tasks.add(task);
+                    } else {
+                        dirsToAddToZip.add(additionalDirectoryToBackupFile);
+                    }
 
                 } catch (Exception e) {
                     Logger.getLogger().warn("Something went wrong when trying to backup an additional directory \"" + directoryToBackup + "\"", sender);
                     Logger.getLogger().warn(this.getClass(), e);
                 }
+            }
+
+            if (Config.getInstance().getGoogleDriveConfig().isZipArchive()) {
+                Task task = new GoogleDriveAddLocalDirToZip(dirsToAddToZip, Config.getInstance().getGoogleDriveConfig().getBackupsFolderId(),
+                        backupName + ".zip", true, false, false, permissions, sender);
+                task.prepareTask();
+
+                tasks.add(task);
             }
 
         } catch (Exception e) {

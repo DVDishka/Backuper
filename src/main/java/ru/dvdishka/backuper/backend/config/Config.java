@@ -23,7 +23,7 @@ public class Config {
     // hides bugs that may exist with reading the config.
     private File configFile;
 
-    private final String configVersion = "11.0";
+    private final String configVersion = "12.0";
     private long lastBackup;
     private long lastChange;
 
@@ -155,6 +155,8 @@ public class Config {
         this.googleDriveConfig.createBackuperFolder = config.getBoolean("googleDrive.createBackuperFolder", true);
         this.googleDriveConfig.backupsNumber = config.getInt("googleDrive.maxBackupsNumber", 0);
         this.googleDriveConfig.backupsWeight = config.getLong("googleDrive.maxBackupsWeight", 0) * 1_048_576L;
+        this.googleDriveConfig.zipArchive = config.getBoolean("googleDrive.zipArchive", true);
+        this.googleDriveConfig.zipCompressionLevel = config.getInt("googleDrive.zipCompressionLevel", 5);
 
         this.alertBackupMessage = config.getString("server.alertBackupMessage", "Server will be backed up in %d second(s)");
         this.alertBackupRestartMessage = config.getString("server.alertBackupRestartMessage", "Server will be backed up and restarted in %d second(s)");
@@ -186,7 +188,7 @@ public class Config {
             this.backupTime = -1;
         }
 
-        if (this.alertTimeBeforeRestart >= this.backupPeriod * 60L && this.backupPeriod != -1) {
+        if (this.alertTimeBeforeRestart >= this.backupPeriod * 60L && this.backupPeriod != -1 && backupTime == -1) {
             Logger.getLogger().warn("Failed to load config value!");
             Logger.getLogger().warn("alertTimeBeforeRestart must be < backupPeriod * 60, using backupPeriod * 60 - 1 value...");
             this.alertTimeBeforeRestart = this.backupPeriod * 60L - 1L;
@@ -258,6 +260,18 @@ public class Config {
             }
         }
 
+        if (this.googleDriveConfig.zipCompressionLevel > 9 || this.googleDriveConfig.zipCompressionLevel < 0) {
+            Logger.getLogger().warn("Failed to load config value!");
+            if (this.googleDriveConfig.zipCompressionLevel < 0) {
+                Logger.getLogger().warn("googleDrive.zipCompressionLevel must be >= 0, using 0 value...");
+                this.googleDriveConfig.zipCompressionLevel = 0;
+            }
+            if (this.googleDriveConfig.zipCompressionLevel > 9) {
+                Logger.getLogger().warn("googleDrive.zipCompressionLevel must be <= 9, using 9 value...");
+                this.googleDriveConfig.zipCompressionLevel = 9;
+            }
+        }
+
         isConfigFileOk = isConfigFileOk && Objects.equals(configVersion, this.configVersion);
 
         List<String> configFields = List.of("backup.backupTime", "backup.backupPeriod", "backup.afterBackup", "local.maxBackupsNumber",
@@ -272,7 +286,7 @@ public class Config {
                 "backup.deleteBrokenBackups", "backup.backupFileNameFormat", "googleDrive.enabled", "googleDrive.autoBackup",
                 "googleDrive.auth.tokenFolderPath", "googleDrive.backupsFolderId", "googleDrive.createBackuperFolder",
                 "googleDrive.maxBackupsWeight", "googleDrive.maxBackupsNumber", "server.sizeCacheFile", "server.alertBackupMessage", "server.alertBackupRestartMessage",
-                "sftp.zipCompressionLevel", "sftp.zipArchive");
+                "sftp.zipCompressionLevel", "sftp.zipArchive", "googleDrive.zipCompressionLevel", "googleDrive.zipArchive");
 
         for (String configField : configFields) {
             if (isConfigFileOk && !config.contains(configField)) {
@@ -349,6 +363,8 @@ public class Config {
             newConfig.set("googleDrive.createBackuperFolder", this.googleDriveConfig.createBackuperFolder);
             newConfig.set("googleDrive.maxBackupsWeight", this.googleDriveConfig.backupsWeight / 1_048_576L);
             newConfig.set("googleDrive.maxBackupsNumber", this.googleDriveConfig.backupsNumber);
+            newConfig.set("googleDrive.zipArchive", this.googleDriveConfig.zipArchive);
+            newConfig.set("googleDrive.zipCompressionLevel", this.googleDriveConfig.zipCompressionLevel);
 
             newConfig.set("lastBackup", this.lastBackup);
             newConfig.set("lastChange", this.lastChange);

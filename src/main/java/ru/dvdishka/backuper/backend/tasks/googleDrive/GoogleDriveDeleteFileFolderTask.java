@@ -46,6 +46,8 @@ public class GoogleDriveDeleteFileFolderTask extends Task {
                 UIUtils.successSound(sender);
             }
 
+            Logger.getLogger().devLog(taskName + " task completed");
+
         } catch (Exception e) {
             if (setLocked) {
                 Backuper.unlock();

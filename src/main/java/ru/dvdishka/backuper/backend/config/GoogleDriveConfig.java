@@ -15,6 +15,8 @@ public class GoogleDriveConfig {
     boolean createBackuperFolder;
     int backupsNumber;
     long backupsWeight;
+    boolean zipArchive;
+    int zipCompressionLevel;
 
     public boolean isEnabled() {
         return enabled;
@@ -61,5 +63,13 @@ public class GoogleDriveConfig {
 
     public long getBackupsWeight() {
         return backupsWeight;
+    }
+
+    public boolean isZipArchive() {
+        return zipArchive;
+    }
+
+    public int getZipCompressionLevel() {
+        return zipCompressionLevel;
     }
 }
