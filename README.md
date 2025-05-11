@@ -202,6 +202,11 @@
 
 
 
+* `ZIP archive` - **(true/false)** - Do you want to store backups in ZIP archives on SFTP server?
+* `ZIP compression level` - **(0 - 9)** - archive compression level. A higher value may reduce file size, but may also increase the time required to archive and decompress
+
+
+
 #### Authentication
 
 * `Address` - **(Address)** - SFTP server address
