@@ -19,6 +19,9 @@ public class GoogleDriveAddLocalDirToZip extends BaseAddLocalDirsToZipTask {
 
     private static final String taskName = "GoogleDriveAddLocalDirToZip";
 
+    private static final int STREAM_BUFFER_SIZE = 1048576; // 1MB for stream buffering
+    private static final int PIPE_BUFFER_SIZE = 4194304; // 4MB for pipe buffer
+
     private String parentId;
     private String zipFileName;
 
@@ -38,8 +41,9 @@ public class GoogleDriveAddLocalDirToZip extends BaseAddLocalDirsToZipTask {
             Backuper.lock(this);
         }
 
-        try (PipedInputStream pipedInputStream = new PipedInputStream();
+        try (PipedInputStream pipedInputStream = new PipedInputStream(PIPE_BUFFER_SIZE);
                 PipedOutputStream pipedOutputStream = new PipedOutputStream(pipedInputStream)) {
+
             Logger.getLogger().devLog(taskName + " task has been started");
 
             if (!isTaskPrepared) {
@@ -48,8 +52,11 @@ public class GoogleDriveAddLocalDirToZip extends BaseAddLocalDirsToZipTask {
 
             Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
 
-                ZipOutputStream targetZipOutputStream = new ZipOutputStream(pipedOutputStream);
-                try {
+                // Use BufferedOutputStream for better performance
+                try (BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(pipedOutputStream,
+                        STREAM_BUFFER_SIZE);
+                        ZipOutputStream targetZipOutputStream = new ZipOutputStream(bufferedOutputStream)) {
+
                     for (File sourceDirToAdd : sourceDirsToAdd) {
 
                         if (cancelled) {
@@ -70,13 +77,6 @@ public class GoogleDriveAddLocalDirToZip extends BaseAddLocalDirsToZipTask {
                     Logger.getLogger().warn(this.getClass(), e);
 
                     Backuper.unlock();
-                } finally {
-                    try {
-                        targetZipOutputStream.finish();
-                        targetZipOutputStream.close();
-                    } catch (Exception e) {
-                        Logger.getLogger().warn(this.getClass(), e);
-                    }
                 }
             });
 
