@@ -1157,7 +1157,7 @@ public class Initialization implements Listener {
                 Logger.getLogger().warn("Failed to establish SFTP connection", sender);
             }
         }
-        if (Config.getInstance().getGoogleDriveConfig().isEnabled() && GoogleDriveUtils.isAuthorized(sender)) {
+        if (Config.getInstance().getGoogleDriveConfig().isEnabled() && GoogleDriveUtils.isAuthorized(sender) && !Config.getInstance().getGoogleDriveConfig().getRawBackupFolderId().isEmpty()) {
             try {
                 GoogleDriveUtils.getService(sender).files().listLabels(Config.getInstance().getGoogleDriveConfig().getRawBackupFolderId()).execute();
             } catch (GoogleJsonResponseException e) {
