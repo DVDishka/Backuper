@@ -402,13 +402,15 @@ public class GoogleDriveUtils {
                         Logger.getLogger().warn("Failed to authorize user in Google Drive", sender);
                     }
                     Logger.getLogger().warn(GoogleDriveUtils.class, e);
+                    return;
                 }
             } catch (Exception e) {
                 completedRetries++;
                 if (completedRetries == RETRIES) {
                     Logger.getLogger().warn(GoogleDriveUtils.class, "Failed to download file from Google Drive", sender);
+                    Logger.getLogger().warn(GoogleDriveUtils.class, e);
+                    return;
                 }
-                Logger.getLogger().warn(GoogleDriveUtils.class, e);
             }
         }
     }
@@ -647,12 +649,14 @@ public class GoogleDriveUtils {
                         Logger.getLogger().warn("Failed to authorize user in Google Drive", sender);
                     }
                     Logger.getLogger().warn(GoogleDriveUtils.class, e);
+                    return;
                 }
             } catch (Exception e) {
                 completedRetries++;
                 if (completedRetries == RETRIES) {
                     Logger.getLogger().warn(GoogleDriveUtils.class, "Failed to rename Google Drive file", sender);
                     Logger.getLogger().warn(GoogleDriveUtils.class, e);
+                    return;
                 }
             }
         }
@@ -676,12 +680,14 @@ public class GoogleDriveUtils {
                         Logger.getLogger().warn("Failed to authorize user in Google Drive", sender);
                     }
                     Logger.getLogger().warn(GoogleDriveUtils.class, e);
+                    return;
                 }
             } catch (Exception e) {
                 completedRetries++;
                 if (completedRetries == RETRIES) {
                     Logger.getLogger().warn(GoogleDriveUtils.class, "Failed to delete Google Drive file", sender);
                     Logger.getLogger().warn(GoogleDriveUtils.class, e);
+                    return;
                 }
             }
         }
