@@ -694,13 +694,23 @@ public class GoogleDriveUtils {
             if (googleJsonResponseException.getDetails().getCode() == 401) {
                 credential = null;
                 Logger.getLogger().warn("Failed to authorize user in Google Drive", sender);
+                return;
             }
-            if (googleJsonResponseException.getDetails().getCode() == 403 &&
-                    googleJsonResponseException.getDetails().getDetails().stream().anyMatch(details -> details.getReason().equals("RATE_LIMIT_EXCEEDED"))) {
-                Logger.getLogger().devWarn(GoogleDriveUtils.class, "Rate limit exceeded, retry in 30 seconds...");
-                try {
-                    Thread.sleep(30000);
-                } catch (Exception ignored) {}
+            if (googleJsonResponseException.getDetails().getErrors() != null) {
+
+                if (googleJsonResponseException.getDetails().getErrors().stream().anyMatch(errorInfo -> errorInfo.getReason().equals("storageQuotaExceeded"))) {
+                    Logger.getLogger().warn("Your GoogleDrive storage space limit exceeded", sender);
+                    return;
+                }
+
+                if (googleJsonResponseException.getDetails().getErrors().stream().anyMatch(errorInfo -> errorInfo.getReason().equals("rateLimitExceeded"))) {
+                    Logger.getLogger().devWarn(GoogleDriveUtils.class, "Rate limit exceeded, retry in 30 seconds...");
+                    try {
+                        Thread.sleep(30000);
+                    } catch (Exception ignored) {
+                    }
+                    return;
+                }
             }
         }
         Logger.getLogger().warn(GoogleDriveUtils.class, e);

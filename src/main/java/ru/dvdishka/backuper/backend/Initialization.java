@@ -150,10 +150,9 @@ public class Initialization implements Listener {
             StatusCommand.sendTaskStartedMessage("DeleteOldBackups", sender);
             new DeleteOldBackupsTask(true, List.of(Permissions.BACKUP), sender).run();
 
-            Logger.getLogger().log("Deleting broken backups...");
-            StatusCommand.sendTaskStartedMessage("DeleteBrokenBackups", sender);
-
             if (Config.getInstance().isDeleteBrokenBackups()) {
+                Logger.getLogger().log("Deleting broken backups...");
+                StatusCommand.sendTaskStartedMessage("DeleteBrokenBackups", sender);
                 new DeleteBrokenBackupsTask(true, List.of(Permissions.BACKUP), sender).run();
             }
 
