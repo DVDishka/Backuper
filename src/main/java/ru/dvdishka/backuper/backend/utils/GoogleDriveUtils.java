@@ -47,7 +47,7 @@ public class GoogleDriveUtils {
     private static final List<String> DRIVE_SCOPES = List.of(DriveScopes.DRIVE_FILE);
     private static final NetHttpTransport NET_HTTP_TRANSPORT = new NetHttpTransport();
 
-    private static final int RETRIES = 5;
+    private static final int RETRIES = 10;
 
     private static final String FOLDER_MIME_TYPE = "application/vnd.google-apps.folder";
 
@@ -706,7 +706,7 @@ public class GoogleDriveUtils {
                 if (googleJsonResponseException.getDetails().getErrors().stream().anyMatch(errorInfo -> errorInfo.getReason().equals("rateLimitExceeded"))) {
                     Logger.getLogger().devWarn(GoogleDriveUtils.class, "Rate limit exceeded, retry in 30 seconds...");
                     try {
-                        Thread.sleep(30000);
+                        Thread.sleep(10000);
                     } catch (Exception ignored) {
                     }
                     return;
