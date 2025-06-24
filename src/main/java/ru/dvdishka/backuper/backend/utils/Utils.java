@@ -9,6 +9,7 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -125,9 +126,16 @@ public class Utils {
 
         try {
 
-            if (path.toPath().startsWith(new File(Config.getInstance().getLocalConfig().getBackupsFolder()).toPath()) ||
+            Path normalizedPath =  path.toPath().toAbsolutePath().normalize();
+            Path normalizedBackupFolderPath = new File(Config.getInstance().getLocalConfig().getBackupsFolder()).toPath().toAbsolutePath().normalize();
+
+            if (path.equals(new File(Config.getInstance().getLocalConfig().getBackupsFolder())) ||
+                    normalizedPath.startsWith(normalizedBackupFolderPath) ||
+                    path.toPath().startsWith(new File(Config.getInstance().getLocalConfig().getBackupsFolder()).toPath()) ||
                     path.toPath().startsWith(new File("plugins/Backuper/Backups/").toPath()) ||
-                    path.toPath().startsWith(new File("./" + Config.getInstance().getLocalConfig().getBackupsFolder()).toPath())) {
+                    !Utils.isWindows && path.toPath().startsWith(new File("./" + Config.getInstance().getLocalConfig().getBackupsFolder()).toPath()) ||
+                    Utils.isWindows && path.toPath().startsWith(new File(Config.getInstance().getLocalConfig().getBackupsFolder()).toPath()) ||
+                    Utils.isWindows && Config.getInstance().getLocalConfig().getBackupsFolder().charAt(1) != ':' && path.toPath().startsWith(new File(".\\" + Config.getInstance().getLocalConfig().getBackupsFolder()).toPath())) {
                 return true;
             }
 
