@@ -64,7 +64,7 @@ public class CopyToSftpCommand extends Command {
 
         StatusCommand.sendTaskStartedMessage("CopyToSftp", sender);
 
-        Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+        Scheduler.getInstance().runAsync(Utils.plugin, () -> {
 
             String inProgressName = localBackup.getName() + " in progress";
             if (localBackup.getFileType().equals("(ZIP)")) {

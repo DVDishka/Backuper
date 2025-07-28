@@ -54,7 +54,7 @@ public class ToZIPCommand extends Command {
 
         StatusCommand.sendTaskStartedMessage("ToZIP", sender);
 
-        Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+        Scheduler.getInstance().runAsync(Utils.plugin, () -> {
             try {
 
                 localBackup.toZip(true, sender);

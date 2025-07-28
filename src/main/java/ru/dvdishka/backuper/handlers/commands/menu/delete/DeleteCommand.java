@@ -77,7 +77,7 @@ public class DeleteCommand extends Command {
 
         final Backup finalBackup = backup;
 
-        Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+        Scheduler.getInstance().runAsync(Utils.plugin, () -> {
 
             try {
                 finalBackup.delete(true, sender);

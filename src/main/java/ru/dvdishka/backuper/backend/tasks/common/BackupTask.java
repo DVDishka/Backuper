@@ -96,8 +96,8 @@ public class BackupTask extends Task {
 
                 if (afterBackup.equals("RESTART")) {
 
-                    Scheduler.getScheduler().runSyncDelayed(Utils.plugin, () -> {
-                        Scheduler.cancelTasks(Utils.plugin);
+                    Scheduler.getInstance().runSyncDelayed(Utils.plugin, () -> {
+                        Scheduler.getInstance().destroy(Utils.plugin);
                         Bukkit.getServer().restart();
                     }, 20);
 
@@ -334,8 +334,8 @@ public class BackupTask extends Task {
             if (!cancelled) {
                 if (afterBackup.equals("RESTART")) {
 
-                    Scheduler.getScheduler().runSyncDelayed(Utils.plugin, () -> {
-                        Scheduler.cancelTasks(Utils.plugin);
+                    Scheduler.getInstance().runSyncDelayed(Utils.plugin, () -> {
+                        Scheduler.getInstance().destroy(Utils.plugin);
                         Bukkit.getServer().restart();
                     }, 20);
 

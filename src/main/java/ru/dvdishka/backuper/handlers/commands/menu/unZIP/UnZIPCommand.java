@@ -54,7 +54,7 @@ public class UnZIPCommand extends Command {
 
         StatusCommand.sendTaskStartedMessage("UnZIP", sender);
 
-        Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+        Scheduler.getInstance().runAsync(Utils.plugin, () -> {
 
             try {
                 localBackup.unZip(true, sender);

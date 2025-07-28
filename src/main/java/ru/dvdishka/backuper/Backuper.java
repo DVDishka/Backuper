@@ -86,7 +86,7 @@ public class Backuper extends JavaPlugin {
 
         saveSizeCache();
 
-        Scheduler.cancelTasks(this);
+        Scheduler.getInstance().destroy(this);
         new SetWorldsWritableTask(false, List.of(), null).run();
 
         Config.getInstance().setConfigField("lastBackup", Config.getInstance().getLastBackup());

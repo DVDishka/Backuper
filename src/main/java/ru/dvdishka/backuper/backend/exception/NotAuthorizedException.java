@@ -1,4 +1,4 @@
-package ru.dvdishka.backuper.backend.exceptions;
+package ru.dvdishka.backuper.backend.exception;
 
 public class NotAuthorizedException extends Exception {
 

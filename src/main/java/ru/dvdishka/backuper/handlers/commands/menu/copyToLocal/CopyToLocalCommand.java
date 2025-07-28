@@ -81,7 +81,7 @@ public class CopyToLocalCommand extends Command {
 
         final Task copyToLocalTask = backup.getCopyToLocalTask(true, sender);
 
-        Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+        Scheduler.getInstance().runAsync(Utils.plugin, () -> {
             copyToLocalTask.run();
 
             sendMessage("CopyToLocal task completed");

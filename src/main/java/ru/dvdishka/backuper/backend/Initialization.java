@@ -19,15 +19,13 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.server.ServerLoadEvent;
 import org.bukkit.plugin.java.JavaPlugin;
-import ru.dvdishka.backuper.Backuper;
+import org.quartz.CronTrigger;
 import ru.dvdishka.backuper.backend.backup.*;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.config.BackwardsCompatibility;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.tasks.common.BackupTask;
-import ru.dvdishka.backuper.backend.tasks.common.DeleteBrokenBackupsTask;
-import ru.dvdishka.backuper.backend.tasks.common.DeleteOldBackupsTask;
+import ru.dvdishka.backuper.backend.quartzjob.AutoBackupQuartzJob;
 import ru.dvdishka.backuper.backend.utils.*;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
 import ru.dvdishka.backuper.handlers.commands.backup.BackupCommand;
@@ -61,15 +59,10 @@ import java.io.FileReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-
-import static java.lang.Math.max;
-import static java.lang.Math.min;
 
 public class Initialization implements Listener {
 
@@ -130,104 +123,14 @@ public class Initialization implements Listener {
         }
     }
 
-    public static void initAutoBackup(CommandSender sender) {
+    public static void initAutoBackup() {
 
-        // AUTO BACKUP PERMISSION LIST CREATION
-        List<Permissions> autoBackupPermissions = new ArrayList<>();
-        {
-            autoBackupPermissions.add(Permissions.BACKUP);
-            if (Config.getInstance().getAfterBackup().equals("STOP")) {
-                autoBackupPermissions.add(Permissions.STOP);
-            }
-            if (Config.getInstance().getAfterBackup().equals("RESTART")) {
-                autoBackupPermissions.add(Permissions.RESTART);
-            }
-        }
-
-        Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-
-            Logger.getLogger().log("Deleting old backups...");
-            StatusCommand.sendTaskStartedMessage("DeleteOldBackups", sender);
-            new DeleteOldBackupsTask(true, List.of(Permissions.BACKUP), sender).run();
-
-            if (Config.getInstance().isDeleteBrokenBackups()) {
-                Logger.getLogger().log("Deleting broken backups...");
-                StatusCommand.sendTaskStartedMessage("DeleteBrokenBackups", sender);
-                new DeleteBrokenBackupsTask(true, List.of(Permissions.BACKUP), sender).run();
-            }
+        Scheduler.getInstance().runAsync(Utils.plugin, () -> {
 
             Logger.getLogger().log("Initializing auto backup...");
 
-            if (Config.getInstance().isAutoBackup()) {
-
-                long delay;
-
-                if (Config.getInstance().isFixedBackupTime()) {
-
-                    if (Config.getInstance().getBackupTime() > LocalDateTime.now().getHour()) {
-                        delay = (long) Config.getInstance().getBackupTime() * 60 * 60 - (LocalDateTime.now().getHour() * 60 * 60 + LocalDateTime.now().getMinute() * 60 + LocalDateTime.now().getSecond());
-
-                    } else {
-                        delay = (long) Config.getInstance().getBackupTime() * 60 * 60 + 86400 - (LocalDateTime.now().getHour() * 60 * 60 + LocalDateTime.now().getMinute() * 60 + LocalDateTime.now().getSecond());
-                    }
-                } else {
-                    delay = Config.getInstance().getBackupPeriod() * 60L - (LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) - Config.getInstance().getLastBackup());
-                }
-
-                if (delay <= 0) {
-                    delay = 1;
-                }
-
-                Logger.getLogger().devLog("Delay: " + delay);
-
-                if (Config.getInstance().getAlertTimeBeforeRestart() != -1) {
-
-                    long firstAlertDelay = max((delay - Config.getInstance().getAlertTimeBeforeRestart()) * 20, 1);
-                    long alertTime = min(Config.getInstance().getAlertTimeBeforeRestart(), delay);
-
-                    Scheduler.getScheduler().runSyncDelayed(Utils.plugin, () -> {
-
-                        UIUtils.sendBackupAlert(alertTime, Config.getInstance().getAfterBackup());
-
-                    }, firstAlertDelay);
-
-                    long secondAlertDelay = max((delay + Config.getInstance().getBackupPeriod() * 60L - Config.getInstance().getAlertTimeBeforeRestart()) * 20, 1);
-                    long period = Config.getInstance().getBackupPeriod() * 60L * 20L;
-
-                    if (Config.getInstance().isFixedBackupTime()) {
-                        period = 1440 * 60L * 20L;
-                    }
-
-                    Scheduler.getScheduler().runSyncRepeatingTask(Utils.plugin, () -> {
-                        UIUtils.sendBackupAlert(Config.getInstance().getAlertTimeBeforeRestart(), Config.getInstance().getAfterBackup());
-                    }, secondAlertDelay, period);
-                }
-
-                if (!Config.getInstance().isFixedBackupTime()) {
-
-                    Scheduler.getScheduler().runSyncRepeatingTask(Utils.plugin, () -> {
-                        Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                            if (!Backuper.isLocked()) {
-                                new BackupTask(Config.getInstance().getAfterBackup(), true, true, autoBackupPermissions, null).run();
-                            } else {
-                                Logger.getLogger().warn("Failed to start an Auto Backup task. Blocked by another operation", sender);
-                            }
-                        });
-                    }, delay * 20, Config.getInstance().getBackupPeriod() * 60L * 20L);
-
-                } else {
-
-                    Scheduler.getScheduler().runSyncRepeatingTask(Utils.plugin, () -> {
-                        Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
-                            if (!Backuper.isLocked()) {
-                                new BackupTask(Config.getInstance().getAfterBackup(), true, true, autoBackupPermissions, null).run();
-                            } else {
-                                Logger.getLogger().warn("Failed to start an Auto Backup task. Blocked by another operation", sender);
-                            }
-                        });
-                    }, delay * 20, 1440L * 60L * 20L);
-                }
-            }
+            CronTrigger autoBackupJobTrigger = Scheduler.getInstance().runCronScheduledJob(AutoBackupQuartzJob.class, "backup", "auto", Config.getInstance().getAutoBackupCron());
+            AutoBackupQuartzJob.scheduleNextBackupAlert(autoBackupJobTrigger); // Prepare alert for backup above
 
             Logger.getLogger().log("Auto backup initialization completed");
         });
@@ -368,7 +271,7 @@ public class Initialization implements Listener {
 
                                         .executes((sender, args) -> {
 
-                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                 new ListCommand("local", sender, args).execute();
                                             });
                                         })
@@ -377,7 +280,7 @@ public class Initialization implements Listener {
 
                                                 .executes((sender, args) -> {
 
-                                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                    Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                         new ListCommand("local", sender, args).execute();
                                                     });
                                                 })
@@ -390,7 +293,7 @@ public class Initialization implements Listener {
 
                                         .executes((sender, args) -> {
 
-                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                 new ListCommand("sftp", sender, args).execute();
                                             });
                                         })
@@ -399,7 +302,7 @@ public class Initialization implements Listener {
 
                                                 .executes((sender, args) -> {
 
-                                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                    Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                         new ListCommand("sftp", sender, args).execute();
                                                     });
                                                 })
@@ -412,7 +315,7 @@ public class Initialization implements Listener {
 
                                         .executes((sender, args) -> {
 
-                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                 new ListCommand("ftp", sender, args).execute();
                                             });
                                         })
@@ -421,7 +324,7 @@ public class Initialization implements Listener {
 
                                                 .executes((sender, args) -> {
 
-                                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                    Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                         new ListCommand("ftp", sender, args).execute();
                                                     });
                                                 })
@@ -434,7 +337,7 @@ public class Initialization implements Listener {
 
                                         .executes((sender, args) -> {
 
-                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                 new ListCommand("googleDrive", sender, args).execute();
                                             });
                                         })
@@ -443,7 +346,7 @@ public class Initialization implements Listener {
 
                                                 .executes((sender, args) -> {
 
-                                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                    Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                         new ListCommand("googleDrive", sender, args).execute();
                                                     });
                                                 })
@@ -460,7 +363,7 @@ public class Initialization implements Listener {
 
                                 .executes((sender, args) -> {
 
-                                    Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                    Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                         new ReloadCommand(sender, args).execute();
                                     });
                                 })
@@ -501,7 +404,7 @@ public class Initialization implements Listener {
 
                                                         .executes((sender, args) -> {
 
-                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                                 new MenuCommand("local", sender, args).execute();
                                                             });
                                                         })
@@ -542,7 +445,7 @@ public class Initialization implements Listener {
 
                                                                     if (Objects.equals(args.get("action"), "deleteConfirmation")) {
                                                                         if (sender.hasPermission(Permissions.LOCAL_DELETE.getPermission())) {
-                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                                                 new DeleteConfirmationCommand("local", sender, args).execute();
                                                                             });
                                                                         } else {
@@ -552,7 +455,7 @@ public class Initialization implements Listener {
 
                                                                     if (Objects.equals(args.get("action"), "delete")) {
                                                                         if (sender.hasPermission(Permissions.LOCAL_DELETE.getPermission())) {
-                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                                                 new DeleteCommand("local", sender, args).execute();
                                                                             });
                                                                         } else {
@@ -562,7 +465,7 @@ public class Initialization implements Listener {
 
                                                                     if (Objects.equals(args.get("action"), "toZIPConfirmation")) {
                                                                         if (sender.hasPermission(Permissions.LOCAL_TO_ZIP.getPermission())) {
-                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                                                 new ToZIPConfirmationCommand(sender, args).execute();
                                                                             });
                                                                         } else {
@@ -572,7 +475,7 @@ public class Initialization implements Listener {
 
                                                                     if (Objects.equals(args.get("action"), "toZIP")) {
                                                                         if (sender.hasPermission(Permissions.LOCAL_TO_ZIP.getPermission())) {
-                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                                                 new ToZIPCommand(sender, args).execute();
                                                                             });
                                                                         } else {
@@ -582,7 +485,7 @@ public class Initialization implements Listener {
 
                                                                     if (Objects.equals(args.get("action"), "unZIPConfirmation")) {
                                                                         if (sender.hasPermission(Permissions.LOCAL_UNZIP.getPermission())) {
-                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                                                 new UnZIPConfirmationCommand(sender, args).execute();
                                                                             });
                                                                         } else {
@@ -592,7 +495,7 @@ public class Initialization implements Listener {
 
                                                                     if (Objects.equals(args.get("action"), "unZIP")) {
                                                                         if (sender.hasPermission(Permissions.LOCAL_UNZIP.getPermission())) {
-                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                                                 new UnZIPCommand(sender, args).execute();
                                                                             });
                                                                         } else {
@@ -602,7 +505,7 @@ public class Initialization implements Listener {
 
                                                                     if (Objects.equals(args.get("action"), "copyToSftpConfirmation")) {
                                                                         if (sender.hasPermission(Permissions.LOCAL_COPY_TO_SFTP.getPermission())) {
-                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                                                 new CopyToSftpConfirmationCommand(sender, args).execute();
                                                                             });
                                                                         } else {
@@ -612,7 +515,7 @@ public class Initialization implements Listener {
 
                                                                     if (Objects.equals(args.get("action"), "copyToSftp")) {
                                                                         if (sender.hasPermission(Permissions.LOCAL_COPY_TO_SFTP.getPermission())) {
-                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                                                 new CopyToSftpCommand(sender, args).execute();
                                                                             });
                                                                         } else {
@@ -622,7 +525,7 @@ public class Initialization implements Listener {
 
                                                                     if (Objects.equals(args.get("action"), "copyToFtpConfirmation")) {
                                                                         if (sender.hasPermission(Permissions.LOCAL_COPY_TO_FTP.getPermission())) {
-                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                                                 new CopyToFtpConfirmationCommand(sender, args).execute();
                                                                             });
                                                                         } else {
@@ -632,7 +535,7 @@ public class Initialization implements Listener {
 
                                                                     if (Objects.equals(args.get("action"), "copyToFtp")) {
                                                                         if (sender.hasPermission(Permissions.LOCAL_COPY_TO_FTP.getPermission())) {
-                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                                                 new CopyToFtpCommand(sender, args).execute();
                                                                             });
                                                                         } else {
@@ -642,7 +545,7 @@ public class Initialization implements Listener {
 
                                                                     if (Objects.equals(args.get("action"), "copyToGoogleDriveConfirmation")) {
                                                                         if (sender.hasPermission(Permissions.LOCAL_COPY_TO_GOOGLE_DRIVE.getPermission())) {
-                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                                                 new CopyToGoogleDriveConfirmationCommand(sender, args).execute();
                                                                             });
                                                                         } else {
@@ -652,7 +555,7 @@ public class Initialization implements Listener {
 
                                                                     if (Objects.equals(args.get("action"), "copyToGoogleDrive")) {
                                                                         if (sender.hasPermission(Permissions.LOCAL_COPY_TO_GOOGLE_DRIVE.getPermission())) {
-                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                                                 new CopyToGoogleDriveCommand(sender, args).execute();
                                                                             });
                                                                         } else {
@@ -691,7 +594,7 @@ public class Initialization implements Listener {
 
                                                         .executes((sender, args) -> {
 
-                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                                 new MenuCommand("sftp", sender, args).execute();
                                                             });
                                                         })
@@ -703,7 +606,7 @@ public class Initialization implements Listener {
 
                                                                     if (Objects.equals(args.get("action"), "deleteConfirmation")) {
                                                                         if (sender.hasPermission(Permissions.SFTP_DELETE.getPermission())) {
-                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                                                 new DeleteConfirmationCommand("sftp", sender, args).execute();
                                                                             });
 
@@ -714,7 +617,7 @@ public class Initialization implements Listener {
 
                                                                     if (Objects.equals(args.get("action"), "delete")) {
                                                                         if (sender.hasPermission(Permissions.SFTP_DELETE.getPermission())) {
-                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                                                 new DeleteCommand("sftp", sender, args).execute();
                                                                             });
 
@@ -725,7 +628,7 @@ public class Initialization implements Listener {
 
                                                                     if (Objects.equals(args.get("action"), "copyToLocalConfirmation")) {
                                                                         if (sender.hasPermission(Permissions.SFTP_COPY_TO_LOCAL.getPermission())) {
-                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                                                 new CopyToLocalConfirmationCommand("sftp", sender, args).execute();
                                                                             });
                                                                         } else {
@@ -735,7 +638,7 @@ public class Initialization implements Listener {
 
                                                                     if (Objects.equals(args.get("action"), "copyToLocal")) {
                                                                         if (sender.hasPermission(Permissions.SFTP_COPY_TO_LOCAL.getPermission())) {
-                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                                                 new CopyToLocalCommand("sftp", sender, args).execute();
                                                                             });
                                                                         } else {
@@ -774,7 +677,7 @@ public class Initialization implements Listener {
 
                                                         .executes((sender, args) -> {
 
-                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                                 new MenuCommand("ftp", sender, args).execute();
                                                             });
                                                         })
@@ -786,7 +689,7 @@ public class Initialization implements Listener {
 
                                                                     if (Objects.equals(args.get("action"), "deleteConfirmation")) {
                                                                         if (sender.hasPermission(Permissions.FTP_DELETE.getPermission())) {
-                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                                                 new DeleteConfirmationCommand("ftp", sender, args).execute();
                                                                             });
 
@@ -797,7 +700,7 @@ public class Initialization implements Listener {
 
                                                                     if (Objects.equals(args.get("action"), "delete")) {
                                                                         if (sender.hasPermission(Permissions.FTP_DELETE.getPermission())) {
-                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                                                 new DeleteCommand("ftp", sender, args).execute();
                                                                             });
 
@@ -808,7 +711,7 @@ public class Initialization implements Listener {
 
                                                                     if (Objects.equals(args.get("action"), "copyToLocalConfirmation")) {
                                                                         if (sender.hasPermission(Permissions.FTP_COPY_TO_LOCAL.getPermission())) {
-                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                                                 new CopyToLocalConfirmationCommand("ftp", sender, args).execute();
                                                                             });
                                                                         } else {
@@ -818,7 +721,7 @@ public class Initialization implements Listener {
 
                                                                     if (Objects.equals(args.get("action"), "copyToLocal")) {
                                                                         if (sender.hasPermission(Permissions.FTP_COPY_TO_LOCAL.getPermission())) {
-                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                                                 new CopyToLocalCommand("ftp", sender, args).execute();
                                                                             });
                                                                         } else {
@@ -857,7 +760,7 @@ public class Initialization implements Listener {
 
                                                         .executes((sender, args) -> {
 
-                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                                 new MenuCommand("googleDrive", sender, args).execute();
                                                             });
                                                         })
@@ -869,7 +772,7 @@ public class Initialization implements Listener {
 
                                                                     if (Objects.equals(args.get("action"), "deleteConfirmation")) {
                                                                         if (sender.hasPermission(Permissions.GOOGLE_DRIVE_DELETE.getPermission())) {
-                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                                                 new DeleteConfirmationCommand("googleDrive", sender, args).execute();
                                                                             });
 
@@ -880,7 +783,7 @@ public class Initialization implements Listener {
 
                                                                     if (Objects.equals(args.get("action"), "delete")) {
                                                                         if (sender.hasPermission(Permissions.GOOGLE_DRIVE_DELETE.getPermission())) {
-                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                                                 new DeleteCommand("googleDrive", sender, args).execute();
                                                                             });
 
@@ -891,7 +794,7 @@ public class Initialization implements Listener {
 
                                                                     if (Objects.equals(args.get("action"), "copyToLocalConfirmation")) {
                                                                         if (sender.hasPermission(Permissions.GOOGLE_DRIVE_COPY_TO_LOCAL.getPermission())) {
-                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                                                 new CopyToLocalConfirmationCommand("googleDrive", sender, args).execute();
                                                                             });
                                                                         } else {
@@ -901,7 +804,7 @@ public class Initialization implements Listener {
 
                                                                     if (Objects.equals(args.get("action"), "copyToLocal")) {
                                                                         if (sender.hasPermission(Permissions.GOOGLE_DRIVE_COPY_TO_LOCAL.getPermission())) {
-                                                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                                                            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                                                 new CopyToLocalCommand("googleDrive", sender, args).execute();
                                                                             });
                                                                         } else {
@@ -923,13 +826,13 @@ public class Initialization implements Listener {
                                 .executes((sender, args) -> {
 
                                     if (Objects.equals(args.get("action"), "cancelConfirmation")) {
-                                        Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                        Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                             new CancelConfirmationCommand(sender, args).execute();
                                         });
                                     }
 
                                     if (Objects.equals(args.get("action"), "cancel")) {
-                                        Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                        Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                             new CancelCommand(sender, args).execute();
                                         });
                                     }
@@ -957,7 +860,7 @@ public class Initialization implements Listener {
 
                                         .executes((sender, args) -> {
 
-                                            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+                                            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                                                 new GoogleDriveLinkCommand(sender, args).execute();
                                             });
                                         })
@@ -1132,7 +1035,7 @@ public class Initialization implements Listener {
 
     @EventHandler
     public void onStartCompleted(ServerLoadEvent event) {
-        Initialization.initAutoBackup(Bukkit.getConsoleSender());
+        Initialization.initAutoBackup();
     }
 
     public static void unifyBackupNameFormat(CommandSender sender) {

@@ -6,10 +6,12 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+import org.quartz.CronExpression;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.utils.Utils;
 
 import java.io.File;
+import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -23,16 +25,14 @@ public class Config {
     // hides bugs that may exist with reading the config.
     private File configFile;
 
-    private final String configVersion = "12.0";
+    private final String configVersion = "13.0";
     private long lastBackup;
     private long lastChange;
 
     private List<String> addDirectoryToBackup;
     private List<String> excludeDirectoryFromBackup;
-    private boolean fixedBackupTime;
     private boolean autoBackup;
-    private int backupTime;
-    private int backupPeriod;
+    private CronExpression autoBackupCron;
     private String afterBackup;
     private boolean skipDuplicateBackup;
     private long alertTimeBeforeRestart;
@@ -100,12 +100,17 @@ public class Config {
 
         boolean isConfigFileOk = true;
 
-        this.backupTime = config.getInt("backup.backupTime", -1);
         this.backupFileNameFormat = config.getString("backup.backupFileNameFormat", "dd-MM-yyyy HH-mm-ss");
-        this.backupPeriod = config.getInt("backup.backupPeriod", 1440);
         this.afterBackup = config.getString("backup.afterBackup", "NOTHING").toUpperCase();
         this.setWorldsReadOnly = config.getBoolean("backup.setWorldsReadOnly", false);
         this.autoBackup = config.getBoolean("backup.autoBackup", true);
+        try {
+            this.autoBackupCron = new CronExpression(config.getString("backup.autoBackupCron", "0 0 0 1/1 * ? *"));
+        } catch (ParseException e) {
+            this.autoBackup = false;
+            Logger.getLogger().warn("Failed to parse backup.autoBackupCron! Disabling auto backup...", sender);
+            Logger.getLogger().warn(this.getClass(), e);
+        }
         this.skipDuplicateBackup = config.getBoolean("backup.skipDuplicateBackup", true);
         this.deleteBrokenBackups = config.getBoolean("backup.deleteBrokenBackups", true);
 
@@ -162,7 +167,6 @@ public class Config {
         this.alertBackupRestartMessage = config.getString("server.alertBackupRestartMessage", "Server will be backed up and restarted in %d second(s)");
         this.sizeCacheFile = new File(config.getString("server.sizeCacheFile", "./plugins/Backuper/sizeCache.json"));
         this.betterLogging = config.getBoolean("server.betterLogging", false);
-        this.fixedBackupTime = this.backupTime > -1;
         this.addDirectoryToBackup = config.getStringList("backup.addDirectoryToBackup");
         this.excludeDirectoryFromBackup = config.getStringList("backup.excludeDirectoryFromBackup");
         this.alertTimeBeforeRestart = config.getLong("server.alertTimeBeforeRestart", 60);
@@ -180,24 +184,6 @@ public class Config {
             Logger.getLogger().warn(this.getClass(), e);
             isConfigFileOk = false;
             backupFileNameFormat = "dd-MM-yyyy HH-mm-ss";
-        }
-
-        if (this.backupTime < -1) {
-            Logger.getLogger().warn("Failed to load config value!");
-            Logger.getLogger().warn("backupTime must be >= -1, using default -1 value...");
-            this.backupTime = -1;
-        }
-
-        if (this.alertTimeBeforeRestart >= this.backupPeriod * 60L && this.backupPeriod != -1 && backupTime == -1) {
-            Logger.getLogger().warn("Failed to load config value!");
-            Logger.getLogger().warn("alertTimeBeforeRestart must be < backupPeriod * 60, using backupPeriod * 60 - 1 value...");
-            this.alertTimeBeforeRestart = this.backupPeriod * 60L - 1L;
-        }
-
-        if (this.backupPeriod <= 0 && this.backupPeriod != -1) {
-            Logger.getLogger().warn("Failed to load config value!");
-            Logger.getLogger().warn("backup.backupPeriod must be > 0, using default 1440 value...");
-            this.backupPeriod = 1440;
         }
 
         if (this.localConfig.backupsNumber < 0) {
@@ -274,7 +260,7 @@ public class Config {
 
         isConfigFileOk = isConfigFileOk && Objects.equals(configVersion, this.configVersion);
 
-        List<String> configFields = List.of("backup.backupTime", "backup.backupPeriod", "backup.afterBackup", "local.maxBackupsNumber",
+        List<String> configFields = List.of("backup.autoBackupCron", "backup.afterBackup", "local.maxBackupsNumber",
                 "local.maxBackupsWeight", "local.zipArchive", "server.betterLogging", "backup.autoBackup", "lastBackup", "lastChange",
                 "backup.skipDuplicateBackup", "local.backupsFolder", "server.alertTimeBeforeRestart", "backup.addDirectoryToBackup",
                 "backup.excludeDirectoryFromBackup", "backup.setWorldsReadOnly", "server.alertOnlyServerRestart", "sftp.enabled",
@@ -307,9 +293,8 @@ public class Config {
             Utils.plugin.saveDefaultConfig();
             FileConfiguration newConfig = YamlConfiguration.loadConfiguration(configFile);
 
-            newConfig.set("backup.backupTime", this.backupTime);
+            newConfig.set("backup.autoBackupCron", this.autoBackupCron == null ? "0 0 0 1/1 * ? *" : this.autoBackupCron);
             newConfig.set("backup.backupFileNameFormat", this.backupFileNameFormat);
-            newConfig.set("backup.backupPeriod", this.backupPeriod);
             newConfig.set("backup.afterBackup", this.afterBackup);
             newConfig.set("backup.autoBackup", this.autoBackup);
             newConfig.set("backup.skipDuplicateBackup", this.skipDuplicateBackup);
@@ -409,20 +394,8 @@ public class Config {
         return betterLogging;
     }
 
-    public boolean isFixedBackupTime() {
-        return fixedBackupTime;
-    }
-
     public boolean isSkipDuplicateBackup() {
         return skipDuplicateBackup;
-    }
-
-    public int getBackupPeriod() {
-        return backupPeriod;
-    }
-
-    public int getBackupTime() {
-        return backupTime;
     }
 
     public long getLastBackup() {
@@ -503,5 +476,9 @@ public class Config {
 
     public String getAlertBackupRestartMessage() {
         return alertBackupRestartMessage;
+    }
+
+    public CronExpression getAutoBackupCron() {
+        return autoBackupCron;
     }
 }

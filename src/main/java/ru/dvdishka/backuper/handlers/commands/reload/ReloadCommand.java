@@ -31,13 +31,13 @@ public class ReloadCommand extends Command {
         Config.getInstance().setConfigField("lastBackup", Config.getInstance().getLastBackup());
         Config.getInstance().setConfigField("lastChange", Config.getInstance().getLastChange());
 
-        Scheduler.cancelTasks(Utils.plugin);
+        Scheduler.getInstance().destroy(Utils.plugin);
 
         Initialization.initConfig(new File("plugins/Backuper/config.yml"), sender);
         Initialization.checkStorages(sender);
         Initialization.unifyBackupNameFormat(sender);
 
-        Initialization.initAutoBackup(sender);
+        Initialization.initAutoBackup();
 
         successSound();
     }

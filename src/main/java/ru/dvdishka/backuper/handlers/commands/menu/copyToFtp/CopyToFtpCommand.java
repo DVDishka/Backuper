@@ -64,7 +64,7 @@ public class CopyToFtpCommand extends Command {
 
         StatusCommand.sendTaskStartedMessage("CopyToFtp", sender);
 
-        Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+        Scheduler.getInstance().runAsync(Utils.plugin, () -> {
 
             String inProgressName = localBackup.getName() + " in progress";
             if (localBackup.getFileType().equals("(ZIP)")) {

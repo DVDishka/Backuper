@@ -125,7 +125,7 @@ public class BackupCommand extends Command {
 
         if (Config.getInstance().getAlertTimeBeforeRestart() != -1) {
 
-            Scheduler.getScheduler().runSyncDelayed(Utils.plugin, () -> {
+            Scheduler.getInstance().runSyncDelayed(Utils.plugin, () -> {
 
                 UIUtils.sendBackupAlert(min(Config.getInstance().getAlertTimeBeforeRestart(), delay), afterBackup);
 
@@ -141,11 +141,11 @@ public class BackupCommand extends Command {
             backupPermissions.add(Permissions.RESTART);
         }
 
-        Scheduler.getScheduler().runSyncDelayed(Utils.plugin, () -> {
+        Scheduler.getInstance().runSyncDelayed(Utils.plugin, () -> {
 
             StatusCommand.sendTaskStartedMessage("Backup", sender);
 
-            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
                 new BackupTask(afterBackup, false, isLocal, isFtp, isSftp, isGoogleDrive, true, backupPermissions, sender).run();
                 sendMessage("Backup task completed");
             });

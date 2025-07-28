@@ -66,7 +66,7 @@ public class CopyToGoogleDriveCommand extends Command {
 
         StatusCommand.sendTaskStartedMessage("CopyToGoogleDrive", sender);
 
-        Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+        Scheduler.getInstance().runAsync(Utils.plugin, () -> {
 
             String inProgressName = localBackup.getName() + " in progress";
             if (localBackup.getFileType().equals("(ZIP)")) {

@@ -11,7 +11,10 @@ import ru.dvdishka.backuper.backend.utils.UIUtils;
 import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
 
-import java.io.*;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.util.List;
 import java.util.zip.ZipOutputStream;
 
@@ -50,7 +53,7 @@ public class GoogleDriveAddLocalDirToZip extends BaseAddLocalDirsToZipTask {
                 prepareTask();
             }
 
-            Scheduler.getScheduler().runAsync(Utils.plugin, () -> {
+            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
 
                 // Use BufferedOutputStream for better performance
                 try (BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(pipedOutputStream,
