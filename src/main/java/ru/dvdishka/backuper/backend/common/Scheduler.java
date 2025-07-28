@@ -23,15 +23,15 @@ public class Scheduler {
             try {
                 if (DirectSchedulerFactory.getInstance().getAllSchedulers().stream().noneMatch(scheduler -> {
                     try {
-                        return scheduler.getSchedulerName().equals("main");
+                        return scheduler.getSchedulerName().equals("backuper");
                     } catch (SchedulerException e) {
                         throw new RuntimeException(e);
                     }
                 })) {
-                    DirectSchedulerFactory.getInstance().createScheduler("main", "main", new SimpleThreadPool(1, 5), new RAMJobStore());
+                    DirectSchedulerFactory.getInstance().createScheduler("backuper", "main", new SimpleThreadPool(1, 5), new RAMJobStore());
                 }
 
-                instance.quartzScheduler = DirectSchedulerFactory.getInstance().getScheduler("main");
+                instance.quartzScheduler = DirectSchedulerFactory.getInstance().getScheduler("backuper");
                 instance.quartzScheduler.start();
             } catch (Exception e) {
                 Logger.getLogger().warn("Failed to initialize Quartz Scheduler, automatic backups will not work");

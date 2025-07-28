@@ -23,8 +23,8 @@ import org.quartz.CronTrigger;
 import ru.dvdishka.backuper.backend.backup.*;
 import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.common.Scheduler;
-import ru.dvdishka.backuper.backend.config.BackwardsCompatibility;
 import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.backend.config.ConfigBackwardsCompatibility;
 import ru.dvdishka.backuper.backend.quartzjob.AutoBackupQuartzJob;
 import ru.dvdishka.backuper.backend.utils.*;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
@@ -1040,7 +1040,7 @@ public class Initialization implements Listener {
 
     public static void unifyBackupNameFormat(CommandSender sender) {
         Logger.getLogger().log("Unifying backup names format");
-        BackwardsCompatibility.unifyBackupNameFormat(sender);
+        ConfigBackwardsCompatibility.unifyBackupNameFormat(sender);
         Logger.getLogger().log("Backup names format unification completed");
     }
 

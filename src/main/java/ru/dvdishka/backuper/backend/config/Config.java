@@ -95,8 +95,9 @@ public class Config {
 
         String configVersion = config.getString("configVersion");
 
-        BackwardsCompatibility.configBelow4(config);
-        BackwardsCompatibility.configBelow8(config);
+        ConfigBackwardsCompatibility.configBelow4(config);
+        ConfigBackwardsCompatibility.configBelow8(config);
+        ConfigBackwardsCompatibility.configBelow13(config);
 
         boolean isConfigFileOk = true;
 
@@ -104,12 +105,14 @@ public class Config {
         this.afterBackup = config.getString("backup.afterBackup", "NOTHING").toUpperCase();
         this.setWorldsReadOnly = config.getBoolean("backup.setWorldsReadOnly", false);
         this.autoBackup = config.getBoolean("backup.autoBackup", true);
-        try {
-            this.autoBackupCron = new CronExpression(config.getString("backup.autoBackupCron", "0 0 0 1/1 * ? *"));
-        } catch (ParseException e) {
-            this.autoBackup = false;
-            Logger.getLogger().warn("Failed to parse backup.autoBackupCron! Disabling auto backup...", sender);
-            Logger.getLogger().warn(this.getClass(), e);
+        if (autoBackup) {
+            try {
+                this.autoBackupCron = new CronExpression(config.getString("backup.autoBackupCron", "0 0 0 1/1 * ? *"));
+            } catch (ParseException e) {
+                this.autoBackup = false;
+                Logger.getLogger().warn("Failed to parse backup.autoBackupCron! Disabling auto backup...", sender);
+                Logger.getLogger().warn(this.getClass(), e);
+            }
         }
         this.skipDuplicateBackup = config.getBoolean("backup.skipDuplicateBackup", true);
         this.deleteBrokenBackups = config.getBoolean("backup.deleteBrokenBackups", true);
@@ -293,7 +296,7 @@ public class Config {
             Utils.plugin.saveDefaultConfig();
             FileConfiguration newConfig = YamlConfiguration.loadConfiguration(configFile);
 
-            newConfig.set("backup.autoBackupCron", this.autoBackupCron == null ? "0 0 0 1/1 * ? *" : this.autoBackupCron);
+            newConfig.set("backup.autoBackupCron", this.autoBackupCron == null ? "0 0 0 1/1 * ? *" : this.autoBackupCron.getCronExpression());
             newConfig.set("backup.backupFileNameFormat", this.backupFileNameFormat);
             newConfig.set("backup.afterBackup", this.afterBackup);
             newConfig.set("backup.autoBackup", this.autoBackup);

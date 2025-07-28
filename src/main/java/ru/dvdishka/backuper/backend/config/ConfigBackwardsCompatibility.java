@@ -10,7 +10,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
 
-public class BackwardsCompatibility {
+public class ConfigBackwardsCompatibility {
 
     public static void configBelow4(FileConfiguration config) {
 
@@ -76,6 +76,32 @@ public class BackwardsCompatibility {
         config.set("server.alertTimeBeforeRestart", alertTimeBeforeRestart);
         config.set("server.alertOnlyServerRestart", alertOnlyServerRestart);
         config.set("server.betterLogging", betterLogging);
+    }
+
+    public static void configBelow13(FileConfiguration config) { // Migrating from Time/Period format to Cron
+
+        double configVersion = config.getDouble("configVersion");
+        if (configVersion >= 13.0) {
+            return;
+        }
+
+        int backupTime = config.getInt("backup.backupTime", -1);
+
+        if (backupTime < -1 || backupTime > 23) {
+            Logger.getLogger().warn("Failed to load config value!");
+            Logger.getLogger().warn("backupTime must be >= -1, using default -1 value...");
+            backupTime = -1;
+        }
+
+        String cron;
+        if (backupTime != -1) {
+            cron = "0 0 " + backupTime + " 1/1 * ? *";
+        } else {
+            cron = "0 0 0 1/1 * ? *";
+            Logger.getLogger().warn("The format of the auto-backup schedule definition has changed! Please go to Backuper's config.yml and define the schedule using the new format! Your old schedule will not work now!");
+        }
+
+        config.set("backup.autoBackupCron", cron);
     }
 
     public static void unifyBackupNameFormat(CommandSender sender) {

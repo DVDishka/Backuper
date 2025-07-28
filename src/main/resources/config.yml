@@ -6,6 +6,7 @@ lastChange: 0
 backup:
   # (true/false) Automatic backup once in a specified period
   autoBackup: true
+  # (Expression) Auto-backup schedule expression. Use this site to generate your one: http://www.cronmaker.com
   autoBackupCron: '0 0 0 1/1 * ? *'
   # Set a format for backup file names (see java.time docs). It must contain information about both time and date
   backupFileNameFormat: 'dd-MM-yyyy HH-mm-ss'

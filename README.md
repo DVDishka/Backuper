@@ -82,6 +82,8 @@
 ### Backup settings
 
 * `Auto backup` - **(true/false)** - Enables automatic backups once at a specified interval **(when disabled, backups will only run on the `/backuper backup` command)**
+* `Auto backup cron` - **(Expression)** - Auto-backup schedule expression. Use this site to generate your one: [CronMaker](http://www.cronmaker.com)
+
 
 
 
@@ -91,11 +93,6 @@
 
 * `Add directory to backup` - **(List of paths)** - Full directory paths to folders/files that you want to be backed up. World folders will be backed up automatically, so you do not need to specify world folders there (For example you can specify "plugins", "config"). You can also specify all files with "*".
 * `Exclude Directory From Backup` - **(List of paths)** - Full directory paths to folders/files that you want to be excluded from backup. If you want to backup everything from the **folder1** except some **folder1/file1** you can specify **folder1** in `addDirectoryToBackup` and **folder1/file1** in `excludeDirectoryFromBackup`. (The `backupsFolder` directory will be excluded automatically to prevent the loop)
-
-
-
-* `Backup period` - **(>= 1 Minutes or -1)** - The period after which the server will make automatic backups **(To change this value you need to set `backupTime` to -1 and `autoBackup` to true)**
-* `backup time` - **(0 - 23 or -1)** - Fixed backup time. Automatic backups will be made at this time every day. (`backupPeriod` will be automatically set to 24 hours). **-1 to disable backup time fixation**
 
 
 
@@ -336,4 +333,3 @@
 
 * **Please report any issues to** [GitHub](https://github.com/DVDishka/Backuper/issues)
 * RESTART option may not work well, so it's better to use STOP with a loop in your start script ([start script](https://flags.sh/) auto restart ON)
-* You can reset the backup time if it is broken **and your `backup.backupTime` is set to -1** by changing `lastBackup` to 0. Then the next backup will happen at the server start and the next ones will happen after `backup.backupPeriod`
