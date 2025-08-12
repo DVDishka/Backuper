@@ -4,9 +4,7 @@ import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.Initialization;
-import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.handlers.commands.Command;
 
 import java.io.File;
@@ -20,7 +18,7 @@ public class ReloadCommand extends Command {
     @Override
     public void execute() {
 
-        if (Backuper.isLocked()) {
+        if (Backuper.getInstance().getTaskManager().isLocked()) {
             returnFailure("Blocked by another operation!");
             cancelSound();
             return;
@@ -31,7 +29,7 @@ public class ReloadCommand extends Command {
         Config.getInstance().setConfigField("lastBackup", Config.getInstance().getLastBackup());
         Config.getInstance().setConfigField("lastChange", Config.getInstance().getLastChange());
 
-        Scheduler.getInstance().destroy(Utils.plugin);
+        Backuper.getInstance().getScheduleManager().destroy(Backuper.getInstance());
 
         Initialization.initConfig(new File("plugins/Backuper/config.yml"), sender);
         Initialization.checkStorages(sender);

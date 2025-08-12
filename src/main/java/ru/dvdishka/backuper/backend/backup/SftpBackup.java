@@ -1,20 +1,18 @@
 package ru.dvdishka.backuper.backend.backup;
 
-import org.bukkit.command.CommandSender;
+import com.jcraft.jsch.SftpException;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.tasks.Task;
-import ru.dvdishka.backuper.backend.tasks.sftp.SftpDeleteDirTask;
-import ru.dvdishka.backuper.backend.utils.SftpUtils;
-import ru.dvdishka.backuper.handlers.commands.Permissions;
+import ru.dvdishka.backuper.backend.task.BaseAsyncTask;
+import ru.dvdishka.backuper.backend.task.SftpDeleteDirTask;
+import ru.dvdishka.backuper.backend.util.SftpUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 public class SftpBackup extends ExternalBackup {
 
-    private static HashMap<String, SftpBackup> backups = new HashMap<>();
+    private static final HashMap<String, SftpBackup> backups = new HashMap<>();
 
     private SftpBackup(String backupName) {
         this.backupName = backupName;
@@ -45,9 +43,14 @@ public class SftpBackup extends ExternalBackup {
             return false;
         }
 
-        ArrayList<String> backupFileNames = SftpUtils.ls(Config.getInstance().getSftpConfig().getBackupsFolder(), null);
+        ArrayList<String> backupFileNames;
+        try {
+            backupFileNames = SftpUtils.ls(Config.getInstance().getSftpConfig().getBackupsFolder());
+        } catch (SftpException e) {
+            throw new RuntimeException(e);
+        }
 
-        return backupFileNames.contains(backupName) || backupFileNames.contains(backupName + ".zip");
+        return backupFileNames.contains(backupName) || backupFileNames.contains("%s.zip".formatted(backupName));
     }
 
     public static ArrayList<SftpBackup> getBackups() {
@@ -57,15 +60,19 @@ public class SftpBackup extends ExternalBackup {
         }
 
         ArrayList<SftpBackup> backups = new ArrayList<>();
-        for (String fileName : SftpUtils.ls(Config.getInstance().getSftpConfig().getBackupsFolder(), null)) {
-            try {
-                SftpBackup backup = SftpBackup.getInstance(fileName.replace(".zip", ""));
+        try {
+            for (String fileName : SftpUtils.ls(Config.getInstance().getSftpConfig().getBackupsFolder())) {
+                try {
+                    SftpBackup backup = SftpBackup.getInstance(fileName.replace(".zip", ""));
 
-                if (backup != null) {
-                    backups.add(backup);
+                    if (backup != null) {
+                        backups.add(backup);
+                    }
+                } catch (Exception ignored) {
                 }
-            } catch (Exception ignored) {
             }
+        } catch (SftpException e) {
+            throw new RuntimeException(e);
         }
         return backups;
     }
@@ -75,34 +82,37 @@ public class SftpBackup extends ExternalBackup {
     }
 
     public String getFileName() {
-        if (getFileType().equals("(ZIP)")) {
-            return backupName + ".zip";
+        if (BackupFileType.ZIP.equals(this.getFileType())) {
+            return "%s.zip".formatted(backupName);
         } else {
             return backupName;
         }
     }
 
-    /**
-     * @return Possible values: "(Folder)" "(ZIP)"
-     */
-    public String getFileType() {
-        if (SftpUtils.ls(Config.getInstance().getSftpConfig().getBackupsFolder(), null).contains(backupName + ".zip")) {
-            return "(ZIP)";
+    public BackupFileType getFileType() {
+        try {
+            return SftpUtils.ls(Config.getInstance().getSftpConfig().getBackupsFolder()).contains("%s.zip".formatted(backupName)) ? BackupFileType.ZIP : BackupFileType.DIR;
+        } catch (SftpException e) {
+            throw new RuntimeException(e);
         }
-        return "(Folder)";
     }
 
     @Override
-    Task getDirectDeleteTask(boolean setLocked, CommandSender sender) {
-        return new SftpDeleteDirTask(getPath(), setLocked, List.of(Permissions.SFTP_DELETE), sender);
+    public BaseAsyncTask getRawDeleteTask() {
+        return new SftpDeleteDirTask(getPath());
     }
 
     public LocalDateTime getLocalDateTime() {
         return LocalDateTime.parse(backupName, Config.getInstance().getDateTimeFormatter());
     }
 
-    long calculateByteSize(CommandSender sender) {
-        long size =  SftpUtils.getDirByteSize(SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), getFileName()), sender);
+    long calculateByteSize() {
+        long size;
+        try {
+            size = SftpUtils.getDirByteSize(SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), getFileName()));
+        } catch (SftpException e) {
+            throw new RuntimeException(e);
+        }
         return size;
     }
 

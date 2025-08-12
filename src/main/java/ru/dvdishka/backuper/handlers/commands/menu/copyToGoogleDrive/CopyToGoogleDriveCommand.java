@@ -6,16 +6,12 @@ import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.backup.Backup;
 import ru.dvdishka.backuper.backend.backup.GoogleDriveBackup;
 import ru.dvdishka.backuper.backend.backup.LocalBackup;
-import ru.dvdishka.backuper.backend.backup.StorageType;
-import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.tasks.Task;
-import ru.dvdishka.backuper.backend.tasks.googleDrive.GoogleDriveSendFileFolderTask;
-import ru.dvdishka.backuper.backend.utils.GoogleDriveUtils;
-import ru.dvdishka.backuper.backend.utils.Utils;
+import ru.dvdishka.backuper.backend.task.BaseAsyncTask;
+import ru.dvdishka.backuper.backend.task.GoogleDriveSendDirTask;
+import ru.dvdishka.backuper.backend.util.GoogleDriveUtils;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
-import ru.dvdishka.backuper.handlers.commands.task.status.StatusCommand;
 
 import java.util.List;
 
@@ -34,7 +30,7 @@ public class CopyToGoogleDriveCommand extends Command {
             return;
         }
 
-        if (!Config.getInstance().getGoogleDriveConfig().isEnabled() || !GoogleDriveUtils.isAuthorized(sender)) {
+        if (!Config.getInstance().getGoogleDriveConfig().isEnabled() || !GoogleDriveUtils.checkConnection()) {
             cancelSound();
             returnFailure("Google Drive storage is disabled or Google account is not linked!");
             return;
@@ -48,7 +44,7 @@ public class CopyToGoogleDriveCommand extends Command {
             return;
         }
 
-        if (Backuper.isLocked()) {
+        if (Backuper.getInstance().getTaskManager().isLocked()) {
             cancelSound();
             returnFailure("Blocked by another operation!");
             return;
@@ -64,32 +60,31 @@ public class CopyToGoogleDriveCommand extends Command {
 
         buttonSound();
 
-        StatusCommand.sendTaskStartedMessage("CopyToGoogleDrive", sender);
-
-        Scheduler.getInstance().runAsync(Utils.plugin, () -> {
+        Backuper.getInstance().getScheduleManager().runAsync(() -> {
 
             String inProgressName = localBackup.getName() + " in progress";
-            if (localBackup.getFileType().equals("(ZIP)")) {
+            if (Backup.BackupFileType.ZIP.equals(localBackup.getFileType())) {
                 inProgressName += ".zip";
             }
 
-            Task task = new GoogleDriveSendFileFolderTask(localBackup.getFile(),
+            BaseAsyncTask task = new GoogleDriveSendDirTask(localBackup.getFile(),
                     Config.getInstance().getGoogleDriveConfig().getBackupsFolderId(),
                     inProgressName,
-                    true, true, true,
-                    List.of(Permissions.LOCAL_COPY_TO_GOOGLE_DRIVE),
-                    sender);
-            task.run();
+                    true, true
+            );
+            Backuper.getInstance().getTaskManager().startTask(task, sender, List.of(Permissions.LOCAL_COPY_TO_GOOGLE_DRIVE));
 
             if (!task.isCancelled()) {
-                GoogleDriveUtils.renameFile(
-                        GoogleDriveUtils.getFileByName(inProgressName, Config.getInstance().getGoogleDriveConfig().getBackupsFolderId(), sender).getId(),
-                        localBackup.getFileName(),
-                        sender);
-                Backup.saveBackupSizeToCache(StorageType.GOOGLE_DRIVE, localBackup.getName(), task.getTaskMaxProgress());
+                try {
+                    GoogleDriveUtils.renameFile(
+                            GoogleDriveUtils.getFileByName(inProgressName, Config.getInstance().getGoogleDriveConfig().getBackupsFolderId()).getId(),
+                            localBackup.getFileName()
+                    );
+                    Backup.saveBackupSizeToCache(Backup.StorageType.GOOGLE_DRIVE, localBackup.getName(), task.getTaskMaxProgress());
+                } catch (Exception e) {
+                    Backuper.getInstance().getLogManager().warn("Failed to rename backup \"in-progress\" file on Google Drive");
+                }
             }
-
-            sendMessage("CopyToGoogleDrive task completed");
         });
     }
 }

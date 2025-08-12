@@ -4,13 +4,13 @@ import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.backup.*;
-import ru.dvdishka.backuper.backend.common.Logger;
-import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.utils.GoogleDriveUtils;
-import ru.dvdishka.backuper.backend.utils.Utils;
+import ru.dvdishka.backuper.backend.task.BaseAsyncTask;
+import ru.dvdishka.backuper.backend.util.GoogleDriveUtils;
 import ru.dvdishka.backuper.handlers.commands.Command;
-import ru.dvdishka.backuper.handlers.commands.task.status.StatusCommand;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
+
+import java.util.List;
 
 public class DeleteCommand extends Command {
 
@@ -31,7 +31,7 @@ public class DeleteCommand extends Command {
                 storage.equals("sftp") && !Config.getInstance().getSftpConfig().isEnabled() ||
                 storage.equals("ftp") && !Config.getInstance().getFtpConfig().isEnabled() ||
                 storage.equals("googleDrive") && (!Config.getInstance().getGoogleDriveConfig().isEnabled() ||
-                        !GoogleDriveUtils.isAuthorized(sender))) {
+                        !GoogleDriveUtils.checkConnection())) {
             cancelSound();
             if (!storage.equals("googleDrive")) {
                 returnFailure(storage + " storage is disabled!");
@@ -50,46 +50,36 @@ public class DeleteCommand extends Command {
             return;
         }
 
-        if (Backuper.isLocked()) {
+        if (Backuper.getInstance().getTaskManager().isLocked()) {
             cancelSound();
             returnFailure("Blocked by another operation!");
             return;
         }
 
         Backup backup = null;
-
+        Permissions permission = null;
         if (storage.equals("local")) {
             backup = LocalBackup.getInstance(backupName);
+            permission = Permissions.LOCAL_DELETE;
         }
         if (storage.equals("sftp")) {
             backup = SftpBackup.getInstance(backupName);
+            permission = Permissions.SFTP_DELETE;
         }
         if (storage.equals("ftp")) {
             backup = FtpBackup.getInstance(backupName);
+            permission = Permissions.FTP_DELETE;
         }
         if (storage.equals("googleDrive")) {
             backup = GoogleDriveBackup.getInstance(backupName);
+            permission = Permissions.GOOGLE_DRIVE_DELETE;
         }
 
         buttonSound();
 
-        StatusCommand.sendTaskStartedMessage("Delete", sender);
-
         final Backup finalBackup = backup;
 
-        Scheduler.getInstance().runAsync(Utils.plugin, () -> {
-
-            try {
-                finalBackup.delete(true, sender);
-                successSound();
-                sendMessage("Delete task completed");
-
-            } catch (Exception e) {
-
-                Logger.getLogger().warn("Delete task has been finished with an exception!", sender);
-                Logger.getLogger().warn(this.getClass(), e);
-                cancelSound();
-            }
-        });
+        BaseAsyncTask task = finalBackup.getDeleteTask();
+        Backuper.getInstance().getTaskManager().startTaskAsync(task, sender, List.of(permission));
     }
 }

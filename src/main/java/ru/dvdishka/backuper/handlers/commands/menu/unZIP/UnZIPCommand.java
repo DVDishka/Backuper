@@ -3,13 +3,13 @@ package ru.dvdishka.backuper.handlers.commands.menu.unZIP;
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
+import ru.dvdishka.backuper.backend.backup.Backup;
 import ru.dvdishka.backuper.backend.backup.LocalBackup;
-import ru.dvdishka.backuper.backend.common.Logger;
-import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.handlers.commands.Command;
-import ru.dvdishka.backuper.handlers.commands.task.status.StatusCommand;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
+
+import java.util.List;
 
 public class UnZIPCommand extends Command {
 
@@ -38,13 +38,13 @@ public class UnZIPCommand extends Command {
 
         LocalBackup localBackup = LocalBackup.getInstance(backupName);
 
-        if (localBackup.getFileType().equals("(Folder)")) {
+        if (Backup.BackupFileType.DIR.equals(localBackup.getFileType())) {
             cancelSound();
-            returnFailure("Backup is already Folder!");
+            returnFailure("Backup is already unzipped!");
             return;
         }
 
-        if (Backuper.isLocked()) {
+        if (Backuper.getInstance().getTaskManager().isLocked()) {
             cancelSound();
             returnFailure("Blocked by another operation!");
             return;
@@ -52,23 +52,9 @@ public class UnZIPCommand extends Command {
 
         buttonSound();
 
-        StatusCommand.sendTaskStartedMessage("UnZIP", sender);
-
-        Scheduler.getInstance().runAsync(Utils.plugin, () -> {
-
-            try {
-                localBackup.unZip(true, sender);
-                sendMessage("UnZIP task completed");
-
-            } catch (Exception e) {
-
-                Backuper.unlock();
-
-                Logger.getLogger().warn("The UnZIP task has been finished with an exception!", sender);
-                Logger.getLogger().warn(this.getClass(), e);
-
-                cancelSound();
-            }
+        Backuper.getInstance().getTaskManager().startTaskAsync(localBackup.getUnZipTask(), sender, List.of(Permissions.LOCAL_UNZIP));
+        Backuper.getInstance().getScheduleManager().runAsync(() -> {
+            localBackup.getUnZipTask();
         });
     }
 }

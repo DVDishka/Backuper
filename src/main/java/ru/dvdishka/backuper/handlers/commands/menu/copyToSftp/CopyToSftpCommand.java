@@ -3,17 +3,15 @@ package ru.dvdishka.backuper.handlers.commands.menu.copyToSftp;
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
+import ru.dvdishka.backuper.backend.backup.Backup;
 import ru.dvdishka.backuper.backend.backup.LocalBackup;
 import ru.dvdishka.backuper.backend.backup.SftpBackup;
-import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.tasks.Task;
-import ru.dvdishka.backuper.backend.tasks.sftp.SftpSendFileFolderTask;
-import ru.dvdishka.backuper.backend.utils.SftpUtils;
-import ru.dvdishka.backuper.backend.utils.Utils;
+import ru.dvdishka.backuper.backend.task.BaseAsyncTask;
+import ru.dvdishka.backuper.backend.task.SftpSendDirTask;
+import ru.dvdishka.backuper.backend.util.SftpUtils;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
-import ru.dvdishka.backuper.handlers.commands.task.status.StatusCommand;
 
 import java.util.List;
 
@@ -46,7 +44,7 @@ public class CopyToSftpCommand extends Command {
             return;
         }
 
-        if (Backuper.isLocked()) {
+        if (Backuper.getInstance().getTaskManager().isLocked()) {
             cancelSound();
             returnFailure("Blocked by another operation!");
             return;
@@ -62,27 +60,28 @@ public class CopyToSftpCommand extends Command {
 
         buttonSound();
 
-        StatusCommand.sendTaskStartedMessage("CopyToSftp", sender);
+        Backuper.getInstance().getScheduleManager().runAsync(() -> {
 
-        Scheduler.getInstance().runAsync(Utils.plugin, () -> {
-
-            String inProgressName = localBackup.getName() + " in progress";
-            if (localBackup.getFileType().equals("(ZIP)")) {
+            String inProgressName = "%s in progress".formatted(localBackup.getName());
+            if (Backup.BackupFileType.ZIP.equals(localBackup.getFileType())) {
                 inProgressName += ".zip";
             }
 
-            Task task = new SftpSendFileFolderTask(localBackup.getFile(),
+            BaseAsyncTask task = new SftpSendDirTask(localBackup.getFile(),
                     SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), inProgressName),
-                    false, true, true, List.of(Permissions.LOCAL_COPY_TO_SFTP), sender);
-            task.run();
+                    false, true);
+            Backuper.getInstance().getTaskManager().startTask(task, sender, List.of(Permissions.LOCAL_COPY_TO_SFTP));
 
             if (!task.isCancelled()) {
-                SftpUtils.renameFile(SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), inProgressName),
-                        SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), localBackup.getFileName()),
-                        sender);
+                try {
+                    SftpUtils.renameFile(SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), inProgressName),
+                            SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), localBackup.getFileName())
+                    );
+                    Backup.saveBackupSizeToCache(Backup.StorageType.SFTP, localBackup.getName(), task.getTaskMaxProgress());
+                } catch (Exception e) {
+                    Backuper.getInstance().getLogManager().warn("Failed to rename backup \"in-progress\" file on SFTP server");
+                }
             }
-
-            sendMessage("CopyToSftp task completed");
         });
     }
 }

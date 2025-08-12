@@ -2,15 +2,16 @@ package ru.dvdishka.backuper;
 
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPIBukkitConfig;
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.dvdishka.backuper.backend.Initialization;
 import ru.dvdishka.backuper.backend.backup.Backup;
-import ru.dvdishka.backuper.backend.common.Logger;
-import ru.dvdishka.backuper.backend.common.Scheduler;
+import ru.dvdishka.backuper.backend.common.LogManager;
+import ru.dvdishka.backuper.backend.common.ScheduleManager;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.tasks.Task;
-import ru.dvdishka.backuper.backend.tasks.common.SetWorldsWritableTask;
-import ru.dvdishka.backuper.backend.utils.Utils;
+import ru.dvdishka.backuper.backend.task.BaseAsyncTask;
+import ru.dvdishka.backuper.backend.task.SetWorldsWritableTask;
+import ru.dvdishka.backuper.backend.task.TaskManager;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -18,42 +19,29 @@ import java.util.List;
 
 public class Backuper extends JavaPlugin {
 
-    private static volatile boolean isBackupBusy = false;
-    private static Task currentTask = null;
+    private TaskManager taskManager;
+    private LogManager logger;
+    private ScheduleManager scheduleManager;
 
-    public static Task getCurrentTask() {
-        return currentTask;
-    }
-
-    public static void lock(Task task) {
-        isBackupBusy = true;
-        currentTask = task;
-    }
-
-    public static void unlock() {
-        isBackupBusy = false;
-        currentTask = null;
-    }
-
-    public static boolean isLocked() {
-        return isBackupBusy;
-    }
+    private static Backuper instance;
 
     public void onEnable() {
 
         CommandAPI.onEnable();
 
-        Utils.plugin = this;
+        instance = this;
+        this.logger = new LogManager();
+        this.taskManager = new TaskManager();
 
         File pluginDir = new File("plugins/Backuper");
         File configFile = new File("plugins/Backuper/config.yml");
 
         if (!pluginDir.exists() && !pluginDir.mkdirs()) {
-            
-            Logger.getLogger().warn("Can not create plugins/Backuper dir!");
+            Backuper.getInstance().getLogManager().warn("Can not create plugins/Backuper dir!");
         }
         
         Initialization.initConfig(configFile, null);
+        this.scheduleManager = new ScheduleManager(); // Should be initialized after the config file
         Initialization.loadSizeCache(null);
         Initialization.sendGoogleAccountCheckResult(this.getServer().getConsoleSender());
         Initialization.checkStorages(null);
@@ -62,7 +50,7 @@ public class Backuper extends JavaPlugin {
         File backupsDir = new File(Config.getInstance().getLocalConfig().getBackupsFolder());
         if (!backupsDir.exists() && !backupsDir.mkdirs()) {
 
-            Logger.getLogger().warn("Can not create plugins/Backuper/Backups dir!");
+            Backuper.getInstance().getLogManager().warn("Can not create plugins/Backuper/Backups dir!");
         }
 
         Initialization.unifyBackupNameFormat(null);
@@ -74,7 +62,7 @@ public class Backuper extends JavaPlugin {
         Initialization.sendIssueToGitHub();
         Initialization.sendPluginVersionCheckResult(this.getServer().getConsoleSender());
 
-        Logger.getLogger().log("Backuper plugin has been enabled!");
+        Backuper.getInstance().getLogManager().log("Backuper plugin has been enabled!");
     }
 
     public void onLoad() {
@@ -86,15 +74,16 @@ public class Backuper extends JavaPlugin {
 
         saveSizeCache();
 
-        Scheduler.getInstance().destroy(this);
-        new SetWorldsWritableTask(false, List.of(), null).run();
+        Backuper.getInstance().getScheduleManager().destroy(this);
+        BaseAsyncTask setWorldsWritableTask = new SetWorldsWritableTask();
+        getTaskManager().startTask(setWorldsWritableTask, Bukkit.getConsoleSender(), List.of());
 
         Config.getInstance().setConfigField("lastBackup", Config.getInstance().getLastBackup());
         Config.getInstance().setConfigField("lastChange", Config.getInstance().getLastChange());
 
         CommandAPI.onDisable();
 
-        Logger.getLogger().log("Backuper plugin has been disabled!");
+        Backuper.getInstance().getLogManager().log("Backuper plugin has been disabled!");
     }
 
     private void saveSizeCache() {
@@ -103,12 +92,28 @@ public class Backuper extends JavaPlugin {
             File sizeCachceFile = Config.getInstance().getSizeCacheFile();
 
             FileWriter writer = new FileWriter(sizeCachceFile);
-            writer.write(Backup.getSizeCacheJson(null));
+            writer.write(Backup.getSizeCacheJson());
             writer.close();
 
         } catch (Exception e) {
-            Logger.getLogger().warn("Failed to save size cache to disk!");
-            Logger.getLogger().warn(this.getClass(), e);
+            Backuper.getInstance().getLogManager().warn("Failed to save size cache to disk!");
+            Backuper.getInstance().getLogManager().warn(e);
         }
+    }
+
+    public static Backuper getInstance() {
+        return instance;
+    }
+
+    public TaskManager getTaskManager() {
+        return taskManager;
+    }
+
+    public LogManager getLogManager() {
+        return logger;
+    }
+
+    public ScheduleManager getScheduleManager() {
+        return scheduleManager;
     }
 }

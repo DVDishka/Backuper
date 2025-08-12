@@ -40,7 +40,7 @@ public class CopyToFtpConfirmationCommand extends Command {
         LocalBackup backup = LocalBackup.getInstance(backupName);
         String backupFormattedName = backup.getFormattedName();
 
-        if (Backuper.isLocked()) {
+        if (Backuper.getInstance().getTaskManager().isLocked()) {
             cancelSound();
             returnFailure("Blocked by another operation!");
             return;
@@ -48,8 +48,7 @@ public class CopyToFtpConfirmationCommand extends Command {
 
         buttonSound();
 
-        long backupSize = backup.getMbSize(sender);
-        String zipFolderBackup = backup.getFileType();
+        long backupSize = backup.getMbSize();
 
         Component header = Component.empty();
 
@@ -62,13 +61,13 @@ public class CopyToFtpConfirmationCommand extends Command {
 
         message = message
                 .append(Component.text(backupFormattedName)
-                        .hoverEvent(HoverEvent.showText(Component.text("(local) " + zipFolderBackup + " " + backupSize + " MB"))))
+                        .hoverEvent(HoverEvent.showText(Component.text("(%s) (%s)) %s MB".formatted(backup.getStorageType().name(), backup.getFileType().name(), backupSize)))))
                 .append(Component.newline())
                 .append(Component.newline());
 
         message = message
                 .append(Component.text("[COPY TO FTP]")
-                        .clickEvent(ClickEvent.runCommand("/backuper menu local " + "\"" + backupName + "\" copyToFtp"))
+                        .clickEvent(ClickEvent.runCommand("/backuper menu local \"%s\" copyToFtp".formatted(backupName)))
                         .color(TextColor.color(0xB02100))
                         .decorate(TextDecoration.BOLD));
 

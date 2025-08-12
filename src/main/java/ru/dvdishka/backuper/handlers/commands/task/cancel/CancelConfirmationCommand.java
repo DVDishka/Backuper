@@ -8,7 +8,6 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.handlers.commands.Command;
-import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 public class CancelConfirmationCommand extends Command {
 
@@ -18,18 +17,6 @@ public class CancelConfirmationCommand extends Command {
 
     @Override
     public void execute() {
-
-        if (!Backuper.isLocked()) {
-            cancelSound();
-            returnFailure("There is no running task!");
-            return;
-        }
-
-        if (!checkPermission(sender)) {
-            cancelSound();
-            returnFailure("You do not have permission to cancel this task!");
-            return;
-        }
 
         buttonSound();
 
@@ -42,7 +29,7 @@ public class CancelConfirmationCommand extends Command {
 
         Component message = net.kyori.adventure.text.Component.empty();
 
-        long progress = Backuper.getCurrentTask().getTaskPercentProgress();
+        long progress = Backuper.getInstance().getTaskManager().getCurrentTask().getTaskPercentProgress();
         TextColor color;
 
         if (progress < 40) {
@@ -56,7 +43,7 @@ public class CancelConfirmationCommand extends Command {
         message = message
                 .append(Component.text("Current task:"))
                 .append(Component.space())
-                .append(Component.text(Backuper.getCurrentTask().getTaskName())
+                .append(Component.text(Backuper.getInstance().getTaskManager().getCurrentTask().getTaskName())
                         .decorate(TextDecoration.BOLD)
                         .color(TextColor.fromHexString("#129c9b")))
                 .append(Component.newline())
@@ -73,15 +60,5 @@ public class CancelConfirmationCommand extends Command {
                         .decorate(TextDecoration.BOLD));
 
         sendFramedMessage(header, message, 15);
-    }
-
-    public static boolean checkPermission(CommandSender sender) {
-
-        for (Permissions permission : Backuper.getCurrentTask().getPermissions()) {
-            if (!sender.hasPermission(permission.getPermission())) {
-                return false;
-            }
-        }
-        return true;
     }
 }

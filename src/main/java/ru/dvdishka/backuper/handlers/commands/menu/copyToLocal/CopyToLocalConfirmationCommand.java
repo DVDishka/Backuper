@@ -13,12 +13,12 @@ import ru.dvdishka.backuper.backend.backup.FtpBackup;
 import ru.dvdishka.backuper.backend.backup.GoogleDriveBackup;
 import ru.dvdishka.backuper.backend.backup.SftpBackup;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.utils.GoogleDriveUtils;
+import ru.dvdishka.backuper.backend.util.GoogleDriveUtils;
 import ru.dvdishka.backuper.handlers.commands.Command;
 
 public class CopyToLocalConfirmationCommand extends Command {
 
-    private String storage;
+    private final String storage;
 
     public CopyToLocalConfirmationCommand(String storage, CommandSender sender, CommandArguments arguments) {
         super(sender, arguments);
@@ -39,7 +39,7 @@ public class CopyToLocalConfirmationCommand extends Command {
         if (storage.equals("sftp") && !Config.getInstance().getSftpConfig().isEnabled() ||
                 storage.equals("ftp") && !Config.getInstance().getFtpConfig().isEnabled() ||
                 storage.equals("googleDrive") && (!Config.getInstance().getGoogleDriveConfig().isEnabled() ||
-                        !GoogleDriveUtils.isAuthorized(sender))) {
+                        !GoogleDriveUtils.checkConnection())) {
             cancelSound();
             if (!storage.equals("googleDrive")) {
                 returnFailure(storage + " storage is disabled!");
@@ -69,7 +69,7 @@ public class CopyToLocalConfirmationCommand extends Command {
 
         String backupFormattedName = backup.getFormattedName();
 
-        if (Backuper.isLocked()) {
+        if (Backuper.getInstance().getTaskManager().isLocked()) {
             cancelSound();
             returnFailure("Blocked by another operation!");
             return;
@@ -77,8 +77,7 @@ public class CopyToLocalConfirmationCommand extends Command {
 
         buttonSound();
 
-        long backupSize = backup.getMbSize(sender);
-        String zipFolderBackup = backup.getFileType();
+        long backupSize = backup.getMbSize();
 
         Component header = Component.empty();
 
@@ -91,13 +90,13 @@ public class CopyToLocalConfirmationCommand extends Command {
 
         message = message
                 .append(Component.text(backupFormattedName)
-                        .hoverEvent(HoverEvent.showText(Component.text("(sftp) " + zipFolderBackup + " " + backupSize + " MB"))))
+                        .hoverEvent(HoverEvent.showText(Component.text("(%s) (%s) %s MB".formatted(backup.getStorageType().name(), backup.getFileType().name(), backupSize)))))
                 .append(Component.newline())
                 .append(Component.newline());
 
         message = message
                 .append(Component.text("[COPY TO LOCAL]")
-                        .clickEvent(ClickEvent.runCommand("/backuper menu " + storage + " " + "\"" + backupName + "\" copyToLocal"))
+                        .clickEvent(ClickEvent.runCommand("/backuper menu %s \"%s\" copyToLocal".formatted(storage, backupName)))
                         .color(TextColor.color(0xB02100))
                         .decorate(TextDecoration.BOLD));
 

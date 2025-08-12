@@ -3,13 +3,14 @@ package ru.dvdishka.backuper.handlers.commands.menu.toZIP;
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
+import ru.dvdishka.backuper.backend.backup.Backup;
 import ru.dvdishka.backuper.backend.backup.LocalBackup;
-import ru.dvdishka.backuper.backend.common.Logger;
-import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.utils.Utils;
+import ru.dvdishka.backuper.backend.task.BaseAsyncTask;
 import ru.dvdishka.backuper.handlers.commands.Command;
-import ru.dvdishka.backuper.handlers.commands.task.status.StatusCommand;
+import ru.dvdishka.backuper.handlers.commands.Permissions;
+
+import java.util.List;
 
 public class ToZIPCommand extends Command {
 
@@ -38,13 +39,13 @@ public class ToZIPCommand extends Command {
 
         LocalBackup localBackup = LocalBackup.getInstance(backupName);
 
-        if (localBackup.getFileType().equals("(ZIP)")) {
+        if (Backup.BackupFileType.ZIP.equals(localBackup.getFileType())) {
             cancelSound();
             returnFailure("Backup is already ZIP!");
             return;
         }
 
-        if (Backuper.isLocked()) {
+        if (Backuper.getInstance().getTaskManager().isLocked()) {
             cancelSound();
             returnFailure("Blocked by another operation!");
             return;
@@ -52,22 +53,7 @@ public class ToZIPCommand extends Command {
 
         buttonSound();
 
-        StatusCommand.sendTaskStartedMessage("ToZIP", sender);
-
-        Scheduler.getInstance().runAsync(Utils.plugin, () -> {
-            try {
-
-                localBackup.toZip(true, sender);
-                sendMessage("ToZIP task completed");
-
-            } catch (Exception e) {
-
-                cancelSound();
-                Backuper.unlock();
-
-                Logger.getLogger().warn("Something went wrong while running ToZIP task", sender);
-                Logger.getLogger().warn(this.getClass(), e);
-            }
-        });
+        BaseAsyncTask task = localBackup.getToZipTask();
+        Backuper.getInstance().getTaskManager().startTaskAsync(task, sender, List.of(Permissions.LOCAL_TO_ZIP));
     }
 }

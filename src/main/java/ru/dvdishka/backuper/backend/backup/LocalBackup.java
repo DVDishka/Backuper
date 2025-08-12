@@ -1,22 +1,17 @@
 package ru.dvdishka.backuper.backend.backup;
 
-import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.tasks.Task;
-import ru.dvdishka.backuper.backend.tasks.local.folder.DeleteDirTask;
-import ru.dvdishka.backuper.backend.tasks.local.zip.tozip.ConvertFolderToZipTask;
-import ru.dvdishka.backuper.backend.tasks.local.zip.unzip.ConvertZipToFolderTask;
-import ru.dvdishka.backuper.backend.utils.UIUtils;
-import ru.dvdishka.backuper.backend.utils.Utils;
-import ru.dvdishka.backuper.handlers.commands.Permissions;
+import ru.dvdishka.backuper.backend.task.BaseAsyncTask;
+import ru.dvdishka.backuper.backend.task.ConvertFolderToZipTask;
+import ru.dvdishka.backuper.backend.task.ConvertZipToFolderTask;
+import ru.dvdishka.backuper.backend.task.DeleteDirTask;
+import ru.dvdishka.backuper.backend.util.Utils;
 
 import java.io.File;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Objects;
 
 public class LocalBackup extends ExternalBackup {
@@ -54,7 +49,7 @@ public class LocalBackup extends ExternalBackup {
 
         if (!new File(Config.getInstance().getLocalConfig().getBackupsFolder()).exists() ||
                 new File(Config.getInstance().getLocalConfig().getBackupsFolder()).listFiles() == null) {
-            Logger.getLogger().warn("Wrong local.backupsFolder config value! (Maybe the specified folder does not exist)");
+            Backuper.getInstance().getLogManager().warn("Wrong local.backupsFolder config value! (Maybe the specified folder does not exist)");
             return backups;
         }
 
@@ -79,7 +74,7 @@ public class LocalBackup extends ExternalBackup {
         return backupLocalDateTime;
     }
 
-    long calculateByteSize(CommandSender sender) {
+    long calculateByteSize() {
 
         File backupsFolder = new File(Config.getInstance().getLocalConfig().getBackupsFolder());
         String backupFilePath;
@@ -87,31 +82,22 @@ public class LocalBackup extends ExternalBackup {
         if (backupsFolder.toPath().resolve(backupName).toFile().exists()) {
             backupFilePath = backupsFolder.toPath().resolve(backupName).toFile().getPath();
         } else {
-            backupFilePath = backupsFolder.toPath().resolve(backupName).toFile().getPath() + ".zip";
+            backupFilePath = "%s.zip".formatted(backupsFolder.toPath().resolve(backupName).toFile().getPath());
         }
 
         long size = Utils.getFileFolderByteSize(new File(backupFilePath));
         return size;
     }
 
-    /**
-     * @return Possible values: "(Folder)" "(ZIP)"
-     */
-    public String getFileType() {
+    public BackupFileType getFileType() {
 
         File backupsFolder = new File(Config.getInstance().getLocalConfig().getBackupsFolder());
-        String zipOrFolder = "(ZIP)";
-
-        if (backupsFolder.toPath().resolve(backupName).toFile().exists()) {
-            zipOrFolder = "(Folder)";
-        }
-
-        return zipOrFolder;
+        return backupsFolder.toPath().resolve(backupName).toFile().exists() ? BackupFileType.ZIP : BackupFileType.DIR;
     }
 
     public String getFileName() {
-        if (getFileType().equals("(ZIP)")) {
-            return backupName + ".zip";
+        if (BackupFileType.ZIP.equals(this.getFileType())) {
+            return "%s.zip".formatted(backupName);
         } else {
             return backupName;
         }
@@ -125,8 +111,8 @@ public class LocalBackup extends ExternalBackup {
 
         File backupsFolder = new File(Config.getInstance().getLocalConfig().getBackupsFolder());
 
-        if (this.getFileType().equals("(ZIP)")) {
-            return backupsFolder.toPath().resolve(backupName + ".zip").toFile();
+        if (BackupFileType.ZIP.equals(this.getFileType())) {
+            return backupsFolder.toPath().resolve("%s.zip".formatted(backupName)).toFile();
         } else {
             return backupsFolder.toPath().resolve(backupName).toFile();
         }
@@ -136,8 +122,8 @@ public class LocalBackup extends ExternalBackup {
 
         File backupsFolder = new File(Config.getInstance().getLocalConfig().getBackupsFolder());
 
-        if (backupsFolder.toPath().resolve(backupName + ".zip").toFile().exists()) {
-            return backupsFolder.toPath().resolve(backupName + ".zip").toFile();
+        if (backupsFolder.toPath().resolve("%s.zip".formatted(backupName)).toFile().exists()) {
+            return backupsFolder.toPath().resolve("%s.zip".formatted(backupName)).toFile();
         }
         return null;
     }
@@ -158,227 +144,27 @@ public class LocalBackup extends ExternalBackup {
         File backupsFolder = new File(Config.getInstance().getLocalConfig().getBackupsFolder());
 
         return backupsFolder.toPath().resolve(backupName).toFile().exists() ||
-                backupsFolder.toPath().resolve(backupName + ".zip").toFile().exists();
+                backupsFolder.toPath().resolve("%s.zip".formatted(backupName)).toFile().exists();
     }
 
     @Override
-    Task getDirectDeleteTask(boolean setLocked, CommandSender sender) {
-        return new DeleteDirTask(this.getFile(), setLocked, List.of(Permissions.LOCAL_DELETE), sender);
+    public BaseAsyncTask getRawDeleteTask() {
+        return new DeleteDirTask(this.getFile());
     }
 
-    private Task getDirectToZipTask(boolean setLocked, CommandSender sender) {
-        return new ConvertFolderToZipTask(this.getFile(), setLocked, List.of(Permissions.LOCAL_TO_ZIP), sender);
+    public BaseAsyncTask getRawToZipTask() {
+        return new ConvertFolderToZipTask(this.getFile());
     }
 
-    private Task getDirectUnZipTask(boolean setLocked, CommandSender sender) {
-        return new ConvertZipToFolderTask(this.getZIPFile(), setLocked, List.of(Permissions.LOCAL_UNZIP), sender);
+    public BaseAsyncTask getRawUnZipTask() {
+        return new ConvertZipToFolderTask(this.getZIPFile());
     }
 
-    public Task getToZipTask(boolean setLocked, CommandSender sender) {
-        return new BackupToZipTask(this, setLocked, sender);
+    public BackupToZipTask getToZipTask() {
+        return new BackupToZipTask(this);
     }
 
-    public void toZip(boolean setLocked, CommandSender sender) {
-        getToZipTask(setLocked, sender).run();
-    }
-
-    public Task getUnZipTask(boolean setLocked, CommandSender sender) {
-        return new BackupUnZipTask(this, setLocked, sender);
-    }
-
-    public void unZip(boolean setLocked, CommandSender sender) {
-        getUnZipTask(setLocked, sender).run();
-    }
-
-    public class BackupToZipTask extends Task {
-
-        private static final String taskName = "BackupToZip";
-
-        private LocalBackup backup = null;
-        private Task toZipTask = null;
-
-        /**
-         * @param backup
-         * @param setLocked
-         * @param sender
-         */
-        public BackupToZipTask(LocalBackup backup, boolean setLocked, CommandSender sender) {
-            super(taskName, setLocked, List.of(Permissions.LOCAL_TO_ZIP), sender);
-            this.backup = backup;
-        }
-
-        @Override
-        public void run() {
-
-            if (cancelled) {
-                return;
-            }
-
-            try {
-                if (setLocked) {
-                    Backuper.lock(this);
-                }
-
-                if (!isTaskPrepared) {
-                    prepareTask();
-                }
-
-                if (!cancelled) {
-                    toZipTask.run();
-                }
-                cachedBackupsSize.get(StorageType.LOCAL).invalidate(backup.getName());
-
-                if (setLocked) {
-                    UIUtils.successSound(sender);
-                    Backuper.unlock();
-                }
-
-            } catch (Exception e) {
-                if (setLocked) {
-                    UIUtils.cancelSound(sender);
-                    Backuper.unlock();
-                }
-
-                Logger.getLogger().warn(taskName + " task has been finished with an exception", sender);
-                Logger.getLogger().warn(this.getClass(), e);
-            }
-        }
-
-        @Override
-        public void prepareTask() {
-
-            isTaskPrepared = true;
-
-            if (cancelled) {
-                return;
-            }
-
-            toZipTask = backup.getDirectToZipTask(false, sender);
-            toZipTask.prepareTask();
-        }
-
-        @Override
-        public void cancel() {
-            cancelled = true;
-            if (toZipTask != null) {
-                toZipTask.cancel();
-            }
-        }
-
-        @Override
-        public long getTaskMaxProgress() {
-
-            if (!isTaskPrepared) {
-                return 0;
-            }
-
-            return toZipTask.getTaskMaxProgress();
-        }
-
-        @Override
-        public long getTaskCurrentProgress() {
-
-            if (!isTaskPrepared) {
-                return 0;
-            }
-
-            return toZipTask.getTaskCurrentProgress();
-        }
-    }
-
-    public class BackupUnZipTask extends Task {
-
-        private static final String taskName = "BackupUnZip";
-
-        private LocalBackup backup = null;
-        private Task unZipTask = null;
-
-        /**
-         * @param backup
-         * @param setLocked
-         * @param sender
-         */
-        public BackupUnZipTask(LocalBackup backup, boolean setLocked, CommandSender sender) {
-            super(taskName, setLocked, List.of(Permissions.LOCAL_UNZIP), sender);
-            this.backup = backup;
-        }
-
-        @Override
-        public void run() {
-
-            if (cancelled) {
-                return;
-            }
-
-            try {
-                if (setLocked) {
-                    Backuper.lock(this);
-                }
-
-                if (!isTaskPrepared) {
-                    prepareTask();
-                }
-
-                if (!cancelled) {
-                    unZipTask.run();
-                }
-                cachedBackupsSize.get(StorageType.LOCAL).invalidate(backup.getName());
-
-                if (setLocked) {
-                    UIUtils.successSound(sender);
-                    Backuper.unlock();
-                }
-
-            } catch (Exception e) {
-                if (setLocked) {
-                    UIUtils.cancelSound(sender);
-                    Backuper.unlock();
-                }
-
-                Logger.getLogger().warn(taskName + " task has been finished with an exception", sender);
-                Logger.getLogger().warn(this.getClass(), e);
-            }
-        }
-
-        @Override
-        public void prepareTask() {
-
-            isTaskPrepared = true;
-
-            if (cancelled) {
-                return;
-            }
-
-            unZipTask = backup.getDirectUnZipTask(false, sender);
-            unZipTask.prepareTask();
-        }
-
-        @Override
-        public void cancel() {
-            cancelled = true;
-            if (unZipTask != null) {
-                unZipTask.cancel();
-            }
-        }
-
-        @Override
-        public long getTaskMaxProgress() {
-
-            if (!isTaskPrepared) {
-                return 0;
-            }
-
-            return unZipTask.getTaskMaxProgress();
-        }
-
-        @Override
-        public long getTaskCurrentProgress() {
-
-            if (!isTaskPrepared) {
-                return 0;
-            }
-
-            return unZipTask.getTaskCurrentProgress();
-        }
+    public BackupUnZipTask getUnZipTask() {
+        return new BackupUnZipTask(this);
     }
 }

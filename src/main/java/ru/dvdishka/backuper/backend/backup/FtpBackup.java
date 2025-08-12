@@ -1,12 +1,11 @@
 package ru.dvdishka.backuper.backend.backup;
 
-import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.tasks.Task;
-import ru.dvdishka.backuper.backend.tasks.ftp.FtpDeleteDirTask;
-import ru.dvdishka.backuper.backend.utils.FtpUtils;
-import ru.dvdishka.backuper.handlers.commands.Permissions;
+import ru.dvdishka.backuper.backend.task.BaseAsyncTask;
+import ru.dvdishka.backuper.backend.task.FtpDeleteDirTask;
+import ru.dvdishka.backuper.backend.util.FtpUtils;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,7 +13,7 @@ import java.util.List;
 
 public class FtpBackup extends ExternalBackup {
 
-    private static HashMap<String, FtpBackup> backups = new HashMap<>();
+    private static final HashMap<String, FtpBackup> backups = new HashMap<>();
 
     private FtpBackup(String backupName) {
         this.backupName = backupName;
@@ -45,9 +44,14 @@ public class FtpBackup extends ExternalBackup {
             return false;
         }
 
-        List<String> backupFileNames = FtpUtils.ls(Config.getInstance().getFtpConfig().getBackupsFolder(), null);
+        List<String> backupFileNames;
+        try {
+            backupFileNames = FtpUtils.ls(Config.getInstance().getFtpConfig().getBackupsFolder());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
-        return backupFileNames.contains(backupName) || backupFileNames.contains(backupName + ".zip");
+        return backupFileNames.contains(backupName) || backupFileNames.contains("%s.zip".formatted(backupName));
     }
 
     public static ArrayList<FtpBackup> getBackups() {
@@ -57,22 +61,26 @@ public class FtpBackup extends ExternalBackup {
         }
 
         ArrayList<FtpBackup> backups = new ArrayList<>();
-        for (String fileName : FtpUtils.ls(Config.getInstance().getFtpConfig().getBackupsFolder(), null)) {
-            try {
-                FtpBackup backup = FtpBackup.getInstance(fileName.replace(".zip", ""));
+        try {
+            for (String fileName : FtpUtils.ls(Config.getInstance().getFtpConfig().getBackupsFolder())) {
+                try {
+                    FtpBackup backup = FtpBackup.getInstance(fileName.replace(".zip", ""));
 
-                if (backup != null) {
-                    backups.add(backup);
+                    if (backup != null) {
+                        backups.add(backup);
+                    }
+                } catch (Exception ignored) {
                 }
-            } catch (Exception ignored) {
             }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
         return backups;
     }
 
     @Override
-    Task getDirectDeleteTask(boolean setLocked, CommandSender sender) {
-        return new FtpDeleteDirTask(getPath(), setLocked, List.of(Permissions.FTP_DELETE), sender);
+    public BaseAsyncTask getRawDeleteTask() {
+        return new FtpDeleteDirTask(getPath());
     }
 
     public LocalDateTime getLocalDateTime() {
@@ -84,26 +92,32 @@ public class FtpBackup extends ExternalBackup {
     }
 
     public String getFileName() {
-        if (getFileType().equals("(ZIP)")) {
-            return backupName + ".zip";
+        if (BackupFileType.ZIP.equals(getFileType())) {
+            return "%s.zip".formatted(backupName);
         } else {
             return backupName;
         }
     }
 
-    long calculateByteSize(CommandSender sender) {
-        long size = FtpUtils.getDirByteSize(getPath(), sender);
+    long calculateByteSize() {
+        long size;
+        try {
+            size = FtpUtils.getDirByteSize(getPath());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         return size;
     }
 
-    /**
-     * @return Possible values: "(Folder)" "(ZIP)"
-     */
-    public String getFileType() {
-        if (FtpUtils.ls(Config.getInstance().getFtpConfig().getBackupsFolder(), null).contains(backupName + ".zip")) {
-            return "(ZIP)";
+    public BackupFileType getFileType() {
+        try {
+            if (FtpUtils.ls(Config.getInstance().getFtpConfig().getBackupsFolder()).contains("%s.zip".formatted(backupName))) {
+                return BackupFileType.ZIP;
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        return "(Folder)";
+        return BackupFileType.DIR;
     }
 
     public String getPath() {

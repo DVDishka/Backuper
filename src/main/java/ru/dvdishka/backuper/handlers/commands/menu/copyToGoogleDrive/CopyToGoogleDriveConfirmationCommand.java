@@ -10,7 +10,7 @@ import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.backup.LocalBackup;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.utils.GoogleDriveUtils;
+import ru.dvdishka.backuper.backend.util.GoogleDriveUtils;
 import ru.dvdishka.backuper.handlers.commands.Command;
 
 public class CopyToGoogleDriveConfirmationCommand extends Command {
@@ -28,7 +28,7 @@ public class CopyToGoogleDriveConfirmationCommand extends Command {
             return;
         }
 
-        if (!Config.getInstance().getGoogleDriveConfig().isEnabled() || !GoogleDriveUtils.isAuthorized(sender)) {
+        if (!Config.getInstance().getGoogleDriveConfig().isEnabled() || !GoogleDriveUtils.checkConnection()) {
             cancelSound();
             returnFailure("Google Drive storage is disabled or Google account is not linked!");
             return;
@@ -45,7 +45,7 @@ public class CopyToGoogleDriveConfirmationCommand extends Command {
         String backupName = localBackup.getName();
         String backupFormattedName = localBackup.getFormattedName();
 
-        if (Backuper.isLocked()) {
+        if (Backuper.getInstance().getTaskManager().isLocked()) {
             cancelSound();
             returnFailure("Blocked by another operation!");
             return;
@@ -53,8 +53,7 @@ public class CopyToGoogleDriveConfirmationCommand extends Command {
 
         buttonSound();
 
-        long backupSize = localBackup.getMbSize(sender);
-        String zipFolderBackup = localBackup.getFileType();
+        long backupSize = localBackup.getMbSize();
 
         Component header = Component.empty();
 
@@ -67,13 +66,13 @@ public class CopyToGoogleDriveConfirmationCommand extends Command {
 
         message = message
                 .append(Component.text(backupFormattedName)
-                        .hoverEvent(HoverEvent.showText(Component.text("(local) " + zipFolderBackup + " " + backupSize + " MB"))))
+                        .hoverEvent(HoverEvent.showText(Component.text("(%s) (%s) %s MB".formatted(localBackup.getFileType().name(), localBackup.getStorageType().name(), backupSize)))))
                 .append(Component.newline())
                 .append(Component.newline());
 
         message = message
                 .append(Component.text("[COPY TO GoogleDrive]")
-                        .clickEvent(ClickEvent.runCommand("/backuper menu local " + "\"" + backupName + "\" copyToSftp"))
+                        .clickEvent(ClickEvent.runCommand("/backuper menu local \"%s\" copyToGoogleDrive".formatted(backupName)))
                         .color(TextColor.color(0xB02100))
                         .decorate(TextDecoration.BOLD));
 

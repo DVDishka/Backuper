@@ -9,10 +9,10 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
+import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.backup.*;
-import ru.dvdishka.backuper.backend.common.Logger;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.utils.GoogleDriveUtils;
+import ru.dvdishka.backuper.backend.util.GoogleDriveUtils;
 import ru.dvdishka.backuper.handlers.commands.Command;
 
 import java.io.File;
@@ -22,11 +22,11 @@ import java.util.HashMap;
 public class ListCommand extends Command {
 
     public static ArrayList<ArrayList<TextComponent>> pages;
-    private String storage;
+    private final String storage;
     private boolean sendResult = true;
 
-    private HashMap<String, Long> backupNameMbSize = new HashMap<>();
-    private HashMap<String, String> backupNameFileType = new HashMap<>();
+    private final HashMap<String, Long> backupNameMbSize = new HashMap<>();
+    private final HashMap<String, Backup.BackupFileType> backupNameFileType = new HashMap<>();
 
     public ListCommand(String storage, CommandSender sender, CommandArguments arguments) {
         super(sender, arguments);
@@ -48,12 +48,12 @@ public class ListCommand extends Command {
                 storage.equals("sftp") && !Config.getInstance().getSftpConfig().isEnabled() ||
                 storage.equals("ftp") && !Config.getInstance().getFtpConfig().isEnabled() ||
                 storage.equals("googleDrive") && (!Config.getInstance().getGoogleDriveConfig().isEnabled() ||
-                        !GoogleDriveUtils.isAuthorized(sender))) {
+                        !GoogleDriveUtils.checkConnection())) {
             cancelSound();
             if (!storage.equals("googleDrive")) {
-                returnFailure(storage + " storage is disabled!");
+                returnFailure("%s storage is disabled!".formatted(storage));
             } else {
-                returnFailure(storage + " storage is disabled or Google account is not linked!");
+                returnFailure("%s storage is disabled or Google account is not linked!".formatted(storage));
             }
             return;
         }
@@ -99,7 +99,7 @@ public class ListCommand extends Command {
                 .append(Component.text("Backup list")
                         .decorate(TextDecoration.BOLD))
                 .append(Component.space())
-                .append(Component.text("(" + storage + ")")
+                .append(Component.text("(%s)".formatted(storage))
                         .color(TextColor.fromHexString("#129c9b"))
                         .decorate(TextDecoration.BOLD));
 
@@ -131,7 +131,7 @@ public class ListCommand extends Command {
         }
 
         if (backups == null) {
-            Logger.getLogger().warn("Something went wrong while trying to get backup list!", sender);
+            Backuper.getInstance().getLogManager().warn("Something went wrong while trying to get backup list!", sender);
             return;
         }
 
@@ -147,15 +147,14 @@ public class ListCommand extends Command {
             String backupName = backup.getName();
             String backupFormattedName = backup.getFormattedName();
 
-            String backupFileType = backup.getFileType();
-            long backupMbSize = backup.getMbSize(sender);
+            long backupMbSize = backup.getMbSize();
 
             backupNameMbSize.put(backupFormattedName, backupMbSize);
-            backupNameFileType.put(backupFormattedName, backupFileType);
+            backupNameFileType.put(backupFormattedName, backup.getFileType());
 
             HoverEvent<net.kyori.adventure.text.Component> hoverEvent = HoverEvent
-                    .showText(net.kyori.adventure.text.Component.text("(" + storage + ") " + backupFileType + " " + backupMbSize + " MB"));
-            ClickEvent clickEvent = ClickEvent.runCommand("/backuper menu " + storage + " \"" + backupName + "\"");
+                    .showText(net.kyori.adventure.text.Component.text("(%s) %s %s MB".formatted(backup.getStorageType().name(), backup.getFileType().name(), backupMbSize)));
+            ClickEvent clickEvent = ClickEvent.runCommand("/backuper menu %s \"%s\"".formatted(storage, backupName));
 
             pages.get((i - 1) / 10)
                     .add(net.kyori.adventure.text.Component.text(backupFormattedName)
@@ -177,13 +176,13 @@ public class ListCommand extends Command {
                     .append(Component.text("<<<<<<<<")
                             .decorate(TextDecoration.BOLD)
                             .color(TextColor.fromHexString("#129c9b"))
-                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list " + storage + " " + (pageNumber - 1))))
+                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list %s %s".formatted(storage, pageNumber - 1))))
                     .append(Component.text(String.valueOf(pageNumber))
                             .decorate(TextDecoration.BOLD))
                     .append(Component.text(">>>>>>>>")
                             .decorate(TextDecoration.BOLD)
                             .color(TextColor.fromHexString("#129c9b"))
-                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list " + storage + " " + (pageNumber + 1))))
+                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list %s %s".formatted(storage, pageNumber + 1))))
                     .append(Component.newline());
 
             for (TextComponent backupComponent : pages.get(pageNumber - 1)) {
@@ -197,13 +196,13 @@ public class ListCommand extends Command {
                     .append(Component.text("<<<<<<<<")
                             .decorate(TextDecoration.BOLD)
                             .color(TextColor.fromHexString("#129c9b"))
-                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list " + storage + " " + (pageNumber - 1))))
+                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list %s %s".formatted(storage, pageNumber - 1))))
                     .append(Component.text(String.valueOf(pageNumber))
                             .decorate(TextDecoration.BOLD))
                     .append(Component.text(">>>>>>>>")
                             .decorate(TextDecoration.BOLD)
                             .color(TextColor.fromHexString("#129c9b"))
-                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list " + storage + " " + (pageNumber + 1))));
+                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list %s %s".formatted(storage, pageNumber + 1))));
 
         // For players
         } else {
@@ -236,7 +235,7 @@ public class ListCommand extends Command {
                             .append(Component.space())
                             .append(Component.text(storage))
                             .append(Component.space())
-                            .append(Component.text(backupNameFileType.get(backupName)))
+                            .append(Component.text(backupNameFileType.get(backupName).name()))
                             .append(Component.space())
                             .append(Component.text(backupNameMbSize.get(backupName)))
                             .append(Component.space())
@@ -270,7 +269,7 @@ public class ListCommand extends Command {
                                 .append(Component.space())
                                 .append(Component.text(storage))
                                 .append(Component.space())
-                                .append(Component.text(backupNameFileType.get(backupName)))
+                                .append(Component.text(backupNameFileType.get(backupName).name()))
                                 .append(Component.space())
                                 .append(Component.text(backupNameMbSize.get(backupName)))
                                 .append(Component.space())

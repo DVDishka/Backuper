@@ -7,8 +7,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.quartz.CronExpression;
-import ru.dvdishka.backuper.backend.common.Logger;
-import ru.dvdishka.backuper.backend.utils.Utils;
+import ru.dvdishka.backuper.Backuper;
 
 import java.io.File;
 import java.text.ParseException;
@@ -72,7 +71,7 @@ public class Config {
         try {
             config.save(configFile);
         } catch (Exception e) {
-            Logger.getLogger().warn("Failed to save config");
+            Backuper.getInstance().getLogManager().warn("Failed to save config");
         }
     }
 
@@ -86,7 +85,7 @@ public class Config {
 
     public void load(File configFile, CommandSender sender) {
 
-        Logger.getLogger().devLog("loading config...", sender);
+        Backuper.getInstance().getLogManager().devLog("loading config...", sender);
 
         this.configFile = configFile;
 
@@ -110,8 +109,8 @@ public class Config {
                 this.autoBackupCron = new CronExpression(config.getString("backup.autoBackupCron", "0 0 0 1/1 * ? *"));
             } catch (ParseException e) {
                 this.autoBackup = false;
-                Logger.getLogger().warn("Failed to parse backup.autoBackupCron! Disabling auto backup...", sender);
-                Logger.getLogger().warn(this.getClass(), e);
+                Backuper.getInstance().getLogManager().warn("Failed to parse backup.autoBackupCron! Disabling auto backup...", sender);
+                Backuper.getInstance().getLogManager().warn(e);
             }
         }
         this.skipDuplicateBackup = config.getBoolean("backup.skipDuplicateBackup", true);
@@ -183,80 +182,80 @@ public class Config {
             this.dateTimeFormatter = DateTimeFormatter.ofPattern(backupFileNameFormat);
             LocalDateTime localDateTime = LocalDateTime.parse(LocalDateTime.now().format(dateTimeFormatter), dateTimeFormatter);
         } catch (Exception e) {
-            Logger.getLogger().warn("Wrong backupFileNameFormat format: \"" + backupFileNameFormat + "\", using default \"dd-MM-yyyy HH-mm-ss\" value...");
-            Logger.getLogger().warn(this.getClass(), e);
+            Backuper.getInstance().getLogManager().warn("Wrong backupFileNameFormat format: \"" + backupFileNameFormat + "\", using default \"dd-MM-yyyy HH-mm-ss\" value...");
+            Backuper.getInstance().getLogManager().warn(e);
             isConfigFileOk = false;
             backupFileNameFormat = "dd-MM-yyyy HH-mm-ss";
         }
 
         if (this.localConfig.backupsNumber < 0) {
-            Logger.getLogger().warn("Failed to load config value!");
-            Logger.getLogger().warn("local.maxBackupsNumber must be >= 0, using default 0 value...");
+            Backuper.getInstance().getLogManager().warn("Failed to load config value!");
+            Backuper.getInstance().getLogManager().warn("local.maxBackupsNumber must be >= 0, using default 0 value...");
             this.localConfig.backupsNumber = 0;
         }
 
         if (this.localConfig.backupsWeight < 0) {
-            Logger.getLogger().warn("Failed to load config value!");
-            Logger.getLogger().warn("local.maxBackupsWeight must be >= 0, using default 0 value...");
+            Backuper.getInstance().getLogManager().warn("Failed to load config value!");
+            Backuper.getInstance().getLogManager().warn("local.maxBackupsWeight must be >= 0, using default 0 value...");
             this.localConfig.backupsWeight = 0;
         }
 
         if (this.sftpConfig.backupsNumber < 0) {
-            Logger.getLogger().warn("Failed to load config value!");
-            Logger.getLogger().warn("sftp.maxBackupsNumber must be >= 0, using default 0 value...");
+            Backuper.getInstance().getLogManager().warn("Failed to load config value!");
+            Backuper.getInstance().getLogManager().warn("sftp.maxBackupsNumber must be >= 0, using default 0 value...");
             this.sftpConfig.backupsNumber = 0;
         }
 
         if (this.sftpConfig.backupsWeight < 0) {
-            Logger.getLogger().warn("Failed to load config value!");
-            Logger.getLogger().warn("sftp.maxBackupsWeight must be >= 0, using default 0 value...");
+            Backuper.getInstance().getLogManager().warn("Failed to load config value!");
+            Backuper.getInstance().getLogManager().warn("sftp.maxBackupsWeight must be >= 0, using default 0 value...");
             this.sftpConfig.backupsWeight = 0;
         }
 
         if (this.localConfig.zipCompressionLevel > 9 || this.localConfig.zipCompressionLevel < 0) {
-            Logger.getLogger().warn("Failed to load config value!");
+            Backuper.getInstance().getLogManager().warn("Failed to load config value!");
             if (this.localConfig.zipCompressionLevel < 0) {
-                Logger.getLogger().warn("local.zipCompressionLevel must be >= 0, using 0 value...");
+                Backuper.getInstance().getLogManager().warn("local.zipCompressionLevel must be >= 0, using 0 value...");
                 this.localConfig.zipCompressionLevel = 0;
             }
             if (this.localConfig.zipCompressionLevel > 9) {
-                Logger.getLogger().warn("local.zipCompressionLevel must be <= 9, using 9 value...");
+                Backuper.getInstance().getLogManager().warn("local.zipCompressionLevel must be <= 9, using 9 value...");
                 this.localConfig.zipCompressionLevel = 9;
             }
         }
 
         if (this.ftpConfig.zipCompressionLevel > 9 || this.ftpConfig.zipCompressionLevel < 0) {
-            Logger.getLogger().warn("Failed to load config value!");
+            Backuper.getInstance().getLogManager().warn("Failed to load config value!");
             if (this.ftpConfig.zipCompressionLevel < 0) {
-                Logger.getLogger().warn("ftp.zipCompressionLevel must be >= 0, using 0 value...");
+                Backuper.getInstance().getLogManager().warn("ftp.zipCompressionLevel must be >= 0, using 0 value...");
                 this.ftpConfig.zipCompressionLevel = 0;
             }
             if (this.ftpConfig.zipCompressionLevel > 9) {
-                Logger.getLogger().warn("ftp.zipCompressionLevel must be <= 9, using 9 value...");
+                Backuper.getInstance().getLogManager().warn("ftp.zipCompressionLevel must be <= 9, using 9 value...");
                 this.ftpConfig.zipCompressionLevel = 9;
             }
         }
 
         if (this.sftpConfig.zipCompressionLevel > 9 || this.sftpConfig.zipCompressionLevel < 0) {
-            Logger.getLogger().warn("Failed to load config value!");
+            Backuper.getInstance().getLogManager().warn("Failed to load config value!");
             if (this.sftpConfig.zipCompressionLevel < 0) {
-                Logger.getLogger().warn("sftp.zipCompressionLevel must be >= 0, using 0 value...");
+                Backuper.getInstance().getLogManager().warn("sftp.zipCompressionLevel must be >= 0, using 0 value...");
                 this.sftpConfig.zipCompressionLevel = 0;
             }
             if (this.sftpConfig.zipCompressionLevel > 9) {
-                Logger.getLogger().warn("sftp.zipCompressionLevel must be <= 9, using 9 value...");
+                Backuper.getInstance().getLogManager().warn("sftp.zipCompressionLevel must be <= 9, using 9 value...");
                 this.sftpConfig.zipCompressionLevel = 9;
             }
         }
 
         if (this.googleDriveConfig.zipCompressionLevel > 9 || this.googleDriveConfig.zipCompressionLevel < 0) {
-            Logger.getLogger().warn("Failed to load config value!");
+            Backuper.getInstance().getLogManager().warn("Failed to load config value!");
             if (this.googleDriveConfig.zipCompressionLevel < 0) {
-                Logger.getLogger().warn("googleDrive.zipCompressionLevel must be >= 0, using 0 value...");
+                Backuper.getInstance().getLogManager().warn("googleDrive.zipCompressionLevel must be >= 0, using 0 value...");
                 this.googleDriveConfig.zipCompressionLevel = 0;
             }
             if (this.googleDriveConfig.zipCompressionLevel > 9) {
-                Logger.getLogger().warn("googleDrive.zipCompressionLevel must be <= 9, using 9 value...");
+                Backuper.getInstance().getLogManager().warn("googleDrive.zipCompressionLevel must be <= 9, using 9 value...");
                 this.googleDriveConfig.zipCompressionLevel = 9;
             }
         }
@@ -285,15 +284,15 @@ public class Config {
 
         if (!isConfigFileOk) {
 
-            Logger.getLogger().warn("The config.yml file is damaged, repair...");
-            Logger.getLogger().warn("If the plugin has just been updated, ignore this warning");
+            Backuper.getInstance().getLogManager().warn("The config.yml file is damaged, repair...");
+            Backuper.getInstance().getLogManager().warn("If the plugin has just been updated, ignore this warning");
 
             if (!configFile.delete()) {
-                Logger.getLogger().warn("Can not delete old config file!", sender);
+                Backuper.getInstance().getLogManager().warn("Can not delete old config file!", sender);
                 noErrors = false;
             }
 
-            Utils.plugin.saveDefaultConfig();
+            Backuper.getInstance().saveDefaultConfig();
             FileConfiguration newConfig = YamlConfiguration.loadConfiguration(configFile);
 
             newConfig.set("backup.autoBackupCron", this.autoBackupCron == null ? "0 0 0 1/1 * ? *" : this.autoBackupCron.getCronExpression());
@@ -371,8 +370,8 @@ public class Config {
 
             } catch (Exception e) {
 
-                Logger.getLogger().warn("Can not save config file!", sender);
-                Logger.getLogger().warn("Initialization", e);
+                Backuper.getInstance().getLogManager().warn("Can not save config file!", sender);
+                Backuper.getInstance().getLogManager().warn(e);
                 noErrors = false;
             }
         }
@@ -382,10 +381,10 @@ public class Config {
         }
 
         if (noErrors) {
-            Logger.getLogger().devLog("Config has been loaded successfully!", sender);
+            Backuper.getInstance().getLogManager().devLog("Config has been loaded successfully!", sender);
         }
         if (!noErrors) {
-            Logger.getLogger().warn("Config has been loaded with errors!", sender);
+            Backuper.getInstance().getLogManager().warn("Config has been loaded with errors!", sender);
         }
     }
 

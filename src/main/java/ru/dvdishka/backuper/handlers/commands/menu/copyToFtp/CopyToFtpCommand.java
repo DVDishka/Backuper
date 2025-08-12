@@ -3,17 +3,15 @@ package ru.dvdishka.backuper.handlers.commands.menu.copyToFtp;
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
+import ru.dvdishka.backuper.backend.backup.Backup;
 import ru.dvdishka.backuper.backend.backup.FtpBackup;
 import ru.dvdishka.backuper.backend.backup.LocalBackup;
-import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.tasks.Task;
-import ru.dvdishka.backuper.backend.tasks.ftp.FtpSendFileFolderTask;
-import ru.dvdishka.backuper.backend.utils.FtpUtils;
-import ru.dvdishka.backuper.backend.utils.Utils;
+import ru.dvdishka.backuper.backend.task.BaseAsyncTask;
+import ru.dvdishka.backuper.backend.task.FtpSendDirTask;
+import ru.dvdishka.backuper.backend.util.FtpUtils;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
-import ru.dvdishka.backuper.handlers.commands.task.status.StatusCommand;
 
 import java.util.List;
 
@@ -46,7 +44,7 @@ public class CopyToFtpCommand extends Command {
             return;
         }
 
-        if (Backuper.isLocked()) {
+        if (Backuper.getInstance().getTaskManager().isLocked()) {
             cancelSound();
             returnFailure("Blocked by another operation!");
             return;
@@ -62,27 +60,29 @@ public class CopyToFtpCommand extends Command {
 
         buttonSound();
 
-        StatusCommand.sendTaskStartedMessage("CopyToFtp", sender);
+        Backuper.getInstance().getScheduleManager().runAsync(() -> {
 
-        Scheduler.getInstance().runAsync(Utils.plugin, () -> {
-
-            String inProgressName = localBackup.getName() + " in progress";
-            if (localBackup.getFileType().equals("(ZIP)")) {
+            String inProgressName = "%s in progress".formatted(localBackup.getName());
+            if (Backup.BackupFileType.ZIP.equals(localBackup.getFileType())) {
                 inProgressName += ".zip";
             }
 
-            Task task = new FtpSendFileFolderTask(localBackup.getFile(),
+            BaseAsyncTask task = new FtpSendDirTask(localBackup.getFile(),
                     FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(), inProgressName),
-                    false, true, true, List.of(Permissions.LOCAL_COPY_TO_FTP), sender);
-            task.run();
+                    false, true);
+            Backuper.getInstance().getTaskManager().startTask(task, sender, List.of(Permissions.LOCAL_COPY_TO_FTP));
 
             if (!task.isCancelled()) {
-                FtpUtils.renameFile(FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(), inProgressName),
-                        FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(), localBackup.getFileName()),
-                        sender);
+                try {
+                    FtpUtils.renameFile(FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(), inProgressName),
+                            FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(), localBackup.getFileName())
+                    );
+                    Backup.saveBackupSizeToCache(Backup.StorageType.FTP, localBackup.getName(), task.getTaskMaxProgress());
+                } catch (Exception e) {
+                    Backuper.getInstance().getLogManager().warn("Failed to rename backup \"in-progress\" file on FTP(S) server");
+                    Backuper.getInstance().getLogManager().warn(e);
+                }
             }
-
-            sendMessage("CopyToFtp task completed");
         });
     }
 }

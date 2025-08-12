@@ -4,14 +4,15 @@ import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.backend.common.Logger;
-import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.tasks.common.BackupTask;
-import ru.dvdishka.backuper.backend.utils.*;
+import ru.dvdishka.backuper.backend.task.BackupTask;
+import ru.dvdishka.backuper.backend.task.BaseAsyncTask;
+import ru.dvdishka.backuper.backend.util.FtpUtils;
+import ru.dvdishka.backuper.backend.util.GoogleDriveUtils;
+import ru.dvdishka.backuper.backend.util.SftpUtils;
+import ru.dvdishka.backuper.backend.util.UIUtils;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
-import ru.dvdishka.backuper.handlers.commands.task.status.StatusCommand;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -79,7 +80,7 @@ public class BackupCommand extends Command {
 
     public void execute() {
 
-        if (Backuper.isLocked()) {
+        if (Backuper.getInstance().getTaskManager().isLocked()) {
             cancelSound();
             returnFailure("Blocked by another operation!");
             return;
@@ -105,19 +106,16 @@ public class BackupCommand extends Command {
 
         if (isFtp && !FtpUtils.checkConnection(sender)) {
             cancelSound();
-            returnFailure("FTP(S) storage is disabled or unavailable!");
             return;
         }
 
         if (isSftp && !SftpUtils.checkConnection(sender)) {
             cancelSound();
-            returnFailure("SFTP storage is disabled or unavailable!");
             return;
         }
 
-        if (isGoogleDrive && (!Config.getInstance().getGoogleDriveConfig().isEnabled() || !GoogleDriveUtils.isAuthorized(sender))) {
+        if (isGoogleDrive && (!Config.getInstance().getGoogleDriveConfig().isEnabled() || !GoogleDriveUtils.checkConnection())) {
             cancelSound();
-            returnFailure("Google Drive storage is disabled or account is not linked!");
             return;
         }
 
@@ -125,7 +123,7 @@ public class BackupCommand extends Command {
 
         if (Config.getInstance().getAlertTimeBeforeRestart() != -1) {
 
-            Scheduler.getInstance().runSyncDelayed(Utils.plugin, () -> {
+            Backuper.getInstance().getScheduleManager().runSyncDelayed(Backuper.getInstance(), () -> {
 
                 UIUtils.sendBackupAlert(min(Config.getInstance().getAlertTimeBeforeRestart(), delay), afterBackup);
 
@@ -141,23 +139,19 @@ public class BackupCommand extends Command {
             backupPermissions.add(Permissions.RESTART);
         }
 
-        Scheduler.getInstance().runSyncDelayed(Utils.plugin, () -> {
+        Backuper.getInstance().getScheduleManager().runSyncDelayed(Backuper.getInstance(), () -> {
 
-            StatusCommand.sendTaskStartedMessage("Backup", sender);
-
-            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
-                new BackupTask(afterBackup, false, isLocal, isFtp, isSftp, isGoogleDrive, true, backupPermissions, sender).run();
-                sendMessage("Backup task completed");
-            });
+            BaseAsyncTask task = new BackupTask(afterBackup, false, isLocal, isFtp, isSftp, isGoogleDrive);
+            Backuper.getInstance().getTaskManager().startTaskAsync(task, sender, backupPermissions);
 
         }, delay * 20);
 
         if (arguments.get("delaySeconds") != null) {
 
-            returnSuccess("Backup task will be started in " + delay + " seconds");
+            returnSuccess("Backup task will be started in %s seconds".formatted(delay));
 
             if (!(sender instanceof ConsoleCommandSender)) {
-                Logger.getLogger().log("Backup task will be started in " + delay + " seconds");
+                Backuper.getInstance().getLogManager().log("Backup task will be started in %s seconds".formatted(delay));
             }
         }
     }

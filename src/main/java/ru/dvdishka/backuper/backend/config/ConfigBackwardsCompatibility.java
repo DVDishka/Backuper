@@ -2,7 +2,7 @@ package ru.dvdishka.backuper.backend.config;
 
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
-import ru.dvdishka.backuper.backend.common.Logger;
+import ru.dvdishka.backuper.Backuper;
 
 import java.io.File;
 import java.time.LocalDateTime;
@@ -88,8 +88,8 @@ public class ConfigBackwardsCompatibility {
         int backupTime = config.getInt("backup.backupTime", -1);
 
         if (backupTime < -1 || backupTime > 23) {
-            Logger.getLogger().warn("Failed to load config value!");
-            Logger.getLogger().warn("backupTime must be >= -1, using default -1 value...");
+            Backuper.getInstance().getLogManager().warn("Failed to load config value!");
+            Backuper.getInstance().getLogManager().warn("backupTime must be >= -1, using default -1 value...");
             backupTime = -1;
         }
 
@@ -98,7 +98,7 @@ public class ConfigBackwardsCompatibility {
             cron = "0 0 " + backupTime + " 1/1 * ? *";
         } else {
             cron = "0 0 0 1/1 * ? *";
-            Logger.getLogger().warn("The format of the auto-backup schedule definition has changed! Please go to Backuper's config.yml and define the schedule using the new format! Your old schedule will not work now!");
+            Backuper.getInstance().getLogManager().warn("The format of the auto-backup schedule definition has changed! Please go to Backuper's config.yml and define the schedule using the new format! Your old schedule will not work now!");
         }
 
         config.set("backup.autoBackupCron", cron);
@@ -114,7 +114,7 @@ public class ConfigBackwardsCompatibility {
             File backupsDir = new File(Config.getInstance().getLocalConfig().getBackupsFolder());
 
             if (!backupsDir.exists() || backupsDir.listFiles() == null) {
-                Logger.getLogger().warn("Wrong local.backupFolder config field value", sender);
+                Backuper.getInstance().getLogManager().warn("Wrong local.backupFolder config field value", sender);
                 throw new RuntimeException();
             }
 
@@ -144,14 +144,14 @@ public class ConfigBackwardsCompatibility {
                     File newFile = new File(backupsDir, newFileName);
 
                     if (!file.renameTo(newFile)) {
-                        Logger.getLogger().warn("Failed to reformat backup to new unified format " + newFile.getAbsolutePath() + " (it will be unavailable)", sender);
+                        Backuper.getInstance().getLogManager().warn("Failed to reformat backup to new unified format " + newFile.getAbsolutePath() + " (it will be unavailable)", sender);
                     }
                 }
             }
 
         } catch (Exception e) {
-            Logger.getLogger().warn("Failed to unify backup name format", sender);
-            Logger.getLogger().warn("BackwardsCompatibility:UnifyBackupNameFormat", e);
+            Backuper.getInstance().getLogManager().warn("Failed to unify backup name format", sender);
+            Backuper.getInstance().getLogManager().warn(e);
         }
     }
 }

@@ -5,16 +5,12 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.Trigger;
 import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.backend.common.Logger;
-import ru.dvdishka.backuper.backend.common.Scheduler;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.tasks.common.BackupTask;
-import ru.dvdishka.backuper.backend.tasks.common.DeleteBrokenBackupsTask;
-import ru.dvdishka.backuper.backend.tasks.common.DeleteOldBackupsTask;
-import ru.dvdishka.backuper.backend.utils.UIUtils;
-import ru.dvdishka.backuper.backend.utils.Utils;
+import ru.dvdishka.backuper.backend.task.BackupTask;
+import ru.dvdishka.backuper.backend.task.BaseAsyncTask;
+import ru.dvdishka.backuper.backend.task.TaskManager;
+import ru.dvdishka.backuper.backend.util.UIUtils;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
-import ru.dvdishka.backuper.handlers.commands.task.status.StatusCommand;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -29,37 +25,22 @@ public class AutoBackupQuartzJob implements org.quartz.Job {
     @Override
     public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
 
-        // AUTO BACKUP PERMISSION LIST CREATION
-        List<Permissions> autoBackupPermissions = new ArrayList<>();
-        {
-            autoBackupPermissions.add(Permissions.BACKUP);
-            if (Config.getInstance().getAfterBackup().equals("STOP")) {
-                autoBackupPermissions.add(Permissions.STOP);
-            }
-            if (Config.getInstance().getAfterBackup().equals("RESTART")) {
-                autoBackupPermissions.add(Permissions.RESTART);
-            }
-        }
-
-        Logger.getLogger().log("Deleting old backups...");
-        StatusCommand.sendTaskStartedMessage("DeleteOldBackups", Bukkit.getConsoleSender());
-        new DeleteOldBackupsTask(true, List.of(Permissions.BACKUP), Bukkit.getConsoleSender()).run();
-
-        if (Config.getInstance().isDeleteBrokenBackups()) {
-            Logger.getLogger().log("Deleting broken backups...");
-            StatusCommand.sendTaskStartedMessage("DeleteBrokenBackups", Bukkit.getConsoleSender());
-            new DeleteBrokenBackupsTask(true, List.of(Permissions.BACKUP), Bukkit.getConsoleSender()).run();
-        }
-
         if (Config.getInstance().isAutoBackup()) {
 
             scheduleNextBackupAlert(jobExecutionContext.getTrigger()); // Prepare alert for next backup
 
-            Scheduler.getInstance().runAsync(Utils.plugin, () -> {
-                if (!Backuper.isLocked()) {
-                    new BackupTask(Config.getInstance().getAfterBackup(), true, true, autoBackupPermissions, null).run();
-                } else {
-                    Logger.getLogger().warn("Failed to start an Auto Backup task. Blocked by another operation", Bukkit.getConsoleSender());
+            Backuper.getInstance().getScheduleManager().runAsync(() -> {
+                BaseAsyncTask backupTask = new BackupTask(Config.getInstance().getAfterBackup(), true);
+                List<Permissions> permissions = new ArrayList<>(){};
+                permissions.add(Permissions.BACKUP);
+                if ("RESTART".equals(Config.getInstance().getAfterBackup())) {
+                    permissions.add(Permissions.RESTART);
+                }
+                if ("STOP".equals(Config.getInstance().getAfterBackup())) {
+                    permissions.add(Permissions.STOP);
+                }
+                if (TaskManager.Result.LOCKED.equals(Backuper.getInstance().getTaskManager().startTask(backupTask, Bukkit.getConsoleSender(), permissions))) {
+                    Backuper.getInstance().getLogManager().warn("Failed to start an Auto Backup task. Blocked by another operation", Bukkit.getConsoleSender());
                 }
             });
         }
@@ -72,7 +53,7 @@ public class AutoBackupQuartzJob implements org.quartz.Job {
             delay = max((delay - Config.getInstance().getAlertTimeBeforeRestart()) * 20, 1); // Subtracting alert pre-delay from new backup's delay
             long alertTime = min(Config.getInstance().getAlertTimeBeforeRestart(), delay); // Used for notification only
 
-            Scheduler.getInstance().runSyncDelayed(Utils.plugin, () -> {
+            Backuper.getInstance().getScheduleManager().runSyncDelayed(Backuper.getInstance(), () -> {
                 UIUtils.sendBackupAlert(alertTime, Config.getInstance().getAfterBackup());
             }, delay);
         }

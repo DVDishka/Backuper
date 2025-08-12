@@ -8,6 +8,7 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
+import ru.dvdishka.backuper.backend.backup.Backup;
 import ru.dvdishka.backuper.backend.backup.LocalBackup;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.handlers.commands.Command;
@@ -40,16 +41,15 @@ public class ToZIPConfirmationCommand extends Command {
         LocalBackup localBackup = LocalBackup.getInstance(backupName);
         String backupFormattedName = localBackup.getFormattedName();
 
-        long backupSize = localBackup.getMbSize(sender);
-        String zipFolderBackup = localBackup.getFileType();
+        long backupSize = localBackup.getMbSize();
 
-        if (zipFolderBackup.equals("(ZIP)")) {
+        if (Backup.BackupFileType.ZIP.equals(localBackup.getFileType())) {
             cancelSound();
             returnFailure("Backup is already ZIP!");
             return;
         }
 
-        if (Backuper.isLocked()) {
+        if (Backuper.getInstance().getTaskManager().isLocked()) {
             cancelSound();
             returnFailure("Backup is blocked by another operation!");
             return;
@@ -68,13 +68,13 @@ public class ToZIPConfirmationCommand extends Command {
 
         message = message
                 .append(Component.text(backupFormattedName)
-                        .hoverEvent(HoverEvent.showText(Component.text("(local) " + zipFolderBackup + " " + backupSize + " MB"))))
+                        .hoverEvent(HoverEvent.showText(Component.text("(%s) (%s) %s MB".formatted(localBackup.getStorageType().name(), localBackup.getFileType().name(), backupSize)))))
                 .append(Component.newline())
                 .append(Component.newline());
 
         message = message
                 .append(Component.text("[CONVERT BACKUP]")
-                        .clickEvent(ClickEvent.runCommand("/backuper menu local \"" + backupName + "\" toZIP"))
+                        .clickEvent(ClickEvent.runCommand("/backuper menu local \"%s\" toZIP".formatted(backupName)))
                         .color(TextColor.color(0xB02100))
                         .decorate(TextDecoration.BOLD));
 

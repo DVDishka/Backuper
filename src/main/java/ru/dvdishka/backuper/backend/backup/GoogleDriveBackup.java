@@ -3,19 +3,17 @@ package ru.dvdishka.backuper.backend.backup;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.api.services.drive.model.File;
-import org.bukkit.command.CommandSender;
-import ru.dvdishka.backuper.backend.common.Logger;
+import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.tasks.Task;
-import ru.dvdishka.backuper.backend.tasks.googleDrive.GoogleDriveDeleteFileFolderTask;
-import ru.dvdishka.backuper.backend.utils.GoogleDriveUtils;
-import ru.dvdishka.backuper.handlers.commands.Permissions;
+import ru.dvdishka.backuper.backend.exception.StorageQuotaExceededException;
+import ru.dvdishka.backuper.backend.task.BaseAsyncTask;
+import ru.dvdishka.backuper.backend.task.GoogleDriveDeleteDirTask;
+import ru.dvdishka.backuper.backend.util.GoogleDriveUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 public class GoogleDriveBackup extends ExternalBackup {
@@ -52,14 +50,19 @@ public class GoogleDriveBackup extends ExternalBackup {
         return backupList.get("all", (key) -> {
 
             ArrayList<GoogleDriveBackup> backups = new ArrayList<>();
-            for (File driveFile : GoogleDriveUtils.ls(Config.getInstance().getGoogleDriveConfig().getBackupsFolderId(), null)) {
-                try {
-                    GoogleDriveBackup backup = getInstance(driveFile.getName().replace(".zip", ""));
+            try {
+                for (File driveFile : GoogleDriveUtils.ls(Config.getInstance().getGoogleDriveConfig().getBackupsFolderId(), null)) {
+                    try {
+                        GoogleDriveBackup backup = getInstance(driveFile.getName().replace(".zip", ""));
 
-                    if (backup != null) {
-                        backups.add(backup);
+                        if (backup != null) {
+                            backups.add(backup);
+                        }
+                    } catch (Exception ignored) {
                     }
-                } catch (Exception ignored) {}
+                }
+            } catch (StorageQuotaExceededException e) {
+                throw new RuntimeException(e);
             }
             return backups;
         });
@@ -87,15 +90,15 @@ public class GoogleDriveBackup extends ExternalBackup {
             return false;
 
         } catch (Exception e) {
-            Logger.getLogger().warn("Failed to connect to GoogleDrive or a Google account is not connected");
-            Logger.getLogger().warn(GoogleDriveBackup.class, e);
+            Backuper.getInstance().getLogManager().warn("Failed to connect to GoogleDrive or a Google account is not connected");
+            Backuper.getInstance().getLogManager().warn(e);
             return false;
         }
     }
 
     @Override
-    Task getDirectDeleteTask(boolean setLocked, CommandSender sender) {
-        return new GoogleDriveDeleteFileFolderTask(getDriveFile(sender).getId(), setLocked, List.of(Permissions.GOOGLE_DRIVE_DELETE), sender);
+    public BaseAsyncTask getRawDeleteTask() {
+        return new GoogleDriveDeleteDirTask(getDriveFile().getId());
     }
 
     @Override
@@ -109,10 +112,10 @@ public class GoogleDriveBackup extends ExternalBackup {
     }
 
     @Override
-    long calculateByteSize(CommandSender sender) {
+    long calculateByteSize() {
 
         try {
-            File driveFile = GoogleDriveUtils.getService(sender).files().get(getPath()).setFields("appProperties").execute();
+            File driveFile = GoogleDriveUtils.getService().files().get(getPath()).setFields("appProperties").execute();
 
             Map<String, String> appProperties = driveFile.getAppProperties();
 
@@ -122,8 +125,8 @@ public class GoogleDriveBackup extends ExternalBackup {
         } catch (Exception ignored) {}
 
         try {
-            long size = GoogleDriveUtils.getFileByteSize(getDriveFile(sender).getId(), sender);
-            saveSizeToFileProperties(size, sender);
+            long size = GoogleDriveUtils.getFileByteSize(getDriveFile().getId());
+            saveSizeToFileProperties(size);
             return size;
         } catch (Exception e) {
             return 0;
@@ -132,33 +135,36 @@ public class GoogleDriveBackup extends ExternalBackup {
 
     /**
      * Puts given size to file`s appProperties
+     *
      * @param byteSize
-     * @param sender
      */
-    public void saveSizeToFileProperties(long byteSize, CommandSender sender) {
+    public boolean saveSizeToFileProperties(long byteSize) {
 
         try {
-
-            GoogleDriveUtils.addProperty(getDriveFile(sender).getId(), "size", String.valueOf(byteSize), sender);
-
+            GoogleDriveUtils.addProperty(getDriveFile().getId(), "size", String.valueOf(byteSize));
+            return true;
         } catch (Exception e) {
-            Logger.getLogger().warn("Failed to save backup size to Google Drive", sender);
-            Logger.getLogger().warn(GoogleDriveBackup.class, e);
+            Backuper.getInstance().getLogManager().warn("Failed to save backup size to Google Drive");
+            Backuper.getInstance().getLogManager().warn(e);
+            return false;
         }
     }
 
-    /**
-     * @return Possible values: "(Folder)" "(ZIP)"
-     */
     @Override
-    public String getFileType() {
-        return GoogleDriveUtils.getFileByName(backupName + ".zip",
-                Config.getInstance().getGoogleDriveConfig().getBackupsFolderId(), null) != null ? "(ZIP)" : "(Folder)";
+    public BackupFileType getFileType() {
+        try {
+            return GoogleDriveUtils.getFileByName("%s.zip".formatted(backupName),
+                    Config.getInstance().getGoogleDriveConfig().getBackupsFolderId()) != null ? BackupFileType.ZIP : BackupFileType.DIR;
+        } catch (Exception e) {
+            Backuper.getInstance().getLogManager().warn("Failed to get Google Drive backup file type");
+            Backuper.getInstance().getLogManager().warn(e);
+            return null;
+        }
     }
 
     @Override
     public String getFileName() {
-        return getDriveFile(null).getName();
+        return getDriveFile().getName();
     }
 
     /**
@@ -166,20 +172,20 @@ public class GoogleDriveBackup extends ExternalBackup {
      */
     @Override
     public String getPath() {
-        return getDriveFile(null).getId();
+        return getDriveFile().getId();
     }
 
     /**
-     * Returns null if there is this backup does not exist
-     * @param sender
+     * Returns null if this backup doesn't exist
+     *
      * @return
      */
-    public File getDriveFile(CommandSender sender) {
+    public File getDriveFile() {
 
         try {
-            return GoogleDriveUtils.getFileByName(backupName + (Objects.equals(getFileType(), "(ZIP)") ? ".zip" : ""),
-                    Config.getInstance().getGoogleDriveConfig().getBackupsFolderId(),
-                    sender);
+            return GoogleDriveUtils.getFileByName(backupName + (BackupFileType.ZIP.equals(getFileType()) ? ".zip" : ""),
+                    Config.getInstance().getGoogleDriveConfig().getBackupsFolderId()
+            );
         } catch (Exception e) {
             return null;
         }
