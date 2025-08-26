@@ -2,11 +2,13 @@ package ru.dvdishka.backuper.backend.task;
 
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
+import ru.dvdishka.backuper.backend.storage.Storage;
 
 import java.io.File;
 
-public class ConvertZipToFolderTask extends BaseAsyncTask {
+public class ConvertZipToFolderTask extends BaseTask {
 
+    private final Storage storage;
     private final File sourceZipFileDir;
 
     private UnpackZipTask unpackZipTask;
@@ -15,14 +17,13 @@ public class ConvertZipToFolderTask extends BaseAsyncTask {
     private final long deleteProgressMultiplier = 1;
     private final long unZipProgressMultiplier = 50;
 
-    public ConvertZipToFolderTask(File sourceZipFileDir) {
-
-        super();
+    public ConvertZipToFolderTask(Storage storage, File sourceZipFileDir) {
+        this.storage = storage;
         this.sourceZipFileDir = sourceZipFileDir;
     }
 
     @Override
-    protected void run() {
+    public void run() {
 
         if (!cancelled) {
             try {
@@ -42,7 +43,7 @@ public class ConvertZipToFolderTask extends BaseAsyncTask {
 
         if (!cancelled) {
             devLog("The Rename \"in progress\" Folder/ZIP local task has been started");
-            if (!new File(sourceZipFileDir.getPath().replace(".zip", "") + " in progress").renameTo(new File(sourceZipFileDir.getPath().replace(".zip", "")))) {
+            if (!new File("%s in progress".formatted(sourceZipFileDir.getPath().replace(".zip", ""))).renameTo(new File(sourceZipFileDir.getPath().replace(".zip", "")))) {
                 warn("The Rename \"in progress\" ZIP local task has been finished with an exception!", sender);
             }
             devLog("The Rename \"in progress\" Folder/ZIP local task has been finished");
@@ -50,10 +51,9 @@ public class ConvertZipToFolderTask extends BaseAsyncTask {
     }
 
     @Override
-    protected void prepareTask(CommandSender sender) {
-
-        unpackZipTask = new UnpackZipTask(sourceZipFileDir, new File(sourceZipFileDir.getPath().replace(".zip", "") + " in progress"));
-        deleteDirTask = new DeleteDirTask(sourceZipFileDir);
+    public void prepareTask(CommandSender sender) {
+        unpackZipTask = new UnpackZipTask(sourceZipFileDir, new File("%s in progress".formatted(sourceZipFileDir.getPath().replace(".zip", ""))));
+        deleteDirTask = new DeleteDirTask(storage, sourceZipFileDir.toPath().toAbsolutePath().normalize().toString());
     }
 
     @Override
@@ -73,7 +73,7 @@ public class ConvertZipToFolderTask extends BaseAsyncTask {
     }
 
     @Override
-    protected void cancel() {
+    public void cancel() {
         cancelled = true;
         Backuper.getInstance().getTaskManager().cancelTaskRaw(unpackZipTask);
         Backuper.getInstance().getTaskManager().cancelTaskRaw(deleteDirTask);

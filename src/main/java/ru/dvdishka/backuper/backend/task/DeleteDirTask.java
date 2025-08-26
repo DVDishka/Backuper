@@ -1,74 +1,70 @@
 package ru.dvdishka.backuper.backend.task;
 
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.SftpException;
 import org.bukkit.command.CommandSender;
-import ru.dvdishka.backuper.backend.util.Utils;
+import ru.dvdishka.backuper.backend.storage.Storage;
 
-import java.io.File;
-import java.nio.file.Files;
-import java.util.Objects;
+import java.io.IOException;
 
-public class DeleteDirTask extends BaseAsyncTask {
+public class DeleteDirTask extends BaseTask implements SingleStorageTask {
 
-    private final File dirToDelete;
+    private final Storage storage;
+    private final String path;
 
-    public DeleteDirTask(File dirToDelete) {
+    public DeleteDirTask(Storage storage, String path) {
+        this.storage = storage;
+        this.path = path;
+    }
 
-        super();
-        this.dirToDelete = dirToDelete;
+
+    @Override
+    public void run() throws IOException, JSchException, SftpException {
+
+        if (!cancelled) {
+            deleteDir(path);
+        }
     }
 
     @Override
-    protected void run() {
-        deleteDir(dirToDelete);
+    public void prepareTask(CommandSender sender) throws SftpException {
+        maxProgress = storage.getDirByteSize(path);
     }
 
-    private void deleteDir(File dir) {
+    private void deleteDir(String currentPath) {
 
         if (cancelled) {
             return;
         }
 
-        if (!dir.exists()) {
-            warn("Directory " + dir.getAbsolutePath() + " does not exist");
-            return;
-        }
+        try {
+            if (storage.isDir(currentPath)) {
 
-        if (!cancelled && dir.isFile()) {
-
-            long fileByteSize = 0;
-
-            try {
-                fileByteSize = Files.size(dir.toPath());
-            } catch (Exception e) {
-                warn("Failed to get file size before deletion", sender);
-                warn(e);
+                for (String file : storage.ls(currentPath)) {
+                    if (file.equals(".") || file.equals("..")) {
+                        continue;
+                    }
+                    deleteDir(storage.resolve(currentPath, file));
+                }
+                storage.delete(currentPath);
+            } else {
+                long fileSize = storage.getDirByteSize(currentPath);
+                storage.delete(currentPath);
+                incrementCurrentProgress(fileSize);
             }
-
-            if (!dir.delete()) {
-
-                warn("Can not delete file " + dir.getName(), sender);
-            }
-
-            incrementCurrentProgress(fileByteSize);
-        } else if (dir.isDirectory()) {
-
-            for (File file : Objects.requireNonNull(dir.listFiles())) {
-
-                deleteDir(file);
-            }
-            if (!dir.delete()) {
-
-                warn("Can not delete directory " + dir.getName(), sender);
-            }
+        } catch (Exception e) {
+            warn("Something went while trying to delete %s directory from %s storage".formatted(currentPath, storage.getId()), sender);
+            warn(e);
         }
     }
 
     @Override
-    protected void prepareTask(CommandSender sender) {
-        maxProgress = Utils.getFileFolderByteSize(dirToDelete);
+    public void cancel() {
+        cancelled = true;
     }
 
-    protected void cancel() {
-        cancelled = true;
+    @Override
+    public Storage getStorage() {
+        return storage;
     }
 }

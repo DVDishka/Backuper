@@ -1,6 +1,6 @@
 package ru.dvdishka.backuper.backend.config;
 
-public class SftpConfig {
+public class SftpConfig implements StorageConfig {
 
     boolean enabled;
     boolean autoBackup;

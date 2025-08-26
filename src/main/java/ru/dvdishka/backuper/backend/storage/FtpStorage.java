@@ -1,0 +1,332 @@
+package ru.dvdishka.backuper.backend.storage;
+
+import org.apache.commons.net.ftp.FTP;
+import org.apache.commons.net.ftp.FTPClient;
+import org.apache.commons.net.ftp.FTPFile;
+import org.apache.commons.net.ftp.FTPReply;
+import org.apache.commons.net.io.CopyStreamEvent;
+import org.apache.commons.net.io.CopyStreamListener;
+import org.bukkit.command.CommandSender;
+import ru.dvdishka.backuper.Backuper;
+import ru.dvdishka.backuper.backend.backup.Backup;
+import ru.dvdishka.backuper.backend.config.FtpConfig;
+import ru.dvdishka.backuper.backend.config.StorageConfig;
+import ru.dvdishka.backuper.backend.util.FtpUtils;
+
+import java.io.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class FtpStorage implements Storage {
+
+    private String id = null;
+    private final FtpConfig config;
+    private FTPClient ftpClient = null;
+
+    public FtpStorage(FtpConfig config) {
+        this.config = config;
+    }
+
+    public FTPClient getClient() throws StorageConnectionException {
+        if (ftpClient != null && ftpClient.isConnected() && ftpClient.isAvailable()) {
+            try {
+                if (ftpClient.sendNoOp()) {
+                    return ftpClient;
+                }
+            } catch (IOException ignored) {
+                // We shouldn't handle it, we'll just try to establish a new connection
+            }
+        }
+
+        FTPClient ftp = new FTPClient();
+
+        // Enable FTP logging
+        // ftp.addProtocolCommandListener(new PrintCommandListener(new PrintWriter(System.out)));
+
+        ftp.setConnectTimeout(10 * 1000);
+        ftp.setDefaultTimeout(30 * 1000);
+        ftp.setDataTimeout(30 * 1000);
+        ftp.setControlKeepAliveTimeout(30 * 1000);
+        ftp.setControlEncoding("UTF-8");
+
+        try {
+            ftp.connect(config.getAddress(), config.getPort());
+        } catch (IOException e) {
+            throw new StorageConnectionException("Failed to establish FTP(S) connection", e);
+        }
+        int reply = ftp.getReplyCode();
+
+        if (!FTPReply.isPositiveCompletion(reply)) {
+            try {
+                ftp.disconnect();
+            } catch (IOException ignored) {
+                // It only can't disconnect if it's already disconnected
+            }
+            throw new StorageConnectionException("Failed to establish FTP(S) connection");
+        }
+
+        ftp.enterLocalPassiveMode();
+        try {
+            ftp.login(config.getUsername(), config.getPassword());
+        } catch (IOException e) {
+            throw new StorageConnectionException("Failed to login FTP(S) connection", e);
+        }
+
+        reply = ftp.getReplyCode();
+
+        if (!FTPReply.isPositiveCompletion(reply)) {
+            try {
+                ftp.disconnect();
+            } catch (IOException ignored) {
+                // It only can't disconnect if it's already disconnected
+            }
+            throw new StorageConnectionException("Failed to establish FTP(S) connection");
+        }
+
+        try {
+            ftp.setFileType(FTP.BINARY_FILE_TYPE, FTP.BINARY_FILE_TYPE);
+            ftp.setFileTransferMode(FTP.STREAM_TRANSFER_MODE);
+            ftp.setListHiddenFiles(true);
+        } catch (IOException e) {
+            throw new StorageConnectionException("Failed to set FTP(S) connection parameters", e);
+        }
+
+        return ftp;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    @Override
+    public String getId() {
+        return this.id;
+    }
+
+    @Override
+    public Backup.StorageType getType() {
+        return Backup.StorageType.FTP;
+    }
+
+    @Override
+    public StorageConfig getConfig() {
+        return config;
+    }
+
+    @Override
+    public boolean checkConnection() {
+        return checkConnection(null);
+    }
+
+    @Override
+    public boolean checkConnection(CommandSender sender) {
+        try {
+            if (!config.isEnabled()) {
+                Backuper.getInstance().getLogManager().warn("FTP(S) server is disabled in config.yml", sender);
+                return false;
+            }
+
+            getClient();
+            return true;
+        } catch (Exception e) {
+            Backuper.getInstance().getLogManager().warn("Failed to establish connection to the FTP(S) server", sender);
+            Backuper.getInstance().getLogManager().warn(e);
+            return false;
+        }
+    }
+
+    @Override
+    public List<String> ls(String path) throws StorageMethodException, StorageConnectionException {
+        FTPClient ftp = getClient();
+
+        try {
+            ftp.changeWorkingDirectory(path);
+            FTPFile[] files = ftp.listFiles();
+            ftp.changeWorkingDirectory("");
+            return Arrays.stream(files).map(FTPFile::getName).collect(Collectors.toCollection(ArrayList::new));
+        } catch (IOException e) {
+            throw new StorageMethodException("Failed to get file list from dir \"%s\" using FTP(S) connection".formatted(path));
+        }
+    }
+
+    @Override
+    public String resolve(String path, String fileName) {
+        if (!path.endsWith(config.getPathSeparatorSymbol())) {
+            path = "%s%s".formatted(path, config.getPathSeparatorSymbol());
+        }
+        return "%s%s".formatted(path, fileName);
+    }
+
+    @Override
+    public boolean isFile(String path) throws StorageMethodException, StorageConnectionException {
+        FTPClient ftp = getClient();
+        try {
+            ftp.changeWorkingDirectory("");
+            return ftp.mlistFile(path).isFile();
+        } catch (IOException e) {
+            throw new StorageMethodException("Failed to check if \"%s\" in FTP(S) storage is a file or dir".formatted(path));
+        }
+    }
+
+    @Override
+    public long getDirByteSize(String remoteFilePath) throws StorageMethodException, StorageConnectionException {
+        FTPClient ftp = getClient();
+
+        try {
+            long dirSize = 0;
+            ftp.changeWorkingDirectory("");
+            FTPFile currentDir = ftp.mlistFile(remoteFilePath);
+
+            if (currentDir.isFile()) {
+                dirSize += currentDir.getSize();
+            }
+            if (currentDir.isDirectory()) {
+
+                if (!ftp.changeWorkingDirectory(remoteFilePath)) {
+                    throw new StorageMethodException("Failed to change Working directory to \"%s\" using FTP(S) connection".formatted(remoteFilePath));
+                }
+                FTPFile[] files = ftp.listFiles();
+
+                for (FTPFile file : files) {
+                    if (file.getName().equals(".") || file.getName().equals("..")) {
+                        continue;
+                    }
+                    dirSize += getDirByteSize(FtpUtils.resolve(remoteFilePath, file.getName()));
+                }
+            }
+            ftp.changeWorkingDirectory("");
+            return dirSize;
+        } catch (IOException e) {
+            throw new StorageMethodException("Failed to get \"%s\" dir size using FTP(S) connection".formatted(remoteFilePath), e);
+        }
+    }
+
+    @Override
+    public void createDir(String newDirName, String parentDir) throws StorageMethodException, StorageConnectionException {
+        FTPClient ftp = getClient();
+        try {
+            ftp.mkd(resolve(parentDir, newDirName));
+        } catch (IOException e) {
+            throw new StorageMethodException("Failed to create dir \"%s\" using FTP(S) connection".formatted(parentDir));
+        }
+    }
+
+    @Override
+    public void uploadFile(File file, String newFileName, String remoteParentDir, StorageProgressListener progressListener) throws StorageLimitException, StorageMethodException, StorageConnectionException {
+        FTPClient ftp = getClient();
+
+        String remotePath = resolve(remoteParentDir, newFileName);
+        try (InputStream inputStream = new FileInputStream(file)) {
+
+            ftp.setCopyStreamListener(new FtpStorageProgressListener(progressListener));
+            if (!ftp.storeFile(remotePath, inputStream)) {
+                throw new StorageMethodException("Failed to send file \"%s\" to \"%s\"".formatted(file.getCanonicalPath(), remotePath));
+            }
+        } catch (IOException e) {
+            throw new StorageMethodException("Failed to upload file \"%s\" to \"%s\"".formatted(file.getAbsolutePath(), remotePath));
+        } finally {
+            ftp.setCopyStreamListener(null);
+        }
+    }
+
+    @Override
+    public void uploadFile(InputStream sourceStream, String newFileName, String remoteParentDir, StorageProgressListener progressListener) throws StorageLimitException, StorageMethodException, StorageConnectionException {
+        FTPClient ftp = getClient();
+
+        String remotePath = resolve(remoteParentDir, newFileName);
+        try {
+            ftp.setCopyStreamListener(new FtpStorageProgressListener(progressListener));
+            if (!ftp.storeFile(remotePath, sourceStream)) {
+                throw new StorageMethodException("Failed to send stream to \"%s\"".formatted(remotePath));
+            }
+
+        } catch (IOException e) {
+            throw new StorageMethodException("Failed to upload stream to \"%s\"".formatted(remotePath));
+        } finally {
+            ftp.setCopyStreamListener(null);
+        }
+    }
+
+    @Override
+    public void downloadFile(String remotePath, File targetFile, StorageProgressListener progressListener) throws StorageMethodException, StorageConnectionException {
+        FTPClient ftp = getClient();
+
+        try {
+            targetFile.createNewFile();
+        } catch (IOException e) {
+            throw new StorageMethodException("Failed to create new local file \"%s\"".formatted(targetFile.getAbsolutePath()));
+        }
+
+        try (FileOutputStream outputStream = new FileOutputStream(targetFile)) {
+            ftp.setCopyStreamListener(new FtpStorageProgressListener(progressListener));
+            ftp.retrieveFile(remotePath, outputStream);
+
+        } catch (IOException e) {
+            throw new StorageMethodException("Failed to download from FTP(S) storage file \"%s\" to \"%s\"".formatted(remotePath, targetFile.getAbsolutePath()));
+        } finally {
+            ftp.setCopyStreamListener(null);
+        }
+    }
+
+    @Override
+    public void delete(String path) throws StorageMethodException, StorageConnectionException {
+        FTPClient ftp = getClient();
+
+        try {
+            if (isFile(path)) {
+                ftp.deleteFile(path);
+            } else {
+                ftp.removeDirectory(path);
+            }
+        } catch (IOException e) {
+            throw new StorageMethodException("Failed to delete file/dir \"%s\" from FTP(S) storage".formatted(path));
+        }
+    }
+
+    @Override
+    public void renameFile(String path, String newFileName) throws StorageMethodException, StorageConnectionException {
+        FTPClient ftp = getClient();
+        try {
+            String parentPath = "";
+            if (path.contains(config.getPathSeparatorSymbol())) {
+                parentPath = path.substring(0, path.lastIndexOf(config.getPathSeparatorSymbol()));
+                parentPath += config.getPathSeparatorSymbol();
+            }
+            ftp.rename(path, parentPath + newFileName);
+        } catch (IOException e) {
+            throw new StorageMethodException("Failed to rename file \"%s\" to \"%s\" using FTP(S) connection".formatted(path, newFileName));
+        }
+    }
+
+    public void disconnect() {
+        try {
+            if (ftpClient != null && ftpClient.isConnected()) {
+                ftpClient.disconnect();
+            }
+        } catch (Exception ignored) {
+            // Ignore disconnect errors
+        }
+        ftpClient = null;
+    }
+
+    private static class FtpStorageProgressListener implements CopyStreamListener {
+
+        private final StorageProgressListener progressListener;
+
+        FtpStorageProgressListener(StorageProgressListener progressListener) {
+            this.progressListener = progressListener;
+        }
+
+        @Override
+        public void bytesTransferred(CopyStreamEvent copyStreamEvent) {
+            progressListener.incrementProgress(copyStreamEvent.getBytesTransferred());
+        }
+
+        @Override
+        public void bytesTransferred(long totalBytesTransferred, int delta, long totalStreamSize) {
+            progressListener.incrementProgress(delta);
+        }
+    }
+}

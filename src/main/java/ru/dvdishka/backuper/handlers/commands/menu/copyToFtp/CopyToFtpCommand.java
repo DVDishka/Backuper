@@ -7,7 +7,6 @@ import ru.dvdishka.backuper.backend.backup.Backup;
 import ru.dvdishka.backuper.backend.backup.FtpBackup;
 import ru.dvdishka.backuper.backend.backup.LocalBackup;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.task.BaseAsyncTask;
 import ru.dvdishka.backuper.backend.task.FtpSendDirTask;
 import ru.dvdishka.backuper.backend.util.FtpUtils;
 import ru.dvdishka.backuper.handlers.commands.Command;
@@ -67,7 +66,7 @@ public class CopyToFtpCommand extends Command {
                 inProgressName += ".zip";
             }
 
-            BaseAsyncTask task = new FtpSendDirTask(localBackup.getFile(),
+            AsyncTask task = new FtpSendDirTask(localBackup.getFile(),
                     FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(), inProgressName),
                     false, true);
             Backuper.getInstance().getTaskManager().startTask(task, sender, List.of(Permissions.LOCAL_COPY_TO_FTP));

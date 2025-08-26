@@ -38,7 +38,7 @@ public class UIUtils {
 
     public static void returnSuccess(String message, CommandSender sender, TextColor color) {
         try {
-            sender.sendMessage(color + message);
+            sender.sendMessage(Component.text(message).color(color));
         } catch (Exception ignored) {
         }
     }
@@ -52,7 +52,7 @@ public class UIUtils {
 
     public static void returnWarning(String message, CommandSender sender, TextColor color) {
         try {
-            sender.sendMessage(color + message);
+            sender.sendMessage(Component.text(message).color(color));
         } catch (Exception ignored) {
         }
     }

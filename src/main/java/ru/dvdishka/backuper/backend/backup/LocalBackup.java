@@ -1,69 +1,26 @@
 package ru.dvdishka.backuper.backend.backup;
 
+import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.task.BaseAsyncTask;
-import ru.dvdishka.backuper.backend.task.ConvertFolderToZipTask;
-import ru.dvdishka.backuper.backend.task.ConvertZipToFolderTask;
-import ru.dvdishka.backuper.backend.task.DeleteDirTask;
+import ru.dvdishka.backuper.backend.storage.Storage;
+import ru.dvdishka.backuper.backend.task.*;
 import ru.dvdishka.backuper.backend.util.Utils;
 
 import java.io.File;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Objects;
+import java.util.concurrent.ExecutionException;
 
-public class LocalBackup extends ExternalBackup {
+public class LocalBackup implements Backup {
 
-    private LocalDateTime backupLocalDateTime;
+    private final String backupName;
+    private final Storage storage;
+    private final LocalDateTime backupLocalDateTime;
 
-    private static HashMap<String, LocalBackup> backups = new HashMap();
-
-    public static LocalBackup getInstance(String backupName) {
-
-        if (!checkBackupExistenceByName(backupName)) {
-            return null;
-        }
-        if (backups.containsKey(backupName)) {
-            return backups.get(backupName);
-        }
-        LocalBackup backup = new LocalBackup(backupName);
-        backups.put(backupName, backup);
-        return backup;
-    }
-
-    private LocalBackup(String backupName) {
-
+    LocalBackup(Storage storage, String backupName) {
         this.backupName = backupName;
+        this.storage = storage;
         this.backupLocalDateTime = LocalDateTime.parse(backupName, Config.getInstance().getDateTimeFormatter());
-    }
-
-    public static ArrayList<LocalBackup> getBackups() {
-
-        if (!Config.getInstance().getLocalConfig().isEnabled()) {
-            return new ArrayList<>();
-        }
-
-        ArrayList<LocalBackup> backups = new ArrayList<>();
-
-        if (!new File(Config.getInstance().getLocalConfig().getBackupsFolder()).exists() ||
-                new File(Config.getInstance().getLocalConfig().getBackupsFolder()).listFiles() == null) {
-            Backuper.getInstance().getLogManager().warn("Wrong local.backupsFolder config value! (Maybe the specified folder does not exist)");
-            return backups;
-        }
-
-        for (File file : Objects.requireNonNull(new File(Config.getInstance().getLocalConfig().getBackupsFolder()).listFiles())) {
-            try {
-                LocalBackup localBackup = LocalBackup.getInstance(file.getName().replace(".zip", ""));
-
-                if (localBackup != null) {
-                    backups.add(localBackup);
-                }
-            } catch (Exception ignored) {
-            }
-        }
-        return backups;
     }
 
     public String getName() {
@@ -74,7 +31,7 @@ public class LocalBackup extends ExternalBackup {
         return backupLocalDateTime;
     }
 
-    long calculateByteSize() {
+    public long calculateByteSize() {
 
         File backupsFolder = new File(Config.getInstance().getLocalConfig().getBackupsFolder());
         String backupFilePath;
@@ -128,35 +85,21 @@ public class LocalBackup extends ExternalBackup {
         return null;
     }
 
-    @SuppressWarnings({"BooleanMethodIsAlwaysInverted"})
-    public static boolean checkBackupExistenceByName(String backupName) {
-
-        if (!Config.getInstance().getLocalConfig().isEnabled()) {
-            return false;
-        }
-
-        try {
-            LocalDateTime.parse(backupName, Config.getInstance().getDateTimeFormatter());
-        } catch (Exception e) {
-            return false;
-        }
-
-        File backupsFolder = new File(Config.getInstance().getLocalConfig().getBackupsFolder());
-
-        return backupsFolder.toPath().resolve(backupName).toFile().exists() ||
-                backupsFolder.toPath().resolve("%s.zip".formatted(backupName)).toFile().exists();
+    @Override
+    public Storage getStorage() {
+        return storage;
     }
 
     @Override
-    public BaseAsyncTask getRawDeleteTask() {
-        return new DeleteDirTask(this.getFile());
+    public Task getRawDeleteTask() {
+        return new LocalDeleteDirTask(this.getFile());
     }
 
-    public BaseAsyncTask getRawToZipTask() {
+    public Task getRawToZipTask() {
         return new ConvertFolderToZipTask(this.getFile());
     }
 
-    public BaseAsyncTask getRawUnZipTask() {
+    public Task getRawUnZipTask() {
         return new ConvertZipToFolderTask(this.getZIPFile());
     }
 
@@ -166,5 +109,129 @@ public class LocalBackup extends ExternalBackup {
 
     public BackupUnZipTask getUnZipTask() {
         return new BackupUnZipTask(this);
+    }
+
+    public static class BackupUnZipTask extends BaseTask {
+
+        private final LocalBackup backup;
+        private Task unZipTask;
+
+        public BackupUnZipTask(LocalBackup backup) {
+            super();
+            this.backup = backup;
+        }
+
+        @Override
+        public void run() {
+            if (!cancelled) {
+                try {
+                    Backuper.getInstance().getTaskManager().startTaskRaw(unZipTask, sender);
+                } catch (TaskException e) {
+                    warn(e);
+                }
+                Backuper.getInstance().getBackupManager().cachedBackupsSize.get(backup.getStorage()).invalidate(backup.getName());
+            }
+        }
+
+        @Override
+        public void prepareTask(CommandSender sender) {
+
+            if (cancelled) {
+                return;
+            }
+
+            unZipTask = backup.getRawUnZipTask();
+            Backuper.getInstance().getTaskManager().cancelTaskRaw(unZipTask);
+        }
+
+        @Override
+        public void cancel() {
+            cancelled = true;
+            if (unZipTask != null) {
+                Backuper.getInstance().getTaskManager().cancelTaskRaw(unZipTask);
+            }
+        }
+
+        @Override
+        public long getTaskMaxProgress() {
+
+            if (!isTaskPrepared()) {
+                return 0;
+            }
+
+            return unZipTask.getTaskMaxProgress();
+        }
+
+        @Override
+        public long getTaskCurrentProgress() {
+
+            if (!isTaskPrepared()) {
+                return 0;
+            }
+
+            return unZipTask.getTaskCurrentProgress();
+        }
+    }
+
+    public static class BackupToZipTask extends BaseTask {
+
+        private final LocalBackup backup;
+        private Task toZipTask;
+
+        public BackupToZipTask(LocalBackup backup) {
+            super();
+            this.backup = backup;
+        }
+
+        @Override
+        public void run() {
+            if (!cancelled) {
+                try {
+                    Backuper.getInstance().getTaskManager().startTaskRaw(toZipTask, sender);
+                } catch (Exception e) {
+                    warn(new TaskException(toZipTask, e));
+                }
+                Backuper.getInstance().getBackupManager().cachedBackupsSize.get(backup.getStorage()).invalidate(backup.getName());
+            }
+        }
+
+        @Override
+        public void prepareTask(CommandSender sender) throws ExecutionException, InterruptedException {
+
+            if (cancelled) {
+                return;
+            }
+
+            toZipTask = backup.getRawToZipTask();
+            Backuper.getInstance().getTaskManager().prepareTask(toZipTask, sender);
+        }
+
+        @Override
+        public void cancel() {
+            cancelled = true;
+            if (toZipTask != null) {
+                Backuper.getInstance().getTaskManager().cancelTaskRaw(toZipTask);
+            }
+        }
+
+        @Override
+        public long getTaskMaxProgress() {
+
+            if (!isTaskPrepared()) {
+                return 0;
+            }
+
+            return toZipTask.getTaskMaxProgress();
+        }
+
+        @Override
+        public long getTaskCurrentProgress() {
+
+            if (!isTaskPrepared()) {
+                return 0;
+            }
+
+            return toZipTask.getTaskCurrentProgress();
+        }
     }
 }

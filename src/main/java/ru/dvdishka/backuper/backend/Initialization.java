@@ -1023,7 +1023,7 @@ public class Initialization implements Listener {
         }
     }
 
-    // Send plugin version and google account warnings if player is an operator
+    // Send plugin version and google account warnings if the player is an operator
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         sendPluginVersionCheckResult(event.getPlayer());

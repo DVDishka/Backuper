@@ -102,7 +102,7 @@ public class LogManager {
             return;
         }
 
-        Backuper.getInstance().getLogger().warning(exception.getMessage() + "\n" + Arrays.toString(exception.getStackTrace()));
+        Backuper.getInstance().getLogger().warning("%s\n%s".formatted(exception.getMessage(), Arrays.toString(exception.getStackTrace())));
     }
 
     public void devWarn(Exception exception) {
@@ -112,7 +112,7 @@ public class LogManager {
         }
 
         if (Config.getInstance().isBetterLogging()) {
-            Backuper.getInstance().getLogger().warning(exception.getMessage() + "\n" + Arrays.toString(exception.getStackTrace()));
+            Backuper.getInstance().getLogger().warning("%s\n%s".formatted(exception.getMessage(), Arrays.toString(exception.getStackTrace())));
         }
     }
 }

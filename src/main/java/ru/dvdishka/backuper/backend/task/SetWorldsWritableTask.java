@@ -6,7 +6,7 @@ import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.util.Utils;
 
-public class SetWorldsWritableTask extends BaseAsyncTask {
+public class SetWorldsWritableTask extends BaseTask {
 
     private final boolean force;
 
@@ -21,7 +21,7 @@ public class SetWorldsWritableTask extends BaseAsyncTask {
     }
 
     @Override
-    protected void run() {
+    public void run() {
 
         if (!Config.getInstance().isSetWorldsReadOnly() && !force) {
             return;
@@ -32,7 +32,7 @@ public class SetWorldsWritableTask extends BaseAsyncTask {
         for (World world : Bukkit.getWorlds()) {
 
             if (!world.getWorldFolder().setWritable(true)) {
-                warn("Can not set " + world.getWorldFolder().getPath() + " writable!", sender);
+                warn("Can not set %s writable!".formatted(world.getWorldFolder().getPath()), sender);
                 Utils.errorSetWritable = true;
             }
 
@@ -43,11 +43,11 @@ public class SetWorldsWritableTask extends BaseAsyncTask {
     }
 
     @Override
-    protected void prepareTask(CommandSender sender) {
+    public void prepareTask(CommandSender sender) {
     }
 
     @Override
-    protected void cancel() {
+    public void cancel() {
         cancelled = true;
     }
 }

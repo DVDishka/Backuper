@@ -182,7 +182,7 @@ public class Config {
             this.dateTimeFormatter = DateTimeFormatter.ofPattern(backupFileNameFormat);
             LocalDateTime localDateTime = LocalDateTime.parse(LocalDateTime.now().format(dateTimeFormatter), dateTimeFormatter);
         } catch (Exception e) {
-            Backuper.getInstance().getLogManager().warn("Wrong backupFileNameFormat format: \"" + backupFileNameFormat + "\", using default \"dd-MM-yyyy HH-mm-ss\" value...");
+            Backuper.getInstance().getLogManager().warn("Wrong backupFileNameFormat format: \"%s\", using default \"dd-MM-yyyy HH-mm-ss\" value...".formatted(backupFileNameFormat));
             Backuper.getInstance().getLogManager().warn(e);
             isConfigFileOk = false;
             backupFileNameFormat = "dd-MM-yyyy HH-mm-ss";

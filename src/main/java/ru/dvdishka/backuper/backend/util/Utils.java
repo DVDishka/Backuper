@@ -6,6 +6,7 @@ import ru.dvdishka.backuper.backend.config.Config;
 
 import java.io.File;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -38,7 +39,7 @@ public class Utils {
 
     static {
         try {
-            getLatestVersionURL = new URL("https://hangar.papermc.io/api/v1/projects/Collagen/Backuper/latestrelease");
+            getLatestVersionURL = URI.create("https://hangar.papermc.io/api/v1/projects/Collagen/Backuper/latestrelease").toURL();
         } catch (MalformedURLException e) {
             Backuper.getInstance().getLogManager().warn("Failed to check Backuper updates!");
             Backuper.getInstance().getLogManager().warn(e);
@@ -83,7 +84,7 @@ public class Utils {
     public static long getFileFolderByteSizeExceptExcluded(File path) {
 
         if (!path.exists()) {
-            Backuper.getInstance().getLogManager().warn("Directory " + path.getAbsolutePath() + " does not exist");
+            Backuper.getInstance().getLogManager().warn("Directory %s does not exist".formatted(path.getAbsolutePath()));
             return 0;
         }
 
@@ -131,17 +132,17 @@ public class Utils {
                     normalizedPath.startsWith(normalizedBackupFolderPath) ||
                     path.toPath().startsWith(new File(Config.getInstance().getLocalConfig().getBackupsFolder()).toPath()) ||
                     path.toPath().startsWith(new File("plugins/Backuper/Backups/").toPath()) ||
-                    !Utils.isWindows && path.toPath().startsWith(new File("./" + Config.getInstance().getLocalConfig().getBackupsFolder()).toPath()) ||
+                    !Utils.isWindows && path.toPath().startsWith(new File("./%s".formatted(Config.getInstance().getLocalConfig().getBackupsFolder())).toPath()) ||
                     Utils.isWindows && path.toPath().startsWith(new File(Config.getInstance().getLocalConfig().getBackupsFolder()).toPath()) ||
-                    Utils.isWindows && Config.getInstance().getLocalConfig().getBackupsFolder().charAt(1) != ':' && path.toPath().startsWith(new File(".\\" + Config.getInstance().getLocalConfig().getBackupsFolder()).toPath())) {
+                    Utils.isWindows && Config.getInstance().getLocalConfig().getBackupsFolder().charAt(1) != ':' && path.toPath().startsWith(new File(".\\%s".formatted(Config.getInstance().getLocalConfig().getBackupsFolder())).toPath())) {
                 return true;
             }
 
         } catch (SecurityException e) {
-            Backuper.getInstance().getLogManager().warn("Failed to copy file \"" + path.getAbsolutePath() + "\", no access", sender);
+            Backuper.getInstance().getLogManager().warn("Failed to copy file \"%s\", no access".formatted(path.getAbsolutePath()), sender);
             Backuper.getInstance().getLogManager().warn(e);
         } catch (Exception e) {
-            Backuper.getInstance().getLogManager().warn("Something went wrong while trying to copy file \"" + path.getAbsolutePath() + "\"", sender);
+            Backuper.getInstance().getLogManager().warn("Something went wrong while trying to copy file \"%s\"".formatted(path.getAbsolutePath()), sender);
             Backuper.getInstance().getLogManager().warn(e);
         }
 
@@ -156,11 +157,11 @@ public class Utils {
                 }
 
             } catch (SecurityException e) {
-                Backuper.getInstance().getLogManager().warn("Failed to copy file \"" + path.getAbsolutePath() + "\", no access", sender);
+                Backuper.getInstance().getLogManager().warn("Failed to copy file \"%s\", no access".formatted(path.getAbsolutePath()), sender);
                 Backuper.getInstance().getLogManager().warn(e);
                 return true;
             } catch (Exception e) {
-                Backuper.getInstance().getLogManager().warn("Something went wrong while trying to copy file \"" + path.getAbsolutePath() + "\"", sender);
+                Backuper.getInstance().getLogManager().warn("Something went wrong while trying to copy file \"%s\"".formatted(path.getAbsolutePath()), sender);
                 Backuper.getInstance().getLogManager().warn(e);
                 return true;
             }

@@ -35,9 +35,9 @@ public class MenuCommand extends Command {
                         !GoogleDriveUtils.checkConnection())) {
             cancelSound();
             if (!storage.equals("googleDrive")) {
-                returnFailure(storage + " storage is disabled!");
+                returnFailure("%s storage is disabled!".formatted(storage));
             } else {
-                returnFailure(storage + " storage is disabled or Google account is not linked!");
+                returnFailure("%s storage is disabled or Google account is not linked!".formatted(storage));
             }
             return;
         }
@@ -79,7 +79,7 @@ public class MenuCommand extends Command {
                 .append(Component.text("Backup menu")
                         .decorate(TextDecoration.BOLD))
                 .append(Component.space())
-                .append(Component.text("(" + storage + ")")
+                .append(Component.text("(%s)".formatted(storage))
                         .color(TextColor.fromHexString("#129c9b"))
                         .decorate(TextDecoration.BOLD));
         ;

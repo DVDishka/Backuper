@@ -6,7 +6,6 @@ import org.bukkit.command.ConsoleCommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.task.BackupTask;
-import ru.dvdishka.backuper.backend.task.BaseAsyncTask;
 import ru.dvdishka.backuper.backend.util.FtpUtils;
 import ru.dvdishka.backuper.backend.util.GoogleDriveUtils;
 import ru.dvdishka.backuper.backend.util.SftpUtils;
@@ -141,7 +140,7 @@ public class BackupCommand extends Command {
 
         Backuper.getInstance().getScheduleManager().runSyncDelayed(Backuper.getInstance(), () -> {
 
-            BaseAsyncTask task = new BackupTask(afterBackup, false, isLocal, isFtp, isSftp, isGoogleDrive);
+            AsyncTask task = new BackupTask(afterBackup, false, isLocal, isFtp, isSftp, isGoogleDrive);
             Backuper.getInstance().getTaskManager().startTaskAsync(task, sender, backupPermissions);
 
         }, delay * 20);

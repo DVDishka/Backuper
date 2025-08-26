@@ -42,9 +42,9 @@ public class CopyToLocalConfirmationCommand extends Command {
                         !GoogleDriveUtils.checkConnection())) {
             cancelSound();
             if (!storage.equals("googleDrive")) {
-                returnFailure(storage + " storage is disabled!");
+                returnFailure("%s storage is disabled!".formatted(storage));
             } else {
-                returnFailure(storage + " storage is disabled or Google account is not linked!");
+                returnFailure("%s storage is disabled or Google account is not linked!".formatted(storage));
             }
             return;
         }

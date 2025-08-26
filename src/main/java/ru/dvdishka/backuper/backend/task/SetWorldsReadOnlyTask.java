@@ -6,7 +6,7 @@ import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.util.Utils;
 
-public class SetWorldsReadOnlyTask extends BaseAsyncTask {
+public class SetWorldsReadOnlyTask extends BaseTask {
 
     private final boolean force;
 
@@ -21,7 +21,7 @@ public class SetWorldsReadOnlyTask extends BaseAsyncTask {
     }
 
     @Override
-    protected void run() {
+    public void run() {
 
         if (!Config.getInstance().isSetWorldsReadOnly() && !force) {
             return;
@@ -41,11 +41,11 @@ public class SetWorldsReadOnlyTask extends BaseAsyncTask {
     }
 
     @Override
-    protected void prepareTask(CommandSender sender) {
+    public void prepareTask(CommandSender sender) {
     }
 
     @Override
-    protected void cancel() {
+    public void cancel() {
         cancelled = true;
     }
 }

@@ -6,7 +6,6 @@ import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.backup.Backup;
 import ru.dvdishka.backuper.backend.backup.LocalBackup;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.task.BaseAsyncTask;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
 
@@ -53,7 +52,7 @@ public class ToZIPCommand extends Command {
 
         buttonSound();
 
-        BaseAsyncTask task = localBackup.getToZipTask();
+        AsyncTask task = localBackup.getToZipTask();
         Backuper.getInstance().getTaskManager().startTaskAsync(task, sender, List.of(Permissions.LOCAL_TO_ZIP));
     }
 }

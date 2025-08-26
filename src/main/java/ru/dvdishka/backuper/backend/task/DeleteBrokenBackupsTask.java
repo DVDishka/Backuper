@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-public class DeleteBrokenBackupsTask extends BaseAsyncTask {
+public class DeleteBrokenBackupsTask extends BaseTask {
 
     private final ArrayList<BaseTask> tasks = new ArrayList<>();
 
@@ -22,7 +22,7 @@ public class DeleteBrokenBackupsTask extends BaseAsyncTask {
     }
 
     @Override
-    protected void run() throws IOException {
+    public void run() throws IOException {
 
         for (BaseTask task : tasks) {
             if (cancelled) {
@@ -37,7 +37,7 @@ public class DeleteBrokenBackupsTask extends BaseAsyncTask {
     }
 
     @Override
-    protected void prepareTask(CommandSender sender) throws ExecutionException, InterruptedException {
+    public void prepareTask(CommandSender sender) throws ExecutionException, InterruptedException {
 
         if (cancelled) {
             return;
@@ -58,7 +58,7 @@ public class DeleteBrokenBackupsTask extends BaseAsyncTask {
                     }
 
                     if (file.getName().replace(".zip", "").endsWith(" in progress")) {
-                        BaseTask task = new DeleteDirTask(file);
+                        BaseTask task = new LocalDeleteDirTask(file);
                         Backuper.getInstance().getTaskManager().prepareTask(task, sender);
                         tasks.add(task);
                     }
@@ -134,7 +134,7 @@ public class DeleteBrokenBackupsTask extends BaseAsyncTask {
     }
 
     @Override
-    protected void cancel() {
+    public void cancel() {
 
         cancelled = true;
         for (BaseTask task : tasks) {

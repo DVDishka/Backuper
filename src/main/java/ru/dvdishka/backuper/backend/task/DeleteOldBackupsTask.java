@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-public class DeleteOldBackupsTask extends BaseAsyncTask {
+public class DeleteOldBackupsTask extends BaseTask {
 
     private final ArrayList<BaseTask> deleteBackupTasks = new ArrayList<>();
 
@@ -21,7 +21,7 @@ public class DeleteOldBackupsTask extends BaseAsyncTask {
     }
 
     @Override
-    protected void run() throws IOException {
+    public void run() throws IOException {
 
         for (BaseTask deleteDirTask : deleteBackupTasks) {
             if (!cancelled) {
@@ -35,7 +35,7 @@ public class DeleteOldBackupsTask extends BaseAsyncTask {
     }
 
     @Override
-    protected void prepareTask(CommandSender sender) {
+    public void prepareTask(CommandSender sender) {
 
         try {
             if (!cancelled && Config.getInstance().getLocalConfig().isEnabled()) {
@@ -75,7 +75,7 @@ public class DeleteOldBackupsTask extends BaseAsyncTask {
     }
 
     @Override
-    protected void cancel() {
+    public void cancel() {
         cancelled = true;
 
         for (BaseTask deleteDirTask : deleteBackupTasks) {

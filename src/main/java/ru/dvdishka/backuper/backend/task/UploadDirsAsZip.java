@@ -1,63 +1,109 @@
 package ru.dvdishka.backuper.backend.task;
 
 import org.bukkit.command.CommandSender;
+import ru.dvdishka.backuper.Backuper;
+import ru.dvdishka.backuper.backend.storage.BasicStorageProgressListener;
+import ru.dvdishka.backuper.backend.storage.Storage;
+import ru.dvdishka.backuper.backend.storage.StorageProgressListener;
 import ru.dvdishka.backuper.backend.util.Utils;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-/**
- * Abstract base for zipping local directories. Implements common traversal, CRC
- * calculation, and progress preparation.
- */
-public abstract class BaseAddLocalDirToZipTask extends BaseAsyncTask {
-    protected static final int FILE_BUFFER_SIZE = 65536; // 64KB buffer
-    protected final List<File> sourceDirsToAdd;
-    protected final boolean forceExcludedDirs;
-    protected final boolean createRootDirInTargetZIP;
+public class UploadDirsAsZip extends BaseTask implements SingleStorageTask {
 
-    protected BaseAddLocalDirToZipTask(List<File> sourceDirsToAdd,
-                                       boolean createRootDirInTargetZIP,
-                                       boolean forceExcludedDirs) {
-        this.sourceDirsToAdd = sourceDirsToAdd;
-        this.forceExcludedDirs = forceExcludedDirs;
+    private static final int FILE_BUFFER_SIZE = 65536;
+    private static final int STREAM_BUFFER_SIZE = 1048576;
+    private static final int PIPE_BUFFER_SIZE = 4194304;
+
+    private final List<File> sourceDirs;
+    private final boolean forceExcludedDirs;
+    private final boolean createRootDirInTargetZIP;
+    private final Storage targetStorage;
+    private final String targetParentDir;
+    private final String targetZipFileName;
+
+    public UploadDirsAsZip(Storage targetStorage, List<File> sourceDirs, String targetParentDir, String targetZipFileName,
+                           boolean createRootDirInTargetZIP, boolean forceExcludedDirs) {
+
+        this.targetStorage = targetStorage;
+        this.sourceDirs = sourceDirs;
+        this.targetParentDir = targetParentDir;
+        this.targetZipFileName = targetZipFileName;
         this.createRootDirInTargetZIP = createRootDirInTargetZIP;
+        this.forceExcludedDirs = forceExcludedDirs;
     }
 
     @Override
-    protected void prepareTask(CommandSender sender) {
+    public void run() throws IOException {
+
+        try (PipedInputStream pipedInputStream = new PipedInputStream(PIPE_BUFFER_SIZE);
+             PipedOutputStream pipedOutputStream = new PipedOutputStream(pipedInputStream)) {
+
+            Backuper.getInstance().getScheduleManager().runAsync(() -> {
+
+                // Use BufferedOutputStream for better performance
+                try (BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(pipedOutputStream,
+                        STREAM_BUFFER_SIZE);
+                     ZipOutputStream targetZipOutputStream = new ZipOutputStream(bufferedOutputStream)) {
+
+                    for (File sourceDirToAdd : sourceDirs) {
+
+                        if (cancelled) {
+                            break;
+                        }
+
+                        if (createRootDirInTargetZIP) {
+                            File parent = sourceDirToAdd.getParentFile();
+                            parent = parent == null ? new File("") : parent;
+                            addDirToZip(targetZipOutputStream, sourceDirToAdd, parent.toPath());
+                        } else {
+                            addDirToZip(targetZipOutputStream, sourceDirToAdd, sourceDirToAdd.toPath());
+                        }
+                    }
+
+                } catch (Exception e) {
+                    warn("Failed to send ZIP entry to %s storage".formatted(targetStorage), sender);
+                    warn(e);
+                }
+            });
+
+            final StorageProgressListener progressListener = new BasicStorageProgressListener();
+            targetStorage.uploadFile(pipedInputStream, targetZipFileName, targetParentDir, progressListener);
+        }
+    }
+
+    @Override
+    public void prepareTask(CommandSender sender) {
         if (!forceExcludedDirs) {
-            for (File dir : sourceDirsToAdd) {
+            for (File dir : sourceDirs) {
                 this.maxProgress += Utils.getFileFolderByteSizeExceptExcluded(dir);
             }
         } else {
-            for (File dir : sourceDirsToAdd) {
+            for (File dir : sourceDirs) {
                 this.maxProgress += Utils.getFileFolderByteSize(dir);
             }
         }
     }
 
     @Override
-    protected void cancel() {
+    public void cancel() {
         cancelled = true;
     }
 
     /**
      * Recursively add a directory (or file) into the ZIP output stream.
      */
-    protected void addDirToZip(ZipOutputStream zip, File sourceDir, Path relativeDirPath) {
+    private void addDirToZip(ZipOutputStream zip, File sourceDir, Path relativeDirPath) {
         if (cancelled) {
             return;
         }
         if (!sourceDir.exists()) {
-            warn("Directory does not exist: " + sourceDir.getAbsolutePath(), sender);
+            warn("Directory does not exist: %s".formatted(sourceDir.getAbsolutePath()), sender);
             return;
         }
         boolean excluded = Utils.isExcludedDirectory(sourceDir, sender);
@@ -77,7 +123,7 @@ public abstract class BaseAddLocalDirToZipTask extends BaseAsyncTask {
                         entry.setCompressedSize(sourceDir.length());
                         entry.setCrc(calculateCRC(sourceDir));
                     } else {
-                        zip.setLevel(getZipCompressionLevel());
+                        zip.setLevel(targetStorage.getConfig().getZipCompressionLevel());
                     }
                     zip.putNextEntry(entry);
                     byte[] buffer = new byte[FILE_BUFFER_SIZE];
@@ -92,7 +138,7 @@ public abstract class BaseAddLocalDirToZipTask extends BaseAsyncTask {
                 }
             }
         } catch (Exception e) {
-            warn("Error adding to ZIP: " + sourceDir.getName(), sender);
+            warn("Error adding to ZIP: %s".formatted(sourceDir.getName()), sender);
             warn(e);
         }
         File[] children = sourceDir.listFiles();
@@ -108,7 +154,7 @@ public abstract class BaseAddLocalDirToZipTask extends BaseAsyncTask {
     /**
      * Whether the file should be stored without compression.
      */
-    protected boolean isAlreadyCompressed(File file) {
+    private boolean isAlreadyCompressed(File file) {
         String name = file.getName().toLowerCase();
         return name.endsWith(".zip") || name.endsWith(".jar") || name.endsWith(".gz")
                 || name.endsWith(".7z") || name.endsWith(".rar")
@@ -122,7 +168,7 @@ public abstract class BaseAddLocalDirToZipTask extends BaseAsyncTask {
     /**
      * Calculate CRC for a file (required for STORED method).
      */
-    protected long calculateCRC(File file) throws IOException {
+    private long calculateCRC(File file) throws IOException {
         try (BufferedInputStream bis = new BufferedInputStream(
                 new FileInputStream(file), FILE_BUFFER_SIZE)) {
             CRC32 crc = new CRC32();
@@ -135,8 +181,8 @@ public abstract class BaseAddLocalDirToZipTask extends BaseAsyncTask {
         }
     }
 
-    /**
-     * Child classes must provide the ZIP compression level for non-stored entries.
-     */
-    protected abstract int getZipCompressionLevel();
+    @Override
+    public Storage getStorage() {
+        return targetStorage;
+    }
 }

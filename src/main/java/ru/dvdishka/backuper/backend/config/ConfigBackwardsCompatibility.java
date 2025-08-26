@@ -95,7 +95,7 @@ public class ConfigBackwardsCompatibility {
 
         String cron;
         if (backupTime != -1) {
-            cron = "0 0 " + backupTime + " 1/1 * ? *";
+            cron = "0 0 %s 1/1 * ? *".formatted(backupTime);
         } else {
             cron = "0 0 0 1/1 * ? *";
             Backuper.getInstance().getLogManager().warn("The format of the auto-backup schedule definition has changed! Please go to Backuper's config.yml and define the schedule using the new format! Your old schedule will not work now!");
@@ -144,7 +144,7 @@ public class ConfigBackwardsCompatibility {
                     File newFile = new File(backupsDir, newFileName);
 
                     if (!file.renameTo(newFile)) {
-                        Backuper.getInstance().getLogManager().warn("Failed to reformat backup to new unified format " + newFile.getAbsolutePath() + " (it will be unavailable)", sender);
+                        Backuper.getInstance().getLogManager().warn("Failed to reformat backup to new unified format %s (it will be unavailable)".formatted(newFile.getAbsolutePath()), sender);
                     }
                 }
             }

@@ -5,7 +5,6 @@ import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.backup.*;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.task.BaseAsyncTask;
 import ru.dvdishka.backuper.backend.util.GoogleDriveUtils;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
@@ -36,9 +35,9 @@ public class CopyToLocalCommand extends Command {
                         !GoogleDriveUtils.checkConnection())) {
             cancelSound();
             if (!storage.equals("googleDrive")) {
-                returnFailure(storage + " storage is disabled!");
+                returnFailure("%s storage is disabled!".formatted(storage));
             } else {
-                returnFailure(storage + " storage is disabled or Google account is not linked!");
+                returnFailure("%s storage is disabled or Google account is not linked!".formatted(storage));
             }
             return;
         }
@@ -80,7 +79,7 @@ public class CopyToLocalCommand extends Command {
 
         buttonSound();
 
-        final BaseAsyncTask copyToLocalTask = backup.getCopyToLocalTask();
+        final AsyncTask copyToLocalTask = backup.getCopyToLocalTask();
         Backuper.getInstance().getTaskManager().startTaskAsync(copyToLocalTask, sender, List.of(permission));
     }
 }

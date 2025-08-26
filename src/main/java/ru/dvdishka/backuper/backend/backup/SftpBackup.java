@@ -2,58 +2,23 @@ package ru.dvdishka.backuper.backend.backup;
 
 import com.jcraft.jsch.SftpException;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.task.BaseAsyncTask;
 import ru.dvdishka.backuper.backend.task.SftpDeleteDirTask;
+import ru.dvdishka.backuper.backend.task.Task;
 import ru.dvdishka.backuper.backend.util.SftpUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.List;
 
 public class SftpBackup extends ExternalBackup {
 
-    private static final HashMap<String, SftpBackup> backups = new HashMap<>();
+    private final String backupName;
 
-    private SftpBackup(String backupName) {
+    SftpBackup(String backupName) {
         this.backupName = backupName;
     }
 
-    public static SftpBackup getInstance(String backupName) {
-
-        if (!checkBackupExistenceByName(backupName)) {
-            return null;
-        }
-        if (backups.containsKey(backupName)) {
-            return backups.get(backupName);
-        }
-        SftpBackup backup = new SftpBackup(backupName);
-        backups.put(backupName, backup);
-        return backup;
-    }
-
-    public static boolean checkBackupExistenceByName(String backupName) {
-
-        if (!Config.getInstance().getSftpConfig().isEnabled()) {
-            return false;
-        }
-
-        try {
-            LocalDateTime.parse(backupName, Config.getInstance().getDateTimeFormatter());
-        } catch (Exception e) {
-            return false;
-        }
-
-        ArrayList<String> backupFileNames;
-        try {
-            backupFileNames = SftpUtils.ls(Config.getInstance().getSftpConfig().getBackupsFolder());
-        } catch (SftpException e) {
-            throw new RuntimeException(e);
-        }
-
-        return backupFileNames.contains(backupName) || backupFileNames.contains("%s.zip".formatted(backupName));
-    }
-
-    public static ArrayList<SftpBackup> getBackups() {
+    public static List<SftpBackup> getBackups() {
 
         if (!Config.getInstance().getSftpConfig().isEnabled()) {
             return new ArrayList<>();
@@ -98,7 +63,7 @@ public class SftpBackup extends ExternalBackup {
     }
 
     @Override
-    public BaseAsyncTask getRawDeleteTask() {
+    public Task getRawDeleteTask() {
         return new SftpDeleteDirTask(getPath());
     }
 

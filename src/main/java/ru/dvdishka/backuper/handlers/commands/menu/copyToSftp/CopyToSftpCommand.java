@@ -7,7 +7,6 @@ import ru.dvdishka.backuper.backend.backup.Backup;
 import ru.dvdishka.backuper.backend.backup.LocalBackup;
 import ru.dvdishka.backuper.backend.backup.SftpBackup;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.task.BaseAsyncTask;
 import ru.dvdishka.backuper.backend.task.SftpSendDirTask;
 import ru.dvdishka.backuper.backend.util.SftpUtils;
 import ru.dvdishka.backuper.handlers.commands.Command;
@@ -67,7 +66,7 @@ public class CopyToSftpCommand extends Command {
                 inProgressName += ".zip";
             }
 
-            BaseAsyncTask task = new SftpSendDirTask(localBackup.getFile(),
+            AsyncTask task = new SftpSendDirTask(localBackup.getFile(),
                     SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), inProgressName),
                     false, true);
             Backuper.getInstance().getTaskManager().startTask(task, sender, List.of(Permissions.LOCAL_COPY_TO_SFTP));

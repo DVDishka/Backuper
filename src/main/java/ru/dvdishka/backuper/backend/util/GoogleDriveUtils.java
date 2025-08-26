@@ -30,8 +30,7 @@ import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.backup.Backup;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.exception.StorageLimitException;
-import ru.dvdishka.backuper.backend.exception.StorageQuotaExceededException;
+import ru.dvdishka.backuper.backend.storage.Storage;
 
 import javax.naming.AuthenticationException;
 import java.io.*;
@@ -83,7 +82,6 @@ public class GoogleDriveUtils {
 
                 if (checkConnection) {
                     try {
-
                         Drive service = new Drive.Builder(NET_HTTP_TRANSPORT, JSON_FACTORY, credential)
                                 .setApplicationName(APPLICATION_NAME)
                                 .setHttpRequestInitializer(httpRequest -> {
@@ -224,7 +222,7 @@ public class GoogleDriveUtils {
      * @param parentFolderId GoogleDrive parent folder ID or an empty string
      * @return Returns new file's id
      **/
-    public static String uploadFile(File file, String parentFolderId, MediaHttpUploaderProgressListener progressListener) throws StorageLimitException, StorageQuotaExceededException {
+    public static String uploadFile(File file, String parentFolderId, MediaHttpUploaderProgressListener progressListener) throws Storage.StorageLimitException, Storage.StorageQuotaExceededException {
         return uploadFile(file, file.getName(), parentFolderId, progressListener); // No need to make it retriable because nested uploadFile is already retriable
     }
 
@@ -234,7 +232,7 @@ public class GoogleDriveUtils {
      * @param parentFolderId GoogleDrive parent folder ID or an empty string
      * @return Returns new file's id
      **/
-    public static String uploadFile(File file, String fileName, String parentFolderId, MediaHttpUploaderProgressListener progressListener) throws StorageLimitException, StorageQuotaExceededException {
+    public static String uploadFile(File file, String fileName, String parentFolderId, MediaHttpUploaderProgressListener progressListener) throws Storage.StorageLimitException, Storage.StorageQuotaExceededException {
         if (!file.exists()) {
             throw new RuntimeException("Failed to upload file to Google Drive", new NoSuchFileException(file.getAbsolutePath()));
         }
@@ -279,7 +277,7 @@ public class GoogleDriveUtils {
      * @param parentFolderId GoogleDrive parent folder ID or an empty string
      * @return Returns new file's id
      **/
-    public static String uploadFile(InputStream inputStream, String fileName, String parentFolderId, MediaHttpUploaderProgressListener progressListener) throws StorageLimitException, StorageQuotaExceededException {
+    public static String uploadFile(InputStream inputStream, String fileName, String parentFolderId, MediaHttpUploaderProgressListener progressListener) throws Storage.StorageLimitException, Storage.StorageQuotaExceededException {
         try {
             return ((Retriable<String>) () -> {
                 Drive service = getService();
@@ -311,7 +309,7 @@ public class GoogleDriveUtils {
     /***
      * @return Returns new folder's id
      */
-    public static String createFolder(String folderName, String parentFolderId, Map<String, String> properties) throws StorageLimitException, StorageQuotaExceededException {
+    public static String createFolder(String folderName, String parentFolderId, Map<String, String> properties) throws Storage.StorageLimitException, Storage.StorageQuotaExceededException {
         try {
             return ((Retriable<String>) () -> {
                 Drive service = getService();
@@ -336,11 +334,11 @@ public class GoogleDriveUtils {
     /***
      * @return Returns new folder's id
      */
-    public static String createFolder(String folderName, String parentFolderId) throws StorageLimitException, StorageQuotaExceededException {
+    public static String createFolder(String folderName, String parentFolderId) throws Storage.StorageLimitException, Storage.StorageQuotaExceededException {
         return createFolder(folderName, parentFolderId, new HashMap<>());
     }
 
-    public static void downloadFile(String fileId, File targetFile, MediaHttpDownloaderProgressListener progressListener) throws StorageQuotaExceededException {
+    public static void downloadFile(String fileId, File targetFile, MediaHttpDownloaderProgressListener progressListener) throws Storage.StorageQuotaExceededException {
         try {
             ((Retriable<Void>) () -> {
                 try (OutputStream outputStream = new FileOutputStream(targetFile)) {
@@ -353,12 +351,12 @@ public class GoogleDriveUtils {
                     return null;
                 }
             }).retry(RETRIES);
-        } catch (StorageLimitException | IOException e) {
+        } catch (Storage.StorageLimitException | IOException e) {
             throw new RuntimeException("Failed to download file from Google Drive", e);
         }
     }
 
-    public static boolean isFolder(String driveFileId) throws StorageQuotaExceededException {
+    public static boolean isFolder(String driveFileId) throws Storage.StorageQuotaExceededException {
         try {
             return ((Retriable<Boolean>) () -> {
                 Drive service = getService();
@@ -368,7 +366,7 @@ public class GoogleDriveUtils {
                         .getMimeType()
                         .equals(FOLDER_MIME_TYPE);
             }).retry(RETRIES);
-        } catch (IOException | StorageLimitException e) {
+        } catch (IOException | Storage.StorageLimitException e) {
             throw new RuntimeException("Failed to check if file is folder on Google Drive", e);
         }
     }
@@ -383,7 +381,7 @@ public class GoogleDriveUtils {
 
         protected void onAuthorization(String id, CommandSender sender) {
 
-            String url = AUTO_SERVICE_URL + "/authgd?id=" + id;
+            String url = "%s/authgd?id=%s".formatted(AUTO_SERVICE_URL, id);
 
             Component header = Component.empty()
                     .append(Component.text("Account linking"));
@@ -489,7 +487,7 @@ public class GoogleDriveUtils {
      * @param driveFileId Parent Google Drive file ID. "drive" to get all drive files. "" to get all files
      * @param query       Additional parameters to find some file faster. "appProperties has { key='backuper' and value='true' }" will be added in the query string anyway
      **/
-    public static List<com.google.api.services.drive.model.File> ls(String driveFileId, String query) throws StorageQuotaExceededException {
+    public static List<com.google.api.services.drive.model.File> ls(String driveFileId, String query) throws Storage.StorageQuotaExceededException {
 
         try {
             return ((Retriable<List<com.google.api.services.drive.model.File>>) () -> {
@@ -503,7 +501,7 @@ public class GoogleDriveUtils {
                             .setPageToken(pageToken);
                     String q = "appProperties has { key='backuper' and value='true' }";
                     if (query != null) {
-                        q += " and " + query;
+                        q = "%s and %s".formatted(q, query);
                     }
 
                     if (driveFileId != null && driveFileId.equals("drive")) {
@@ -511,7 +509,7 @@ public class GoogleDriveUtils {
                     }
 
                     if (driveFileId != null && !driveFileId.isEmpty() && !driveFileId.equals("drive")) {
-                        q += " and '" + driveFileId + "'" + " in parents";
+                        q = "%s and '%s' in parents".formatted(q, driveFileId);
                     }
                     lsRequest = lsRequest.setQ(q);
 
@@ -525,7 +523,7 @@ public class GoogleDriveUtils {
 
                 return driveFiles;
             }).retry(RETRIES);
-        } catch (IOException | StorageLimitException e) {
+        } catch (IOException | Storage.StorageLimitException e) {
             throw new RuntimeException("Failed to get Google Drive credentials", e);
         }
     }
@@ -533,11 +531,11 @@ public class GoogleDriveUtils {
     /**
      * @param driveFileId Parent Google Drive file ID. "drive" to get all drive files. "" To get all files
      **/
-    public static List<com.google.api.services.drive.model.File> ls(String driveFileId) throws StorageQuotaExceededException {
+    public static List<com.google.api.services.drive.model.File> ls(String driveFileId) throws Storage.StorageQuotaExceededException {
         return ls(driveFileId, null);
     }
 
-    public static void renameFile(String fileId, String newName) throws StorageQuotaExceededException {
+    public static void renameFile(String fileId, String newName) throws Storage.StorageQuotaExceededException {
         try {
             ((Retriable<Void>) () -> {
                 Drive service = getService();
@@ -547,34 +545,34 @@ public class GoogleDriveUtils {
                         .execute();
                 return null;
             }).retry(RETRIES);
-        } catch (IOException | StorageLimitException e) {
+        } catch (IOException | Storage.StorageLimitException e) {
             throw new RuntimeException("Failed to rename file on Google Drive", e);
         }
     }
 
-    public static void deleteFile(String fileId) throws StorageQuotaExceededException {
+    public static void deleteFile(String fileId) throws Storage.StorageQuotaExceededException {
         try {
             ((Retriable<Void>) () -> {
                 Drive service = getService();
                 service.files().delete(fileId).execute();
                 return null;
             }).retry(RETRIES);
-        } catch (IOException | StorageLimitException e) {
-            throw new RuntimeException("Failed to delete file on Google Drive", e);
+        } catch (IOException | Storage.StorageLimitException e) {
+            throw new RuntimeException("Failed to delete file/dir on Google Drive", e);
         }
     }
 
-    public static com.google.api.services.drive.model.File getFileByName(String fileName, String parentId) throws StorageQuotaExceededException {
+    public static com.google.api.services.drive.model.File getFileByName(String fileName, String parentId) throws Storage.StorageQuotaExceededException {
         try {
             return ((Retriable<com.google.api.services.drive.model.File>) () -> {
                 String q = "";
-                q += "name = '" + fileName + "'";
+                q += "name = '%s'".formatted(fileName);
                 q += " and appProperties has { key='backuper' and value='true' }";
 
                 Drive.Files.List lsRequest = GoogleDriveUtils.getService().files().list();
 
                 if (parentId != null && !parentId.isEmpty()) {
-                    q += " and '" + Config.getInstance().getGoogleDriveConfig().getBackupsFolderId() + "' in parents";
+                    q += " and '%s' in parents".formatted(parentId);
                 }
 
                 lsRequest.setQ(q);
@@ -582,12 +580,12 @@ public class GoogleDriveUtils {
                 FileList driveFileList = lsRequest.execute();
                 return !driveFileList.getFiles().isEmpty() ? driveFileList.getFiles().getFirst() : null;
             }).retry(RETRIES);
-        } catch (IOException | StorageLimitException e) {
+        } catch (IOException | Storage.StorageLimitException e) {
             throw new RuntimeException("Failed to get Google Drive credentials", e);
         }
     }
 
-    public static long getFileByteSize(String fileId) throws StorageQuotaExceededException {
+    public static long getFileByteSize(String fileId) throws Storage.StorageQuotaExceededException {
         try {
             return ((Retriable<Long>) () -> {
                 if (isFolder(fileId)) {
@@ -606,15 +604,15 @@ public class GoogleDriveUtils {
                     return size != null ? size : 0;
                 }
             }).retry(RETRIES);
-        } catch (IOException | StorageLimitException e) {
+        } catch (IOException | Storage.StorageLimitException e) {
             throw new RuntimeException("Failed to get Google Drive credentials", e);
         }
     }
 
-    public static String getFileName(String fileId) throws StorageQuotaExceededException {
+    public static String getFileName(String fileId) throws Storage.StorageQuotaExceededException {
         try {
             return ((Retriable<String>) () -> getService().files().get(fileId).setFields("name").execute().getName()).retry(RETRIES);
-        } catch (IOException | StorageLimitException e) {
+        } catch (IOException | Storage.StorageLimitException e) {
             throw new RuntimeException("Failed to get Google Drive credentials", e);
         }
     }
@@ -624,9 +622,9 @@ public class GoogleDriveUtils {
 
         int RATE_LIMIT_DELAY_MILLIS = 10000;
 
-        T run() throws IOException, StorageLimitException, StorageQuotaExceededException;
+        T run() throws IOException, Storage.StorageLimitException, Storage.StorageQuotaExceededException;
 
-        default T retry(int retries) throws StorageLimitException, StorageQuotaExceededException, IOException {
+        default T retry(int retries) throws Storage.StorageLimitException, Storage.StorageQuotaExceededException, IOException {
             int completedRetries = 0;
             while (completedRetries < retries) {
                 try {
@@ -642,7 +640,7 @@ public class GoogleDriveUtils {
                             }
                             if (googleJsonResponseException.getDetails().getErrors() != null) {
                                 if (googleJsonResponseException.getDetails().getErrors().stream().anyMatch(errorInfo -> errorInfo.getReason().equals("storageQuotaExceeded"))) {
-                                    throw new StorageLimitException(Backup.StorageType.GOOGLE_DRIVE);
+                                    throw new Storage.StorageLimitException(Backup.StorageType.GOOGLE_DRIVE);
                                 }
                                 if (googleJsonResponseException.getDetails().getErrors().stream().anyMatch(errorInfo -> errorInfo.getReason().equals("rateLimitExceeded"))) {
                                     Backuper.getInstance().getLogManager().devWarn("Rate limit exceeded, retry in %s seconds...".formatted(RATE_LIMIT_DELAY_MILLIS / 1000));
@@ -651,7 +649,7 @@ public class GoogleDriveUtils {
                                     } catch (Exception ignored) {
                                         // No need to handle wait interruption
                                     }
-                                    throw new StorageQuotaExceededException(Backup.StorageType.GOOGLE_DRIVE);
+                                    throw new Storage.StorageQuotaExceededException(Backup.StorageType.GOOGLE_DRIVE);
                                 }
                             }
                         }

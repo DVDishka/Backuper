@@ -12,7 +12,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
-public class UnpackZipTask extends BaseAsyncTask {
+public class UnpackZipTask extends BaseTask {
 
     private final File sourceZipDir;
     private final File targetFolderDir;
@@ -25,7 +25,7 @@ public class UnpackZipTask extends BaseAsyncTask {
     }
 
     @Override
-    protected void run() throws IOException {
+    public void run() throws IOException {
 
         try (ZipInputStream zipInput = new ZipInputStream(Files.newInputStream(sourceZipDir.toPath()))) {
 
@@ -78,7 +78,7 @@ public class UnpackZipTask extends BaseAsyncTask {
     }
 
     @Override
-    protected void prepareTask(CommandSender sender) {
+    public void prepareTask(CommandSender sender) {
 
         maxProgress = 0;
 

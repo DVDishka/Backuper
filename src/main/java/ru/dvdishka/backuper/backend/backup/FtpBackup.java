@@ -1,85 +1,23 @@
 package ru.dvdishka.backuper.backend.backup;
 
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.task.BaseAsyncTask;
 import ru.dvdishka.backuper.backend.task.FtpDeleteDirTask;
+import ru.dvdishka.backuper.backend.task.Task;
 import ru.dvdishka.backuper.backend.util.FtpUtils;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 
 public class FtpBackup extends ExternalBackup {
 
-    private static final HashMap<String, FtpBackup> backups = new HashMap<>();
+    private final String backupName;
 
-    private FtpBackup(String backupName) {
+    FtpBackup(String backupName) {
         this.backupName = backupName;
     }
 
-    public static FtpBackup getInstance(String backupName) {
-
-        if (!checkBackupExistenceByName(backupName)) {
-            return null;
-        }
-        if (backups.containsKey(backupName)) {
-            return backups.get(backupName);
-        }
-        FtpBackup backup = new FtpBackup(backupName);
-        backups.put(backupName, backup);
-        return backup;
-    }
-
-    public static boolean checkBackupExistenceByName(String backupName) {
-
-        if (!Config.getInstance().getFtpConfig().isEnabled()) {
-            return false;
-        }
-
-        try {
-            LocalDateTime.parse(backupName, Config.getInstance().getDateTimeFormatter());
-        } catch (Exception e) {
-            return false;
-        }
-
-        List<String> backupFileNames;
-        try {
-            backupFileNames = FtpUtils.ls(Config.getInstance().getFtpConfig().getBackupsFolder());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        return backupFileNames.contains(backupName) || backupFileNames.contains("%s.zip".formatted(backupName));
-    }
-
-    public static ArrayList<FtpBackup> getBackups() {
-
-        if (!Config.getInstance().getFtpConfig().isEnabled()) {
-            return new ArrayList<>();
-        }
-
-        ArrayList<FtpBackup> backups = new ArrayList<>();
-        try {
-            for (String fileName : FtpUtils.ls(Config.getInstance().getFtpConfig().getBackupsFolder())) {
-                try {
-                    FtpBackup backup = FtpBackup.getInstance(fileName.replace(".zip", ""));
-
-                    if (backup != null) {
-                        backups.add(backup);
-                    }
-                } catch (Exception ignored) {
-                }
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return backups;
-    }
-
     @Override
-    public BaseAsyncTask getRawDeleteTask() {
+    public Task getRawDeleteTask() {
         return new FtpDeleteDirTask(getPath());
     }
 

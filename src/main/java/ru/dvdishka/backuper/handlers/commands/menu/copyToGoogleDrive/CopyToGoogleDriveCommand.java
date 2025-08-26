@@ -7,7 +7,6 @@ import ru.dvdishka.backuper.backend.backup.Backup;
 import ru.dvdishka.backuper.backend.backup.GoogleDriveBackup;
 import ru.dvdishka.backuper.backend.backup.LocalBackup;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.task.BaseAsyncTask;
 import ru.dvdishka.backuper.backend.task.GoogleDriveSendDirTask;
 import ru.dvdishka.backuper.backend.util.GoogleDriveUtils;
 import ru.dvdishka.backuper.handlers.commands.Command;
@@ -62,12 +61,12 @@ public class CopyToGoogleDriveCommand extends Command {
 
         Backuper.getInstance().getScheduleManager().runAsync(() -> {
 
-            String inProgressName = localBackup.getName() + " in progress";
+            String inProgressName = "%s in progress".formatted(localBackup.getName());
             if (Backup.BackupFileType.ZIP.equals(localBackup.getFileType())) {
-                inProgressName += ".zip";
+                inProgressName = "%s.zip".formatted(inProgressName);
             }
 
-            BaseAsyncTask task = new GoogleDriveSendDirTask(localBackup.getFile(),
+            AsyncTask task = new GoogleDriveSendDirTask(localBackup.getFile(),
                     Config.getInstance().getGoogleDriveConfig().getBackupsFolderId(),
                     inProgressName,
                     true, true

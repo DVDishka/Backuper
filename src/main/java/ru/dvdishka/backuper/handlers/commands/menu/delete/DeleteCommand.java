@@ -5,7 +5,6 @@ import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.backup.*;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.task.BaseAsyncTask;
 import ru.dvdishka.backuper.backend.util.GoogleDriveUtils;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
@@ -34,9 +33,9 @@ public class DeleteCommand extends Command {
                         !GoogleDriveUtils.checkConnection())) {
             cancelSound();
             if (!storage.equals("googleDrive")) {
-                returnFailure(storage + " storage is disabled!");
+                returnFailure("%s storage is disabled!".formatted(storage));
             } else {
-                returnFailure(storage + " storage is disabled or Google account is not linked!");
+                returnFailure("%s storage is disabled or Google account is not linked!".formatted(storage));
             }
             return;
         }
@@ -79,7 +78,7 @@ public class DeleteCommand extends Command {
 
         final Backup finalBackup = backup;
 
-        BaseAsyncTask task = finalBackup.getDeleteTask();
+        AsyncTask task = finalBackup.getDeleteTask();
         Backuper.getInstance().getTaskManager().startTaskAsync(task, sender, List.of(permission));
     }
 }

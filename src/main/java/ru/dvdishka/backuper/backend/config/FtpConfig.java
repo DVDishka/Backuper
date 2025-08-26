@@ -1,6 +1,6 @@
 package ru.dvdishka.backuper.backend.config;
 
-public class FtpConfig {
+public class FtpConfig implements StorageConfig {
 
     boolean enabled;
     boolean autoBackup;

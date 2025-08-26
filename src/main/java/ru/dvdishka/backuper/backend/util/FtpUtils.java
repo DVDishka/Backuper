@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class FtpUtils {
@@ -25,7 +26,7 @@ public class FtpUtils {
     private static String pathSeparatorSymbol;
     private static int port;
 
-    private static ArrayList<FTPClient> ftps = new ArrayList<>();
+    private static final ArrayList<FTPClient> ftps = new ArrayList<>();
 
     public static void init() {
         enabled = Config.getInstance().getFtpConfig().isEnabled();
@@ -37,14 +38,14 @@ public class FtpUtils {
         port = Config.getInstance().getFtpConfig().getPort();
     }
 
-    /***\
+    /***
      * Checks if the FTP(S) server is available. Sends warning to the console if not
      */
     public static boolean checkConnection() {
         return checkConnection(null);
     }
 
-    /***\
+    /***
      * Checks if the FTP(S) server is available. Sends warning to the console and sender if not
      */
     public static boolean checkConnection(CommandSender sender) {
@@ -58,6 +59,7 @@ public class FtpUtils {
             return true;
         } catch (Exception e) {
             Backuper.getInstance().getLogManager().warn("Failed to establish connection to the FTP(S) server", sender);
+            Backuper.getInstance().getLogManager().warn(e);
             return false;
         }
     }
@@ -103,7 +105,7 @@ public class FtpUtils {
         return ftp;
     }
 
-    public static ArrayList<String> ls(String path) throws IOException {
+    public static List<String> ls(String path) throws IOException {
 
         FTPClient ftp = getClient();
 
@@ -117,7 +119,7 @@ public class FtpUtils {
         }
     }
 
-    public static ArrayList<String> ls(FTPClient ftp, String path) throws IOException {
+    public static List<String> ls(FTPClient ftp, String path) throws IOException {
 
         try {
             ftp.changeWorkingDirectory(path);
@@ -133,9 +135,9 @@ public class FtpUtils {
     public static String resolve(String path, String fileName) {
 
         if (!path.endsWith(pathSeparatorSymbol)) {
-            path += pathSeparatorSymbol;
+            path = "%s%s".formatted(path, pathSeparatorSymbol);
         }
-        return path + fileName;
+        return "%s%s".formatted(path, fileName);
     }
 
     public static long getDirByteSize(String remoteFilePath) throws IOException {

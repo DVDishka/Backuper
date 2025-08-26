@@ -1,6 +1,6 @@
 package ru.dvdishka.backuper.backend.config;
 
-public class LocalConfig {
+public class LocalConfig implements StorageConfig {
 
     boolean enabled;
     boolean autoBackup;
@@ -9,6 +9,7 @@ public class LocalConfig {
     long backupsWeight;
     boolean zipArchive;
     int zipCompressionLevel;
+    String pathSeparatorSymbol;
 
     public int getBackupsNumber() {
         return backupsNumber;
@@ -37,4 +38,6 @@ public class LocalConfig {
     public boolean isAutoBackup() {
         return autoBackup;
     }
+
+    public String getPathSeparatorSymbol() {return pathSeparatorSymbol;}
 }

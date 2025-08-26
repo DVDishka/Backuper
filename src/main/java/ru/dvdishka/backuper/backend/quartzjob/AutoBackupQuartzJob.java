@@ -7,7 +7,6 @@ import org.quartz.Trigger;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.task.BackupTask;
-import ru.dvdishka.backuper.backend.task.BaseAsyncTask;
 import ru.dvdishka.backuper.backend.task.TaskManager;
 import ru.dvdishka.backuper.backend.util.UIUtils;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
@@ -30,7 +29,7 @@ public class AutoBackupQuartzJob implements org.quartz.Job {
             scheduleNextBackupAlert(jobExecutionContext.getTrigger()); // Prepare alert for next backup
 
             Backuper.getInstance().getScheduleManager().runAsync(() -> {
-                BaseAsyncTask backupTask = new BackupTask(Config.getInstance().getAfterBackup(), true);
+                AsyncTask backupTask = new BackupTask(Config.getInstance().getAfterBackup(), true);
                 List<Permissions> permissions = new ArrayList<>(){};
                 permissions.add(Permissions.BACKUP);
                 if ("RESTART".equals(Config.getInstance().getAfterBackup())) {

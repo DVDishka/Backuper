@@ -6,11 +6,13 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.dvdishka.backuper.backend.Initialization;
 import ru.dvdishka.backuper.backend.backup.Backup;
+import ru.dvdishka.backuper.backend.backup.BackupManager;
 import ru.dvdishka.backuper.backend.common.LogManager;
 import ru.dvdishka.backuper.backend.common.ScheduleManager;
 import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.task.BaseAsyncTask;
+import ru.dvdishka.backuper.backend.storage.StorageManager;
 import ru.dvdishka.backuper.backend.task.SetWorldsWritableTask;
+import ru.dvdishka.backuper.backend.task.Task;
 import ru.dvdishka.backuper.backend.task.TaskManager;
 
 import java.io.File;
@@ -22,6 +24,8 @@ public class Backuper extends JavaPlugin {
     private TaskManager taskManager;
     private LogManager logger;
     private ScheduleManager scheduleManager;
+    private StorageManager storageManager;
+    private BackupManager backupManager;
 
     private static Backuper instance;
 
@@ -32,6 +36,8 @@ public class Backuper extends JavaPlugin {
         instance = this;
         this.logger = new LogManager();
         this.taskManager = new TaskManager();
+        this.storageManager = new StorageManager();
+        this.backupManager = new BackupManager();
 
         File pluginDir = new File("plugins/Backuper");
         File configFile = new File("plugins/Backuper/config.yml");
@@ -75,7 +81,7 @@ public class Backuper extends JavaPlugin {
         saveSizeCache();
 
         Backuper.getInstance().getScheduleManager().destroy(this);
-        BaseAsyncTask setWorldsWritableTask = new SetWorldsWritableTask();
+        Task setWorldsWritableTask = new SetWorldsWritableTask();
         getTaskManager().startTask(setWorldsWritableTask, Bukkit.getConsoleSender(), List.of());
 
         Config.getInstance().setConfigField("lastBackup", Config.getInstance().getLastBackup());
@@ -115,5 +121,13 @@ public class Backuper extends JavaPlugin {
 
     public ScheduleManager getScheduleManager() {
         return scheduleManager;
+    }
+
+    public StorageManager getStorageManager() {
+        return storageManager;
+    }
+
+    public BackupManager getBackupManager() {
+        return backupManager;
     }
 }

@@ -9,7 +9,7 @@ import ru.dvdishka.backuper.backend.config.Config;
 import java.io.File;
 import java.util.concurrent.ExecutionException;
 
-public class CopyExternalBackupToLocalTask extends BaseAsyncTask {
+public class CopyExternalBackupToLocalTask extends BaseTask {
 
     private final ExternalBackup backup;
     private BaseTask copyToLocalTask = null;
@@ -20,7 +20,7 @@ public class CopyExternalBackupToLocalTask extends BaseAsyncTask {
     }
 
     @Override
-    protected void run() {
+    public void run() {
 
         if (!cancelled) {
             try {
@@ -32,9 +32,9 @@ public class CopyExternalBackupToLocalTask extends BaseAsyncTask {
 
         if (!cancelled) {
 
-            String inProgressName = backup.getName() + " in progress";
+            String inProgressName = "%s in progress".formatted(backup.getName());
             if (Backup.BackupFileType.ZIP.equals(backup.getFileType())) {
-                inProgressName += ".zip";
+                inProgressName = "%s.zip".formatted(inProgressName);
             }
             File inProgressFile = new File(Config.getInstance().getLocalConfig().getBackupsFolder(), inProgressName);
             final String backupFileName = backup.getFileName();
@@ -46,7 +46,7 @@ public class CopyExternalBackupToLocalTask extends BaseAsyncTask {
     }
 
     @Override
-    protected void prepareTask(CommandSender sender) throws ExecutionException, InterruptedException {
+    public void prepareTask(CommandSender sender) throws ExecutionException, InterruptedException {
 
         if (cancelled) {
             return;
@@ -57,7 +57,7 @@ public class CopyExternalBackupToLocalTask extends BaseAsyncTask {
     }
 
     @Override
-    protected void cancel() {
+    public void cancel() {
         cancelled = true;
         if (copyToLocalTask != null) {
             Backuper.getInstance().getTaskManager().cancelTaskRaw(copyToLocalTask);

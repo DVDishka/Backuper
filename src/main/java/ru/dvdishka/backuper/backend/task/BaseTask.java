@@ -5,8 +5,7 @@ import com.jcraft.jsch.SftpException;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.ApiStatus;
 import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.backend.exception.StorageLimitException;
-import ru.dvdishka.backuper.backend.exception.StorageQuotaExceededException;
+import ru.dvdishka.backuper.backend.storage.Storage;
 
 import javax.naming.AuthenticationException;
 import java.io.IOException;
@@ -15,7 +14,7 @@ import java.util.concurrent.ExecutionException;
 
 import static java.lang.Math.min;
 
-public abstract class BaseTask {
+public abstract class BaseTask implements Task {
 
     protected CommandSender sender = null; //Any task must be able to send some information to sender without crash (For example when only one storage is not available and the BackupTask shouldn't be aborted)
     protected String taskName;
@@ -47,7 +46,7 @@ public abstract class BaseTask {
         return maxProgress;
     }
 
-    protected synchronized void incrementCurrentProgress(long progress) {
+    public synchronized void incrementCurrentProgress(long progress) {
         this.currentProgress += progress;
     }
 
@@ -59,19 +58,19 @@ public abstract class BaseTask {
      * This method should only be used to declare Task's run logic, don't use it to start any task. Use TaskManager.startTaskRaw instead
      */
     @ApiStatus.Internal
-    protected abstract void run() throws IOException, JSchException, SftpException;
+    public abstract void run() throws IOException, JSchException, SftpException;
 
     /***
      * This method should only be used to declare Task's prepare logic, don't use it to prepare any task. Use TaskManager.prepareTask instead
      */
     @ApiStatus.Internal
-    protected abstract void prepareTask(CommandSender sender) throws ExecutionException, InterruptedException, AuthenticationException, IOException, StorageLimitException, StorageQuotaExceededException, SftpException;
+    public abstract void prepareTask(CommandSender sender) throws ExecutionException, InterruptedException, AuthenticationException, IOException, Storage.StorageLimitException, Storage.StorageQuotaExceededException, SftpException;
 
     /***
      * Don't use this method to start any task. Use TaskManager.startTaskRaw instead
      */
     @ApiStatus.Internal
-    protected void start(CommandSender sender) throws TaskException {
+    public void start(CommandSender sender) throws TaskException {
         if (!cancelled) {
             this.sender = sender;
         }
@@ -99,13 +98,13 @@ public abstract class BaseTask {
     }
 
     /***
-     * Don't use this method to cancel any task. Use
+     * This method should only be used to declare Task's cancel logic, don't use it to cancel any task. Use TaskManager.cancel instead
      */
     @ApiStatus.Internal
-    protected abstract void cancel();
+    public abstract void cancel();
 
     @ApiStatus.Internal
-    protected void setPrepareTaskFuture(CompletableFuture<Void> future) {
+    public void setPrepareTaskFuture(CompletableFuture<Void> future) {
         this.prepareTaskFuture = future;
     }
 
@@ -145,7 +144,7 @@ public abstract class BaseTask {
         Backuper.getInstance().getLogManager().devWarn(e);
     }
 
-    protected boolean isTaskPrepared() {
+    public boolean isTaskPrepared() {
         return prepareTaskFuture != null && prepareTaskFuture.isDone();
     }
 }

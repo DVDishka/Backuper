@@ -6,7 +6,7 @@ import ru.dvdishka.backuper.backend.util.GoogleDriveUtils;
 import java.io.File;
 import java.util.HashMap;
 
-public class GoogleDriveConfig {
+public class GoogleDriveConfig implements StorageConfig {
 
     boolean enabled;
     boolean autoBackup;

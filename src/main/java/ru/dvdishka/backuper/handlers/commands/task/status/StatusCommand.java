@@ -51,7 +51,7 @@ public class StatusCommand extends Command {
                 .append(Component.newline())
                 .append(Component.text("Task progress:"))
                 .append(Component.space())
-                .append(Component.text(progress == 0 ? "Preparing..." : (progress + "%"))
+                .append(Component.text(progress == 0 ? "Preparing..." : "%s%%".formatted(progress))
                         .decorate(TextDecoration.BOLD)
                         .color(color));
 

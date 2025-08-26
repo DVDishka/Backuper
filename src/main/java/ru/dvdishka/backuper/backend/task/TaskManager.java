@@ -17,10 +17,10 @@ import java.util.function.Function;
 
 public class TaskManager {
 
-    private BaseTask currentTask;
+    private Task currentTask;
     private List<Permissions> currentTaskPermissions;
 
-    private Result start(BaseAsyncTask task, CommandSender sender, List<Permissions> permissions, Function<Runnable, CompletableFuture<Void>> taskExecutor) {
+    private Result start(Task task, CommandSender sender, List<Permissions> permissions, Function<Runnable, CompletableFuture<Void>> taskExecutor) {
         if (currentTask != null) {
             return Result.LOCKED.sendMessage(task, sender);
         }
@@ -50,7 +50,7 @@ public class TaskManager {
     /***
      * Run task using current thread
      */
-    public Result startTask(BaseAsyncTask task, CommandSender sender, List<Permissions> permissions) {
+    public Result startTask(Task task, CommandSender sender, List<Permissions> permissions) {
         return start(task, sender, permissions, (runnable) -> {
             runnable.run();
             return CompletableFuture.completedFuture(null);
@@ -60,22 +60,22 @@ public class TaskManager {
     /***
      * Run task async
      */
-    public Result startTaskAsync(BaseAsyncTask task, CommandSender sender, List<Permissions> permissions) {
+    public Result startTaskAsync(Task task, CommandSender sender, List<Permissions> permissions) {
         return start(task, sender, permissions, Backuper.getInstance().getScheduleManager()::runAsync);
     }
 
-    public void startTaskRaw(BaseTask task, CommandSender sender) throws TaskException {
+    public void startTaskRaw(Task task, CommandSender sender) throws TaskException {
         task.start(sender);
     }
 
-    public void cancelTaskRaw(BaseTask task) {
+    public void cancelTaskRaw(Task task) {
         task.cancel();
     }
 
     /***
      * Preparation will be completed using a random thread, not current, but this method waits for preparation to be completed
      */
-    public void prepareTask(BaseTask task, CommandSender sender) throws ExecutionException, InterruptedException {
+    public void prepareTask(Task task, CommandSender sender) throws ExecutionException, InterruptedException {
         CompletableFuture<Void> prepareTaskFuture = Backuper.getInstance().getScheduleManager().runAsync(() -> {
             try {
                 task.prepareTask(sender);
@@ -87,7 +87,7 @@ public class TaskManager {
         prepareTaskFuture.get();
     }
 
-    public Result cancelTask(BaseTask task, CommandSender sender) {
+    public Result cancelTask(Task task, CommandSender sender) {
         if (currentTask == null) {
             return Result.NO_TASK_RUNNING.sendMessage(task, sender);
         }
@@ -106,7 +106,7 @@ public class TaskManager {
         return currentTask != null;
     }
 
-    public BaseTask getCurrentTask() {
+    public Task getCurrentTask() {
         return currentTask;
     }
 
@@ -128,7 +128,7 @@ public class TaskManager {
             this.message = message;
         }
         
-        private Component getMessage(BaseTask task, CommandSender sender) {
+        private Component getMessage(Task task, CommandSender sender) {
             if (STARTED.equals(this)) {
                 return getTaskStartedMessage(task, sender);
             }
@@ -141,12 +141,12 @@ public class TaskManager {
         /***
          * @return Returns itself
          */
-        public Result sendMessage(BaseTask task, CommandSender sender) {
+        public Result sendMessage(Task task, CommandSender sender) {
             UIUtils.sendMessage(getMessage(task, sender), sender);
             return this;
         }
 
-        private Component getTaskCompletedMessage(BaseTask task, CommandSender sender) {
+        private Component getTaskCompletedMessage(Task task, CommandSender sender) {
             Component message = Component.empty();
 
             message = message
@@ -163,7 +163,7 @@ public class TaskManager {
             }
         }
 
-        private Component getTaskStartedMessage(BaseTask task, CommandSender sender) {
+        private Component getTaskStartedMessage(Task task, CommandSender sender) {
 
             Component header = Component.empty();
             Component message = Component.empty();

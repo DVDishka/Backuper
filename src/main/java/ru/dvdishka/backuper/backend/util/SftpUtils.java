@@ -9,6 +9,7 @@ import ru.dvdishka.backuper.backend.config.Config;
 
 import javax.security.sasl.AuthenticationException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.Vector;
 
@@ -187,7 +188,7 @@ public class SftpUtils {
         }
     }
 
-    public static ArrayList<String> ls(String remoteFolderPath) throws SftpException {
+    public static List<String> ls(String remoteFolderPath) throws SftpException {
         Pair<Session, ChannelSftp> sessionChannelSftpPair;
         try {
             sessionChannelSftpPair = createChannel();

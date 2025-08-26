@@ -49,7 +49,7 @@ public class CancelConfirmationCommand extends Command {
                 .append(Component.newline())
                 .append(Component.text("Task progress:"))
                 .append(Component.space())
-                .append(Component.text(progress + "%")
+                .append(Component.text("%s%%".formatted(progress))
                         .decorate(TextDecoration.BOLD)
                         .color(color))
                 .append(Component.newline())
