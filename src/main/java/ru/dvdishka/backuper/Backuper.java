@@ -2,14 +2,13 @@ package ru.dvdishka.backuper;
 
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPIBukkitConfig;
+import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.dvdishka.backuper.backend.Initialization;
-import ru.dvdishka.backuper.backend.backup.Backup;
-import ru.dvdishka.backuper.backend.backup.BackupManager;
 import ru.dvdishka.backuper.backend.common.LogManager;
 import ru.dvdishka.backuper.backend.common.ScheduleManager;
-import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.backend.config.ConfigManager;
 import ru.dvdishka.backuper.backend.storage.StorageManager;
 import ru.dvdishka.backuper.backend.task.SetWorldsWritableTask;
 import ru.dvdishka.backuper.backend.task.Task;
@@ -19,14 +18,16 @@ import java.io.File;
 import java.io.FileWriter;
 import java.util.List;
 
+@Getter
 public class Backuper extends JavaPlugin {
 
     private TaskManager taskManager;
-    private LogManager logger;
+    private LogManager logManager;
+    private ConfigManager configManager;
     private ScheduleManager scheduleManager;
     private StorageManager storageManager;
-    private BackupManager backupManager;
 
+    @Getter
     private static Backuper instance;
 
     public void onEnable() {
@@ -34,10 +35,10 @@ public class Backuper extends JavaPlugin {
         CommandAPI.onEnable();
 
         instance = this;
-        this.logger = new LogManager();
+        this.configManager = new ConfigManager();
+        this.logManager = new LogManager();
         this.taskManager = new TaskManager();
         this.storageManager = new StorageManager();
-        this.backupManager = new BackupManager();
 
         File pluginDir = new File("plugins/Backuper");
         File configFile = new File("plugins/Backuper/config.yml");
@@ -52,12 +53,6 @@ public class Backuper extends JavaPlugin {
         Initialization.sendGoogleAccountCheckResult(this.getServer().getConsoleSender());
         Initialization.checkStorages(null);
         Initialization.indexStorages(null);
-
-        File backupsDir = new File(Config.getInstance().getLocalConfig().getBackupsFolder());
-        if (!backupsDir.exists() && !backupsDir.mkdirs()) {
-
-            Backuper.getInstance().getLogManager().warn("Can not create plugins/Backuper/Backups dir!");
-        }
 
         Initialization.unifyBackupNameFormat(null);
         Initialization.initBStats(this);
@@ -84,8 +79,8 @@ public class Backuper extends JavaPlugin {
         Task setWorldsWritableTask = new SetWorldsWritableTask();
         getTaskManager().startTask(setWorldsWritableTask, Bukkit.getConsoleSender(), List.of());
 
-        Config.getInstance().setConfigField("lastBackup", Config.getInstance().getLastBackup());
-        Config.getInstance().setConfigField("lastChange", Config.getInstance().getLastChange());
+        configManager.setConfigField("lastBackup", configManager.getLastBackup());
+        configManager.setConfigField("lastChange", configManager.getLastChange());
 
         CommandAPI.onDisable();
 
@@ -95,39 +90,15 @@ public class Backuper extends JavaPlugin {
     private void saveSizeCache() {
 
         try {
-            File sizeCachceFile = Config.getInstance().getSizeCacheFile();
+            File sizeCachceFile = configManager.getServerConfig().getSizeCacheFile();
 
             FileWriter writer = new FileWriter(sizeCachceFile);
-            writer.write(Backup.getSizeCacheJson());
+            writer.write(storageManager.getSizeCacheJson());
             writer.close();
 
         } catch (Exception e) {
             Backuper.getInstance().getLogManager().warn("Failed to save size cache to disk!");
             Backuper.getInstance().getLogManager().warn(e);
         }
-    }
-
-    public static Backuper getInstance() {
-        return instance;
-    }
-
-    public TaskManager getTaskManager() {
-        return taskManager;
-    }
-
-    public LogManager getLogManager() {
-        return logger;
-    }
-
-    public ScheduleManager getScheduleManager() {
-        return scheduleManager;
-    }
-
-    public StorageManager getStorageManager() {
-        return storageManager;
-    }
-
-    public BackupManager getBackupManager() {
-        return backupManager;
     }
 }

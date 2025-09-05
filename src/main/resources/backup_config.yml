@@ -1,0 +1,28 @@
+# (true/false) Automatic backup once in a specified period
+autoBackup: true
+# (Expression) Auto-backup schedule expression. Use this site to generate your one: http://www.cronmaker.com
+autoBackupCron: '0 0 0 1/1 * ? *'
+# Set a format for backup file names (see java.time docs). It must contain information about both time and date
+backupFileNameFormat: 'dd-MM-yyyy HH-mm-ss'
+# (Path list) (An example of how to set a list is below) Full directory paths to folders/files that you want to be backed up. Worlds will be backed up automatically, so you do not need to specify world folders there (For example, you can specify "plugins", "config") You can also specify all files with "*".
+# addDirectoryToBackup:
+# - 'path1'
+# - 'path2'
+# - ...
+addDirectoryToBackup: []
+# (Path list) (An example of how to set a list is below) Full directory paths to folders/files that you want to be excluded from backup. If you want to backup everything from the folder1 except some folder1/file1, you can specify folder1 in addDirectoryToBackup and folder1/file1 in excludeDirectoryFromBackup. (The backupsFolder directory will be excluded automatically to prevent the loop)
+# excludeDirectoryFromBackup:
+# - 'path1'
+# - 'path2'
+# - ...
+excludeDirectoryFromBackup: []
+
+# (true/false) Sometimes errors may occur while creating a backup. When this option is enabled, such backups will be deleted
+deleteBrokenBackups: true
+# (true/false) The backup will only occur if the world has been changed since the last backup. If the world has not been changed, this backup cycle will be skipped
+skipDuplicateBackup: true
+# (STOP, RESTART, NOTHING) What to do after an automatic backup
+afterBackup: NOTHING
+
+# (true/false) (True recommended) The backuper will mark all world folders as Read-Only to prevent folder changing that may cause the backup crash. True value may cause access denied errors during the backup (you should just ignore that)
+setWorldsReadOnly: false

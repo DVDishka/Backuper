@@ -3,7 +3,7 @@ package ru.dvdishka.backuper.backend.task;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
-import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.util.Utils;
 
 public class SetWorldsWritableTask extends BaseTask {
@@ -23,7 +23,7 @@ public class SetWorldsWritableTask extends BaseTask {
     @Override
     public void run() {
 
-        if (!Config.getInstance().isSetWorldsReadOnly() && !force) {
+        if (!Backuper.getInstance().getConfigManager().getBackupConfig().isSetWorldsReadOnly() && !force) {
             return;
         }
 

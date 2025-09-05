@@ -11,8 +11,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.backup.*;
-import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.util.GoogleDriveUtils;
+import ru.dvdishka.backuper.backend.config.ConfigManager;
 import ru.dvdishka.backuper.handlers.commands.Command;
 
 import java.io.File;
@@ -44,10 +43,10 @@ public class ListCommand extends Command {
     @Override
     public void execute() {
 
-        if (storage.equals("local") && !Config.getInstance().getLocalConfig().isEnabled() ||
-                storage.equals("sftp") && !Config.getInstance().getSftpConfig().isEnabled() ||
-                storage.equals("ftp") && !Config.getInstance().getFtpConfig().isEnabled() ||
-                storage.equals("googleDrive") && (!Config.getInstance().getGoogleDriveConfig().isEnabled() ||
+        if (storage.equals("local") && !ConfigManager.getInstance().getLocalConfig().isEnabled() ||
+                storage.equals("sftp") && !ConfigManager.getInstance().getSftpConfig().isEnabled() ||
+                storage.equals("ftp") && !ConfigManager.getInstance().getFtpConfig().isEnabled() ||
+                storage.equals("googleDrive") && (!ConfigManager.getInstance().getGoogleDriveConfig().isEnabled() ||
                         !GoogleDriveUtils.checkConnection())) {
             cancelSound();
             if (!storage.equals("googleDrive")) {
@@ -59,7 +58,7 @@ public class ListCommand extends Command {
         }
 
         if (storage.equals("local")) {
-            File backupsFolder = new File(Config.getInstance().getLocalConfig().getBackupsFolder());
+            File backupsFolder = new File(ConfigManager.getInstance().getLocalConfig().getBackupsFolder());
             if (!backupsFolder.exists() || backupsFolder.listFiles() == null) {
                 returnFailure("Wrong local.backupsFolder config value! (Maybe the specified folder does not exist)");
                 cancelSound();

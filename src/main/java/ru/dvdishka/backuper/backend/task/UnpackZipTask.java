@@ -1,70 +1,56 @@
 package ru.dvdishka.backuper.backend.task;
 
 import org.bukkit.command.CommandSender;
-import ru.dvdishka.backuper.backend.util.Utils;
+import ru.dvdishka.backuper.backend.storage.BasicStorageProgressListener;
+import ru.dvdishka.backuper.backend.storage.Storage;
+import ru.dvdishka.backuper.backend.storage.StorageProgressListener;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
-public class UnpackZipTask extends BaseTask {
+public class UnpackZipTask extends BaseTask implements SingleStorageTask {
 
-    private final File sourceZipDir;
-    private final File targetFolderDir;
+    private final Storage storage;
+    private final String sourceZipDir;
+    private final String targetFolderDir;
 
-    public UnpackZipTask(File sourceZipDir, File targetFolderDir) {
+    private final List<StorageProgressListener> progressListeners = new ArrayList<>();
 
+    /***
+     * @param targetFolderDir Not parent
+     */
+    public UnpackZipTask(Storage storage, String sourceZipDir, String targetFolderDir) {
         super();
+        this.storage = storage;
         this.sourceZipDir = sourceZipDir;
-        this.targetFolderDir = targetFolderDir;
+        this.targetFolderDir = "%s in progress".formatted(targetFolderDir);
     }
 
     @Override
     public void run() throws IOException {
 
-        try (ZipInputStream zipInput = new ZipInputStream(Files.newInputStream(sourceZipDir.toPath()))) {
+        try (ZipInputStream zipInput = new ZipInputStream(storage.downloadFile(sourceZipDir, new BasicStorageProgressListener()))) {
 
             ZipEntry zipEntry;
+            if (!storage.exists(targetFolderDir)) {
+                storage.createDir(storage.getFileNameFromPath(sourceZipDir), storage.getParentPath(targetFolderDir));
+            }
 
             while (!cancelled && (zipEntry = zipInput.getNextEntry()) != null) {
-
-                if (zipEntry.isDirectory()) {
-                    targetFolderDir.mkdirs();
-                    zipInput.closeEntry();
-                    continue;
-                }
-
                 final String name = zipEntry.getName();
-
                 try {
 
-                    if (!targetFolderDir.toPath().resolve(name).getParent().toFile().exists()) {
-
-                        // Sometimes it works in vain, so there is no point in checking the result
-                        targetFolderDir.toPath().resolve(name).getParent().toFile().mkdirs();
-                    }
-
-                    try (FileOutputStream outputStream = new FileOutputStream(targetFolderDir.toPath().resolve(name).toFile())) {
-
-                        int length;
-                        byte[] buffer = new byte[4096];
-
-                        while ((length = zipInput.read(buffer)) >= 0) {
-
-                            if (cancelled) {
-                                break;
-                            }
-
-                            outputStream.write(buffer, 0, length);
-                            incrementCurrentProgress(length);
-                        }
-
-                        outputStream.flush();
+                    if (zipEntry.isDirectory()) {
+                        storage.createDir(storage.getFileNameFromPath(name), storage.resolve(targetFolderDir, storage.getParentPath(name)));
+                    } else {
+                        StorageProgressListener progressListener = new BasicStorageProgressListener();
+                        storage.uploadFile(zipInput, storage.getFileNameFromPath(name), storage.resolve(targetFolderDir, name), progressListener);
+                        progressListeners.add(progressListener);
                     }
 
                 } catch (Exception e) {
@@ -74,6 +60,8 @@ public class UnpackZipTask extends BaseTask {
 
                 zipInput.closeEntry();
             }
+
+            storage.renameFile(targetFolderDir, storage.getFileNameFromPath(sourceZipDir).replace(" in progress", ""));
         }
     }
 
@@ -100,14 +88,20 @@ public class UnpackZipTask extends BaseTask {
             warn("Something went wrong while calculating UnpackZip task maxProgress", this.sender);
             warn(e);
         }
+    }
 
-        if (maxProgress <= 0) {
-            maxProgress = (long) (((double) Utils.getFileFolderByteSize(sourceZipDir)) * 1.6);
-        }
+    @Override
+    public long getTaskCurrentProgress() {
+        return progressListeners.stream().mapToLong(StorageProgressListener::getCurrentProgress).sum();
     }
 
     @Override
     public void cancel() {
         cancelled = true;
+    }
+
+    @Override
+    public Storage getStorage() {
+        return storage;
     }
 }

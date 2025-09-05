@@ -12,8 +12,7 @@ import ru.dvdishka.backuper.backend.backup.Backup;
 import ru.dvdishka.backuper.backend.backup.FtpBackup;
 import ru.dvdishka.backuper.backend.backup.GoogleDriveBackup;
 import ru.dvdishka.backuper.backend.backup.SftpBackup;
-import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.util.GoogleDriveUtils;
+import ru.dvdishka.backuper.backend.config.ConfigManager;
 import ru.dvdishka.backuper.handlers.commands.Command;
 
 public class CopyToLocalConfirmationCommand extends Command {
@@ -30,15 +29,15 @@ public class CopyToLocalConfirmationCommand extends Command {
 
         String backupName = (String) arguments.get("backupName");
 
-        if (!Config.getInstance().getLocalConfig().isEnabled()) {
+        if (!ConfigManager.getInstance().getLocalConfig().isEnabled()) {
             cancelSound();
             returnFailure("Local storage is disabled!");
             return;
         }
 
-        if (storage.equals("sftp") && !Config.getInstance().getSftpConfig().isEnabled() ||
-                storage.equals("ftp") && !Config.getInstance().getFtpConfig().isEnabled() ||
-                storage.equals("googleDrive") && (!Config.getInstance().getGoogleDriveConfig().isEnabled() ||
+        if (storage.equals("sftp") && !ConfigManager.getInstance().getSftpConfig().isEnabled() ||
+                storage.equals("ftp") && !ConfigManager.getInstance().getFtpConfig().isEnabled() ||
+                storage.equals("googleDrive") && (!ConfigManager.getInstance().getGoogleDriveConfig().isEnabled() ||
                         !GoogleDriveUtils.checkConnection())) {
             cancelSound();
             if (!storage.equals("googleDrive")) {

@@ -9,8 +9,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import ru.dvdishka.backuper.backend.backup.*;
-import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.util.GoogleDriveUtils;
+import ru.dvdishka.backuper.backend.config.ConfigManager;
 import ru.dvdishka.backuper.handlers.commands.Command;
 
 public class MenuCommand extends Command {
@@ -28,10 +27,10 @@ public class MenuCommand extends Command {
 
         String backupName = (String) arguments.get("backupName");
 
-        if (storage.equals("local") && !Config.getInstance().getLocalConfig().isEnabled() ||
-                storage.equals("sftp") && !Config.getInstance().getSftpConfig().isEnabled() ||
-                storage.equals("ftp") && !Config.getInstance().getFtpConfig().isEnabled() ||
-                storage.equals("googleDrive") && (!Config.getInstance().getGoogleDriveConfig().isEnabled() ||
+        if (storage.equals("local") && !ConfigManager.getInstance().getLocalConfig().isEnabled() ||
+                storage.equals("sftp") && !ConfigManager.getInstance().getSftpConfig().isEnabled() ||
+                storage.equals("ftp") && !ConfigManager.getInstance().getFtpConfig().isEnabled() ||
+                storage.equals("googleDrive") && (!ConfigManager.getInstance().getGoogleDriveConfig().isEnabled() ||
                         !GoogleDriveUtils.checkConnection())) {
             cancelSound();
             if (!storage.equals("googleDrive")) {
@@ -112,7 +111,7 @@ public class MenuCommand extends Command {
                         .append(Component.space());
             }
 
-            if (storage.equals("local") && Config.getInstance().getFtpConfig().isEnabled()) {
+            if (storage.equals("local") && ConfigManager.getInstance().getFtpConfig().isEnabled()) {
                 message = message
                         .append(Component.text("[COPY TO FTP]")
                                 .clickEvent(ClickEvent.runCommand("/backuper menu %s \"%s\" copyToFtpConfirmation".formatted(storage, backupName)))
@@ -121,7 +120,7 @@ public class MenuCommand extends Command {
                         .append(Component.space());
             }
 
-            if (storage.equals("local") && Config.getInstance().getSftpConfig().isEnabled()) {
+            if (storage.equals("local") && ConfigManager.getInstance().getSftpConfig().isEnabled()) {
                 message = message
                         .append(Component.text("[COPY TO SFTP]")
                                 .clickEvent(ClickEvent.runCommand("/backuper menu %s \"%s\" copyToSftpConfirmation".formatted(storage, backupName)))
@@ -130,9 +129,9 @@ public class MenuCommand extends Command {
                         .append(Component.space());
             }
 
-            if (storage.equals("sftp") && Config.getInstance().getLocalConfig().isEnabled() ||
-                    storage.equals("ftp") && Config.getInstance().getFtpConfig().isEnabled() ||
-                    storage.equals("googleDrive") && Config.getInstance().getGoogleDriveConfig().isEnabled()) {
+            if (storage.equals("sftp") && ConfigManager.getInstance().getLocalConfig().isEnabled() ||
+                    storage.equals("ftp") && ConfigManager.getInstance().getFtpConfig().isEnabled() ||
+                    storage.equals("googleDrive") && ConfigManager.getInstance().getGoogleDriveConfig().isEnabled()) {
                 message = message
                         .append(Component.text("[COPY TO LOCAL]")
                                 .clickEvent(ClickEvent.runCommand("/backuper menu %s \"%s\" copyToLocalConfirmation".formatted(storage, backupName)))

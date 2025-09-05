@@ -3,37 +3,45 @@ package ru.dvdishka.backuper.backend.task;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.storage.BasicStorageProgressListener;
+import ru.dvdishka.backuper.backend.storage.LocalStorage;
 import ru.dvdishka.backuper.backend.storage.Storage;
 import ru.dvdishka.backuper.backend.storage.StorageProgressListener;
 import ru.dvdishka.backuper.backend.util.Utils;
 
 import java.io.*;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-public class UploadDirsAsZip extends BaseTask implements SingleStorageTask {
+public class TransferDirsAsZipTask extends BaseTask {
 
     private static final int FILE_BUFFER_SIZE = 65536;
     private static final int STREAM_BUFFER_SIZE = 1048576;
     private static final int PIPE_BUFFER_SIZE = 4194304;
 
-    private final List<File> sourceDirs;
+    private final Storage sourceStorage;
+    private final List<String> sourceDirs;
     private final boolean forceExcludedDirs;
     private final boolean createRootDirInTargetZIP;
     private final Storage targetStorage;
     private final String targetParentDir;
     private final String targetZipFileName;
 
-    public UploadDirsAsZip(Storage targetStorage, List<File> sourceDirs, String targetParentDir, String targetZipFileName,
+    private StorageProgressListener progressListener;
+
+    /***
+     * @param sourceDirs Absolute paths. Don't try to add there a file you want to send without createRootDirInTargetZIP true option
+     * @param targetParentDir Absolute path
+     */
+    public TransferDirsAsZipTask(Storage sourceStorage, List<String> sourceDirs, Storage targetStorage, String targetParentDir, String targetZipFileName,
                            boolean createRootDirInTargetZIP, boolean forceExcludedDirs) {
 
+        this.sourceStorage = sourceStorage;
         this.targetStorage = targetStorage;
         this.sourceDirs = sourceDirs;
         this.targetParentDir = targetParentDir;
-        this.targetZipFileName = targetZipFileName;
+        this.targetZipFileName = "%s in progress".formatted(targetZipFileName);
         this.createRootDirInTargetZIP = createRootDirInTargetZIP;
         this.forceExcludedDirs = forceExcludedDirs;
     }
@@ -51,18 +59,16 @@ public class UploadDirsAsZip extends BaseTask implements SingleStorageTask {
                         STREAM_BUFFER_SIZE);
                      ZipOutputStream targetZipOutputStream = new ZipOutputStream(bufferedOutputStream)) {
 
-                    for (File sourceDirToAdd : sourceDirs) {
+                    for (String sourceDirToAdd : sourceDirs) {
 
                         if (cancelled) {
                             break;
                         }
 
                         if (createRootDirInTargetZIP) {
-                            File parent = sourceDirToAdd.getParentFile();
-                            parent = parent == null ? new File("") : parent;
-                            addDirToZip(targetZipOutputStream, sourceDirToAdd, parent.toPath());
+                            addDirToZip(targetZipOutputStream, sourceDirToAdd, sourceStorage.getFileNameFromPath(sourceDirToAdd));
                         } else {
-                            addDirToZip(targetZipOutputStream, sourceDirToAdd, sourceDirToAdd.toPath());
+                            addDirToZip(targetZipOutputStream, sourceDirToAdd, "");
                         }
                     }
 
@@ -72,20 +78,26 @@ public class UploadDirsAsZip extends BaseTask implements SingleStorageTask {
                 }
             });
 
-            final StorageProgressListener progressListener = new BasicStorageProgressListener();
+            progressListener = new BasicStorageProgressListener();
             targetStorage.uploadFile(pipedInputStream, targetZipFileName, targetParentDir, progressListener);
+            targetStorage.renameFile(targetStorage.resolve(targetParentDir, targetZipFileName), targetZipFileName.replace(" in progress", ""));
         }
     }
 
     @Override
+    public long getTaskCurrentProgress() {
+        return progressListener.getCurrentProgress();
+    }
+
+    @Override
     public void prepareTask(CommandSender sender) {
-        if (!forceExcludedDirs) {
-            for (File dir : sourceDirs) {
-                this.maxProgress += Utils.getFileFolderByteSizeExceptExcluded(dir);
+        if (forceExcludedDirs || !(sourceStorage instanceof LocalStorage)) {
+            for (String dir : sourceDirs) {
+                this.maxProgress += sourceStorage.getDirByteSize(dir);
             }
         } else {
-            for (File dir : sourceDirs) {
-                this.maxProgress += Utils.getFileFolderByteSize(dir);
+            for (String dir : sourceDirs) {
+                this.maxProgress += Utils.getFileFolderByteSizeExceptExcluded(new File(dir));
             }
         }
     }
@@ -98,26 +110,20 @@ public class UploadDirsAsZip extends BaseTask implements SingleStorageTask {
     /**
      * Recursively add a directory (or file) into the ZIP output stream.
      */
-    private void addDirToZip(ZipOutputStream zip, File sourceDir, Path relativeDirPath) {
-        if (cancelled) {
+    private void addDirToZip(ZipOutputStream zip, String sourceDir, String relativeDirPath) {
+        if (cancelled) return;
+        if (!sourceStorage.exists(sourceDir)) {
+            warn("Directory does not exist: %s".formatted(sourceDir), sender);
             return;
         }
-        if (!sourceDir.exists()) {
-            warn("Directory does not exist: %s".formatted(sourceDir.getAbsolutePath()), sender);
-            return;
-        }
-        boolean excluded = Utils.isExcludedDirectory(sourceDir, sender);
-        if (excluded && !forceExcludedDirs) {
-            return;
-        }
+        if (sourceStorage instanceof LocalStorage && !forceExcludedDirs && Utils.isExcludedDirectory(new File(sourceDir), sender)) return;
         try {
-            if (sourceDir.isFile()) {
+            if (sourceStorage.isFile(sourceDir)) {
                 try (BufferedInputStream bis = new BufferedInputStream(
                         new FileInputStream(sourceDir), FILE_BUFFER_SIZE)) {
-                    String relativePath = relativeDirPath.toAbsolutePath()
-                            .relativize(sourceDir.toPath().toAbsolutePath()).toString();
-                    ZipEntry entry = new ZipEntry(relativePath);
-                    if (isAlreadyCompressed(sourceDir)) {
+
+                    ZipEntry entry = new ZipEntry(relativeDirPath);
+                    if (isAlreadyCompressed(sourceStorage, sourceDir)) {
                         entry.setMethod(ZipEntry.STORED);
                         entry.setSize(sourceDir.length());
                         entry.setCompressedSize(sourceDir.length());
@@ -129,8 +135,7 @@ public class UploadDirsAsZip extends BaseTask implements SingleStorageTask {
                     byte[] buffer = new byte[FILE_BUFFER_SIZE];
                     int read;
                     while ((read = bis.read(buffer)) != -1) {
-                        if (cancelled)
-                            break;
+                        if (cancelled) break;
                         zip.write(buffer, 0, read);
                         incrementCurrentProgress(read);
                     }
@@ -138,15 +143,24 @@ public class UploadDirsAsZip extends BaseTask implements SingleStorageTask {
                 }
             }
         } catch (Exception e) {
-            warn("Error adding to ZIP: %s".formatted(sourceDir.getName()), sender);
+            warn("Error adding to ZIP: %s".formatted(sourceDir), sender);
             warn(e);
         }
-        File[] children = sourceDir.listFiles();
-        if (children != null) {
-            for (File f : children) {
-                if (!"session.lock".equals(f.getName())) {
-                    addDirToZip(zip, f, relativeDirPath);
+        if (sourceStorage.isDir(sourceDir)) {
+            try {
+                ZipEntry entry = new ZipEntry(relativeDirPath);
+                zip.putNextEntry(entry);
+                zip.closeEntry();
+
+                List<String> ls = sourceStorage.ls(sourceDir);
+                for (String file : ls) {
+                    if (!"session.lock".equals(file)) {
+                        addDirToZip(zip, sourceStorage.resolve(sourceDir, file), "%s/%s".formatted(relativeDirPath, file));
+                    }
                 }
+            } catch (Exception e) {
+                warn("Error adding a dir to ZIP: %s".formatted(sourceDir), sender);
+                warn(e);
             }
         }
     }
@@ -154,8 +168,8 @@ public class UploadDirsAsZip extends BaseTask implements SingleStorageTask {
     /**
      * Whether the file should be stored without compression.
      */
-    private boolean isAlreadyCompressed(File file) {
-        String name = file.getName().toLowerCase();
+    private boolean isAlreadyCompressed(Storage storage, String path) {
+        String name = storage.getFileNameFromPath(path).toLowerCase();
         return name.endsWith(".zip") || name.endsWith(".jar") || name.endsWith(".gz")
                 || name.endsWith(".7z") || name.endsWith(".rar")
                 || name.endsWith(".jpg") || name.endsWith(".jpeg")
@@ -168,9 +182,9 @@ public class UploadDirsAsZip extends BaseTask implements SingleStorageTask {
     /**
      * Calculate CRC for a file (required for STORED method).
      */
-    private long calculateCRC(File file) throws IOException {
+    private long calculateCRC(String path) throws IOException {
         try (BufferedInputStream bis = new BufferedInputStream(
-                new FileInputStream(file), FILE_BUFFER_SIZE)) {
+                sourceStorage.downloadFile(path, new BasicStorageProgressListener()), FILE_BUFFER_SIZE)) {
             CRC32 crc = new CRC32();
             byte[] buffer = new byte[FILE_BUFFER_SIZE];
             int read;
@@ -179,10 +193,5 @@ public class UploadDirsAsZip extends BaseTask implements SingleStorageTask {
             }
             return crc.getValue();
         }
-    }
-
-    @Override
-    public Storage getStorage() {
-        return targetStorage;
     }
 }

@@ -31,15 +31,24 @@ public interface Storage {
      */
     boolean checkConnection(CommandSender sender);
 
+    /***
+     * @return Returns a list of file names
+     */
     List<String> ls(String path) throws StorageMethodException, StorageConnectionException;
 
     String resolve(String path, String fileName) throws StorageMethodException;
+
+    boolean exists(String path) throws StorageMethodException, StorageConnectionException;
 
     boolean isFile(String path) throws StorageMethodException, StorageConnectionException;
 
     default boolean isDir(String path) throws StorageMethodException, StorageConnectionException {
         return !isFile(path);
     }
+
+    String getFileNameFromPath(String path) throws StorageMethodException, StorageConnectionException;
+
+    String getParentPath(String path) throws StorageMethodException, StorageConnectionException;
 
     long getDirByteSize(String remoteFilePath) throws StorageMethodException, StorageConnectionException;
 
@@ -50,6 +59,8 @@ public interface Storage {
     void uploadFile(InputStream sourceStream, String newFileName, String remoteParentDir, StorageProgressListener progressListener) throws StorageLimitException, StorageMethodException, StorageConnectionException;
 
     void downloadFile(String remotePath, File targetFile, StorageProgressListener progressListener) throws StorageMethodException, StorageConnectionException;
+
+    InputStream downloadFile(String remotePath, StorageProgressListener progressListener) throws StorageMethodException, StorageConnectionException;
 
     void delete(String path) throws StorageMethodException, StorageConnectionException;
 

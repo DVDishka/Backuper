@@ -22,10 +22,11 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.quartz.CronTrigger;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.backup.*;
-import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.config.ConfigBackwardsCompatibility;
+import ru.dvdishka.backuper.backend.config.ConfigManager;
 import ru.dvdishka.backuper.backend.quartzjob.AutoBackupQuartzJob;
-import ru.dvdishka.backuper.backend.util.*;
+import ru.dvdishka.backuper.backend.util.UIUtils;
+import ru.dvdishka.backuper.backend.util.Utils;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
 import ru.dvdishka.backuper.handlers.commands.backup.BackupCommand;
 import ru.dvdishka.backuper.handlers.commands.googleDrive.GoogleDriveLinkCommand;
@@ -72,10 +73,10 @@ public class Initialization implements Listener {
         @SuppressWarnings("unused")
         Metrics bStats = new Metrics(plugin, Utils.bStatsId);
 
-        bStats.addCustomChart(new SimplePie("local_storage", () -> Config.getInstance().getLocalConfig().isEnabled() ? "enabled" : "disabled"));
-        bStats.addCustomChart(new SimplePie("ftp_storage", () -> Config.getInstance().getFtpConfig().isEnabled() ? "enabled" : "disabled"));
-        bStats.addCustomChart(new SimplePie("sftp_storage", () -> Config.getInstance().getSftpConfig().isEnabled() ? "enabled" : "disabled"));
-        bStats.addCustomChart(new SimplePie("google_drive_storage", () -> Config.getInstance().getGoogleDriveConfig().isEnabled() && GoogleDriveUtils.checkConnection() ? "enabled" : "disabled"));
+        bStats.addCustomChart(new SimplePie("local_storage", () -> ConfigManager.getInstance().getLocalConfig().isEnabled() ? "enabled" : "disabled"));
+        bStats.addCustomChart(new SimplePie("ftp_storage", () -> ConfigManager.getInstance().getFtpConfig().isEnabled() ? "enabled" : "disabled"));
+        bStats.addCustomChart(new SimplePie("sftp_storage", () -> ConfigManager.getInstance().getSftpConfig().isEnabled() ? "enabled" : "disabled"));
+        bStats.addCustomChart(new SimplePie("google_drive_storage", () -> ConfigManager.getInstance().getGoogleDriveConfig().isEnabled() && GoogleDriveUtils.checkConnection() ? "enabled" : "disabled"));
 
         Backuper.getInstance().getLogManager().log("BStats initialization completed");
     }
@@ -84,7 +85,7 @@ public class Initialization implements Listener {
 
         Backuper.getInstance().getLogManager().log("Indexing storages...");
 
-        if (Config.getInstance().getLocalConfig().isEnabled()) {
+        if (ConfigManager.getInstance().getLocalConfig().isEnabled()) {
             Backuper.getInstance().getScheduleManager().runAsync(() -> {
                 try {
                     Backuper.getInstance().getLogManager().devLog("Indexing local storage...");
@@ -93,14 +94,14 @@ public class Initialization implements Listener {
                 } catch (Exception ignored) {}
             });
         }
-        if (Config.getInstance().getFtpConfig().isEnabled()) {
+        if (ConfigManager.getInstance().getFtpConfig().isEnabled()) {
             Backuper.getInstance().getScheduleManager().runAsync(() -> {
                 Backuper.getInstance().getLogManager().devLog("Indexing FTP storage...");
                 new ListCommand("ftp", false, sender, new CommandArguments(new Objects[]{}, new HashMap<String, Object>(), new String[]{}, new HashMap<String, String>(), "")).execute();
                 Backuper.getInstance().getLogManager().devLog("FTP storage has been indexed");
             });
         }
-        if (Config.getInstance().getSftpConfig().isEnabled()) {
+        if (ConfigManager.getInstance().getSftpConfig().isEnabled()) {
             Backuper.getInstance().getScheduleManager().runAsync(() -> {
                 try {
                     Backuper.getInstance().getLogManager().devLog("Indexing SFTP storage...");
@@ -111,7 +112,7 @@ public class Initialization implements Listener {
                 }
             });
         }
-        if (Config.getInstance().getGoogleDriveConfig().isEnabled() && GoogleDriveUtils.checkConnection()) {
+        if (ConfigManager.getInstance().getGoogleDriveConfig().isEnabled() && GoogleDriveUtils.checkConnection()) {
             Backuper.getInstance().getScheduleManager().runAsync(() -> {
                 try {
                     Backuper.getInstance().getLogManager().devLog("Indexing GoogleDrive storage...");
@@ -128,7 +129,7 @@ public class Initialization implements Listener {
 
             Backuper.getInstance().getLogManager().log("Initializing auto backup...");
 
-            CronTrigger autoBackupJobTrigger = Backuper.getInstance().getScheduleManager().runCronScheduledJob(AutoBackupQuartzJob.class, "backup", "auto", Config.getInstance().getAutoBackupCron());
+            CronTrigger autoBackupJobTrigger = Backuper.getInstance().getScheduleManager().runCronScheduledJob(AutoBackupQuartzJob.class, "backup", "auto", ConfigManager.getInstance().getAutoBackupCron());
             AutoBackupQuartzJob.scheduleNextBackupAlert(autoBackupJobTrigger); // Prepare alert for backup above
 
             Backuper.getInstance().getLogManager().log("Auto backup initialization completed");
@@ -141,14 +142,14 @@ public class Initialization implements Listener {
 
         if (configFile.exists()) {
 
-            Config.getInstance().load(configFile, sender);
+            ConfigManager.getInstance().load(configFile, sender);
 
         } else {
 
             try {
 
                 Backuper.getInstance().saveDefaultConfig();
-                Config.getInstance().load(configFile, sender);
+                ConfigManager.getInstance().load(configFile, sender);
 
             } catch (Exception e) {
 
@@ -175,16 +176,16 @@ public class Initialization implements Listener {
                         .then(new StringArgument("storage").includeSuggestions(ArgumentSuggestions.stringCollection((sender) -> {
                                             ArrayList<String> suggestions = new ArrayList<>();
 
-                                            if (Config.getInstance().getLocalConfig().isEnabled()) {
+                                            if (ConfigManager.getInstance().getLocalConfig().isEnabled()) {
                                                 suggestions.add("local");
                                             }
-                                            if (Config.getInstance().getFtpConfig().isEnabled()) {
+                                            if (ConfigManager.getInstance().getFtpConfig().isEnabled()) {
                                                 suggestions.add("ftp");
                                             }
-                                            if (Config.getInstance().getSftpConfig().isEnabled()) {
+                                            if (ConfigManager.getInstance().getSftpConfig().isEnabled()) {
                                                 suggestions.add("sftp");
                                             }
-                                            if (Config.getInstance().getGoogleDriveConfig().isEnabled()) {
+                                            if (ConfigManager.getInstance().getGoogleDriveConfig().isEnabled()) {
                                                 suggestions.add("googleDrive");
                                             }
                                             int storageCount = suggestions.size();
@@ -265,7 +266,7 @@ public class Initialization implements Listener {
                 .then(new LiteralArgument("list")
 
                         .then(new LiteralArgument("local").withRequirement((sender) -> {
-                                            return Config.getInstance().getLocalConfig().isEnabled();
+                                            return ConfigManager.getInstance().getLocalConfig().isEnabled();
                                         }).withPermission(Permissions.LOCAL_LIST.getPermission())
 
                                         .executes((sender, args) -> {
@@ -287,7 +288,7 @@ public class Initialization implements Listener {
                         )
 
                         .then(new LiteralArgument("sftp").withRequirement((sender -> {
-                                            return Config.getInstance().getSftpConfig().isEnabled();
+                                            return ConfigManager.getInstance().getSftpConfig().isEnabled();
                                         })).withPermission(Permissions.SFTP_LIST.getPermission())
 
                                         .executes((sender, args) -> {
@@ -309,7 +310,7 @@ public class Initialization implements Listener {
                         )
 
                         .then(new LiteralArgument("ftp").withRequirement((sender -> {
-                                            return Config.getInstance().getFtpConfig().isEnabled();
+                                            return ConfigManager.getInstance().getFtpConfig().isEnabled();
                                         })).withPermission(Permissions.FTP_LIST.getPermission())
 
                                         .executes((sender, args) -> {
@@ -331,7 +332,7 @@ public class Initialization implements Listener {
                         )
 
                         .then(new LiteralArgument("googleDrive")
-                                .withRequirement((sender -> Config.getInstance().getGoogleDriveConfig().isEnabled() && GoogleDriveUtils.checkConnection()))
+                                .withRequirement((sender -> ConfigManager.getInstance().getGoogleDriveConfig().isEnabled() && GoogleDriveUtils.checkConnection()))
                                 .withPermission(Permissions.GOOGLE_DRIVE_LIST.getPermission())
 
                                         .executes((sender, args) -> {
@@ -377,7 +378,7 @@ public class Initialization implements Listener {
                 .then(new LiteralArgument("menu")
 
                         .then(new LiteralArgument("local").withRequirement((sender -> {
-                                            return Config.getInstance().getLocalConfig().isEnabled();
+                                            return ConfigManager.getInstance().getLocalConfig().isEnabled();
                                         })).withPermission(Permissions.LOCAL_LIST.getPermission())
 
                                         .then(new TextArgument("backupName").includeSuggestions(ArgumentSuggestions.stringCollectionAsync((info) ->
@@ -422,13 +423,13 @@ public class Initialization implements Listener {
                                                                             suggestions.add("unZIP");
                                                                         }
                                                                         suggestions.add("delete");
-                                                                        if (Config.getInstance().getFtpConfig().isEnabled()) {
+                                                                        if (ConfigManager.getInstance().getFtpConfig().isEnabled()) {
                                                                             suggestions.add("copyToFtp");
                                                                         }
-                                                                        if (Config.getInstance().getSftpConfig().isEnabled()) {
+                                                                        if (ConfigManager.getInstance().getSftpConfig().isEnabled()) {
                                                                             suggestions.add("copyToSftp");
                                                                         }
-                                                                        if (Config.getInstance().getGoogleDriveConfig().isEnabled() &&
+                                                                        if (ConfigManager.getInstance().getGoogleDriveConfig().isEnabled() &&
                                                                                 GoogleDriveUtils.checkConnection()) {
                                                                             suggestions.add("copyToGoogleDrive");
                                                                         }
@@ -565,7 +566,7 @@ public class Initialization implements Listener {
                         )
 
                         .then(new LiteralArgument("sftp").withRequirement((sender -> {
-                                            return Config.getInstance().getSftpConfig().isEnabled();
+                                            return ConfigManager.getInstance().getSftpConfig().isEnabled();
                                         })).withPermission(Permissions.SFTP_LIST.getPermission())
 
                                         .then(new TextArgument("backupName").includeSuggestions(ArgumentSuggestions.stringCollectionAsync((info) -> {
@@ -648,7 +649,7 @@ public class Initialization implements Listener {
                         )
 
                         .then(new LiteralArgument("ftp").withRequirement((sender -> {
-                                            return Config.getInstance().getFtpConfig().isEnabled();
+                                            return ConfigManager.getInstance().getFtpConfig().isEnabled();
                                         })).withPermission(Permissions.FTP_LIST.getPermission())
 
                                         .then(new TextArgument("backupName").includeSuggestions(ArgumentSuggestions.stringCollectionAsync((info) -> {
@@ -731,7 +732,7 @@ public class Initialization implements Listener {
                         )
 
                         .then(new LiteralArgument("googleDrive")
-                                .withRequirement((sender -> Config.getInstance().getGoogleDriveConfig().isEnabled() && GoogleDriveUtils.checkConnection()))
+                                .withRequirement((sender -> ConfigManager.getInstance().getGoogleDriveConfig().isEnabled() && GoogleDriveUtils.checkConnection()))
                                 .withPermission(Permissions.GOOGLE_DRIVE_LIST.getPermission())
 
                                         .then(new TextArgument("backupName").includeSuggestions(ArgumentSuggestions.stringCollectionAsync((info) -> {
@@ -850,7 +851,7 @@ public class Initialization implements Listener {
         backupAccountCommandTree
                 .then(new LiteralArgument("account")
                         .then(new LiteralArgument("googleDrive")
-                                .withRequirement((sender) -> Config.getInstance().getGoogleDriveConfig().isEnabled())
+                                .withRequirement((sender) -> ConfigManager.getInstance().getGoogleDriveConfig().isEnabled())
                                 .withPermission(Permissions.GOOGLE_DRIVE_ACCOUNT.getPermission())
 
                                 .then(new LiteralArgument("link")
@@ -900,7 +901,7 @@ public class Initialization implements Listener {
 
     public static void checkPluginVersion() {
 
-        if (!Config.getInstance().isCheckUpdates()) {
+        if (!ConfigManager.getInstance().isCheckUpdates()) {
             return;
         }
 
@@ -943,7 +944,7 @@ public class Initialization implements Listener {
 
     public static void sendGoogleAccountCheckResult(CommandSender sender) {
 
-        if (sender.isOp() && Config.getInstance().getGoogleDriveConfig().isEnabled() && !GoogleDriveUtils.checkConnection()) {
+        if (sender.isOp() && ConfigManager.getInstance().getGoogleDriveConfig().isEnabled() && !GoogleDriveUtils.checkConnection()) {
 
             Component message = Component.empty();
 
@@ -1042,15 +1043,15 @@ public class Initialization implements Listener {
     }
 
     public static void checkStorages(CommandSender sender) {
-        if (Config.getInstance().getFtpConfig().isEnabled() && (FtpUtils.checkConnection())) {
+        if (ConfigManager.getInstance().getFtpConfig().isEnabled() && (FtpUtils.checkConnection())) {
             Backuper.getInstance().getLogManager().log("FTP(S) connection established successfully", sender);
         }
-        if (Config.getInstance().getSftpConfig().isEnabled() && SftpUtils.checkConnection(sender)) {
+        if (ConfigManager.getInstance().getSftpConfig().isEnabled() && SftpUtils.checkConnection(sender)) {
             Backuper.getInstance().getLogManager().log("SFTP connection established successfully", sender);
         }
-        if (Config.getInstance().getGoogleDriveConfig().isEnabled() && GoogleDriveUtils.checkConnection() && !Config.getInstance().getGoogleDriveConfig().getRawBackupFolderId().isEmpty()) {
+        if (ConfigManager.getInstance().getGoogleDriveConfig().isEnabled() && GoogleDriveUtils.checkConnection() && !ConfigManager.getInstance().getGoogleDriveConfig().getRawBackupFolderId().isEmpty()) {
             try {
-                GoogleDriveUtils.getService().files().listLabels(Config.getInstance().getGoogleDriveConfig().getRawBackupFolderId()).execute();
+                GoogleDriveUtils.getService().files().listLabels(ConfigManager.getInstance().getGoogleDriveConfig().getRawBackupFolderId()).execute();
             } catch (GoogleJsonResponseException e) {
                 if (e.getStatusCode() == 404) {
                     Backuper.getInstance().getLogManager().warn("Wrong folder ID is defined googleDrive.backupsFolderId field in config.yml (File does not exist)", sender);
@@ -1068,7 +1069,7 @@ public class Initialization implements Listener {
     public static void loadSizeCache(CommandSender sender) {
 
         try {
-            File sizeCacheFile = Config.getInstance().getSizeCacheFile();
+            File sizeCacheFile = ConfigManager.getInstance().getSizeCacheFile();
 
             try {
                 if (!sizeCacheFile.exists() && !sizeCacheFile.createNewFile()) {

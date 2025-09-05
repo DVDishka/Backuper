@@ -3,7 +3,7 @@ package ru.dvdishka.backuper.backend.task;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
-import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.util.Utils;
 
 public class SetWorldsReadOnlyTask extends BaseTask {
@@ -23,12 +23,11 @@ public class SetWorldsReadOnlyTask extends BaseTask {
     @Override
     public void run() {
 
-        if (!Config.getInstance().isSetWorldsReadOnly() && !force) {
+        if (!Backuper.getInstance().getConfigManager().getBackupConfig().isSetWorldsReadOnly() && !force) {
             return;
         }
 
         for (World world : Bukkit.getWorlds()) {
-
             if (!Utils.errorSetWritable) {
                 Utils.isAutoSaveEnabled.put(world.getName(), world.isAutoSave());
             }

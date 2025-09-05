@@ -1,0 +1,17 @@
+# (SECONDS < backupPeriod * 60 or -1) A notification about the server restart will be sent to all players on the server {alertTimeBeforeRestart} seconds before the restart. -1 to disable notifications
+alertTimeBeforeRestart: 60
+# (true/false) Notifications will be sent only if the server is restarted or stopped after the backup
+alertOnlyServerRestart: true
+# (String) Backup alert message. (%d is a number of seconds placeholder)
+alertBackupMessage: Server will be backed up in %d second(s)
+# (String) Backup and restart the alert message. (%d is a number of seconds placeholder)
+alertBackupRestartMessage: Server will be backed up and restarted in %d second(s)
+
+# (Path) Size cache file
+sizeCacheFile: ./plugins/Backuper/sizeCache.json
+
+# (true/false) Check for new versions of the Backuper to stay up to date
+checkUpdates: true
+
+# (true/false) Better logging (Some statistic and other information for debugging, you probably don't need it)
+betterLogging: false

@@ -1,6 +1,12 @@
 package ru.dvdishka.backuper.backend.config;
 
-public interface StorageConfig {
+public interface StorageConfig extends Config {
+
+    String getId();// Required to implement the getBackupsFolder method in GoogleDrive storage
+
+    boolean isEnabled();
+
+    boolean isAutoBackup();
 
     int getZipCompressionLevel();
 

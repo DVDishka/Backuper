@@ -2,7 +2,7 @@ package ru.dvdishka.backuper.backend.util;
 
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.backend.config.ConfigManager;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -126,15 +126,15 @@ public class Utils {
         try {
 
             Path normalizedPath =  path.toPath().toAbsolutePath().normalize();
-            Path normalizedBackupFolderPath = new File(Config.getInstance().getLocalConfig().getBackupsFolder()).toPath().toAbsolutePath().normalize();
+            Path normalizedBackupFolderPath = new File(ConfigManager.getInstance().getLocalConfig().getBackupsFolder()).toPath().toAbsolutePath().normalize();
 
-            if (path.equals(new File(Config.getInstance().getLocalConfig().getBackupsFolder())) ||
+            if (path.equals(new File(ConfigManager.getInstance().getLocalConfig().getBackupsFolder())) ||
                     normalizedPath.startsWith(normalizedBackupFolderPath) ||
-                    path.toPath().startsWith(new File(Config.getInstance().getLocalConfig().getBackupsFolder()).toPath()) ||
+                    path.toPath().startsWith(new File(ConfigManager.getInstance().getLocalConfig().getBackupsFolder()).toPath()) ||
                     path.toPath().startsWith(new File("plugins/Backuper/Backups/").toPath()) ||
-                    !Utils.isWindows && path.toPath().startsWith(new File("./%s".formatted(Config.getInstance().getLocalConfig().getBackupsFolder())).toPath()) ||
-                    Utils.isWindows && path.toPath().startsWith(new File(Config.getInstance().getLocalConfig().getBackupsFolder()).toPath()) ||
-                    Utils.isWindows && Config.getInstance().getLocalConfig().getBackupsFolder().charAt(1) != ':' && path.toPath().startsWith(new File(".\\%s".formatted(Config.getInstance().getLocalConfig().getBackupsFolder())).toPath())) {
+                    !Utils.isWindows && path.toPath().startsWith(new File("./%s".formatted(ConfigManager.getInstance().getLocalConfig().getBackupsFolder())).toPath()) ||
+                    Utils.isWindows && path.toPath().startsWith(new File(ConfigManager.getInstance().getLocalConfig().getBackupsFolder()).toPath()) ||
+                    Utils.isWindows && ConfigManager.getInstance().getLocalConfig().getBackupsFolder().charAt(1) != ':' && path.toPath().startsWith(new File(".\\%s".formatted(ConfigManager.getInstance().getLocalConfig().getBackupsFolder())).toPath())) {
                 return true;
             }
 
@@ -146,7 +146,7 @@ public class Utils {
             Backuper.getInstance().getLogManager().warn(e);
         }
 
-        for (String excludeDirectoryFromBackup : Config.getInstance().getExcludeDirectoryFromBackup()) {
+        for (String excludeDirectoryFromBackup : ConfigManager.getInstance().getExcludeDirectoryFromBackup()) {
 
             try {
 

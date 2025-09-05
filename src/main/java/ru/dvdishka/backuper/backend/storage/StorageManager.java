@@ -5,8 +5,9 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 import java.util.concurrent.ConcurrentMap;
 
 public class StorageManager {
@@ -23,8 +24,16 @@ public class StorageManager {
         storages.put(id, storage);
     }
 
-    public Storage getStorage(String id) throws RuntimeException {
+    /***
+     *
+     * @return Returns storage or null if there is no such registered storage
+     */
+    public Storage getStorage(String id) {
         return storages.get(id);
+    }
+
+    public List<Storage> getStorages() {
+        return new ArrayList<>(storages.values());
     }
 
     public String getSizeCacheJson() {
@@ -32,7 +41,7 @@ public class StorageManager {
         HashMap<String, ConcurrentMap<String, Long>> jsonedCache = new HashMap<>();
 
         for (Storage storage : storages.values()) {
-            jsonedCache.put(storage.getId(), storage.getBackupManager().cachedBackupsSize.asMap());
+            jsonedCache.put(storage.getId(), storage.getBackupManager().getSizeCache());
         }
 
         String json = gson.toJson(jsonedCache);
@@ -51,9 +60,7 @@ public class StorageManager {
             if (!jsonedCache.containsKey(storage.getId())) {
                 continue;
             }
-            for (Map.Entry<String, Long> entry : jsonedCache.get(storage.getId()).entrySet()) {
-                storage.getBackupManager().cachedBackupsSize.put(entry.getKey(), entry.getValue());
-            }
+            storage.getBackupManager().loadSizeCache(jsonedCache.get(storage.getId()));
         }
     }
 }

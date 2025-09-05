@@ -11,7 +11,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
 import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.backend.config.ConfigManager;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 public class UIUtils {
@@ -197,15 +197,15 @@ public class UIUtils {
         boolean restart = false;
 
         if (afterBackup.equals("STOP")) {
-            Backuper.getInstance().getLogManager().log(Config.getInstance().getAlertBackupRestartMessage().formatted(timeSeconds));
+            Backuper.getInstance().getLogManager().log(ConfigManager.getInstance().getAlertBackupRestartMessage().formatted(timeSeconds));
             restart = true;
         }
         if (afterBackup.equals("RESTART")) {
-            Backuper.getInstance().getLogManager().log(Config.getInstance().getAlertBackupRestartMessage().formatted(timeSeconds));
+            Backuper.getInstance().getLogManager().log(ConfigManager.getInstance().getAlertBackupRestartMessage().formatted(timeSeconds));
             restart = true;
         }
         if (afterBackup.equals("NOTHING")) {
-            Backuper.getInstance().getLogManager().log(Config.getInstance().getAlertBackupMessage().formatted(timeSeconds));
+            Backuper.getInstance().getLogManager().log(ConfigManager.getInstance().getAlertBackupMessage().formatted(timeSeconds));
         }
 
         for (Player player : Bukkit.getOnlinePlayers()) {
@@ -214,7 +214,7 @@ public class UIUtils {
                 continue;
             }
 
-            if (restart || !Config.getInstance().isAlertOnlyServerRestart()) {
+            if (restart || !ConfigManager.getInstance().isAlertOnlyServerRestart()) {
 
                 Component header = Component.empty();
 
@@ -226,7 +226,7 @@ public class UIUtils {
 
                 message = message
                         .append(Component.text((
-                                restart ? Config.getInstance().getAlertBackupRestartMessage() : Config.getInstance().getAlertBackupMessage()
+                                restart ? ConfigManager.getInstance().getAlertBackupRestartMessage() : ConfigManager.getInstance().getAlertBackupMessage()
                         ).formatted(timeSeconds)));
 
                 sendFramedMessage(header, message, 15, player);

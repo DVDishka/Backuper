@@ -2,11 +2,13 @@ package ru.dvdishka.backuper.backend.backup;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import ru.dvdishka.backuper.backend.storage.Storage;
+import ru.dvdishka.backuper.backend.storage.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 public class BackupManager {
@@ -14,8 +16,8 @@ public class BackupManager {
     private final Storage storage;
 
     private final HashMap<String, Backup> backups = new HashMap<>();
-    public final Cache<String, Long> cachedBackupsSize = Caffeine.newBuilder().build();
-    private final Cache<String, ArrayList<Backup>> backupList = Caffeine
+    final Cache<String, Long> cachedBackupsSize = Caffeine.newBuilder().build();
+    private final Cache<String, List<Backup>> backupList = Caffeine
             .newBuilder()
             .expireAfterWrite(5, TimeUnit.SECONDS)
             .expireAfterAccess(5, TimeUnit.SECONDS)
@@ -33,11 +35,11 @@ public class BackupManager {
             return null;
         }
 
-        return switch (storage.getType()) {
-            case LOCAL -> backups.computeIfAbsent(backupName, LocalBackup::new);
-            case FTP -> backups.computeIfAbsent(backupName, FtpBackup::new);
-            case SFTP -> backups.computeIfAbsent(backupName, SftpBackup::new);
-            case GOOGLE_DRIVE -> backups.computeIfAbsent(backupName, GoogleDriveBackup::new);
+        return switch (storage) {
+            case LocalStorage localStorage -> backups.computeIfAbsent(backupName, (name) -> new LocalBackup(localStorage, name));
+            case FtpStorage ftpStorage -> backups.computeIfAbsent(backupName, (name) -> new FtpBackup(ftpStorage, name));
+            case SftpStorage sftpStorage -> backups.computeIfAbsent(backupName, (name) -> new SftpBackup(sftpStorage, name));
+            case GoogleDriveStorage googleDriveStorage -> backups.computeIfAbsent(backupName, (name) -> new GoogleDriveBackup(googleDriveStorage, name));
             default -> null;
         };
     }
@@ -68,10 +70,22 @@ public class BackupManager {
     public void saveBackupSizeToCache(String backupName, long byteSize) {
         cachedBackupsSize.put(backupName, byteSize);
 
-        if (storageType == Backup.StorageType.GOOGLE_DRIVE) {
-            GoogleDriveBackup backup = GoogleDriveBackup.getInstance(backupName);
+        if (Backup.StorageType.GOOGLE_DRIVE.equals(storage.getType())) {
+            GoogleDriveBackup backup = (GoogleDriveBackup) getBackup(backupName);
             if (backup == null) throw new RuntimeException("Tried to save nonexistent backup's size to cache");
             backup.saveSizeToFileProperties(byteSize);
         }
+    }
+
+    public ConcurrentMap<String, Long> getSizeCache() {
+        return cachedBackupsSize.asMap();
+    }
+
+    /***
+     * Invalidates the current cache and rewrites it with the provided cache
+     */
+    public void loadSizeCache(Map<String, Long> cache) {
+        cachedBackupsSize.invalidateAll();
+        cachedBackupsSize.putAll(cache);
     }
 }

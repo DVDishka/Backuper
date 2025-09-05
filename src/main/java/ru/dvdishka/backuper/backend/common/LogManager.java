@@ -3,7 +3,6 @@ package ru.dvdishka.backuper.backend.common;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.backend.config.Config;
 import ru.dvdishka.backuper.backend.task.TaskException;
 import ru.dvdishka.backuper.backend.util.UIUtils;
 
@@ -28,14 +27,14 @@ public class LogManager {
     }
 
     public void devLog(String text) {
-        if (Config.getInstance().isBetterLogging()) {
+        if (Backuper.getInstance().getConfigManager().getServerConfig().isBetterLogging()) {
             Backuper.getInstance().getLogger().info(text);
         }
     }
 
     public void devLog(String text, CommandSender sender) {
 
-        if (Config.getInstance().isBetterLogging()) {
+        if (Backuper.getInstance().getConfigManager().getServerConfig().isBetterLogging()) {
             Backuper.getInstance().getLogger().info(text);
 
             if (!(sender instanceof ConsoleCommandSender)) {
@@ -91,7 +90,7 @@ public class LogManager {
             return;
         }
 
-        if (Config.getInstance().isBetterLogging()) {
+        if (Backuper.getInstance().getConfigManager().getServerConfig().isBetterLogging()) {
             Backuper.getInstance().getLogger().warning(text);
         }
     }
@@ -111,7 +110,7 @@ public class LogManager {
             return;
         }
 
-        if (Config.getInstance().isBetterLogging()) {
+        if (Backuper.getInstance().getConfigManager().getServerConfig().isBetterLogging()) {
             Backuper.getInstance().getLogger().warning("%s\n%s".formatted(exception.getMessage(), Arrays.toString(exception.getStackTrace())));
         }
     }

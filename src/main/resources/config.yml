@@ -33,119 +33,124 @@ backup:
   # (true/false) (True recommended) The backuper will mark all world folders as Read-Only to prevent folder changing that may cause the backup crash. True value may cause access denied errors during the backup (you should just ignore that)
   setWorldsReadOnly: false
 
-local:
-  # (true/false) Enable local storage to use it via the Backuper
-  enabled: true
-  # (true/false) With automatic backup, backups will be saved to specified local storage. Works only if 'enabled: true'
-  autoBackup: true
+storages:
+  local:
+    type: local
+    # (true/false) Enable local storage to use it via the Backuper
+    enabled: true
+    # (true/false) With automatic backup, backups will be saved to specified local storage. Works only if 'enabled: true'
+    autoBackup: true
 
-  # (Path) Full directory where backups will be stored
-  backupsFolder: ./plugins/Backuper/Backups
+    # (Path) Full directory where backups will be stored
+    backupsFolder: ./plugins/Backuper/Backups
 
-  # (>= 0) Max backups in backups folder, 0 to make it unlimited
-  maxBackupsNumber: 0
-  # (MB >= 0) Max backups folder weight, 0 to make it unlimited
-  maxBackupsWeight: 0
+    # (>= 0) Max backups in backups folder, 0 to make it unlimited
+    maxBackupsNumber: 0
+    # (MB >= 0) Max backups folder weight, 0 to make it unlimited
+    maxBackupsWeight: 0
 
-  # (true/false) Should backups be packaged in a zip archive
-  zipArchive: true
-  # (0 - 9) archive compression level. A higher value may reduce file size but may also increase the time required to archive and decompress
-  zipCompressionLevel: 5
+    # (true/false) Should backups be packaged in a zip archive
+    zipArchive: true
+    # (0 - 9) archive compression level. A higher value may reduce file size but may also increase the time required to archive and decompress
+    zipCompressionLevel: 5
 
-googleDrive:
-  # (true/false) Enable Google Drive storage to use it via Backuper
-  enabled: false
-  # (true/false) With automatic backup, backups will be saved to specified Google Drive. Works only if 'enabled: true'
-  autoBackup: true
+  googleDrive:
+    type: googleDrive
+    # (true/false) Enable Google Drive storage to use it via Backuper
+    enabled: false
+    # (true/false) With automatic backup, backups will be saved to specified Google Drive. Works only if 'enabled: true'
+    autoBackup: true
 
-  # Google Drive folder ID where backups will be stored
-  backupsFolderId: ''
-  # Do you want the Backuper to create its own folder in specified in `backupsFolderId` directory to store backups there?
-  createBackuperFolder: true
+    # Google Drive folder ID where backups will be stored
+    backupsFolderId: ''
+    # Do you want the Backuper to create its own folder in specified in `backupsFolderId` directory to store backups there?
+    createBackuperFolder: true
 
-  # (>= 0) Max backups in backups folder, 0 to make it unlimited
-  maxBackupsNumber: 0
-  # (MB >= 0) Max backups folder weight, 0 to make it unlimited
-  maxBackupsWeight: 0
+    # (>= 0) Max backups in backups folder, 0 to make it unlimited
+    maxBackupsNumber: 0
+    # (MB >= 0) Max backups folder weight, 0 to make it unlimited
+    maxBackupsWeight: 0
 
-  # (true/false) Should backups be packaged in a zip archive
-  zipArchive: true
-  # (0 - 9) archive compression level. A higher value may reduce file size but may also increase the time required to archive and decompress
-  zipCompressionLevel: 2
+    # (true/false) Should backups be packaged in a zip archive
+    zipArchive: true
+    # (0 - 9) archive compression level. A higher value may reduce file size but may also increase the time required to archive and decompress
+    zipCompressionLevel: 2
 
-  auth:
-    # Directory where you want to store your Google authentication tokens
-    tokenFolderPath: ./plugins/Backuper/GoogleDrive/tokens
+    auth:
+      # Directory where you want to store your Google authentication tokens
+      tokenFolderPath: ./plugins/Backuper/GoogleDrive/tokens
 
-ftp:
-  # (true/false) Enable FTP storage to use it via the Backuper
-  enabled: false
-  # (true/false) With automatic backup, backups will be saved to a specified FTP server. Works only if 'enabled: true'
-  autoBackup: true
+  ftp:
+    type: ftp
+    # (true/false) Enable FTP storage to use it via the Backuper
+    enabled: false
+    # (true/false) With automatic backup, backups will be saved to a specified FTP server. Works only if 'enabled: true'
+    autoBackup: true
 
-  # (Path) FTP server directory where backups will be stored
-  backupsFolder: ./
-  # (Symbol) Path separator symbol used on FTP SERVER. For example, '/' on UNIX systems. (It is usually '/' even on Windows servers, so change it to '\' only if it does not work with '/')
-  pathSeparatorSymbol: /
+    # (Path) FTP server directory where backups will be stored
+    backupsFolder: ./
+    # (Symbol) Path separator symbol used on FTP SERVER. For example, '/' on UNIX systems. (It is usually '/' even on Windows servers, so change it to '\' only if it does not work with '/')
+    pathSeparatorSymbol: /
 
-  # (>= 0) Max backups in backups folder, 0 to make it unlimited
-  maxBackupsNumber: 0
-  # (MB >= 0) Max backups folder weight, 0 to make it unlimited
-  maxBackupsWeight: 0
+    # (>= 0) Max backups in backups folder, 0 to make it unlimited
+    maxBackupsNumber: 0
+    # (MB >= 0) Max backups folder weight, 0 to make it unlimited
+    maxBackupsWeight: 0
 
-  # (true/false) Should backups be packaged in a zip archive
-  zipArchive: true
-  # (0 - 9) archive compression level. A higher value may reduce file size but may also increase the time required to archive and decompress
-  zipCompressionLevel: 5
+    # (true/false) Should backups be packaged in a zip archive
+    zipArchive: true
+    # (0 - 9) archive compression level. A higher value may reduce file size but may also increase the time required to archive and decompress
+    zipCompressionLevel: 5
 
-  auth:
-    # (Address) FTP server address
-    address: ''
-    # (Port) FTP server port
-    port: 21
-    # (Username) FTP server username to use for authentication
-    username: ''
-    # (Password) FTP server password to use for authentication
-    password: ''
+    auth:
+      # (Address) FTP server address
+      address: ''
+      # (Port) FTP server port
+      port: 21
+      # (Username) FTP server username to use for authentication
+      username: ''
+      # (Password) FTP server password to use for authentication
+      password: ''
 
-sftp:
-  # (true/false) Enable SFTP storage to use it via the Backuper
-  enabled: false
-  # (true/false) With automatic backup, backups will be saved to a specified SFTP server. Works only if 'enabled: true'
-  autoBackup: true
+  sftp:
+    type: sftp
+    # (true/false) Enable SFTP storage to use it via the Backuper
+    enabled: false
+    # (true/false) With automatic backup, backups will be saved to a specified SFTP server. Works only if 'enabled: true'
+    autoBackup: true
 
-  # (Path) SFTP server directory where backups will be stored
-  backupsFolder: ./
-  # (Symbol) Path separator symbol used on SFTP SERVER. For example, '/' on UNIX systems and '\' on windows
-  pathSeparatorSymbol: /
+    # (Path) SFTP server directory where backups will be stored
+    backupsFolder: ./
+    # (Symbol) Path separator symbol used on SFTP SERVER. For example, '/' on UNIX systems and '\' on windows
+    pathSeparatorSymbol: /
 
-  # (>= 0) Max backups in backups folder, 0 to make it unlimited
-  maxBackupsNumber: 0
-  # (MB >= 0) Max backups folder weight, 0 to make it unlimited
-  maxBackupsWeight: 0
+    # (>= 0) Max backups in backups folder, 0 to make it unlimited
+    maxBackupsNumber: 0
+    # (MB >= 0) Max backups folder weight, 0 to make it unlimited
+    maxBackupsWeight: 0
 
-  # (true/false) Should backups be packaged in a zip archive
-  zipArchive: true
-  # (0 - 9) archive compression level. A higher value may reduce file size but may also increase the time required to archive and decompress
-  zipCompressionLevel: 5
+    # (true/false) Should backups be packaged in a zip archive
+    zipArchive: true
+    # (0 - 9) archive compression level. A higher value may reduce file size but may also increase the time required to archive and decompress
+    zipCompressionLevel: 5
 
-  auth:
-    # (Address) SFTP server address
-    address: ''
-    # (Port) SFTP server port
-    port: 22
-    # (password/key) SFTP server authentication type
-    authType: password
-    # (Username) SFTP server username to use for authentication
-    username: ''
-    # (Password) SFTP server password to use for authentication
-    password: ''
-    # (Absolute Path) Local path to key file if 'authType: key'
-    keyFilePath: ''
-    # (true/false) Do you want to specify local knownHostsFile?
-    useKnownHostsFile: false
-    # (Path) Path to local knownHostsFile if 'useKnownHostsFile: true'
-    knownHostsFilePath: ''
+    auth:
+      # (Address) SFTP server address
+      address: ''
+      # (Port) SFTP server port
+      port: 22
+      # (password/key) SFTP server authentication type
+      authType: password
+      # (Username) SFTP server username to use for authentication
+      username: ''
+      # (Password) SFTP server password to use for authentication
+      password: ''
+      # (Absolute Path) Local path to key file if 'authType: key'
+      keyFilePath: ''
+      # (true/false) Do you want to specify local knownHostsFile?
+      useKnownHostsFile: false
+      # (Path) Path to local knownHostsFile if 'useKnownHostsFile: true'
+      knownHostsFilePath: ''
 
 server:
   # (SECONDS < backupPeriod * 60 or -1) A notification about the server restart will be sent to all players on the server {alertTimeBeforeRestart} seconds before the restart. -1 to disable notifications

@@ -6,9 +6,8 @@ import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.backup.Backup;
 import ru.dvdishka.backuper.backend.backup.LocalBackup;
 import ru.dvdishka.backuper.backend.backup.SftpBackup;
-import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.backend.config.ConfigManager;
 import ru.dvdishka.backuper.backend.task.SftpSendDirTask;
-import ru.dvdishka.backuper.backend.util.SftpUtils;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
 
@@ -23,13 +22,13 @@ public class CopyToSftpCommand extends Command {
     @Override
     public void execute() {
 
-        if (!Config.getInstance().getLocalConfig().isEnabled()) {
+        if (!ConfigManager.getInstance().getLocalConfig().isEnabled()) {
             cancelSound();
             returnFailure("Local storage is disabled");
             return;
         }
 
-        if (!Config.getInstance().getSftpConfig().isEnabled()) {
+        if (!ConfigManager.getInstance().getSftpConfig().isEnabled()) {
             cancelSound();
             returnFailure("SFTP storage is disabled");
             return;
@@ -67,14 +66,14 @@ public class CopyToSftpCommand extends Command {
             }
 
             AsyncTask task = new SftpSendDirTask(localBackup.getFile(),
-                    SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), inProgressName),
+                    SftpUtils.resolve(ConfigManager.getInstance().getSftpConfig().getBackupsFolder(), inProgressName),
                     false, true);
             Backuper.getInstance().getTaskManager().startTask(task, sender, List.of(Permissions.LOCAL_COPY_TO_SFTP));
 
             if (!task.isCancelled()) {
                 try {
-                    SftpUtils.renameFile(SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), inProgressName),
-                            SftpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), localBackup.getFileName())
+                    SftpUtils.renameFile(SftpUtils.resolve(ConfigManager.getInstance().getSftpConfig().getBackupsFolder(), inProgressName),
+                            SftpUtils.resolve(ConfigManager.getInstance().getSftpConfig().getBackupsFolder(), localBackup.getFileName())
                     );
                     Backup.saveBackupSizeToCache(Backup.StorageType.SFTP, localBackup.getName(), task.getTaskMaxProgress());
                 } catch (Exception e) {

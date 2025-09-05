@@ -4,7 +4,7 @@ import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.Initialization;
-import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.backend.config.ConfigManager;
 import ru.dvdishka.backuper.handlers.commands.Command;
 
 import java.io.File;
@@ -26,8 +26,8 @@ public class ReloadCommand extends Command {
 
         buttonSound();
 
-        Config.getInstance().setConfigField("lastBackup", Config.getInstance().getLastBackup());
-        Config.getInstance().setConfigField("lastChange", Config.getInstance().getLastChange());
+        ConfigManager.getInstance().setConfigField("lastBackup", ConfigManager.getInstance().getLastBackup());
+        ConfigManager.getInstance().setConfigField("lastChange", ConfigManager.getInstance().getLastChange());
 
         Backuper.getInstance().getScheduleManager().destroy(Backuper.getInstance());
 

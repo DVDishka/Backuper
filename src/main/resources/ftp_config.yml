@@ -1,0 +1,30 @@
+type: ftp
+# (true/false) Enable FTP storage to use it via the Backuper
+enabled: false
+# (true/false) With automatic backup, backups will be saved to a specified FTP server. Works only if 'enabled: true'
+autoBackup: true
+
+# (Path) FTP server directory where backups will be stored
+backupsFolder: ./
+# (Symbol) Path separator symbol used on FTP SERVER. For example, '/' on UNIX systems. (It is usually '/' even on Windows servers, so change it to '\' only if it does not work with '/')
+pathSeparatorSymbol: /
+
+# (>= 0) Max backups in backups folder, 0 to make it unlimited
+maxBackupsNumber: 0
+# (MB >= 0) Max backups folder weight, 0 to make it unlimited
+maxBackupsWeight: 0
+
+# (true/false) Should backups be packaged in a zip archive
+zipArchive: true
+# (0 - 9) archive compression level. A higher value may reduce file size but may also increase the time required to archive and decompress
+zipCompressionLevel: 5
+
+auth:
+  # (Address) FTP server address
+  address: ''
+  # (Port) FTP server port
+  port: 21
+  # (Username) FTP server username to use for authentication
+  username: ''
+  # (Password) FTP server password to use for authentication
+  password: ''

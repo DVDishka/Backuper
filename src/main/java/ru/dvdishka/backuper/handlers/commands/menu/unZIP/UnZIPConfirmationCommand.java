@@ -10,7 +10,7 @@ import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.backup.Backup;
 import ru.dvdishka.backuper.backend.backup.LocalBackup;
-import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.backend.config.ConfigManager;
 import ru.dvdishka.backuper.handlers.commands.Command;
 
 public class UnZIPConfirmationCommand extends Command {
@@ -22,7 +22,7 @@ public class UnZIPConfirmationCommand extends Command {
     @Override
     public void execute() {
 
-        if (!Config.getInstance().getLocalConfig().isEnabled()) {
+        if (!ConfigManager.getInstance().getLocalConfig().isEnabled()) {
             cancelSound();
             returnFailure("local storage is disabled!");
             return;

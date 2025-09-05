@@ -2,10 +2,7 @@ package ru.dvdishka.backuper.backend.task;
 
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.util.FtpUtils;
-import ru.dvdishka.backuper.backend.util.GoogleDriveUtils;
-import ru.dvdishka.backuper.backend.util.SftpUtils;
+import ru.dvdishka.backuper.backend.config.ConfigManager;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,9 +40,9 @@ public class DeleteBrokenBackupsTask extends BaseTask {
             return;
         }
 
-        if (Config.getInstance().getLocalConfig().isEnabled() && !cancelled) {
+        if (ConfigManager.getInstance().getLocalConfig().isEnabled() && !cancelled) {
 
-            File backupsFolder = new File(Config.getInstance().getLocalConfig().getBackupsFolder());
+            File backupsFolder = new File(ConfigManager.getInstance().getLocalConfig().getBackupsFolder());
 
             if (!backupsFolder.exists() || backupsFolder.listFiles() == null) {
                 warn("Wrong local backupsFolder!");
@@ -66,10 +63,10 @@ public class DeleteBrokenBackupsTask extends BaseTask {
             }
         }
 
-        if (Config.getInstance().getFtpConfig().isEnabled() && !cancelled && FtpUtils.checkConnection(sender)) {
+        if (ConfigManager.getInstance().getFtpConfig().isEnabled() && !cancelled && FtpUtils.checkConnection(sender)) {
 
             try {
-                ArrayList<String> files = FtpUtils.ls(Config.getInstance().getFtpConfig().getBackupsFolder());
+                ArrayList<String> files = FtpUtils.ls(ConfigManager.getInstance().getFtpConfig().getBackupsFolder());
                 for (String file : files) {
 
                     if (cancelled) {
@@ -77,7 +74,7 @@ public class DeleteBrokenBackupsTask extends BaseTask {
                     }
 
                     if (file.replace(".zip", "").endsWith(" in progress")) {
-                        BaseTask task = new FtpDeleteDirTask(FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(), file));
+                        BaseTask task = new FtpDeleteDirTask(FtpUtils.resolve(ConfigManager.getInstance().getFtpConfig().getBackupsFolder(), file));
                         Backuper.getInstance().getTaskManager().prepareTask(task, sender);
                         tasks.add(task);
                     }
@@ -88,10 +85,10 @@ public class DeleteBrokenBackupsTask extends BaseTask {
             }
         }
 
-        if (Config.getInstance().getSftpConfig().isEnabled() && !cancelled && SftpUtils.checkConnection(sender)) {
+        if (ConfigManager.getInstance().getSftpConfig().isEnabled() && !cancelled && SftpUtils.checkConnection(sender)) {
 
             try {
-                ArrayList<String> files = SftpUtils.ls(Config.getInstance().getSftpConfig().getBackupsFolder());
+                ArrayList<String> files = SftpUtils.ls(ConfigManager.getInstance().getSftpConfig().getBackupsFolder());
                 for (String file : files) {
 
                     if (cancelled) {
@@ -99,7 +96,7 @@ public class DeleteBrokenBackupsTask extends BaseTask {
                     }
 
                     if (file.replace(".zip", "").endsWith(" in progress")) {
-                        BaseTask task = new SftpDeleteDirTask(FtpUtils.resolve(Config.getInstance().getSftpConfig().getBackupsFolder(), file));
+                        BaseTask task = new SftpDeleteDirTask(FtpUtils.resolve(ConfigManager.getInstance().getSftpConfig().getBackupsFolder(), file));
                         Backuper.getInstance().getTaskManager().prepareTask(task, sender);
                         tasks.add(task);
                     }
@@ -110,10 +107,10 @@ public class DeleteBrokenBackupsTask extends BaseTask {
             }
         }
 
-        if (Config.getInstance().getGoogleDriveConfig().isEnabled() && GoogleDriveUtils.checkConnection() && !cancelled) {
+        if (ConfigManager.getInstance().getGoogleDriveConfig().isEnabled() && GoogleDriveUtils.checkConnection() && !cancelled) {
 
             try {
-                List<com.google.api.services.drive.model.File> files = GoogleDriveUtils.ls(Config.getInstance().getGoogleDriveConfig().getBackupsFolderId());
+                List<com.google.api.services.drive.model.File> files = GoogleDriveUtils.ls(ConfigManager.getInstance().getGoogleDriveConfig().getBackupsFolderId());
                 for (com.google.api.services.drive.model.File file : files) {
 
                     if (cancelled) {

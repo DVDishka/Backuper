@@ -9,7 +9,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.backup.LocalBackup;
-import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.backend.config.ConfigManager;
 import ru.dvdishka.backuper.handlers.commands.Command;
 
 public class CopyToFtpConfirmationCommand extends Command {
@@ -23,7 +23,7 @@ public class CopyToFtpConfirmationCommand extends Command {
 
         String backupName = (String) arguments.get("backupName");
 
-        if (!Config.getInstance().getFtpConfig().isEnabled()) {
+        if (!ConfigManager.getInstance().getFtpConfig().isEnabled()) {
             cancelSound();
             returnFailure("FTP storage is disabled");
             return;

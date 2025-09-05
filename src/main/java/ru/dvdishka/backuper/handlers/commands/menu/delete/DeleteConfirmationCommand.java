@@ -9,8 +9,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.backup.*;
-import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.util.GoogleDriveUtils;
+import ru.dvdishka.backuper.backend.config.ConfigManager;
 import ru.dvdishka.backuper.handlers.commands.Command;
 
 public class DeleteConfirmationCommand extends Command {
@@ -27,10 +26,10 @@ public class DeleteConfirmationCommand extends Command {
 
         String backupName = (String) arguments.get("backupName");
 
-        if (storage.equals("local") && !Config.getInstance().getLocalConfig().isEnabled() ||
-                storage.equals("sftp") && !Config.getInstance().getSftpConfig().isEnabled() ||
-                storage.equals("ftp") && !Config.getInstance().getFtpConfig().isEnabled() ||
-                storage.equals("googleDrive") && (!Config.getInstance().getGoogleDriveConfig().isEnabled() ||
+        if (storage.equals("local") && !ConfigManager.getInstance().getLocalConfig().isEnabled() ||
+                storage.equals("sftp") && !ConfigManager.getInstance().getSftpConfig().isEnabled() ||
+                storage.equals("ftp") && !ConfigManager.getInstance().getFtpConfig().isEnabled() ||
+                storage.equals("googleDrive") && (!ConfigManager.getInstance().getGoogleDriveConfig().isEnabled() ||
                         !GoogleDriveUtils.checkConnection())) {
             cancelSound();
             if (!storage.equals("googleDrive")) {

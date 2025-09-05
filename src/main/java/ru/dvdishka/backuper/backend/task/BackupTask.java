@@ -5,7 +5,7 @@ import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.ApiStatus;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.backup.Backup;
-import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.backend.config.ConfigManager;
 import ru.dvdishka.backuper.backend.storage.Storage;
 import ru.dvdishka.backuper.backend.util.Utils;
 
@@ -55,11 +55,11 @@ public class BackupTask extends BaseTask {
                 this.sender = sender;
             }
             //Check if this backup should be skipped before precalculations
-            if (!cancelled && Config.getInstance().isSkipDuplicateBackup() && isAutoBackup &&
-                    Config.getInstance().getLastBackup() >= Config.getInstance().getLastChange()) {
+            if (!cancelled && ConfigManager.getInstance().isSkipDuplicateBackup() && isAutoBackup &&
+                    ConfigManager.getInstance().getLastBackup() >= ConfigManager.getInstance().getLastChange()) {
 
                 log("The backup cycle will be skipped since there were no changes from the previous backup", sender);
-                Config.getInstance().updateLastBackup();
+                ConfigManager.getInstance().updateLastBackup();
 
                 if (afterBackup.equals("RESTART")) {
 
@@ -159,7 +159,7 @@ public class BackupTask extends BaseTask {
         // UPDATE VARIABLES
         if (!cancelled && isAutoBackup) {
             devLog("Update \"lastBackup\" Variable task has been started");
-            Config.getInstance().updateLastBackup();
+            ConfigManager.getInstance().updateLastBackup();
             devLog("Update \"lastBackup\" Variable task has been finished");
         }
 
@@ -174,7 +174,7 @@ public class BackupTask extends BaseTask {
                 warn(new TaskException(deleteOldBackupTask, e));
             }
 
-            if (Config.getInstance().isDeleteBrokenBackups()) {
+            if (ConfigManager.getInstance().isDeleteBrokenBackups()) {
                 BaseTask deleteBrokenBackupsTask = new DeleteBrokenBackupsTask();
                 tasks.add(deleteBrokenBackupsTask);
                 try {
@@ -205,7 +205,7 @@ public class BackupTask extends BaseTask {
     protected void prepareTask(CommandSender sender) {
 
         try {
-            this.backupName = "%s in progress".formatted(LocalDateTime.now().format(Config.getInstance().getDateTimeFormatter()));
+            this.backupName = "%s in progress".formatted(LocalDateTime.now().format(ConfigManager.getInstance().getDateTimeFormatter()));
 
             for (Storage storage : storages) {
                 if (!cancelled) {
@@ -252,7 +252,7 @@ public class BackupTask extends BaseTask {
                         continue;
                     }
 
-                    if (!Config.getInstance().getSftpConfig().isZipArchive()) {
+                    if (!ConfigManager.getInstance().getSftpConfig().isZipArchive()) {
                         AsyncTask task = new UploadDirTask(storage, additionalDirectoryToBackupFile, storage.resolve(storage.getConfig().getBackupsFolder(),
                                 backupName), true, false);
                         Backuper.getInstance().getTaskManager().prepareTask(task, sender);
@@ -349,9 +349,9 @@ public class BackupTask extends BaseTask {
 
     private List<String> getAddDirectoryToBackup() {
         // if contains "*" add all Files from "."
-        if(Config.getInstance().getAddDirectoryToBackup().contains("*")){
+        if(ConfigManager.getInstance().getAddDirectoryToBackup().contains("*")){
             // Remove the "*" from the list
-            List<String> list = Config.getInstance().getAddDirectoryToBackup().stream().filter(directory -> !directory.equals("*")).collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
+            List<String> list = ConfigManager.getInstance().getAddDirectoryToBackup().stream().filter(directory -> !directory.equals("*")).collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
             // Add all files from "."
             File file = new File(".");
             for (File subFile: file.listFiles()) {
@@ -359,7 +359,7 @@ public class BackupTask extends BaseTask {
             }
             return list;
         }else{
-            return Config.getInstance().getAddDirectoryToBackup().stream().map(addDirectory -> new File(addDirectory).getPath()).toList();
+            return ConfigManager.getInstance().getAddDirectoryToBackup().stream().map(addDirectory -> new File(addDirectory).getPath()).toList();
         }
     }
 }

@@ -5,7 +5,7 @@ import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.backup.Backup;
 import ru.dvdishka.backuper.backend.backup.LocalBackup;
-import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.backend.config.ConfigManager;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
 
@@ -22,7 +22,7 @@ public class ToZIPCommand extends Command {
 
         String backupName = (String) arguments.get("backupName");
 
-        if (!Config.getInstance().getLocalConfig().isEnabled()) {
+        if (!ConfigManager.getInstance().getLocalConfig().isEnabled()) {
             cancelSound();
             returnFailure("local storage is disabled!");
             return;

@@ -4,11 +4,8 @@ import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.backend.config.ConfigManager;
 import ru.dvdishka.backuper.backend.task.BackupTask;
-import ru.dvdishka.backuper.backend.util.FtpUtils;
-import ru.dvdishka.backuper.backend.util.GoogleDriveUtils;
-import ru.dvdishka.backuper.backend.util.SftpUtils;
 import ru.dvdishka.backuper.backend.util.UIUtils;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
@@ -17,7 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.google.common.primitives.Longs.min;
-import static java.lang.Math.max;
 
 public class BackupCommand extends Command {
 
@@ -97,7 +93,7 @@ public class BackupCommand extends Command {
             return;
         }
 
-        if (isLocal && !Config.getInstance().getLocalConfig().isEnabled()) {
+        if (isLocal && !ConfigManager.getInstance().getLocalConfig().isEnabled()) {
             cancelSound();
             returnFailure("Local storage is disabled!");
             return;
@@ -113,20 +109,20 @@ public class BackupCommand extends Command {
             return;
         }
 
-        if (isGoogleDrive && (!Config.getInstance().getGoogleDriveConfig().isEnabled() || !GoogleDriveUtils.checkConnection())) {
+        if (isGoogleDrive && (!ConfigManager.getInstance().getGoogleDriveConfig().isEnabled() || !GoogleDriveUtils.checkConnection())) {
             cancelSound();
             return;
         }
 
         buttonSound();
 
-        if (Config.getInstance().getAlertTimeBeforeRestart() != -1) {
+        if (ConfigManager.getInstance().getAlertTimeBeforeRestart() != -1) {
 
             Backuper.getInstance().getScheduleManager().runSyncDelayed(Backuper.getInstance(), () -> {
 
-                UIUtils.sendBackupAlert(min(Config.getInstance().getAlertTimeBeforeRestart(), delay), afterBackup);
+                UIUtils.sendBackupAlert(min(ConfigManager.getInstance().getAlertTimeBeforeRestart(), delay), afterBackup);
 
-            }, max((delay - Config.getInstance().getAlertTimeBeforeRestart()) * 20, 1));
+            }, max((delay - ConfigManager.getInstance().getAlertTimeBeforeRestart()) * 20, 1));
         }
 
         List<Permissions> backupPermissions = new ArrayList<>();

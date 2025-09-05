@@ -1,43 +1,68 @@
 package ru.dvdishka.backuper.backend.config;
 
+import lombok.Getter;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
+import ru.dvdishka.backuper.Backuper;
+import ru.dvdishka.backuper.backend.util.Utils;
+
+import java.io.InputStreamReader;
+
+@Getter
 public class LocalConfig implements StorageConfig {
 
-    boolean enabled;
-    boolean autoBackup;
-    String backupsFolder;
-    int backupsNumber;
-    long backupsWeight;
-    boolean zipArchive;
-    int zipCompressionLevel;
-    String pathSeparatorSymbol;
+    private String id;
 
-    public int getBackupsNumber() {
-        return backupsNumber;
+    private boolean enabled;
+    private boolean autoBackup;
+    private String backupsFolder;
+    private int backupsNumber;
+    private long backupsWeight;
+    private boolean zipArchive;
+    private int zipCompressionLevel;
+    private String pathSeparatorSymbol = Utils.isWindows ? "\\" : "/";
+
+    public LocalConfig load(ConfigurationSection config) {
+        this.id = config.getName();
+        this.enabled = config.getBoolean("enabled", true);
+        this.autoBackup = config.getBoolean("autoBackup", true);
+        int backupsNumber = config.getInt("maxBackupsNumber", 0);
+        long backupsWeight = config.getLong("maxBackupsWeight", 0) * 1_048_576L;
+        this.zipArchive = config.getBoolean("zipArchive", true);
+        this.backupsFolder = config.getString("backupsFolder", "plugins/Backuper/Backups");
+        int zipCompressionLevel = config.getInt("zipCompressionLevel", 5);
+
+        if (backupsNumber < 0) {
+            Backuper.getInstance().getLogManager().warn("Failed to load config value!");
+            Backuper.getInstance().getLogManager().warn("%s.maxBackupsNumber must be >= 0, using default 0 value...".formatted(config.getCurrentPath()));
+            backupsNumber = 0;
+        }
+        this.backupsNumber = backupsNumber;
+
+        if (backupsWeight < 0) {
+            Backuper.getInstance().getLogManager().warn("Failed to load config value!");
+            Backuper.getInstance().getLogManager().warn("%s.maxBackupsWeight must be >= 0, using default 0 value...".formatted(config.getCurrentPath()));
+            backupsWeight = 0;
+        }
+        this.backupsWeight = backupsWeight;
+
+        if (zipCompressionLevel > 9 || zipCompressionLevel < 0) {
+            Backuper.getInstance().getLogManager().warn("Failed to load config value!");
+            if (zipCompressionLevel < 0) {
+                Backuper.getInstance().getLogManager().warn("%s.zipCompressionLevel must be >= 0, using 0 value...".formatted(config.getCurrentPath()));
+                zipCompressionLevel = 0;
+            }
+            if (zipCompressionLevel > 9) {
+                Backuper.getInstance().getLogManager().warn("%s.zipCompressionLevel must be <= 9, using 9 value...".formatted(config.getCurrentPath()));
+                zipCompressionLevel = 9;
+            }
+        }
+        this.zipCompressionLevel = zipCompressionLevel;
+        return this;
     }
 
-    public long getBackupsWeight() {
-        return backupsWeight;
+    @Override
+    public ConfigurationSection getDefaultConfig() {
+        return YamlConfiguration.loadConfiguration(new InputStreamReader(Backuper.getInstance().getResource("local_config.yml")));
     }
-
-    public boolean isZipArchive() {
-        return zipArchive;
-    }
-
-    public String getBackupsFolder() {
-        return backupsFolder;
-    }
-
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    public int getZipCompressionLevel() {
-        return zipCompressionLevel;
-    }
-
-    public boolean isAutoBackup() {
-        return autoBackup;
-    }
-
-    public String getPathSeparatorSymbol() {return pathSeparatorSymbol;}
 }

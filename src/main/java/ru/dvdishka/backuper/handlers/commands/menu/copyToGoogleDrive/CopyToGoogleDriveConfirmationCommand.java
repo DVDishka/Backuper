@@ -9,8 +9,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.backup.LocalBackup;
-import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.util.GoogleDriveUtils;
+import ru.dvdishka.backuper.backend.config.ConfigManager;
 import ru.dvdishka.backuper.handlers.commands.Command;
 
 public class CopyToGoogleDriveConfirmationCommand extends Command {
@@ -22,13 +21,13 @@ public class CopyToGoogleDriveConfirmationCommand extends Command {
     @Override
     public void execute() {
 
-        if (!Config.getInstance().getLocalConfig().isEnabled()) {
+        if (!ConfigManager.getInstance().getLocalConfig().isEnabled()) {
             cancelSound();
             returnFailure("Local storage is disabled");
             return;
         }
 
-        if (!Config.getInstance().getGoogleDriveConfig().isEnabled() || !GoogleDriveUtils.checkConnection()) {
+        if (!ConfigManager.getInstance().getGoogleDriveConfig().isEnabled() || !GoogleDriveUtils.checkConnection()) {
             cancelSound();
             returnFailure("Google Drive storage is disabled or Google account is not linked!");
             return;

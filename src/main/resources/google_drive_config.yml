@@ -1,0 +1,24 @@
+type: googleDrive
+# (true/false) Enable Google Drive storage to use it via Backuper
+enabled: false
+# (true/false) With automatic backup, backups will be saved to specified Google Drive. Works only if 'enabled: true'
+autoBackup: true
+
+# Google Drive folder ID where backups will be stored
+backupsFolderId: ''
+# Do you want the Backuper to create its own folder in the specified in `backupsFolderId` directory to store backups there?
+createBackuperFolder: true
+
+# (>= 0) Max backups in backups folder, 0 to make it unlimited
+maxBackupsNumber: 0
+# (MB >= 0) Max backups folder weight, 0 to make it unlimited
+maxBackupsWeight: 0
+
+# (true/false) Should backups be packaged in a zip archive
+zipArchive: true
+# (0 - 9) archive compression level. A higher value may reduce file size but may also increase the time required to archive and decompress
+zipCompressionLevel: 2
+
+auth:
+  # Directory where you want to store your Google authentication tokens
+  tokenFolderPath: ./plugins/Backuper/GoogleDrive/tokens

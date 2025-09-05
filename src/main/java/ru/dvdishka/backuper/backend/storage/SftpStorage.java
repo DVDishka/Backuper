@@ -5,8 +5,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.backup.Backup;
+import ru.dvdishka.backuper.backend.backup.BackupManager;
 import ru.dvdishka.backuper.backend.config.SftpConfig;
-import ru.dvdishka.backuper.backend.config.StorageConfig;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,11 +20,14 @@ public class SftpStorage implements Storage {
 
     private String id = null;
     private final SftpConfig config;
+    private final BackupManager backupManager;
+
     private Session sshSession = null;
     private ChannelSftp sftpChannel = null;
 
     public SftpStorage(SftpConfig config) {
         this.config = config;
+        this.backupManager = new BackupManager(this);
     }
 
     private Pair<Session, ChannelSftp> getClient() throws StorageConnectionException {
@@ -121,8 +124,13 @@ public class SftpStorage implements Storage {
     }
 
     @Override
-    public StorageConfig getConfig() {
+    public SftpConfig getConfig() {
         return config;
+    }
+
+    @Override
+    public BackupManager getBackupManager() {
+        return backupManager;
     }
 
     @Override
@@ -173,6 +181,16 @@ public class SftpStorage implements Storage {
     }
 
     @Override
+    public boolean exists(String path) throws StorageMethodException, StorageConnectionException {
+        try {
+            getClient().getRight().stat(path);
+            return true;
+        } catch (SftpException e) {
+            return false;
+        }
+    }
+
+    @Override
     public boolean isFile(String path) throws StorageMethodException, StorageConnectionException {
         Pair<Session, ChannelSftp> client = getClient();
         ChannelSftp sftp = client.getRight();
@@ -182,6 +200,16 @@ public class SftpStorage implements Storage {
         } catch (SftpException e) {
             throw new StorageMethodException("Failed to check if \"%s\" is a file or dir".formatted(path));
         }
+    }
+
+    @Override
+    public String getFileNameFromPath(String path) throws StorageMethodException, StorageConnectionException {
+        return path.substring(path.lastIndexOf(config.getPathSeparatorSymbol()) + 1);
+    }
+
+    @Override
+    public String getParentPath(String path) throws StorageMethodException, StorageConnectionException {
+        return path.substring(0, path.lastIndexOf(config.getPathSeparatorSymbol()));
     }
 
     @Override
@@ -255,6 +283,18 @@ public class SftpStorage implements Storage {
             targetFile.createNewFile();
             sftp.get(remotePath, targetFile.getCanonicalPath(), new SftpStorageProgressListener(progressListener));
         } catch (SftpException | IOException e) {
+            throw new StorageMethodException("Failed to download file \"%s\" from SFTP server", e);
+        }
+    }
+
+    @Override
+    public InputStream downloadFile(String remotePath, StorageProgressListener progressListener) throws StorageMethodException, StorageConnectionException {
+        Pair<Session, ChannelSftp> client = getClient();
+        ChannelSftp sftp = client.getRight();
+
+        try {
+            return sftp.get(remotePath, new SftpStorageProgressListener(progressListener));
+        } catch (SftpException e) {
             throw new StorageMethodException("Failed to download file \"%s\" from SFTP server", e);
         }
     }

@@ -3,9 +3,11 @@ package ru.dvdishka.backuper.handlers.commands.menu.copyToLocal;
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.backend.backup.*;
-import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.util.GoogleDriveUtils;
+import ru.dvdishka.backuper.backend.backup.FtpBackup;
+import ru.dvdishka.backuper.backend.backup.GoogleDriveBackup;
+import ru.dvdishka.backuper.backend.backup.LocalBackup;
+import ru.dvdishka.backuper.backend.backup.SftpBackup;
+import ru.dvdishka.backuper.backend.config.ConfigManager;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
 
@@ -23,15 +25,15 @@ public class CopyToLocalCommand extends Command {
     @Override
     public void execute() {
 
-        if (!Config.getInstance().getLocalConfig().isEnabled()) {
+        if (!ConfigManager.getInstance().getLocalConfig().isEnabled()) {
             cancelSound();
             returnFailure("Local storage is disabled!");
             return;
         }
 
-        if (storage.equals("sftp") && !Config.getInstance().getSftpConfig().isEnabled() ||
-                storage.equals("ftp") && !Config.getInstance().getFtpConfig().isEnabled() ||
-                storage.equals("googleDrive") && (!Config.getInstance().getGoogleDriveConfig().isEnabled() ||
+        if (storage.equals("sftp") && !ConfigManager.getInstance().getSftpConfig().isEnabled() ||
+                storage.equals("ftp") && !ConfigManager.getInstance().getFtpConfig().isEnabled() ||
+                storage.equals("googleDrive") && (!ConfigManager.getInstance().getGoogleDriveConfig().isEnabled() ||
                         !GoogleDriveUtils.checkConnection())) {
             cancelSound();
             if (!storage.equals("googleDrive")) {

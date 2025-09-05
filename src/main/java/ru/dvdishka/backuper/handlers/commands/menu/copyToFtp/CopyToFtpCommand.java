@@ -6,9 +6,8 @@ import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.backup.Backup;
 import ru.dvdishka.backuper.backend.backup.FtpBackup;
 import ru.dvdishka.backuper.backend.backup.LocalBackup;
-import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.backend.config.ConfigManager;
 import ru.dvdishka.backuper.backend.task.FtpSendDirTask;
-import ru.dvdishka.backuper.backend.util.FtpUtils;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
 
@@ -23,13 +22,13 @@ public class CopyToFtpCommand extends Command {
     @Override
     public void execute() {
 
-        if (!Config.getInstance().getLocalConfig().isEnabled()) {
+        if (!ConfigManager.getInstance().getLocalConfig().isEnabled()) {
             cancelSound();
             returnFailure("Local storage is disabled");
             return;
         }
 
-        if (!Config.getInstance().getFtpConfig().isEnabled()) {
+        if (!ConfigManager.getInstance().getFtpConfig().isEnabled()) {
             cancelSound();
             returnFailure("FTP storage is disabled");
             return;
@@ -67,14 +66,14 @@ public class CopyToFtpCommand extends Command {
             }
 
             AsyncTask task = new FtpSendDirTask(localBackup.getFile(),
-                    FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(), inProgressName),
+                    FtpUtils.resolve(ConfigManager.getInstance().getFtpConfig().getBackupsFolder(), inProgressName),
                     false, true);
             Backuper.getInstance().getTaskManager().startTask(task, sender, List.of(Permissions.LOCAL_COPY_TO_FTP));
 
             if (!task.isCancelled()) {
                 try {
-                    FtpUtils.renameFile(FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(), inProgressName),
-                            FtpUtils.resolve(Config.getInstance().getFtpConfig().getBackupsFolder(), localBackup.getFileName())
+                    FtpUtils.renameFile(FtpUtils.resolve(ConfigManager.getInstance().getFtpConfig().getBackupsFolder(), inProgressName),
+                            FtpUtils.resolve(ConfigManager.getInstance().getFtpConfig().getBackupsFolder(), localBackup.getFileName())
                     );
                     Backup.saveBackupSizeToCache(Backup.StorageType.FTP, localBackup.getName(), task.getTaskMaxProgress());
                 } catch (Exception e) {

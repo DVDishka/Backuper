@@ -6,9 +6,8 @@ import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.backup.Backup;
 import ru.dvdishka.backuper.backend.backup.GoogleDriveBackup;
 import ru.dvdishka.backuper.backend.backup.LocalBackup;
-import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.backend.config.ConfigManager;
 import ru.dvdishka.backuper.backend.task.GoogleDriveSendDirTask;
-import ru.dvdishka.backuper.backend.util.GoogleDriveUtils;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.handlers.commands.Permissions;
 
@@ -23,13 +22,13 @@ public class CopyToGoogleDriveCommand extends Command {
     @Override
     public void execute() {
 
-        if (!Config.getInstance().getLocalConfig().isEnabled()) {
+        if (!ConfigManager.getInstance().getLocalConfig().isEnabled()) {
             cancelSound();
             returnFailure("Local storage is disabled");
             return;
         }
 
-        if (!Config.getInstance().getGoogleDriveConfig().isEnabled() || !GoogleDriveUtils.checkConnection()) {
+        if (!ConfigManager.getInstance().getGoogleDriveConfig().isEnabled() || !GoogleDriveUtils.checkConnection()) {
             cancelSound();
             returnFailure("Google Drive storage is disabled or Google account is not linked!");
             return;
@@ -67,7 +66,7 @@ public class CopyToGoogleDriveCommand extends Command {
             }
 
             AsyncTask task = new GoogleDriveSendDirTask(localBackup.getFile(),
-                    Config.getInstance().getGoogleDriveConfig().getBackupsFolderId(),
+                    ConfigManager.getInstance().getGoogleDriveConfig().getBackupsFolderId(),
                     inProgressName,
                     true, true
             );
@@ -76,7 +75,7 @@ public class CopyToGoogleDriveCommand extends Command {
             if (!task.isCancelled()) {
                 try {
                     GoogleDriveUtils.renameFile(
-                            GoogleDriveUtils.getFileByName(inProgressName, Config.getInstance().getGoogleDriveConfig().getBackupsFolderId()).getId(),
+                            GoogleDriveUtils.getFileByName(inProgressName, ConfigManager.getInstance().getGoogleDriveConfig().getBackupsFolderId()).getId(),
                             localBackup.getFileName()
                     );
                     Backup.saveBackupSizeToCache(Backup.StorageType.GOOGLE_DRIVE, localBackup.getName(), task.getTaskMaxProgress());
