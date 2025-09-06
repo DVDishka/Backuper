@@ -1,4 +1,4 @@
-package ru.dvdishka.backuper.backend.common;
+package ru.dvdishka.backuper.backend;
 
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;

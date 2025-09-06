@@ -1,10 +1,12 @@
 package ru.dvdishka.backuper.backend.quartzjob;
 
 import org.bukkit.Bukkit;
+import org.quartz.CronTrigger;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.Trigger;
 import ru.dvdishka.backuper.Backuper;
+import ru.dvdishka.backuper.backend.config.ConfigManager;
 import ru.dvdishka.backuper.backend.task.BackupTask;
 import ru.dvdishka.backuper.backend.task.Task;
 import ru.dvdishka.backuper.backend.task.TaskManager;
@@ -20,6 +22,17 @@ import static java.lang.Math.max;
 import static java.lang.Math.min;
 
 public class AutoBackupQuartzJob implements org.quartz.Job {
+
+    public void init() {
+        Backuper.getInstance().getScheduleManager().runAsync(() -> {
+            Backuper.getInstance().getLogManager().log("Initializing auto backup...");
+
+            CronTrigger autoBackupJobTrigger = Backuper.getInstance().getScheduleManager().runCronScheduledJob(AutoBackupQuartzJob.class, "backup", "auto", Backuper.getInstance().getConfigManager().getBackupConfig().getAutoBackupCron());
+            scheduleNextBackupAlert(autoBackupJobTrigger); // Prepare alert for backup above
+
+            Backuper.getInstance().getLogManager().log("Auto backup initialization completed");
+        });
+    }
 
     @Override
     public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
@@ -46,7 +59,7 @@ public class AutoBackupQuartzJob implements org.quartz.Job {
         }
     }
 
-    public static void scheduleNextBackupAlert(Trigger cronTrigger) {
+    public void scheduleNextBackupAlert(Trigger cronTrigger) {
         if (Backuper.getInstance().getConfigManager().getServerConfig().getAlertTimeBeforeRestart() != -1) {
 
             long delay = cronTrigger.getNextFireTime().getTime() / 1000 - LocalDateTime.now().toEpochSecond(ZoneOffset.ofHours(cronTrigger.getNextFireTime().getTimezoneOffset() / 60 * -1)); // Calculating delay to next backup

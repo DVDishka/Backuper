@@ -66,76 +66,6 @@ import java.util.concurrent.CompletableFuture;
 
 public class Initialization implements Listener {
 
-    public static void initBStats(JavaPlugin plugin) {
-
-        Backuper.getInstance().getLogManager().log("Initializing BStats...");
-
-        @SuppressWarnings("unused")
-        Metrics bStats = new Metrics(plugin, Utils.bStatsId);
-
-        bStats.addCustomChart(new SimplePie("local_storage", () -> ConfigManager.getInstance().getLocalConfig().isEnabled() ? "enabled" : "disabled"));
-        bStats.addCustomChart(new SimplePie("ftp_storage", () -> ConfigManager.getInstance().getFtpConfig().isEnabled() ? "enabled" : "disabled"));
-        bStats.addCustomChart(new SimplePie("sftp_storage", () -> ConfigManager.getInstance().getSftpConfig().isEnabled() ? "enabled" : "disabled"));
-        bStats.addCustomChart(new SimplePie("google_drive_storage", () -> ConfigManager.getInstance().getGoogleDriveConfig().isEnabled() && GoogleDriveUtils.checkConnection() ? "enabled" : "disabled"));
-
-        Backuper.getInstance().getLogManager().log("BStats initialization completed");
-    }
-
-    public static void indexStorages(CommandSender sender) {
-
-        Backuper.getInstance().getLogManager().log("Indexing storages...");
-
-        if (ConfigManager.getInstance().getLocalConfig().isEnabled()) {
-            Backuper.getInstance().getScheduleManager().runAsync(() -> {
-                try {
-                    Backuper.getInstance().getLogManager().devLog("Indexing local storage...");
-                    new ListCommand("local", false, sender, new CommandArguments(new Objects[]{}, new HashMap<String, Object>(), new String[]{}, new HashMap<String, String>(), "")).execute();
-                    Backuper.getInstance().getLogManager().devLog("Local storage has been indexed");
-                } catch (Exception ignored) {}
-            });
-        }
-        if (ConfigManager.getInstance().getFtpConfig().isEnabled()) {
-            Backuper.getInstance().getScheduleManager().runAsync(() -> {
-                Backuper.getInstance().getLogManager().devLog("Indexing FTP storage...");
-                new ListCommand("ftp", false, sender, new CommandArguments(new Objects[]{}, new HashMap<String, Object>(), new String[]{}, new HashMap<String, String>(), "")).execute();
-                Backuper.getInstance().getLogManager().devLog("FTP storage has been indexed");
-            });
-        }
-        if (ConfigManager.getInstance().getSftpConfig().isEnabled()) {
-            Backuper.getInstance().getScheduleManager().runAsync(() -> {
-                try {
-                    Backuper.getInstance().getLogManager().devLog("Indexing SFTP storage...");
-                    new ListCommand("sftp", false, sender, new CommandArguments(new Objects[]{}, new HashMap<String, Object>(), new String[]{}, new HashMap<String, String>(), "")).execute();
-                    Backuper.getInstance().getLogManager().devLog("SFTP storage has been indexed");
-                } catch (Exception e) {
-                    Backuper.getInstance().getLogManager().devWarn(e);
-                }
-            });
-        }
-        if (ConfigManager.getInstance().getGoogleDriveConfig().isEnabled() && GoogleDriveUtils.checkConnection()) {
-            Backuper.getInstance().getScheduleManager().runAsync(() -> {
-                try {
-                    Backuper.getInstance().getLogManager().devLog("Indexing GoogleDrive storage...");
-                    new ListCommand("googleDrive", false, sender, new CommandArguments(new Objects[]{}, new HashMap<String, Object>(), new String[]{}, new HashMap<String, String>(), "")).execute();
-                    Backuper.getInstance().getLogManager().devLog("GoogleDrive storage has been indexed");
-                } catch (Exception ignored) {}
-            });
-        }
-    }
-
-    public static void initAutoBackup() {
-
-        Backuper.getInstance().getScheduleManager().runAsync(() -> {
-
-            Backuper.getInstance().getLogManager().log("Initializing auto backup...");
-
-            CronTrigger autoBackupJobTrigger = Backuper.getInstance().getScheduleManager().runCronScheduledJob(AutoBackupQuartzJob.class, "backup", "auto", ConfigManager.getInstance().getAutoBackupCron());
-            AutoBackupQuartzJob.scheduleNextBackupAlert(autoBackupJobTrigger); // Prepare alert for backup above
-
-            Backuper.getInstance().getLogManager().log("Auto backup initialization completed");
-        });
-    }
-
     public static void initConfig(File configFile, CommandSender sender) {
 
         Backuper.getInstance().getLogManager().log("Loading config...");
@@ -874,15 +804,15 @@ public class Initialization implements Listener {
         Bukkit.getPluginManager().registerEvents(new Initialization(), Backuper.getInstance());
         Bukkit.getPluginManager().registerEvents(new WorldChangeCatcher(), Backuper.getInstance());
 
-        boolean areWorldChangeEventsExists = true;
+        boolean doWorldChangeEventExist = true;
         for (String eventName : WorldChangeCatcherNew.eventNames) {
             try {
                 Class.forName(eventName);
             } catch (Exception e) {
-                areWorldChangeEventsExists = false;
+                doWorldChangeEventExist = false;
             }
         }
-        if (areWorldChangeEventsExists) {
+        if (doWorldChangeEventExist) {
             Bukkit.getPluginManager().registerEvents(new WorldChangeCatcherNew(), Backuper.getInstance());
         }
     }
@@ -944,7 +874,7 @@ public class Initialization implements Listener {
 
     public static void sendGoogleAccountCheckResult(CommandSender sender) {
 
-        if (sender.isOp() && ConfigManager.getInstance().getGoogleDriveConfig().isEnabled() && !GoogleDriveUtils.checkConnection()) {
+        if (sender.isOp() && Backuper.getInstance().getGoogleDriveConfig().isEnabled() && !GoogleDriveUtils.checkConnection()) {
 
             Component message = Component.empty();
 
@@ -1021,78 +951,6 @@ public class Initialization implements Listener {
                             .color(TextColor.color(0xE3A013)));
 
             sender.sendMessage(message);
-        }
-    }
-
-    // Send plugin version and google account warnings if the player is an operator
-    @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event) {
-        sendPluginVersionCheckResult(event.getPlayer());
-        sendGoogleAccountCheckResult(event.getPlayer());
-    }
-
-    @EventHandler
-    public void onStartCompleted(ServerLoadEvent event) {
-        Initialization.initAutoBackup();
-    }
-
-    public static void unifyBackupNameFormat(CommandSender sender) {
-        Backuper.getInstance().getLogManager().log("Unifying backup names format");
-        ConfigBackwardsCompatibility.unifyBackupNameFormat(sender);
-        Backuper.getInstance().getLogManager().log("Backup names format unification completed");
-    }
-
-    public static void checkStorages(CommandSender sender) {
-        if (ConfigManager.getInstance().getFtpConfig().isEnabled() && (FtpUtils.checkConnection())) {
-            Backuper.getInstance().getLogManager().log("FTP(S) connection established successfully", sender);
-        }
-        if (ConfigManager.getInstance().getSftpConfig().isEnabled() && SftpUtils.checkConnection(sender)) {
-            Backuper.getInstance().getLogManager().log("SFTP connection established successfully", sender);
-        }
-        if (ConfigManager.getInstance().getGoogleDriveConfig().isEnabled() && GoogleDriveUtils.checkConnection() && !ConfigManager.getInstance().getGoogleDriveConfig().getRawBackupFolderId().isEmpty()) {
-            try {
-                GoogleDriveUtils.getService().files().listLabels(ConfigManager.getInstance().getGoogleDriveConfig().getRawBackupFolderId()).execute();
-            } catch (GoogleJsonResponseException e) {
-                if (e.getStatusCode() == 404) {
-                    Backuper.getInstance().getLogManager().warn("Wrong folder ID is defined googleDrive.backupsFolderId field in config.yml (File does not exist)", sender);
-                } else {
-                    Backuper.getInstance().getLogManager().warn("Failed to access Google Drive backup folder defined googleDrive.backupsFolderId field in config.yml", sender);
-                    Backuper.getInstance().getLogManager().warn(e);
-                }
-            } catch (Exception e) {
-                Backuper.getInstance().getLogManager().warn("Failed to access Google Drive backup folder defined googleDrive.backupsFolderId field in config.yml", sender);
-                Backuper.getInstance().getLogManager().warn(e);
-            }
-        }
-    }
-
-    public static void loadSizeCache(CommandSender sender) {
-
-        try {
-            File sizeCacheFile = ConfigManager.getInstance().getSizeCacheFile();
-
-            try {
-                if (!sizeCacheFile.exists() && !sizeCacheFile.createNewFile()) {
-                    Backuper.getInstance().getLogManager().warn("Unable to create %s file!".formatted(sizeCacheFile.getPath()));
-                }
-            } catch (Exception e) {
-                Backuper.getInstance().getLogManager().warn("Unable to create %s file!".formatted(sizeCacheFile.getPath()));
-            }
-
-            FileReader reader = new FileReader(sizeCacheFile);
-            StringBuilder json = new StringBuilder();
-            char[] buffer = new char[1024];
-            int length;
-            while ((length = reader.read(buffer)) != -1) {
-                json.append(new String(buffer, 0, length));
-            }
-            reader.close();
-
-            Backup.loadSizeCache(json.toString());
-
-        } catch (Exception e) {
-            Backuper.getInstance().getLogManager().warn("Failed to load backups size cache", sender);
-            Backuper.getInstance().getLogManager().warn(e);
         }
     }
 }

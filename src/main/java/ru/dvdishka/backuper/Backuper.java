@@ -4,11 +4,15 @@ import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPIBukkitConfig;
 import lombok.Getter;
 import org.bukkit.Bukkit;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.server.ServerLoadEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.dvdishka.backuper.backend.Initialization;
-import ru.dvdishka.backuper.backend.common.LogManager;
-import ru.dvdishka.backuper.backend.common.ScheduleManager;
+import ru.dvdishka.backuper.backend.LogManager;
+import ru.dvdishka.backuper.backend.ScheduleManager;
 import ru.dvdishka.backuper.backend.config.ConfigManager;
+import ru.dvdishka.backuper.backend.quartzjob.AutoBackupQuartzJob;
 import ru.dvdishka.backuper.backend.storage.StorageManager;
 import ru.dvdishka.backuper.backend.task.SetWorldsWritableTask;
 import ru.dvdishka.backuper.backend.task.Task;
@@ -73,7 +77,7 @@ public class Backuper extends JavaPlugin {
 
     public void onDisable() {
 
-        saveSizeCache();
+        storageManager.saveSizeCache();
 
         Backuper.getInstance().getScheduleManager().destroy(this);
         Task setWorldsWritableTask = new SetWorldsWritableTask();
@@ -87,18 +91,14 @@ public class Backuper extends JavaPlugin {
         Backuper.getInstance().getLogManager().log("Backuper plugin has been disabled!");
     }
 
-    private void saveSizeCache() {
+    @EventHandler
+    public void onStartCompleted(ServerLoadEvent event) {
+        new AutoBackupQuartzJob().init();
+    }
 
-        try {
-            File sizeCachceFile = configManager.getServerConfig().getSizeCacheFile();
-
-            FileWriter writer = new FileWriter(sizeCachceFile);
-            writer.write(storageManager.getSizeCacheJson());
-            writer.close();
-
-        } catch (Exception e) {
-            Backuper.getInstance().getLogManager().warn("Failed to save size cache to disk!");
-            Backuper.getInstance().getLogManager().warn(e);
-        }
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        Initialization.sendPluginVersionCheckResult(event.getPlayer());
+        Initialization.sendGoogleAccountCheckResult(event.getPlayer());
     }
 }

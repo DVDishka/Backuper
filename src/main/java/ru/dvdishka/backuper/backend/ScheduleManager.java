@@ -1,4 +1,4 @@
-package ru.dvdishka.backuper.backend.common;
+package ru.dvdishka.backuper.backend;
 
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import org.bukkit.Bukkit;
