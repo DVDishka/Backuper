@@ -66,7 +66,9 @@ public class TaskManager {
     }
 
     public void startTaskRaw(Task task, CommandSender sender) throws TaskException {
+        Backuper.getInstance().getLogManager().devLog("Task %s has been started".formatted(task.getTaskName()));
         task.start(sender);
+        Backuper.getInstance().getLogManager().devLog("Task %s completed".formatted(task.getTaskName()));
     }
 
     public void cancelTaskRaw(Task task) {

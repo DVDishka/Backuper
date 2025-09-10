@@ -51,8 +51,13 @@ public class BackupCommand extends Command {
                 returnFailure("Failed to connect to %s storage".formatted(storage.getId()));
                 storageParseFailure = true;
             }
+            this.storages.add(storage);
         }
         if (storageParseFailure) return false;
+        if (storages.isEmpty()) {
+            returnFailure("You have to define at least one storage");
+            return false;
+        }
         if (!storages.stream().map(Permission.BACKUP::getPermission).allMatch(sender::hasPermission) || afterBackup.equals("STOP") && !sender.hasPermission(Permission.STOP.getPermission()) || afterBackup.equals("RESTART") && !sender.hasPermission(Permission.RESTART.getPermission())) {
             returnFailure("Don't have enough permissions to perform this command");
             return false;

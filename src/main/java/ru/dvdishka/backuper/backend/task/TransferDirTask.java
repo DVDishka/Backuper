@@ -48,17 +48,15 @@ public class TransferDirTask extends BaseTask implements DoubleStorageTask {
     public void run() throws IOException, JSchException, SftpException {
 
         if (createRootDirInTargetDir) {
-            targetStorage.createDir(sourceStorage.getFileNameFromPath(sourceDir), targetDir);
+            if (sourceStorage.isDir(sourceDir)) {
+                targetStorage.createDir(sourceStorage.getFileNameFromPath(sourceDir), targetDir);
+            }
             targetDir = targetStorage.resolve(targetDir, sourceStorage.getFileNameFromPath(sourceDir));
         }
-        targetDir = "%s in progress".formatted(targetDir);
 
         progressListeners = new ArrayList<>();
         if (!cancelled) {
             sendFolder(sourceDir, targetDir);
-        }
-        if (!cancelled) {
-            targetStorage.renameFile(targetDir, targetStorage.getFileNameFromPath(targetDir).replace(" in progress", ""));
         }
     }
 
@@ -71,7 +69,7 @@ public class TransferDirTask extends BaseTask implements DoubleStorageTask {
         }
     }
 
-    private void sendFolder(String sourceDir, String targetDir) {
+    private void sendFolder(final String sourceDir, final String targetDir) {
         if (cancelled) return;
 
         if (!sourceStorage.exists(sourceDir)) {
@@ -87,11 +85,11 @@ public class TransferDirTask extends BaseTask implements DoubleStorageTask {
         if (sourceStorage.isFile(sourceDir) && !sourceStorage.getFileNameFromPath(sourceDir).equals("session.lock")) {
 
             try {
-                StorageProgressListener progressListener = new BasicStorageProgressListener();
+                final StorageProgressListener progressListener = new BasicStorageProgressListener();
                 progressListeners.add(progressListener);
                 CompletableFuture<Void> job = Backuper.getInstance().getScheduleManager().runAsync(() -> {
                     try (InputStream inputStream = sourceStorage.downloadFile(sourceDir, new BasicStorageProgressListener())) {
-                        targetStorage.uploadFile(inputStream, sourceStorage.getFileNameFromPath(sourceDir), targetDir, progressListener);
+                        targetStorage.uploadFile(inputStream, sourceStorage.getFileNameFromPath(sourceDir), targetStorage.getParentPath(targetDir), progressListener);
                     } catch (Exception e) {
                         warn("Failed to send file \"%s\" to %s storage".formatted(sourceDir, targetStorage.getId()));
                         warn(e);
@@ -109,31 +107,25 @@ public class TransferDirTask extends BaseTask implements DoubleStorageTask {
                 }
 
             } catch (Exception e) {
-                warn("Something went wrong while sending file to the SFTP channel", sender);
+                warn("Failed to send file \"%s\" to %s storage".formatted(sourceDir, targetStorage.getId()), sender);
                 warn(e);
             }
         }
         if (sourceStorage.isDir(sourceDir)) {
             for (String file : sourceStorage.ls(sourceDir)) {
-                if (sourceStorage.isDir(sourceStorage.resolve(targetDir, file))) {
+                if (sourceStorage.isDir(sourceStorage.resolve(sourceDir, file))) {
                     targetStorage.createDir(file, targetDir);
                 }
-                sendFolder(file, targetStorage.resolve(targetDir, file));
+                sendFolder(sourceStorage.resolve(sourceDir, file), targetStorage.resolve(targetDir, file));
             }
         }
     }
 
     @Override
     public long getTaskCurrentProgress() {
-
-        if (cancelled) {
-            return maxProgress;
-        }
-
         if (progressListeners == null) {
             return 0;
         }
-
         long currentProgress = 0;
         for (StorageProgressListener progressListener : progressListeners) {
             currentProgress += progressListener.getCurrentProgress();
@@ -149,7 +141,6 @@ public class TransferDirTask extends BaseTask implements DoubleStorageTask {
     @Override
     public void cancel() {
         cancelled = true;
-
         for (CompletableFuture<Void> job : jobs) {
             job.cancel(true);
         }

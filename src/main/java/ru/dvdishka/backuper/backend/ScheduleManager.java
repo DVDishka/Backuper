@@ -41,7 +41,7 @@ public class ScheduleManager {
         if (Backuper.getInstance().getConfigManager().getServerConfig().getThreadsNumber() == 0) {
             this.mainExecutorService = Executors.newWorkStealingPool();
         } else {
-            this.mainExecutorService = Executors.newFixedThreadPool(Backuper.getInstance().getConfigManager().getServerConfig().getThreadsNumber());
+            this.mainExecutorService = Executors.newWorkStealingPool(Backuper.getInstance().getConfigManager().getServerConfig().getThreadsNumber());
         }
     }
 

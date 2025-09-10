@@ -31,7 +31,7 @@ public class TransferDirsAsZipTask extends BaseTask implements DoubleStorageTask
     private StorageProgressListener progressListener;
 
     /***
-     * @param sourceDirs Absolute paths. Don't try to add there a file you want to send without createRootDirInTargetZIP true option
+     * @param sourceDirs Absolute paths. Don't try to add there a file you want to send without createRootDirInTargetZIP a true option
      * @param targetParentDir Absolute path
      */
     public TransferDirsAsZipTask(Storage sourceStorage, List<String> sourceDirs, Storage targetStorage, String targetParentDir, String targetZipFileName,

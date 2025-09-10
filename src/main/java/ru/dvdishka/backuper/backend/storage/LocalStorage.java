@@ -128,7 +128,7 @@ public class LocalStorage implements Storage {
     public boolean isFile(String path) throws StorageMethodException, StorageConnectionException {
         File file = new File(path);
         if (!file.exists()) {
-            throw new StorageMethodException("File \"%s\" does not exist");
+            throw new StorageMethodException("File \"%s\" does not exist".formatted(path));
         }
         return file.isFile();
     }
@@ -184,7 +184,7 @@ public class LocalStorage implements Storage {
             Files.copy(sourceStream, target.toPath());
             progressListener.incrementProgress(target.length());
         } catch (IOException e) {
-            throw new StorageMethodException("Failed to copy stream to \"%s\" in local storage".formatted(target.getAbsolutePath()));
+            throw new StorageMethodException("Failed to copy stream to \"%s\" in %s storage".formatted(target.getAbsolutePath(), id), e);
         }
     }
 
@@ -198,7 +198,7 @@ public class LocalStorage implements Storage {
         try {
             return new FileInputStream(file);
         } catch (IOException e) {
-            throw new StorageMethodException("Failed to get file's \"%s\" input stream from \"%s\" local storage".formatted(remotePath, this.getId()));
+            throw new StorageMethodException("Failed to get file's \"%s\" input stream from \"%s\" storage".formatted(remotePath, id), e);
         }
     }
 
@@ -212,42 +212,33 @@ public class LocalStorage implements Storage {
 
     @Override
     public void renameFile(String path, String newFileName) throws StorageMethodException, StorageConnectionException {
-        try {
-            File sourceFile = new File(path);
+        File sourceFile = new File(path);
+        File targetFile = new File(resolve(getParentPath(path), newFileName));
 
-            String parentPath = "";
-            if (path.contains(config.getPathSeparatorSymbol())) {
-                parentPath = path.substring(0, path.lastIndexOf(config.getPathSeparatorSymbol()));
-                parentPath += config.getPathSeparatorSymbol();
+        if (!sourceFile.exists())
+            throw new StorageMethodException("Source file does not exist: %s".formatted(path));
+        if (targetFile.exists())
+            throw new StorageMethodException("Target file already exists: %s".formatted(newFileName));
+
+        // Create parent directories if they don't exist
+        File parentDir = targetFile.getParentFile();
+        if (parentDir != null && !parentDir.exists()) {
+            if (!parentDir.mkdirs()) {
+                throw new StorageMethodException("Failed to create parent directory for: %s".formatted(newFileName));
             }
-            File targetFile = new File(parentPath + newFileName);
-            
-            if (!sourceFile.exists()) {
-                throw new StorageMethodException("Source file does not exist: %s".formatted(path));
-            }
-            
-            if (targetFile.exists()) {
-                throw new StorageMethodException("Target file already exists: %s".formatted(newFileName));
-            }
-            
-            // Create parent directories if they don't exist
-            File parentDir = targetFile.getParentFile();
-            if (parentDir != null && !parentDir.exists()) {
-                if (!parentDir.mkdirs()) {
-                    throw new StorageMethodException("Failed to create parent directory for: %s".formatted(newFileName));
-                }
-            }
-            
-            if (!sourceFile.renameTo(targetFile)) {
-                // Try using Files.move as fallback
-                try {
+        }
+
+        // Sometimes doesn't work so me need to retry
+        for (int i = 0; i < 1000000; i++) {
+            try {
+                if (!sourceFile.renameTo(targetFile)) {
+                    // Try using Files.move as fallback
                     Files.move(sourceFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                } catch (IOException e) {
-                    throw new StorageMethodException("Failed to rename file from \"%s\" to \"%s\"".formatted(path, newFileName), e);
                 }
+                break;
+            } catch (Exception e) {
+                if (i == 999999) throw new StorageMethodException("Failed to rename file \"%s\" to \"%s\" using local storage".formatted(path, newFileName), e);
             }
-        } catch (Exception e) {
-            throw new StorageMethodException("Failed to rename file \"%s\" to \"%s\" using local storage".formatted(path, newFileName), e);
         }
     }
 
