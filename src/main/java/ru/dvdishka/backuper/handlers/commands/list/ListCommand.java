@@ -10,88 +10,58 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.backend.backup.*;
-import ru.dvdishka.backuper.backend.config.ConfigManager;
+import ru.dvdishka.backuper.backend.backup.Backup;
+import ru.dvdishka.backuper.backend.storage.Storage;
 import ru.dvdishka.backuper.handlers.commands.Command;
+import ru.dvdishka.backuper.handlers.commands.Permission;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 public class ListCommand extends Command {
 
-    public static ArrayList<ArrayList<TextComponent>> pages;
-    private final String storage;
-    private boolean sendResult = true;
+    private List<List<TextComponent>> pages;
+    private Storage storage;
+    private final boolean sendResult;
 
     private final HashMap<String, Long> backupNameMbSize = new HashMap<>();
     private final HashMap<String, Backup.BackupFileType> backupNameFileType = new HashMap<>();
 
-    public ListCommand(String storage, CommandSender sender, CommandArguments arguments) {
+    public ListCommand(boolean sendResult, CommandSender sender, CommandArguments arguments) {
         super(sender, arguments);
-
-        this.storage = storage;
-    }
-
-    public ListCommand(String storage, boolean sendResult, CommandSender sender, CommandArguments arguments) {
-        super(sender, arguments);
-
-        this.storage = storage;
         this.sendResult = sendResult;
     }
 
     @Override
-    public void execute() {
-
-        if (storage.equals("local") && !ConfigManager.getInstance().getLocalConfig().isEnabled() ||
-                storage.equals("sftp") && !ConfigManager.getInstance().getSftpConfig().isEnabled() ||
-                storage.equals("ftp") && !ConfigManager.getInstance().getFtpConfig().isEnabled() ||
-                storage.equals("googleDrive") && (!ConfigManager.getInstance().getGoogleDriveConfig().isEnabled() ||
-                        !GoogleDriveUtils.checkConnection())) {
-            cancelSound();
-            if (!storage.equals("googleDrive")) {
-                returnFailure("%s storage is disabled!".formatted(storage));
-            } else {
-                returnFailure("%s storage is disabled or Google account is not linked!".formatted(storage));
-            }
-            return;
+    public boolean check() {
+        storage = Backuper.getInstance().getStorageManager().getStorage((String) arguments.get("storage"));
+        if (storage == null) {
+            returnFailure("Wrong storage name %s".formatted((String) arguments.get("storage")));
+            return false;
+        }
+        if (!storage.checkConnection()) {
+            returnFailure("Failed to establish connection with storage %s storage".formatted(storage.getId()));
+            return false;
+        }
+        if (!sender.hasPermission(Permission.LIST.getPermission(storage))) {
+            returnFailure("Don't have enough permissions to perform this command");
+            return false;
         }
 
-        if (storage.equals("local")) {
-            File backupsFolder = new File(ConfigManager.getInstance().getLocalConfig().getBackupsFolder());
-            if (!backupsFolder.exists() || backupsFolder.listFiles() == null) {
-                returnFailure("Wrong local.backupsFolder config value! (Maybe the specified folder does not exist)");
-                cancelSound();
-                return;
-            }
-        }
-
-        if (sendResult) {
-            sendMessage("Creating a list of backups may take some time...");
-        }
-        buttonSound();
-
-        // PAGE UPDATING HAPPENS THERE
-        int listPageCount = getListPageCount();
-
-        if (listPageCount == 0) {
-            if (sendResult) {
-                returnFailure("There are no backups yet!");
-            }
-            cancelSound();
-            return;
-        }
-
+        if (sendResult) sendMessage("Creating a list of backups may take some time...");
+        int listPageCount = getListPageCount(); // Page update happens there
         int pageNumber = (Integer) arguments.getOrDefault("pageNumber", 1);
-
         if (pageNumber < 1 || pageNumber > listPageCount) {
-            if (sendResult) {
-                returnFailure("Invalid page number!");
-            }
-            cancelSound();
-            return;
+            returnFailure("Invalid page number!");
+            return false;
         }
 
+        return true;
+    }
+
+    @Override
+    public void run() {
         Component header = Component.empty();
 
         header = header
@@ -102,6 +72,7 @@ public class ListCommand extends Command {
                         .color(TextColor.fromHexString("#129c9b"))
                         .decorate(TextDecoration.BOLD));
 
+        int pageNumber = (Integer) arguments.getOrDefault("pageNumber", 1);
         if (sendResult) {
             if (!(sender instanceof ConsoleCommandSender)) {
                 sendFramedMessage(header, createListMessage(pageNumber, true), 15);
@@ -113,35 +84,14 @@ public class ListCommand extends Command {
     }
 
     private void updateListPages() {
+        List<Backup> backups = new ArrayList<>(storage.getBackupManager().getBackupList());
+        sortBackupsDecrease(backups);
 
-        ArrayList<Backup> backups = null;
-
-        if (storage.equals("local")) {
-            backups = getSortedDecreaseLocalBackupList();
-        }
-        if (storage.equals("sftp")) {
-            backups = getSortedDecreaseSftpBackupList();
-        }
-        if (storage.equals("ftp")) {
-            backups = getSortedDecreaseFtpBackupList();
-        }
-        if (storage.equals("googleDrive")) {
-            backups = getSortedDecreaseGoogleDriveBackupList();
-        }
-
-        if (backups == null) {
-            Backuper.getInstance().getLogManager().warn("Something went wrong while trying to get backup list!", sender);
-            return;
-        }
-
-        ArrayList<ArrayList<TextComponent>> pages = new ArrayList<>();
-
+        List<List<TextComponent>> pages = new ArrayList<>();
         for (int i = 1; i <= backups.size(); i++) {
-
             if (i % 10 == 1) {
                 pages.add(new ArrayList<>());
             }
-
             Backup backup = backups.get(i - 1);
             String backupName = backup.getName();
             String backupFormattedName = backup.getFormattedName();
@@ -152,7 +102,7 @@ public class ListCommand extends Command {
             backupNameFileType.put(backupFormattedName, backup.getFileType());
 
             HoverEvent<net.kyori.adventure.text.Component> hoverEvent = HoverEvent
-                    .showText(net.kyori.adventure.text.Component.text("(%s) %s %s MB".formatted(backup.getStorageType().name(), backup.getFileType().name(), backupMbSize)));
+                    .showText(net.kyori.adventure.text.Component.text("(%s) %s %s MB".formatted(backup.getStorage().getId(), backup.getFileType().name(), backupMbSize)));
             ClickEvent clickEvent = ClickEvent.runCommand("/backuper menu %s \"%s\"".formatted(storage, backupName));
 
             pages.get((i - 1) / 10)
@@ -160,14 +110,11 @@ public class ListCommand extends Command {
                             .hoverEvent(hoverEvent)
                             .clickEvent(clickEvent));
         }
-
-        ListCommand.pages = pages;
+        this.pages = pages;
     }
 
     private Component createListMessage(int pageNumber, boolean pagedListMessage) {
-
         Component message = Component.empty();
-
         // For console
         if (!(sender instanceof ConsoleCommandSender)) {
 
@@ -232,7 +179,7 @@ public class ListCommand extends Command {
                     message = message
                             .append(Component.text(backupName))
                             .append(Component.space())
-                            .append(Component.text(storage))
+                            .append(Component.text(storage.getId()))
                             .append(Component.space())
                             .append(Component.text(backupNameFileType.get(backupName).name()))
                             .append(Component.space())
@@ -253,7 +200,7 @@ public class ListCommand extends Command {
                                 .decorate(TextDecoration.BOLD)
                                 .color(TextColor.fromHexString("#129c9b")));
             } else {
-                for (ArrayList<TextComponent> page : pages) {
+                for (List<TextComponent> page : pages) {
                     for (TextComponent backupComponent : page) {
 
                         if (backupIndex > 1) {
@@ -266,7 +213,7 @@ public class ListCommand extends Command {
                         message = message
                                 .append(Component.text(backupComponent.content()))
                                 .append(Component.space())
-                                .append(Component.text(storage))
+                                .append(Component.text(storage.getId()))
                                 .append(Component.space())
                                 .append(Component.text(backupNameFileType.get(backupName).name()))
                                 .append(Component.space())
@@ -283,49 +230,15 @@ public class ListCommand extends Command {
     }
 
     private int getListPageCount() {
-
         updateListPages();
         return pages.size();
     }
 
-    private ArrayList<Backup> getSortedDecreaseLocalBackupList() {
-
-        ArrayList<Backup> backups = new ArrayList<>(LocalBackup.getBackups());
-        sortBackupsDecrease(backups);
-        return backups;
-    }
-
-    private ArrayList<Backup> getSortedDecreaseFtpBackupList() {
-
-        ArrayList<Backup> backups = new ArrayList<>(FtpBackup.getBackups());
-        sortBackupsDecrease(backups);
-        return backups;
-    }
-
-    private ArrayList<Backup> getSortedDecreaseSftpBackupList() {
-
-        ArrayList<Backup> backups = new ArrayList<>(SftpBackup.getBackups());
-        sortBackupsDecrease(backups);
-        return backups;
-    }
-
-    private ArrayList<Backup> getSortedDecreaseGoogleDriveBackupList() {
-
-        ArrayList<Backup> backups = new ArrayList<>(GoogleDriveBackup.getBackups());
-        sortBackupsDecrease(backups);
-        return backups;
-    }
-
-    private void sortBackupsDecrease(ArrayList<Backup> backups) {
-
+    private void sortBackupsDecrease(List<Backup> backups) {
         for (int firstBackupsIndex = 0; firstBackupsIndex < backups.size(); firstBackupsIndex++) {
-
             for (int secondBackupsIndex = firstBackupsIndex; secondBackupsIndex < backups.size(); secondBackupsIndex++) {
-
                 if (backups.get(firstBackupsIndex).getLocalDateTime().isBefore(backups.get(secondBackupsIndex).getLocalDateTime())) {
-
                     Backup save = backups.get(firstBackupsIndex);
-
                     backups.set(firstBackupsIndex, backups.get(secondBackupsIndex));
                     backups.set(secondBackupsIndex, save);
                 }

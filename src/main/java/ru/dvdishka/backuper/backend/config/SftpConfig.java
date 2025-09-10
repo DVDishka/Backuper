@@ -30,8 +30,11 @@ public class SftpConfig implements StorageConfig {
     private int zipCompressionLevel;
     private int port;
 
+    private ConfigurationSection config;
+
     public SftpConfig load(ConfigurationSection config) {
-        this.id = id;
+        this.config = config;
+        this.id = config.getName();
         this.enabled = config.getBoolean("enabled", false);
         this.autoBackup = config.getBoolean("autoBackup", true);
         this.backupsFolder = config.getString("backupsFolder", "");

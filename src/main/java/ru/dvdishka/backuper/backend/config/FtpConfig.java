@@ -25,7 +25,10 @@ public class FtpConfig implements StorageConfig {
     private boolean zipArchive;
     private int zipCompressionLevel;
 
+    private ConfigurationSection config;
+
     public FtpConfig load(ConfigurationSection config) {
+        this.config = config;
         this.id = config.getName();
         this.enabled = config.getBoolean("enabled", false);
         this.autoBackup = config.getBoolean("autoBackup", true);

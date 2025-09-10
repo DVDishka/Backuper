@@ -4,7 +4,7 @@ import io.papermc.paper.event.player.PlayerInventorySlotChangeEvent;
 import io.papermc.paper.event.player.PlayerPickItemEvent;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import ru.dvdishka.backuper.backend.config.ConfigManager;
+import ru.dvdishka.backuper.Backuper;
 
 import java.util.List;
 
@@ -14,11 +14,11 @@ public class WorldChangeCatcherNew implements Listener {
 
     @EventHandler
     public static void onPlayerInventoryEvent(PlayerInventorySlotChangeEvent event) {
-        ConfigManager.getInstance().updateLastChange();
+        Backuper.getInstance().getConfigManager().updateLastChange();
     }
 
     @EventHandler
     public static void onItemPickUp(PlayerPickItemEvent event) {
-        ConfigManager.getInstance().updateLastChange();
+        Backuper.getInstance().getConfigManager().updateLastChange();
     }
 }

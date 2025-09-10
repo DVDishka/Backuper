@@ -4,7 +4,18 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import dev.jorel.commandapi.executors.CommandArguments;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
+import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
 import ru.dvdishka.backuper.Backuper;
+import ru.dvdishka.backuper.backend.config.LocalConfig;
+import ru.dvdishka.backuper.backend.util.UIUtils;
 import ru.dvdishka.backuper.handlers.commands.list.ListCommand;
 
 import java.io.File;
@@ -19,11 +30,18 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 
-public class StorageManager {
+public class StorageManager implements Listener {
 
     private final HashMap<String, Storage> storages = new HashMap<>();
 
     private final Gson gson = new GsonBuilder().serializeNulls().setPrettyPrinting().create();
+
+    public StorageManager() {
+        // Register default local storage that'll be used to create backups
+        LocalConfig config = new LocalConfig();
+        LocalStorage storage = new LocalStorage(config.load(config.getDefaultConfig()));
+        registerStorage("backuper", storage);
+    }
 
     public void registerStorage(String id, Storage storage) throws RuntimeException {
         if (storages.containsKey(id)) {
@@ -41,8 +59,11 @@ public class StorageManager {
         return storages.get(id);
     }
 
+    /***
+     * @return Doesn't contain disabled storages and "backuper" storage
+     */
     public List<Storage> getStorages() {
-        return new ArrayList<>(storages.values());
+        return new ArrayList<>(storages.values().stream().filter(storage -> !storage.getId().equals("backuper")).toList());
     }
 
     public void saveSizeCache() {
@@ -111,7 +132,7 @@ public class StorageManager {
                     Backuper.getInstance().getScheduleManager().runAsync(() -> {
                         try {
                             Backuper.getInstance().getLogManager().devLog("Indexing local storage...");
-                            new ListCommand(storage.getId(), false, null, new CommandArguments(new Objects[]{}, new HashMap<String, Object>(), new String[]{}, new HashMap<String, String>(), "")).execute();
+                            new ListCommand(false, null, new CommandArguments(new Objects[]{}, new HashMap<>(), new String[]{}, new HashMap<>(), "")).execute();
                             Backuper.getInstance().getLogManager().devLog("Local storage has been indexed");
                         } catch (Exception e) {
                             Backuper.getInstance().getLogManager().warn("Failed to index storage %s".formatted(storage.getId()));
@@ -136,9 +157,46 @@ public class StorageManager {
 
     public void checkStoragesConnection() {
         for (Storage storage : storages.values()) {
-            if (storage.getConfig().isEnabled() && storage.checkConnection()){
+            if (storage.checkConnection()){
                 Backuper.getInstance().getLogManager().log("Connection with %s storage established successfully".formatted(storage.getId()));
+            } else {
+                Backuper.getInstance().getLogManager().warn("Failed to establish connection with %s storage".formatted(storage.getId()));
             }
         }
+        sendUserAuthStoragesCheckResult(Bukkit.getConsoleSender());
+    }
+
+    private void sendUserAuthStoragesCheckResult(CommandSender sender) {
+        for (Storage storage : Backuper.getInstance().getStorageManager().getStorages()) {
+            if (!(storage instanceof UserAuthStorage)) continue;
+
+            if (sender.isOp() && !storage.checkConnection()) {
+                Component header = Component.empty();
+                header = header
+                        .append(Component.text("%s storage account".formatted(storage.getId()))
+                                .decorate(TextDecoration.BOLD)
+                                .color(NamedTextColor.RED));
+
+                Component message = Component.empty();
+                message = message
+                        .append(Component.text("%s storage is enabled, but account is not linked!")
+                                .decorate(TextDecoration.BOLD)
+                                .color(NamedTextColor.RED))
+                        .append(Component.newline())
+                        .append(Component.text("Use ")
+                                .decorate(TextDecoration.BOLD)
+                                .color(NamedTextColor.RED))
+                        .append(Component.text("/backuper account %s link".formatted(storage.getId()))
+                                .decorate(TextDecoration.UNDERLINED)
+                                .clickEvent(ClickEvent.suggestCommand("/backuper account %s link".formatted(storage.getId()))));
+
+                UIUtils.sendFramedMessage(header, message, sender);
+            }
+        }
+    }
+
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        sendUserAuthStoragesCheckResult(event.getPlayer());
     }
 }

@@ -51,7 +51,9 @@ public class ConfigManager {
 
     public void load(File configFile, CommandSender sender) {
 
-        Backuper.getInstance().getLogManager().devLog("loading config...", sender);
+        if (!configFile.exists()) Backuper.getInstance().saveDefaultConfig();
+
+        Backuper.getInstance().getLogManager().log("loading config...", sender);
 
         this.configFile = configFile;
 
@@ -68,7 +70,7 @@ public class ConfigManager {
         this.lastBackup = config.getLong("lastBackup", 0);
         this.lastChange = config.getLong("lastChange", 0);
 
-        config.set("configVersion", YamlConfiguration.loadConfiguration(new InputStreamReader(Backuper.getInstance().getResource("config.yml"))).getString("configVersion"));
+        config.set("configVersion", YamlConfiguration.loadConfiguration(new InputStreamReader(Backuper.getInstance().getResource("config.yml"))).getDouble("configVersion"));
         try {
             config.save(configFile);
         } catch (Exception e) {
@@ -79,12 +81,13 @@ public class ConfigManager {
             CommandAPI.updateRequirements(player);
         }
 
-        Backuper.getInstance().getLogManager().devLog("Config has been loaded", sender);
+        Backuper.getInstance().getLogManager().log("Config has been loaded", sender);
     }
 
     private void loadBackupConfig(ConfigurationSection config) {
         ConfigurationSection backupSection = config.getConfigurationSection("backup");
         this.backupConfig = (BackupConfig) new BackupConfig().repairThenLoad(backupSection);
+        config.set("backup", backupConfig.getConfig());
     }
 
     private void loadStorages(ConfigurationSection config) {
@@ -104,12 +107,15 @@ public class ConfigManager {
                     yield null;
                 }
             };
-            Backuper.getInstance().getStorageManager().registerStorage(storageId, storage);
+            if (storage != null) storagesSection.set(storageId, storage.getConfig().getConfig()); // Setting repaired config for storages with valid storage types
+            if (storage != null && storage.getConfig().isEnabled()) Backuper.getInstance().getStorageManager().registerStorage(storageId, storage);
         });
+        config.set("storages", storagesSection);
     }
 
     private void loadServerConfig(ConfigurationSection config) {
         ConfigurationSection serverSection = config.getConfigurationSection("server");
         this.serverConfig = (ServerConfig) new ServerConfig().repairThenLoad(serverSection);
+        config.set("server", serverConfig.getConfig());
     }
 }

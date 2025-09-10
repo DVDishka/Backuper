@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-public class TransferDirTask extends BaseTask {
+public class TransferDirTask extends BaseTask implements DoubleStorageTask {
 
     private final Storage sourceStorage;
     private final String sourceDir;
@@ -31,6 +31,9 @@ public class TransferDirTask extends BaseTask {
     private ArrayList<StorageProgressListener> progressListeners;
     private long dirSize = 0;
 
+    /***
+     * @param targetDir Not parent
+     */
     public TransferDirTask(Storage sourceStorage, String sourceDir, Storage targetStorage, String targetDir, boolean createRootDirInTargetDir, boolean forceExcludedDirs) {
         super();
         this.sourceStorage = sourceStorage;
@@ -48,31 +51,28 @@ public class TransferDirTask extends BaseTask {
             targetStorage.createDir(sourceStorage.getFileNameFromPath(sourceDir), targetDir);
             targetDir = targetStorage.resolve(targetDir, sourceStorage.getFileNameFromPath(sourceDir));
         }
+        targetDir = "%s in progress".formatted(targetDir);
 
         progressListeners = new ArrayList<>();
         if (!cancelled) {
             sendFolder(sourceDir, targetDir);
         }
+        if (!cancelled) {
+            targetStorage.renameFile(targetDir, targetStorage.getFileNameFromPath(targetDir).replace(" in progress", ""));
+        }
     }
 
     @Override
     public void prepareTask(CommandSender sender) throws ExecutionException, InterruptedException, AuthenticationException, IOException, Storage.StorageLimitException, Storage.StorageQuotaExceededException, SftpException {
-        if (forceExcludedDirs) {
-            dirSize = sourceStorage.getDirByteSize(sourceDir);
+        if (sourceStorage instanceof LocalStorage && !forceExcludedDirs) {
+            dirSize = Utils.getFileFolderByteSizeExceptExcluded(new File(sourceDir));
         } else {
-            if (sourceStorage instanceof LocalStorage) {
-                dirSize = Utils.getFileFolderByteSizeExceptExcluded(new File(sourceDir));
-            } else {
-                dirSize = sourceStorage.getDirByteSize(sourceDir);
-            }
+            dirSize = sourceStorage.getDirByteSize(sourceDir);
         }
     }
 
     private void sendFolder(String sourceDir, String targetDir) {
-
-        if (cancelled) {
-            return;
-        }
+        if (cancelled) return;
 
         if (!sourceStorage.exists(sourceDir)) {
             warn("Something went wrong while trying to send files from %s".formatted(sourceDir));
@@ -80,7 +80,7 @@ public class TransferDirTask extends BaseTask {
             return;
         }
 
-        if (!forceExcludedDirs && sourceStorage instanceof LocalStorage) {
+        if (sourceStorage instanceof LocalStorage && !forceExcludedDirs) {
             if (Utils.isExcludedDirectory(new File(sourceDir), sender)) return;
         }
 
@@ -153,5 +153,15 @@ public class TransferDirTask extends BaseTask {
         for (CompletableFuture<Void> job : jobs) {
             job.cancel(true);
         }
+    }
+
+    @Override
+    public Storage getSourceStorage() {
+        return sourceStorage;
+    }
+
+    @Override
+    public Storage getTargetStorage() {
+        return targetStorage;
     }
 }

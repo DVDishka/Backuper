@@ -13,4 +13,8 @@ public interface StorageConfig extends Config {
     boolean isZipArchive();
 
     String getBackupsFolder();
+
+    int getBackupsNumber();
+
+    long getBackupsWeight();
 }

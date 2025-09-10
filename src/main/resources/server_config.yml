@@ -9,6 +9,8 @@ alertBackupRestartMessage: Server will be backed up and restarted in %d second(s
 
 # (Path) Size cache file
 sizeCacheFile: ./plugins/Backuper/sizeCache.json
+# (>= 0) Number of threads that the backuper will use (0 to automatically set it equal to the number of threads on the server)
+threadsNumber: 0
 
 # (true/false) Check for new versions of the Backuper to stay up to date
 checkUpdates: true

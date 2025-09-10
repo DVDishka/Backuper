@@ -1,5 +1,6 @@
 package ru.dvdishka.backuper.backend.task;
 
+import lombok.Getter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.TextColor;
@@ -8,7 +9,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.util.UIUtils;
-import ru.dvdishka.backuper.handlers.commands.Permissions;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -17,10 +17,11 @@ import java.util.function.Function;
 
 public class TaskManager {
 
+    @Getter
     private Task currentTask;
-    private List<Permissions> currentTaskPermissions;
+    private List<String> currentTaskPermissions;
 
-    private Result start(Task task, CommandSender sender, List<Permissions> permissions, Function<Runnable, CompletableFuture<Void>> taskExecutor) {
+    private Result start(Task task, CommandSender sender, List<String> permissions, Function<Runnable, CompletableFuture<Void>> taskExecutor) {
         if (currentTask != null) {
             return Result.LOCKED.sendMessage(task, sender);
         }
@@ -50,7 +51,7 @@ public class TaskManager {
     /***
      * Run task using current thread
      */
-    public Result startTask(Task task, CommandSender sender, List<Permissions> permissions) {
+    public Result startTask(Task task, CommandSender sender, List<String> permissions) {
         return start(task, sender, permissions, (runnable) -> {
             runnable.run();
             return CompletableFuture.completedFuture(null);
@@ -60,7 +61,7 @@ public class TaskManager {
     /***
      * Run task async
      */
-    public Result startTaskAsync(Task task, CommandSender sender, List<Permissions> permissions) {
+    public Result startTaskAsync(Task task, CommandSender sender, List<String> permissions) {
         return start(task, sender, permissions, Backuper.getInstance().getScheduleManager()::runAsync);
     }
 
@@ -106,12 +107,8 @@ public class TaskManager {
         return currentTask != null;
     }
 
-    public Task getCurrentTask() {
-        return currentTask;
-    }
-
-    private boolean hasPermissions(List<Permissions> permissions, CommandSender sender) {
-        return permissions.stream().allMatch((permission) -> sender.hasPermission(permission.getPermission()));
+    private boolean hasPermissions(List<String> permissions, CommandSender sender) {
+        return permissions.stream().allMatch(sender::hasPermission);
     }
 
     public enum Result {

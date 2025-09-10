@@ -52,7 +52,6 @@
                             <shadedPattern>ru.dvdishka.shade.commandapi</shadedPattern>
                         </relocation>
                     </relocations>
-                    <minimizeJar>true</minimizeJar>
                 </configuration>
                 <executions>
                     <execution>

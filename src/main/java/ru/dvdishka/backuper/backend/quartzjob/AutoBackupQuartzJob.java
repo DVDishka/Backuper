@@ -3,15 +3,14 @@ package ru.dvdishka.backuper.backend.quartzjob;
 import org.bukkit.Bukkit;
 import org.quartz.CronTrigger;
 import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
 import org.quartz.Trigger;
 import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.backend.config.ConfigManager;
+import ru.dvdishka.backuper.backend.storage.Storage;
 import ru.dvdishka.backuper.backend.task.BackupTask;
 import ru.dvdishka.backuper.backend.task.Task;
 import ru.dvdishka.backuper.backend.task.TaskManager;
 import ru.dvdishka.backuper.backend.util.UIUtils;
-import ru.dvdishka.backuper.handlers.commands.Permissions;
+import ru.dvdishka.backuper.handlers.commands.Permission;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -35,23 +34,24 @@ public class AutoBackupQuartzJob implements org.quartz.Job {
     }
 
     @Override
-    public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
+    public void execute(JobExecutionContext jobExecutionContext) {
 
         if (Backuper.getInstance().getConfigManager().getBackupConfig().isAutoBackup()) {
-
             scheduleNextBackupAlert(jobExecutionContext.getTrigger()); // Prepare alert for next backup
 
             Backuper.getInstance().getScheduleManager().runAsync(() -> {
-                Task backupTask = new BackupTask(Backuper.getInstance().getStorageManager().getStorages().stream().filter(storage -> storage.getConfig().isEnabled() && storage.getConfig().isAutoBackup()).toList(),
-                        Backuper.getInstance().getConfigManager().getBackupConfig().getAfterBackup(), true);
-                List<Permissions> permissions = new ArrayList<>(){};
-                permissions.add(Permissions.BACKUP);
+                List<Storage> autoBackupStorages = Backuper.getInstance().getStorageManager().getStorages().stream().filter(storage -> storage.getConfig().isAutoBackup()).toList();
+                Task backupTask = new BackupTask(autoBackupStorages, Backuper.getInstance().getConfigManager().getBackupConfig().getAfterBackup(), true);
+
+                List<String> permissions = new ArrayList<>(){};
+                permissions.addAll(autoBackupStorages.stream().map(Permission.BACKUP::getPermission).toList());
                 if ("RESTART".equals(Backuper.getInstance().getConfigManager().getBackupConfig().getAfterBackup())) {
-                    permissions.add(Permissions.RESTART);
+                    permissions.add(Permission.RESTART.getPermission());
                 }
                 if ("STOP".equals(Backuper.getInstance().getConfigManager().getBackupConfig().getAfterBackup())) {
-                    permissions.add(Permissions.STOP);
+                    permissions.add(Permission.STOP.getPermission());
                 }
+
                 if (TaskManager.Result.LOCKED.equals(Backuper.getInstance().getTaskManager().startTask(backupTask, Bukkit.getConsoleSender(), permissions))) {
                     Backuper.getInstance().getLogManager().warn("Failed to start an Auto Backup task. Blocked by another operation", Bukkit.getConsoleSender());
                 }
@@ -66,7 +66,7 @@ public class AutoBackupQuartzJob implements org.quartz.Job {
             delay = max((delay - Backuper.getInstance().getConfigManager().getServerConfig().getAlertTimeBeforeRestart()) * 20, 1); // Subtracting alert pre-delay from the new backup's delay
             long alertTime = min(Backuper.getInstance().getConfigManager().getServerConfig().getAlertTimeBeforeRestart(), delay); // Used for notification only
 
-            Backuper.getInstance().getScheduleManager().runSyncDelayed(Backuper.getInstance(), () -> {
+            Backuper.getInstance().getScheduleManager().runGlobalRegionDelayed(Backuper.getInstance(), () -> {
                 UIUtils.sendBackupAlert(alertTime, Backuper.getInstance().getConfigManager().getBackupConfig().getAfterBackup());
             }, delay);
         }

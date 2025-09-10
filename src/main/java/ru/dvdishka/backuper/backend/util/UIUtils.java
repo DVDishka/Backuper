@@ -11,8 +11,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
 import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.backend.config.ConfigManager;
-import ru.dvdishka.backuper.handlers.commands.Permissions;
+import ru.dvdishka.backuper.handlers.commands.Permission;
 
 public class UIUtils {
     public static void returnFailure(String message, CommandSender sender) {
@@ -197,24 +196,24 @@ public class UIUtils {
         boolean restart = false;
 
         if (afterBackup.equals("STOP")) {
-            Backuper.getInstance().getLogManager().log(ConfigManager.getInstance().getAlertBackupRestartMessage().formatted(timeSeconds));
+            Backuper.getInstance().getLogManager().log(Backuper.getInstance().getConfigManager().getServerConfig().getAlertBackupRestartMessage().formatted(timeSeconds));
             restart = true;
         }
         if (afterBackup.equals("RESTART")) {
-            Backuper.getInstance().getLogManager().log(ConfigManager.getInstance().getAlertBackupRestartMessage().formatted(timeSeconds));
+            Backuper.getInstance().getLogManager().log(Backuper.getInstance().getConfigManager().getServerConfig().getAlertBackupRestartMessage().formatted(timeSeconds));
             restart = true;
         }
         if (afterBackup.equals("NOTHING")) {
-            Backuper.getInstance().getLogManager().log(ConfigManager.getInstance().getAlertBackupMessage().formatted(timeSeconds));
+            Backuper.getInstance().getLogManager().log(Backuper.getInstance().getConfigManager().getServerConfig().getAlertBackupMessage().formatted(timeSeconds));
         }
 
         for (Player player : Bukkit.getOnlinePlayers()) {
 
-            if (!player.hasPermission(Permissions.ALERT.getPermission())) {
+            if (!player.hasPermission(Permission.ALERT.getPermission())) {
                 continue;
             }
 
-            if (restart || !ConfigManager.getInstance().isAlertOnlyServerRestart()) {
+            if (restart || !Backuper.getInstance().getConfigManager().getServerConfig().isAlertOnlyServerRestart()) {
 
                 Component header = Component.empty();
 
@@ -225,9 +224,8 @@ public class UIUtils {
                 Component message = Component.empty();
 
                 message = message
-                        .append(Component.text((
-                                restart ? ConfigManager.getInstance().getAlertBackupRestartMessage() : ConfigManager.getInstance().getAlertBackupMessage()
-                        ).formatted(timeSeconds)));
+                        .append(Component.text((restart ? Backuper.getInstance().getConfigManager().getServerConfig().getAlertBackupRestartMessage() :
+                                Backuper.getInstance().getConfigManager().getServerConfig().getAlertBackupMessage()).formatted(timeSeconds)));
 
                 sendFramedMessage(header, message, 15, player);
                 notificationSound(player);

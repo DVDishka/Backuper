@@ -4,8 +4,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.ApiStatus;
 import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.backend.backup.Backup;
-import ru.dvdishka.backuper.backend.config.ConfigManager;
 import ru.dvdishka.backuper.backend.storage.Storage;
 import ru.dvdishka.backuper.backend.util.Utils;
 
@@ -19,19 +17,13 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
+import static java.lang.Long.max;
+
 public class BackupTask extends BaseTask {
 
     private final boolean isAutoBackup;
     private final String afterBackup;
     private final List<Storage> storages;
-
-    private final long deleteProgressMultiplier = 3;
-    private final long copyProgressMultiplier = 5;
-    private final long zipProgressMultiplier = 10;
-    private final long sendSftpProgressMultiplier = 15;
-    private final long sendFtpProgressMultiplier = 15;
-    private final long sendGoogleDriveProgressMultiplier = 40;
-    private final long zipFtpProgressMultiplier = 20;
 
     /**
      * May contain the "in progress" part
@@ -55,21 +47,18 @@ public class BackupTask extends BaseTask {
                 this.sender = sender;
             }
             //Check if this backup should be skipped before precalculations
-            if (!cancelled && ConfigManager.getInstance().isSkipDuplicateBackup() && isAutoBackup &&
-                    ConfigManager.getInstance().getLastBackup() >= ConfigManager.getInstance().getLastChange()) {
+            if (!cancelled && Backuper.getInstance().getConfigManager().getBackupConfig().isSkipDuplicateBackup() && isAutoBackup &&
+                    Backuper.getInstance().getConfigManager().getLastBackup() >= Backuper.getInstance().getConfigManager().getLastChange()) {
 
                 log("The backup cycle will be skipped since there were no changes from the previous backup", sender);
-                ConfigManager.getInstance().updateLastBackup();
 
                 if (afterBackup.equals("RESTART")) {
-
-                    Backuper.getInstance().getScheduleManager().runSyncDelayed(Backuper.getInstance(), () -> {
+                    Backuper.getInstance().getScheduleManager().runGlobalRegionDelayed(Backuper.getInstance(), () -> {
                         Backuper.getInstance().getScheduleManager().destroy(Backuper.getInstance());
                         Bukkit.getServer().restart();
                     }, 20);
 
                 } else if (afterBackup.equals("STOP")) {
-
                     devLog("Stopping server...");
                     Bukkit.shutdown();
                 }
@@ -118,8 +107,8 @@ public class BackupTask extends BaseTask {
             }
 
             // Calculate a new backup size
-            if (!cancelled && (task instanceof UploadDirTask uploadDirTask)) {
-                storageBackupByteSize.compute(uploadDirTask.getStorage(), (storage, size) -> size == null ? uploadDirTask.getTaskMaxProgress() : size + uploadDirTask.getTaskMaxProgress());
+            if (!cancelled && (task instanceof TransferDirTask transferDirTask)) {
+                storageBackupByteSize.compute(transferDirTask.getTargetStorage(), (storage, size) -> size == null ? transferDirTask.getTaskMaxProgress() : size + transferDirTask.getTaskMaxProgress()); // There might be several tasks for one storage
             }
         }
 
@@ -134,7 +123,7 @@ public class BackupTask extends BaseTask {
             // RENAME TASK
             if (!cancelled) {
 
-                devLog("The Rename \"in progress\" Folder %s storage task has been started".formatted(storage.getId()));
+                devLog("The Rename \"in progress\" in %s storage task has been started".formatted(storage.getId()));
                 String fileType = "";
                 if (storage.getConfig().isZipArchive()) {
                     fileType = ".zip";
@@ -143,13 +132,13 @@ public class BackupTask extends BaseTask {
                 try {
                     storage.renameFile(storage.resolve(storage.getConfig().getBackupsFolder(), backupName + fileType), backupName.replace(" in progress", "") + fileType);
 
-                    // Add new backup size to cache (ONLY IF NOT ZIP. ZIP SIZE IS NOT COUNTED). NECESSARY TO DO AFTER RENAMING
+                    // Add new backup size to cache (ONLY IF NOT ZIP. ZIP SIZE IS NOT COUNTED). MUST ONLY BE EXECUTED AFTER RENAMING
                     if (!storage.getConfig().isZipArchive()) {
-                        Backup.saveBackupSizeToCache(storage, backupName.replace(" in progress", ""), storageBackupByteSize.get(storage));
-                        devLog("New GOOGLE_DRIVE backup size has been cached");
+                        storage.getBackupManager().saveBackupSizeToCache(backupName.replace(" in progress", ""), storageBackupByteSize.get(storage));
+                        devLog("New backup size in %s storage has been cached".formatted(storage.getId()));
                     }
                 } catch (Exception e) {
-                    warn("Failed to rename Google Drive file %s".formatted(backupName), sender);
+                    warn("Failed to rename file %s in %s storage".formatted(backupName, storage.getId()), sender);
                     warn(e);
                 }
                 devLog("The Rename \"in progress\" Folder %s storage task has been finished".formatted(storage.getId()));
@@ -159,7 +148,7 @@ public class BackupTask extends BaseTask {
         // UPDATE VARIABLES
         if (!cancelled && isAutoBackup) {
             devLog("Update \"lastBackup\" Variable task has been started");
-            ConfigManager.getInstance().updateLastBackup();
+            Backuper.getInstance().getConfigManager().updateLastBackup();
             devLog("Update \"lastBackup\" Variable task has been finished");
         }
 
@@ -174,7 +163,7 @@ public class BackupTask extends BaseTask {
                 warn(new TaskException(deleteOldBackupTask, e));
             }
 
-            if (ConfigManager.getInstance().isDeleteBrokenBackups()) {
+            if (Backuper.getInstance().getConfigManager().getBackupConfig().isDeleteBrokenBackups()) {
                 BaseTask deleteBrokenBackupsTask = new DeleteBrokenBackupsTask();
                 tasks.add(deleteBrokenBackupsTask);
                 try {
@@ -187,14 +176,12 @@ public class BackupTask extends BaseTask {
 
         if (!cancelled) {
             if (afterBackup.equals("RESTART")) {
-
-                Backuper.getInstance().getScheduleManager().runSyncDelayed(Backuper.getInstance(), () -> {
+                Backuper.getInstance().getScheduleManager().runGlobalRegionDelayed(Backuper.getInstance(), () -> {
                     Backuper.getInstance().getScheduleManager().destroy(Backuper.getInstance());
                     Bukkit.getServer().restart();
                 }, 20);
 
             } else if (afterBackup.equals("STOP")) {
-
                 log("Stopping server...", sender);
                 Bukkit.shutdown();
             }
@@ -202,17 +189,14 @@ public class BackupTask extends BaseTask {
     }
 
     @Override
-    protected void prepareTask(CommandSender sender) {
-
+    public void prepareTask(CommandSender sender) {
         try {
-            this.backupName = "%s in progress".formatted(LocalDateTime.now().format(ConfigManager.getInstance().getDateTimeFormatter()));
-
+            this.backupName = "%s in progress".formatted(LocalDateTime.now().format(Backuper.getInstance().getConfigManager().getBackupConfig().getDateTimeFormatter()));
             for (Storage storage : storages) {
                 if (!cancelled) {
                     prepareStorageTask(storage);
                 }
             }
-
         } catch (Exception e) {
             warn("The Backup task has been finished with an exception!", this.sender);
             warn(e);
@@ -220,48 +204,34 @@ public class BackupTask extends BaseTask {
     }
 
     private void prepareStorageTask(Storage storage) {
-
         try {
-            if (cancelled) {
-                return;
-            }
+            if (cancelled) return;
 
             if (!storage.getConfig().isZipArchive()) {
                 storage.createDir(backupName, storage.getConfig().getBackupsFolder());
             }
 
-            ArrayList<File> dirsToAddToZip = new ArrayList<>();
-
+            ArrayList<String> dirsToAddToZip = new ArrayList<>();
             for (String directoryToBackup : getDirectoriesToBackup()) {
-
                 try {
-
-                    if (cancelled) {
-                        break;
-                    }
+                    if (cancelled) return;
 
                     File additionalDirectoryToBackupFile = Paths.get(directoryToBackup).toFile();
                     boolean isExcludedDirectory = Utils.isExcludedDirectory(additionalDirectoryToBackupFile, sender);
-
                     if (!additionalDirectoryToBackupFile.exists()) {
                         warn("addDirectoryToBackup \"%s\" does not exist!".formatted(additionalDirectoryToBackupFile.getPath()));
                         continue;
                     }
+                    if (isExcludedDirectory) continue;
 
-                    if (isExcludedDirectory) {
-                        continue;
-                    }
-
-                    if (!ConfigManager.getInstance().getSftpConfig().isZipArchive()) {
-                        AsyncTask task = new UploadDirTask(storage, additionalDirectoryToBackupFile, storage.resolve(storage.getConfig().getBackupsFolder(),
+                    if (!storage.getConfig().isZipArchive()) {
+                        Task task = new TransferDirTask(Backuper.getInstance().getStorageManager().getStorage("backuper"), additionalDirectoryToBackupFile.toPath().toAbsolutePath().normalize().toString(), storage, storage.resolve(storage.getConfig().getBackupsFolder(),
                                 backupName), true, false);
                         Backuper.getInstance().getTaskManager().prepareTask(task, sender);
-
                         tasks.add(task);
                     } else {
-                        dirsToAddToZip.add(additionalDirectoryToBackupFile);
+                        dirsToAddToZip.add(additionalDirectoryToBackupFile.toPath().toAbsolutePath().normalize().toString());
                     }
-
                 } catch (Exception e) {
                     warn("Something went wrong when trying to backup an additional directory \"%s\"".formatted(directoryToBackup), sender);
                     warn(e);
@@ -269,66 +239,43 @@ public class BackupTask extends BaseTask {
             }
 
             if (storage.getConfig().isZipArchive()) {
-                AsyncTask task = new UploadDirsAsZip(storage, dirsToAddToZip, storage.getConfig().getBackupsFolder(), "%s.zip".formatted(backupName), true, false);
+                Task task = new TransferDirsAsZipTask(Backuper.getInstance().getStorageManager().getStorage("backuper"), dirsToAddToZip, storage, storage.getConfig().getBackupsFolder(), "%s.zip".formatted(backupName), true, false);
                 Backuper.getInstance().getTaskManager().prepareTask(task, sender);
-
                 tasks.add(task);
             }
-
         } catch (Exception e) {
             warn("Something went wrong while trying to prepare %s storage backup task".formatted(storage.getId()));
             warn(e);
         }
     }
 
-    private long getTaskProgressMultiplier(BaseTask task) {
+    private long getTaskProgressMultiplier(Task task) {
+        long deleteProgressMultiplier = 3;
+        final long transferProgressMultiplier = 5;
+        final long zipProgressMultiplier = 10;
+
         return switch (task) {
             case DeleteOldBackupsTask deleteOldBackupsTask -> deleteProgressMultiplier;
-            case CopyDirTask copyDirTask -> copyProgressMultiplier;
-            case AddLocalDirToZipTask addLocalDirToZipTask -> zipProgressMultiplier;
-            case SftpSendDirTask sftpSendDirTask -> sendSftpProgressMultiplier;
-            case FtpSendDirTask ftpSendDirTask -> sendFtpProgressMultiplier;
-            case FtpAddLocalDirToZipTask ftpAddLocalDirToZipTask -> zipFtpProgressMultiplier;
-            case GoogleDriveSendDirTask googleDriveSendDirTask -> sendGoogleDriveProgressMultiplier;
-            case null, default -> 1;
+            case TransferDirTask transferDirTask -> transferProgressMultiplier * max(transferDirTask.getTargetStorage().getTransferSpeedMultiplier(), transferDirTask.getSourceStorage().getTransferSpeedMultiplier());
+            case TransferDirsAsZipTask addLocalDirToZipTask -> zipProgressMultiplier * max(addLocalDirToZipTask.getTargetStorage().getTransferSpeedMultiplier(), addLocalDirToZipTask.getSourceStorage().getTransferSpeedMultiplier());
+            default -> 1;
         };
     }
 
     @Override
     public long getTaskCurrentProgress() {
-
-        if (cancelled) {
-            return getTaskMaxProgress();
-        }
-
-        long currentProgress = 0;
-
-        for (BaseTask task : tasks) {
-            long currentTaskProgress = task.getTaskCurrentProgress();
-            currentProgress += currentTaskProgress * getTaskProgressMultiplier(task);
-        }
-
-        return currentProgress;
+        return tasks.stream().mapToLong(task -> task.getTaskCurrentProgress() * getTaskProgressMultiplier(task)).sum();
     }
 
     @Override
     public long getTaskMaxProgress() {
-
-        long maxProgress = 0;
-
-        for (BaseTask task : tasks) {
-            long maxTaskProgress = task.getTaskMaxProgress();
-            maxProgress += maxTaskProgress * getTaskProgressMultiplier(task);
-        }
-
-        return maxProgress;
+        return tasks.stream().mapToLong(task -> task.getTaskMaxProgress() * getTaskProgressMultiplier(task)).sum();
     }
 
     @Override
     public void cancel() {
         cancelled = true;
-
-        for (BaseTask task : tasks) {
+        for (Task task : tasks) {
             Backuper.getInstance().getTaskManager().cancelTaskRaw(task);
         }
     }
@@ -349,9 +296,9 @@ public class BackupTask extends BaseTask {
 
     private List<String> getAddDirectoryToBackup() {
         // if contains "*" add all Files from "."
-        if(ConfigManager.getInstance().getAddDirectoryToBackup().contains("*")){
+        if(Backuper.getInstance().getConfigManager().getBackupConfig().getAddDirectoryToBackup().contains("*")){
             // Remove the "*" from the list
-            List<String> list = ConfigManager.getInstance().getAddDirectoryToBackup().stream().filter(directory -> !directory.equals("*")).collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
+            List<String> list = Backuper.getInstance().getConfigManager().getBackupConfig().getAddDirectoryToBackup().stream().filter(directory -> !directory.equals("*")).collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
             // Add all files from "."
             File file = new File(".");
             for (File subFile: file.listFiles()) {
@@ -359,7 +306,7 @@ public class BackupTask extends BaseTask {
             }
             return list;
         }else{
-            return ConfigManager.getInstance().getAddDirectoryToBackup().stream().map(addDirectory -> new File(addDirectory).getPath()).toList();
+            return Backuper.getInstance().getConfigManager().getBackupConfig().getAddDirectoryToBackup().stream().map(addDirectory -> new File(addDirectory).getPath()).toList();
         }
     }
 }

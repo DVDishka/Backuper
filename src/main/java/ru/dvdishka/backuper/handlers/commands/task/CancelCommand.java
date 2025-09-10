@@ -1,37 +1,29 @@
-package ru.dvdishka.backuper.handlers.commands.task.cancel;
+package ru.dvdishka.backuper.handlers.commands.task;
 
 import dev.jorel.commandapi.executors.CommandArguments;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.handlers.commands.Command;
+import ru.dvdishka.backuper.handlers.commands.ConfirmableCommand;
 
-public class CancelConfirmationCommand extends Command {
+public class CancelCommand extends ConfirmableCommand {
 
-    public CancelConfirmationCommand(CommandSender sender, CommandArguments arguments) {
+    public CancelCommand(CommandSender sender, CommandArguments arguments) {
         super(sender, arguments);
     }
 
     @Override
-    public void execute() {
-
-        buttonSound();
-
-        Component header = Component.empty();
-
-        header = header
-                .append(Component.text("Confirm Task Cancelling")
-                        .decorate(TextDecoration.BOLD)
-                        .color(TextColor.color(0xB02100)));
-
-        Component message = net.kyori.adventure.text.Component.empty();
+    public boolean check() {
+        if (!Backuper.getInstance().getTaskManager().isLocked()) {
+            returnFailure("No task is currently running");
+            return false;
+        }
+        // Permission check in run()
 
         long progress = Backuper.getInstance().getTaskManager().getCurrentTask().getTaskPercentProgress();
         TextColor color;
-
         if (progress < 40) {
             color = TextColor.color(190, 0, 27);
         } else if (progress < 75) {
@@ -40,6 +32,7 @@ public class CancelConfirmationCommand extends Command {
             color = TextColor.color(0, 156, 61);
         }
 
+        Component message = Component.empty();
         message = message
                 .append(Component.text("Current task:"))
                 .append(Component.space())
@@ -51,14 +44,15 @@ public class CancelConfirmationCommand extends Command {
                 .append(Component.space())
                 .append(Component.text("%s%%".formatted(progress))
                         .decorate(TextDecoration.BOLD)
-                        .color(color))
-                .append(Component.newline())
-                .append(Component.newline())
-                .append(Component.text("[CANCEL]")
-                        .clickEvent(ClickEvent.runCommand("/backuper task cancel"))
-                        .color(TextColor.color(0xB02100))
-                        .decorate(TextDecoration.BOLD));
+                        .color(color));
 
-        sendFramedMessage(header, message, 15);
+        setMessage(message);
+        setMainCommand("/backuper task cancel");
+        return true;
+    }
+
+    @Override
+    public void run() {
+        Backuper.getInstance().getTaskManager().cancelTask(Backuper.getInstance().getTaskManager().getCurrentTask(), sender);
     }
 }

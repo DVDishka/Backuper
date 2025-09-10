@@ -2,7 +2,7 @@
 autoBackup: true
 # (Expression) Auto-backup schedule expression. Use this site to generate your one: http://www.cronmaker.com
 autoBackupCron: '0 0 0 1/1 * ? *'
-# Set a format for backup file names (see java.time docs). It must contain information about both time and date
+# (Expression) Set a format for backup file names (see java.time docs). It must contain information about both time and date
 backupFileNameFormat: 'dd-MM-yyyy HH-mm-ss'
 # (Path list) (An example of how to set a list is below) Full directory paths to folders/files that you want to be backed up. Worlds will be backed up automatically, so you do not need to specify world folders there (For example, you can specify "plugins", "config") You can also specify all files with "*".
 # addDirectoryToBackup:

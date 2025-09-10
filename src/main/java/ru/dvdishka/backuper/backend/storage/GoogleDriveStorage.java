@@ -10,7 +10,6 @@ import com.google.api.client.googleapis.media.MediaHttpDownloader;
 import com.google.api.client.googleapis.media.MediaHttpDownloaderProgressListener;
 import com.google.api.client.googleapis.media.MediaHttpUploader;
 import com.google.api.client.googleapis.media.MediaHttpUploaderProgressListener;
-import com.google.api.client.http.FileContent;
 import com.google.api.client.http.InputStreamContent;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
@@ -21,6 +20,7 @@ import com.google.api.services.drive.DriveScopes;
 import com.google.api.services.drive.model.FileList;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import lombok.Setter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.TextColor;
@@ -36,11 +36,13 @@ import ru.dvdishka.backuper.backend.util.ObfuscateUtils;
 import ru.dvdishka.backuper.backend.util.UIUtils;
 
 import javax.naming.AuthenticationException;
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 
-public class GoogleDriveStorage implements Storage {
+public class GoogleDriveStorage implements UserAuthStorage {
 
+    @Setter
     private String id = null;
     private final GoogleDriveConfig config;
     private final BackupManager backupManager;
@@ -61,7 +63,7 @@ public class GoogleDriveStorage implements Storage {
         this.backupManager = new BackupManager(this);
     }
 
-    public Credential authorizeForced(CommandSender sender) throws AuthenticationException {
+    public void authorizeForced(CommandSender sender) throws StorageConnectionException {
         try {
             this.credential = null;
 
@@ -78,10 +80,10 @@ public class GoogleDriveStorage implements Storage {
                     .setApprovalPrompt("force")
                     .build();
 
-            this.credential = new MyAuthorizationCodeInstalledApp(flow).authorize("user", true, sender);
-            return credential;
+            this.credential = new MyAuthorizationCodeInstalledApp(flow).authorize(id, true, sender);
+            if (this.credential == null) throw new StorageConnectionException("Failed to authorize user in %s storage".formatted(id));
         } catch (Exception e) {
-            throw new AuthenticationException("Failed to authorize user in Google Drive");
+            throw new StorageConnectionException("Failed to authorize user in %s storage".formatted(id), e);
         }
     }
 
@@ -176,10 +178,6 @@ public class GoogleDriveStorage implements Storage {
         } catch (Exception e) {
             throw new StorageConnectionException("Not authorized in Google Drive!", e);
         }
-    }
-
-    public void setId(String id) {
-        this.id = id;
     }
 
     @Override
@@ -429,49 +427,6 @@ public class GoogleDriveStorage implements Storage {
     }
 
     /**
-     * @param file           Local file to upload
-     * @param newFileName       GoogleDrive new file name
-     * @param parentDirId GoogleDrive parent folder ID or an empty string
-     * @param progressListener Progress listener to update with upload progress
-     **/
-    @Override
-    public void uploadFile(File file, String newFileName, String parentDirId, StorageProgressListener progressListener) throws StorageMethodException, StorageConnectionException, Storage.StorageLimitException, Storage.StorageQuotaExceededException {
-        if (!file.exists()) {
-            throw new StorageMethodException("Local file \"%s\" doesn't exist".formatted(file.getAbsolutePath()));
-        }
-
-        try {
-            ((Retriable<Void>) () -> {
-                Drive service = getClient();
-
-                Map<String, String> fileAppProperties = new HashMap<>();
-                fileAppProperties.put("backuper", "true");
-
-                com.google.api.services.drive.model.File driveFileMeta = new com.google.api.services.drive.model.File();
-                driveFileMeta.setAppProperties(fileAppProperties);
-                driveFileMeta.setName(newFileName);
-                if (!Objects.equals(parentDirId, "")) {
-                    driveFileMeta.setParents(List.of(parentDirId));
-                }
-
-                FileContent driveFileContent = new FileContent("", file);
-
-                Drive.Files.Create driveFileCreate = service.files()
-                        .create(driveFileMeta, driveFileContent)
-                        .setUploadType("resumable")
-                        .setFields("id, parents, appProperties");
-                driveFileCreate.getMediaHttpUploader()
-                        .setChunkSize(MediaHttpUploader.MINIMUM_CHUNK_SIZE)
-                        .setProgressListener(new GoogleDriveStorageProgressListener(progressListener));
-
-                return null;
-            }).retry(RETRIES);
-        } catch (IOException e) {
-            throw new StorageMethodException("Failed to upload file to Google Drive", e);
-        }
-    }
-
-    /**
      * @param sourceStream    inputStream to upload
      * @param newFileName       GoogleDrive new file name
      * @param parentDirId GoogleDrive parent folder ID or an empty string
@@ -502,25 +457,6 @@ public class GoogleDriveStorage implements Storage {
             }).retry(RETRIES);
         } catch (IOException e) {
             throw new StorageMethodException("Failed to upload file to Google Drive", e);
-        }
-    }
-
-    @Override
-    public void downloadFile(String fileId, File targetFile, StorageProgressListener progressListener) throws StorageQuotaExceededException, StorageMethodException, StorageConnectionException {
-        try {
-            ((Retriable<Void>) () -> {
-                try (OutputStream outputStream = new FileOutputStream(targetFile)) {
-                    Drive service = getClient();
-
-                    Drive.Files.Get getDriveFile = service.files()
-                            .get(fileId);
-                    getDriveFile.getMediaHttpDownloader().setProgressListener(new GoogleDriveStorageProgressListener(progressListener));
-                    getDriveFile.executeMediaAndDownloadTo(outputStream);
-                    return null;
-                }
-            }).retry(RETRIES);
-        } catch (Storage.StorageLimitException | IOException e) {
-            throw new StorageMethodException("Failed to download file from Google Drive", e);
         }
     }
 
@@ -570,6 +506,11 @@ public class GoogleDriveStorage implements Storage {
         }
     }
 
+    @Override
+    public int getTransferSpeedMultiplier() {
+        return 15;
+    }
+
     public void disconnect() {
         try {
             // Google Drive doesn't require explicit disconnection like FTP/SFTP
@@ -603,7 +544,7 @@ public class GoogleDriveStorage implements Storage {
                             }
                             if (googleJsonResponseException.getDetails().getErrors() != null) {
                                 if (googleJsonResponseException.getDetails().getErrors().stream().anyMatch(errorInfo -> errorInfo.getReason().equals("storageQuotaExceeded"))) {
-                                    throw new StorageLimitException(Backup.StorageType.GOOGLE_DRIVE);
+                                    throw new StorageLimitException();
                                 }
                                 if (googleJsonResponseException.getDetails().getErrors().stream().anyMatch(errorInfo -> errorInfo.getReason().equals("rateLimitExceeded"))) {
                                     Backuper.getInstance().getLogManager().devWarn("Rate limit exceeded, retry in %s seconds...".formatted(RATE_LIMIT_DELAY_MILLIS / 1000));
@@ -612,7 +553,7 @@ public class GoogleDriveStorage implements Storage {
                                     } catch (Exception ignored) {
                                         // No need to handle wait interruption
                                     }
-                                    throw new StorageQuotaExceededException(Backup.StorageType.GOOGLE_DRIVE);
+                                    throw new StorageQuotaExceededException();
                                 }
                             }
                         }
@@ -689,7 +630,7 @@ public class GoogleDriveStorage implements Storage {
                     String result;
                     // Check if AuthGD is down
                     try {
-                        result = Request.Get("%s/getgd?id=%s".formatted(AUTH_SERVICE_URL, id)).execute().returnContent().asString();
+                        result = Request.Get("%s/getgd?id=%s%s".formatted(AUTH_SERVICE_URL, userId, id)).execute().returnContent().asString();
                     } catch (Exception e) {
                         Backuper.getInstance().getLogManager().warn("Google authentication failed. Probably backuper-mc.com is down, inform developer on GitHub", sender);
                         Backuper.getInstance().getLogManager().devWarn(e);

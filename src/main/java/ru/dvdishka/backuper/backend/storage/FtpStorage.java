@@ -1,5 +1,6 @@
 package ru.dvdishka.backuper.backend.storage;
 
+import lombok.Setter;
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPFile;
@@ -12,7 +13,8 @@ import ru.dvdishka.backuper.backend.backup.Backup;
 import ru.dvdishka.backuper.backend.backup.BackupManager;
 import ru.dvdishka.backuper.backend.config.FtpConfig;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -20,6 +22,7 @@ import java.util.stream.Collectors;
 
 public class FtpStorage implements Storage {
 
+    @Setter
     private String id = null;
     private final FtpConfig config;
     private final BackupManager backupManager;
@@ -96,10 +99,6 @@ public class FtpStorage implements Storage {
         }
 
         return ftp;
-    }
-
-    public void setId(String id) {
-        this.id = id;
     }
 
     @Override
@@ -254,24 +253,6 @@ public class FtpStorage implements Storage {
     }
 
     @Override
-    public void uploadFile(File file, String newFileName, String remoteParentDir, StorageProgressListener progressListener) throws StorageLimitException, StorageMethodException, StorageConnectionException {
-        FTPClient ftp = getClient();
-
-        String remotePath = resolve(remoteParentDir, newFileName);
-        try (InputStream inputStream = new FileInputStream(file)) {
-
-            ftp.setCopyStreamListener(new FtpStorageProgressListener(progressListener));
-            if (!ftp.storeFile(remotePath, inputStream)) {
-                throw new StorageMethodException("Failed to send file \"%s\" to \"%s\"".formatted(file.getCanonicalPath(), remotePath));
-            }
-        } catch (IOException e) {
-            throw new StorageMethodException("Failed to upload file \"%s\" to \"%s\"".formatted(file.getAbsolutePath(), remotePath));
-        } finally {
-            ftp.setCopyStreamListener(null);
-        }
-    }
-
-    @Override
     public void uploadFile(InputStream sourceStream, String newFileName, String remoteParentDir, StorageProgressListener progressListener) throws StorageLimitException, StorageMethodException, StorageConnectionException {
         FTPClient ftp = getClient();
 
@@ -284,27 +265,6 @@ public class FtpStorage implements Storage {
 
         } catch (IOException e) {
             throw new StorageMethodException("Failed to upload stream to \"%s\"".formatted(remotePath));
-        } finally {
-            ftp.setCopyStreamListener(null);
-        }
-    }
-
-    @Override
-    public void downloadFile(String remotePath, File targetFile, StorageProgressListener progressListener) throws StorageMethodException, StorageConnectionException {
-        FTPClient ftp = getClient();
-
-        try {
-            targetFile.createNewFile();
-        } catch (IOException e) {
-            throw new StorageMethodException("Failed to create new local file \"%s\"".formatted(targetFile.getAbsolutePath()));
-        }
-
-        try (FileOutputStream outputStream = new FileOutputStream(targetFile)) {
-            ftp.setCopyStreamListener(new FtpStorageProgressListener(progressListener));
-            ftp.retrieveFile(remotePath, outputStream);
-
-        } catch (IOException e) {
-            throw new StorageMethodException("Failed to download from FTP(S) storage file \"%s\" to \"%s\"".formatted(remotePath, targetFile.getAbsolutePath()));
         } finally {
             ftp.setCopyStreamListener(null);
         }
@@ -352,6 +312,11 @@ public class FtpStorage implements Storage {
         } catch (IOException e) {
             throw new StorageMethodException("Failed to rename file \"%s\" to \"%s\" using FTP(S) connection".formatted(path, newFileName));
         }
+    }
+
+    @Override
+    public int getTransferSpeedMultiplier() {
+        return 8;
     }
 
     public void disconnect() {

@@ -1,6 +1,7 @@
 package ru.dvdishka.backuper.backend.config;
 
 import lombok.Getter;
+import lombok.Setter;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.quartz.CronExpression;
@@ -27,12 +28,16 @@ public class BackupConfig implements Config {
 
     private DateTimeFormatter dateTimeFormatter;
 
+    @Setter
+    private ConfigurationSection config;
+
     public BackupConfig load(ConfigurationSection config) {
-        boolean autoBackup = config.getBoolean("autoBackup", true);
+        this.config = config;
+        boolean autoBackup = config.getBoolean("autoBackup");
         CronExpression autoBackupCron = null;
         if (autoBackup) {
             try {
-                autoBackupCron = new CronExpression(config.getString("autoBackupCron", "0 0 0 1/1 * ? *"));
+                autoBackupCron = new CronExpression(config.getString("autoBackupCron"));
             } catch (ParseException e) {
                 autoBackup = false;
                 Backuper.getInstance().getLogManager().warn("Failed to parse backup.autoBackupCron! Disabling auto backup...");
@@ -41,13 +46,13 @@ public class BackupConfig implements Config {
         }
         this.autoBackup = autoBackup;
         this.autoBackupCron = autoBackupCron;
-        String backupFileNameFormat = config.getString("backupFileNameFormat", "dd-MM-yyyy HH-mm-ss");
+        String backupFileNameFormat = config.getString("backupFileNameFormat");
         this.addDirectoryToBackup = config.getStringList("addDirectoryToBackup");
         this.excludeDirectoryFromBackup = config.getStringList("excludeDirectoryFromBackup");
-        this.deleteBrokenBackups = config.getBoolean("deleteBrokenBackups", true);
-        this.skipDuplicateBackup = config.getBoolean("skipDuplicateBackup", true);
-        this.afterBackup = config.getString("afterBackup", "NOTHING").toUpperCase();
-        this.setWorldsReadOnly = config.getBoolean("setWorldsReadOnly", false);
+        this.deleteBrokenBackups = config.getBoolean("deleteBrokenBackups");
+        this.skipDuplicateBackup = config.getBoolean("skipDuplicateBackup");
+        this.afterBackup = config.getString("afterBackup").toUpperCase();
+        this.setWorldsReadOnly = config.getBoolean("setWorldsReadOnly");
 
         try {
             DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(backupFileNameFormat);

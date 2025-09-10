@@ -5,7 +5,6 @@ import ru.dvdishka.backuper.backend.backup.Backup;
 import ru.dvdishka.backuper.backend.backup.BackupManager;
 import ru.dvdishka.backuper.backend.config.StorageConfig;
 
-import java.io.File;
 import java.io.InputStream;
 import java.util.List;
 
@@ -22,12 +21,12 @@ public interface Storage {
     BackupManager getBackupManager();
 
     /***
-     * Checks if the FTP(S) server is available. Sends warning to the console if not
+     * Checks if storage is available. Sends warning to the console if not
      */
     boolean checkConnection();
 
     /***
-     * Checks if the FTP(S) server is available. Sends warning to the console and sender if not
+     * Checks if storage is available. Sends warning to the console and sender if not
      */
     boolean checkConnection(CommandSender sender);
 
@@ -54,17 +53,15 @@ public interface Storage {
 
     void createDir(String newDirName, String parentDir) throws StorageLimitException, StorageMethodException, StorageConnectionException;
 
-    void uploadFile(File file, String newFileName, String remoteParentDir, StorageProgressListener progressListener) throws StorageLimitException, StorageMethodException, StorageConnectionException;
-
     void uploadFile(InputStream sourceStream, String newFileName, String remoteParentDir, StorageProgressListener progressListener) throws StorageLimitException, StorageMethodException, StorageConnectionException;
-
-    void downloadFile(String remotePath, File targetFile, StorageProgressListener progressListener) throws StorageMethodException, StorageConnectionException;
 
     InputStream downloadFile(String remotePath, StorageProgressListener progressListener) throws StorageMethodException, StorageConnectionException;
 
     void delete(String path) throws StorageMethodException, StorageConnectionException;
 
     void renameFile(String path, String newFileName) throws StorageMethodException, StorageConnectionException;
+
+    int getTransferSpeedMultiplier();
 
     class StorageConnectionException extends RuntimeException {
         public StorageConnectionException(String message) {
@@ -87,28 +84,16 @@ public interface Storage {
     }
 
     class StorageLimitException extends RuntimeException {
-        private final Backup.StorageType storageType;
 
-        public StorageLimitException(Backup.StorageType storageType) {
-            super("%s storage space limit reached".formatted(storageType.name()));
-            this.storageType = storageType;
+        public StorageLimitException() {
+            super("Storage space limit reached");
         }
-
-        public Backup.StorageType getStorageType() {
-            return storageType;
-        }}
+    }
 
     class StorageQuotaExceededException extends RuntimeException {
 
-        private final Backup.StorageType storageType;
-
-        public StorageQuotaExceededException(Backup.StorageType storageType) {
-            super("%s storage quota limit reached, try again later".formatted(storageType.name()));
-            this.storageType = storageType;
-        }
-
-        public Backup.StorageType getStorageType() {
-            return storageType;
+        public StorageQuotaExceededException() {
+            super("Storage quota limit reached, try again later");
         }
     }
 }

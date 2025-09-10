@@ -14,7 +14,7 @@ import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-public class TransferDirsAsZipTask extends BaseTask {
+public class TransferDirsAsZipTask extends BaseTask implements DoubleStorageTask {
 
     private static final int FILE_BUFFER_SIZE = 65536;
     private static final int STREAM_BUFFER_SIZE = 1048576;
@@ -91,13 +91,13 @@ public class TransferDirsAsZipTask extends BaseTask {
 
     @Override
     public void prepareTask(CommandSender sender) {
-        if (forceExcludedDirs || !(sourceStorage instanceof LocalStorage)) {
+        if (sourceStorage instanceof LocalStorage && !forceExcludedDirs) {
             for (String dir : sourceDirs) {
-                this.maxProgress += sourceStorage.getDirByteSize(dir);
+                this.maxProgress += Utils.getFileFolderByteSizeExceptExcluded(new File(dir));
             }
         } else {
             for (String dir : sourceDirs) {
-                this.maxProgress += Utils.getFileFolderByteSizeExceptExcluded(new File(dir));
+                this.maxProgress += sourceStorage.getDirByteSize(dir);
             }
         }
     }
@@ -193,5 +193,15 @@ public class TransferDirsAsZipTask extends BaseTask {
             }
             return crc.getValue();
         }
+    }
+
+    @Override
+    public Storage getSourceStorage() {
+        return sourceStorage;
+    }
+
+    @Override
+    public Storage getTargetStorage() {
+        return targetStorage;
     }
 }

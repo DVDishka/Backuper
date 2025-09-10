@@ -38,10 +38,14 @@ public class ScheduleManager {
             Backuper.getInstance().getLogManager().warn(e);
         }
 
-        this.mainExecutorService = Executors.newWorkStealingPool();
+        if (Backuper.getInstance().getConfigManager().getServerConfig().getThreadsNumber() == 0) {
+            this.mainExecutorService = Executors.newWorkStealingPool();
+        } else {
+            this.mainExecutorService = Executors.newFixedThreadPool(Backuper.getInstance().getConfigManager().getServerConfig().getThreadsNumber());
+        }
     }
 
-    public ScheduledTask runSyncDelayed(Plugin plugin, Runnable task, long delayTicks) {
+    public ScheduledTask runGlobalRegionDelayed(Plugin plugin, Runnable task, long delayTicks) {
         if (Utils.isFolia) {
             return Bukkit.getGlobalRegionScheduler().runDelayed(plugin, (scheduledTask) -> task.run(), delayTicks);
         } else {
@@ -50,7 +54,7 @@ public class ScheduleManager {
         return null;
     }
 
-    public ScheduledTask runSyncRepeatingTask(Plugin plugin, Runnable task, long delayTicks, long periodTicks) {
+    public ScheduledTask runGlobalRegionRepeatingTask(Plugin plugin, Runnable task, long delayTicks, long periodTicks) {
         if (Utils.isFolia) {
             return Bukkit.getGlobalRegionScheduler().runAtFixedRate(plugin, (scheduledTask) -> task.run(), delayTicks, periodTicks);
         } else {

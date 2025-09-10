@@ -8,8 +8,6 @@ import ru.dvdishka.backuper.backend.backup.Backup;
 import ru.dvdishka.backuper.backend.backup.BackupManager;
 import ru.dvdishka.backuper.backend.config.SftpConfig;
 
-import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -248,20 +246,6 @@ public class SftpStorage implements Storage {
     }
 
     @Override
-    public void uploadFile(File file, String newFileName, String remoteParentDir, StorageProgressListener progressListener) throws StorageLimitException, StorageMethodException, StorageConnectionException {
-        Pair<Session, ChannelSftp> client = getClient();
-        ChannelSftp sftp = client.getRight();
-
-        try {
-            String localPath = file.getCanonicalPath();
-            String remotePath = resolve(remoteParentDir, newFileName);
-            sftp.put(localPath, remotePath, new SftpStorageProgressListener(progressListener));
-        } catch (SftpException | IOException e) {
-            throw new StorageMethodException("Failed to upload file \"%s\" to SFTP server".formatted(file.getAbsolutePath()));
-        }
-    }
-
-    @Override
     public void uploadFile(InputStream sourceStream, String newFileName, String remoteParentDir, StorageProgressListener progressListener) throws StorageLimitException, StorageMethodException, StorageConnectionException {
         Pair<Session, ChannelSftp> client = getClient();
         ChannelSftp sftp = client.getRight();
@@ -271,19 +255,6 @@ public class SftpStorage implements Storage {
             sftp.put(sourceStream, remotePath, new SftpStorageProgressListener(progressListener));
         } catch (SftpException e) {
             throw new StorageMethodException("Failed to upload stream to SFTP server");
-        }
-    }
-
-    @Override
-    public void downloadFile(String remotePath, File targetFile, StorageProgressListener progressListener) throws StorageMethodException, StorageConnectionException {
-        Pair<Session, ChannelSftp> client = getClient();
-        ChannelSftp sftp = client.getRight();
-
-        try {
-            targetFile.createNewFile();
-            sftp.get(remotePath, targetFile.getCanonicalPath(), new SftpStorageProgressListener(progressListener));
-        } catch (SftpException | IOException e) {
-            throw new StorageMethodException("Failed to download file \"%s\" from SFTP server", e);
         }
     }
 
@@ -333,6 +304,11 @@ public class SftpStorage implements Storage {
         } catch (SftpException e) {
             throw new StorageMethodException("Failed to rename file \"%s\" to \"%s\" using SFTP connection".formatted(path, newFileName), e);
         }
+    }
+
+    @Override
+    public int getTransferSpeedMultiplier() {
+        return 8;
     }
 
     public void disconnect() {

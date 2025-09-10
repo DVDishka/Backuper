@@ -22,7 +22,10 @@ public class LocalConfig implements StorageConfig {
     private int zipCompressionLevel;
     private String pathSeparatorSymbol = Utils.isWindows ? "\\" : "/";
 
+    private ConfigurationSection config;
+
     public LocalConfig load(ConfigurationSection config) {
+        this.config = config;
         this.id = config.getName();
         this.enabled = config.getBoolean("enabled", true);
         this.autoBackup = config.getBoolean("autoBackup", true);

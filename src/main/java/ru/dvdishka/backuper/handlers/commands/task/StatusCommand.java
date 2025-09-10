@@ -1,4 +1,4 @@
-package ru.dvdishka.backuper.handlers.commands.task.status;
+package ru.dvdishka.backuper.handlers.commands.task;
 
 import dev.jorel.commandapi.executors.CommandArguments;
 import net.kyori.adventure.text.Component;
@@ -9,6 +9,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.handlers.commands.Command;
+import ru.dvdishka.backuper.handlers.commands.Permission;
 
 public class StatusCommand extends Command {
 
@@ -17,21 +18,23 @@ public class StatusCommand extends Command {
     }
 
     @Override
-    public void execute() {
-
-        if (Backuper.getInstance().getTaskManager().getCurrentTask() == null) {
-            cancelSound();
-            returnFailure("No tasks are currently running");
-            return;
+    public boolean check() {
+        if (!Backuper.getInstance().getTaskManager().isLocked()) {
+            returnFailure("No task is currently running");
+            return false;
+        }
+        if (!sender.hasPermission(Permission.STATUS.getPermission())) {
+            returnFailure("Don't have enough permissions to perform this command");
+            return false;
         }
 
-        buttonSound();
+        return true;
+    }
 
-        Component message = Component.empty();
-
+    @Override
+    public void run() {
         long progress = Backuper.getInstance().getTaskManager().getCurrentTask().getTaskPercentProgress();
         TextColor color;
-
         if (progress == 0) {
             color = TextColor.color(190, 20, 255);
         } else if (progress < 40) {
@@ -41,7 +44,7 @@ public class StatusCommand extends Command {
         } else {
             color = TextColor.color(0, 156, 61);
         }
-
+        Component message = Component.empty();
         message = message
                 .append(Component.text("Current task:"))
                 .append(Component.space())

@@ -16,7 +16,28 @@ public abstract class Command {
         this.arguments = arguments;
     }
 
-    public abstract void execute();
+    /***
+     * All checks should be performed here. Permission checks should be performed too
+     * @return Returns if all checks were performed successfully
+     */
+    public abstract boolean check();
+
+    /***
+     * Main command logic should be declared here
+     */
+    public abstract void run();
+
+    /***
+     * Performs checks and runs main logic if all checks were performed successfully
+     */
+    public void execute() {
+        if (!check()) {
+            cancelSound();
+            return;
+        }
+        buttonSound();
+        run();
+    }
 
     protected void returnSuccess(String message) {
         UIUtils.returnSuccess(message, sender);

@@ -25,7 +25,10 @@ public class GoogleDriveConfig implements StorageConfig {
     private boolean zipArchive;
     private int zipCompressionLevel;
 
+    private ConfigurationSection config;
+
     public GoogleDriveConfig load(ConfigurationSection config) {
+        this.config = config;
         this.id = config.getName();
         this.enabled = config.getBoolean("googleDrive.enabled", false);
         this.autoBackup = config.getBoolean("googleDrive.autoBackup", true);

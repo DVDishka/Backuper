@@ -18,16 +18,21 @@ public class ServerConfig implements Config {
     private File sizeCacheFile;
     private String alertBackupMessage;
     private String alertBackupRestartMessage;
+    private int threadsNumber;
+
+    private ConfigurationSection config;
 
     @Override
     public Config load(ConfigurationSection config) {
-        this.alertBackupMessage = config.getString("alertBackupMessage", "Server will be backed up in %d second(s)");
-        this.alertBackupRestartMessage = config.getString("alertBackupRestartMessage", "Server will be backed up and restarted in %d second(s)");
-        this.sizeCacheFile = new File(config.getString("sizeCacheFile", "./plugins/Backuper/sizeCache.json"));
-        this.betterLogging = config.getBoolean("betterLogging", false);
-        this.alertTimeBeforeRestart = config.getLong("alertTimeBeforeRestart", 60);
-        this.alertOnlyServerRestart = config.getBoolean("alertOnlyServerRestart", true);
-        this.checkUpdates = config.getBoolean("checkUpdates", true);
+        this.config = config;
+        this.alertBackupMessage = config.getString("alertBackupMessage");
+        this.alertBackupRestartMessage = config.getString("alertBackupRestartMessage");
+        this.sizeCacheFile = new File(config.getString("sizeCacheFile"));
+        this.threadsNumber = config.getInt("threadsNumber");
+        this.betterLogging = config.getBoolean("betterLogging");
+        this.alertTimeBeforeRestart = config.getLong("alertTimeBeforeRestart");
+        this.alertOnlyServerRestart = config.getBoolean("alertOnlyServerRestart");
+        this.checkUpdates = config.getBoolean("checkUpdates");
         return this;
     }
 

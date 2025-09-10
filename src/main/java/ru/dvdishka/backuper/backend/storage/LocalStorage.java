@@ -1,5 +1,6 @@
 package ru.dvdishka.backuper.backend.storage;
 
+import lombok.Setter;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.backup.Backup;
@@ -18,6 +19,7 @@ import java.util.List;
 
 public class LocalStorage implements Storage {
 
+    @Setter
     private String id = null;
     private final BackupManager backupManager;
     private final LocalConfig config;
@@ -25,10 +27,6 @@ public class LocalStorage implements Storage {
     public LocalStorage(LocalConfig config) {
         this.config = config;
         this.backupManager = new BackupManager(this);
-    }
-
-    public void setId(String id) {
-        this.id = id;
     }
 
     @Override
@@ -179,22 +177,6 @@ public class LocalStorage implements Storage {
     }
 
     @Override
-    public void uploadFile(File sourceFile, String newFileName, String remoteParentDir, StorageProgressListener progressListener) throws StorageLimitException, StorageMethodException, StorageConnectionException {
-        if (!sourceFile.exists()) {
-            throw new StorageMethodException("Source file \"%s\" does not exist");
-        }
-
-        File target = new File(resolve(remoteParentDir, newFileName));
-
-        try {
-            Files.copy(sourceFile.toPath(), target.toPath());
-            progressListener.incrementProgress(sourceFile.length());
-        } catch (IOException e) {
-            throw new StorageMethodException("Failed to copy file from \"%s\" to \"%s\" in local storage".formatted(sourceFile.getAbsolutePath(), target.getAbsolutePath()));
-        }
-    }
-
-    @Override
     public void uploadFile(InputStream sourceStream, String newFileName, String remoteParentDir, StorageProgressListener progressListener) throws StorageLimitException, StorageMethodException, StorageConnectionException {
         File target = new File(resolve(remoteParentDir, newFileName));
 
@@ -203,21 +185,6 @@ public class LocalStorage implements Storage {
             progressListener.incrementProgress(target.length());
         } catch (IOException e) {
             throw new StorageMethodException("Failed to copy stream to \"%s\" in local storage".formatted(target.getAbsolutePath()));
-        }
-    }
-
-    @Override
-    public void downloadFile(String sourceFile, File targetFile, StorageProgressListener progressListener) throws StorageMethodException, StorageConnectionException {
-        File file = new File(sourceFile);
-        if (!file.exists()) {
-            throw new StorageMethodException("Source file \"%s\" does not exist".formatted(sourceFile));
-        }
-
-        try {
-            Files.copy(file.toPath(), targetFile.toPath());
-            progressListener.incrementProgress(file.length());
-        } catch (IOException e) {
-            throw new StorageMethodException("Failed to copy file from \"%s\" to \"%s\" in local storage".formatted(file.getAbsolutePath(), targetFile.getAbsolutePath()));
         }
     }
 
@@ -282,5 +249,10 @@ public class LocalStorage implements Storage {
         } catch (Exception e) {
             throw new StorageMethodException("Failed to rename file \"%s\" to \"%s\" using local storage".formatted(path, newFileName), e);
         }
+    }
+
+    @Override
+    public int getTransferSpeedMultiplier() {
+        return 1;
     }
 }
