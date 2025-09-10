@@ -11,7 +11,6 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
@@ -150,31 +149,5 @@ public class Utils {
         }
 
         return isExcludedDirectory;
-    }
-
-    public static void sortLocalDateTime(List<LocalDateTime> backups) {
-        for (int firstBackupsIndex = 0; firstBackupsIndex < backups.size(); firstBackupsIndex++) {
-            for (int secondBackupsIndex = firstBackupsIndex; secondBackupsIndex < backups.size(); secondBackupsIndex++) {
-
-                if (backups.get(firstBackupsIndex).isAfter(backups.get(secondBackupsIndex))) {
-                    LocalDateTime saveDate = backups.get(firstBackupsIndex);
-                    backups.set(firstBackupsIndex, backups.get(secondBackupsIndex));
-                    backups.set(secondBackupsIndex, saveDate);
-                }
-            }
-        }
-    }
-
-    public static void sortLocalDateTimeDecrease(List<LocalDateTime> backups) {
-        for (int firstBackupsIndex = 0; firstBackupsIndex < backups.size(); firstBackupsIndex++) {
-            for (int secondBackupsIndex = firstBackupsIndex; secondBackupsIndex < backups.size(); secondBackupsIndex++) {
-
-                if (backups.get(firstBackupsIndex).isBefore(backups.get(secondBackupsIndex))) {
-                    LocalDateTime saveDate = backups.get(firstBackupsIndex);
-                    backups.set(firstBackupsIndex, backups.get(secondBackupsIndex));
-                    backups.set(secondBackupsIndex, saveDate);
-                }
-            }
-        }
     }
 }

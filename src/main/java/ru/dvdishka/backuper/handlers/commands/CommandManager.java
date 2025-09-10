@@ -6,7 +6,6 @@ import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.backup.Backup;
 import ru.dvdishka.backuper.backend.storage.Storage;
 import ru.dvdishka.backuper.backend.storage.UserAuthStorage;
-import ru.dvdishka.backuper.backend.util.Utils;
 import ru.dvdishka.backuper.handlers.commands.backup.BackupCommand;
 import ru.dvdishka.backuper.handlers.commands.googleDrive.AccountLinkCommand;
 import ru.dvdishka.backuper.handlers.commands.list.ListCommand;
@@ -122,11 +121,7 @@ public class CommandManager {
                                                     if (storage == null || !info.sender().hasPermission(Permission.LIST.getPermission(storage))) return new ArrayList<>();
 
                                                     List<Backup> backups = storage.getBackupManager().getBackupList();
-                                                    List<LocalDateTime> backupDateTimes = new ArrayList<>();
-                                                    for (Backup backup : backups) {
-                                                        backupDateTimes.add(backup.getLocalDateTime());
-                                                    }
-                                                    Utils.sortLocalDateTimeDecrease(backupDateTimes);
+                                                    List<LocalDateTime> backupDateTimes = backups.stream().map(Backup::getLocalDateTime).sorted().toList().reversed();
                                                     ArrayList<String> backupSuggestions = new ArrayList<>();
                                                     for (Backup backup : backups) {
                                                         backupSuggestions.add("\"%s\"".formatted(backup.getName()));

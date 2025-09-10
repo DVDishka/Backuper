@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-public interface Backup {
+public interface Backup extends Comparable<Backup> {
 
     Storage getStorage();
 
@@ -76,6 +76,14 @@ public interface Backup {
 
     default BackupToZipTask getToZipTask() {
         return new BackupToZipTask(this);
+    }
+
+    /***
+     * Older is greater
+     */
+    @Override
+    default int compareTo(Backup backup) {
+        return this.getLocalDateTime().compareTo(backup.getLocalDateTime());
     }
 
     class BackupDeleteTask extends BaseTask {

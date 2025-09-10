@@ -2,8 +2,10 @@ package ru.dvdishka.backuper.backend.backup;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.storage.*;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -47,8 +49,7 @@ public class BackupManager {
     public List<Backup> getBackupList() throws Storage.StorageConnectionException, Storage.StorageMethodException {
 
         return backupList.get("all", (key) -> {
-
-            ArrayList<Backup> backups = new ArrayList<>();
+            List<Backup> backups = new ArrayList<>();
             for (String fileName : storage.ls(storage.getConfig().getBackupsFolder())) {
                 Backup backup = getBackup(fileName.replace(".zip", ""));
                 if (backup != null) {
@@ -61,7 +62,8 @@ public class BackupManager {
 
     public boolean checkBackupExists(String backupName) {
         try {
-            return storage.ls(storage.getConfig().getBackupsFolder()).stream().anyMatch(file -> file.startsWith(backupName));
+            LocalDateTime.parse(backupName, Backuper.getInstance().getConfigManager().getBackupConfig().getDateTimeFormatter());
+            return storage.ls(storage.getConfig().getBackupsFolder()).stream().anyMatch(file -> file.equals(backupName) || file.equals("%s.zip".formatted(backupName)));
         } catch (Exception e) {
             return false;
         }

@@ -85,7 +85,8 @@ public class ListCommand extends Command {
 
     private void updateListPages() {
         List<Backup> backups = new ArrayList<>(storage.getBackupManager().getBackupList());
-        sortBackupsDecrease(backups);
+        backups.sort(Backup::compareTo);
+        backups = backups.reversed();
 
         List<List<TextComponent>> pages = new ArrayList<>();
         for (int i = 1; i <= backups.size(); i++) {
@@ -103,7 +104,7 @@ public class ListCommand extends Command {
 
             HoverEvent<net.kyori.adventure.text.Component> hoverEvent = HoverEvent
                     .showText(net.kyori.adventure.text.Component.text("(%s) %s %s MB".formatted(backup.getStorage().getId(), backup.getFileType().name(), backupMbSize)));
-            ClickEvent clickEvent = ClickEvent.runCommand("/backuper menu %s \"%s\"".formatted(storage, backupName));
+            ClickEvent clickEvent = ClickEvent.runCommand("/backuper menu %s \"%s\"".formatted(storage.getId(), backupName));
 
             pages.get((i - 1) / 10)
                     .add(net.kyori.adventure.text.Component.text(backupFormattedName)
@@ -232,17 +233,5 @@ public class ListCommand extends Command {
     private int getListPageCount() {
         updateListPages();
         return pages.size();
-    }
-
-    private void sortBackupsDecrease(List<Backup> backups) {
-        for (int firstBackupsIndex = 0; firstBackupsIndex < backups.size(); firstBackupsIndex++) {
-            for (int secondBackupsIndex = firstBackupsIndex; secondBackupsIndex < backups.size(); secondBackupsIndex++) {
-                if (backups.get(firstBackupsIndex).getLocalDateTime().isBefore(backups.get(secondBackupsIndex).getLocalDateTime())) {
-                    Backup save = backups.get(firstBackupsIndex);
-                    backups.set(firstBackupsIndex, backups.get(secondBackupsIndex));
-                    backups.set(secondBackupsIndex, save);
-                }
-            }
-        }
     }
 }

@@ -4,12 +4,12 @@ import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.backup.Backup;
 import ru.dvdishka.backuper.backend.storage.Storage;
-import ru.dvdishka.backuper.backend.util.Utils;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 
 public class DeleteOldBackupsTask extends BaseTask {
 
@@ -61,12 +61,7 @@ public class DeleteOldBackupsTask extends BaseTask {
                 }
             }
 
-            ArrayList<LocalDateTime> backupDateTimes = new ArrayList<>();
-            for (Backup backup : backups) {
-                backupDateTimes.add(backup.getLocalDateTime());
-            }
-            Utils.sortLocalDateTime(backupDateTimes);
-
+            List<LocalDateTime> backupDateTimes = backups.stream().map(Backup::getLocalDateTime).sorted().toList();
             if (storage.getConfig().getBackupsNumber() != 0) {
 
                 int backupsToDelete = backups.size() - storage.getConfig().getBackupsNumber();

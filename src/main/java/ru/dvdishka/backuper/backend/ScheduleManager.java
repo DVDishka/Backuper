@@ -38,10 +38,10 @@ public class ScheduleManager {
             Backuper.getInstance().getLogManager().warn(e);
         }
 
-        if (Backuper.getInstance().getConfigManager().getServerConfig().getThreadsNumber() == 0) {
+        if (Backuper.getInstance().getConfigManager().getServerConfig().getThreadNumber() == 0) {
             this.mainExecutorService = Executors.newWorkStealingPool();
         } else {
-            this.mainExecutorService = Executors.newWorkStealingPool(Backuper.getInstance().getConfigManager().getServerConfig().getThreadsNumber());
+            this.mainExecutorService = Executors.newWorkStealingPool(Backuper.getInstance().getConfigManager().getServerConfig().getThreadNumber());
         }
     }
 

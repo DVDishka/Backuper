@@ -18,7 +18,7 @@ public class ServerConfig implements Config {
     private File sizeCacheFile;
     private String alertBackupMessage;
     private String alertBackupRestartMessage;
-    private int threadsNumber;
+    private int threadNumber;
 
     private ConfigurationSection config;
 
@@ -28,7 +28,7 @@ public class ServerConfig implements Config {
         this.alertBackupMessage = config.getString("alertBackupMessage");
         this.alertBackupRestartMessage = config.getString("alertBackupRestartMessage");
         this.sizeCacheFile = new File(config.getString("sizeCacheFile"));
-        this.threadsNumber = config.getInt("threadsNumber");
+        this.threadNumber = config.getInt("threadNumber");
         this.betterLogging = config.getBoolean("betterLogging");
         this.alertTimeBeforeRestart = config.getLong("alertTimeBeforeRestart");
         this.alertOnlyServerRestart = config.getBoolean("alertOnlyServerRestart");
