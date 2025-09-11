@@ -49,13 +49,13 @@ public interface Storage {
 
     String getParentPath(String path) throws StorageMethodException, StorageConnectionException;
 
-    long getDirByteSize(String remoteFilePath) throws StorageMethodException, StorageConnectionException;
+    long getDirByteSize(String path) throws StorageMethodException, StorageConnectionException;
 
     void createDir(String newDirName, String parentDir) throws StorageLimitException, StorageMethodException, StorageConnectionException;
 
-    void uploadFile(InputStream sourceStream, String newFileName, String remoteParentDir, StorageProgressListener progressListener) throws StorageLimitException, StorageMethodException, StorageConnectionException;
+    void uploadFile(InputStream sourceStream, String newFileName, String targetParentDir, StorageProgressListener progressListener) throws StorageLimitException, StorageMethodException, StorageConnectionException;
 
-    InputStream downloadFile(String remotePath, StorageProgressListener progressListener) throws StorageMethodException, StorageConnectionException;
+    InputStream downloadFile(String sourcePath, StorageProgressListener progressListener) throws StorageMethodException, StorageConnectionException;
 
     void delete(String path) throws StorageMethodException, StorageConnectionException;
 

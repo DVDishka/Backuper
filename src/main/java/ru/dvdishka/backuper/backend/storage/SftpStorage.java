@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Vector;
 
-public class SftpStorage implements Storage {
+public class SftpStorage implements PathStorage {
 
     private String id = null;
     private final SftpConfig config;
@@ -201,35 +201,25 @@ public class SftpStorage implements Storage {
     }
 
     @Override
-    public String getFileNameFromPath(String path) throws StorageMethodException, StorageConnectionException {
-        return path.substring(path.lastIndexOf(config.getPathSeparatorSymbol()) + 1);
-    }
-
-    @Override
-    public String getParentPath(String path) throws StorageMethodException, StorageConnectionException {
-        return path.substring(0, path.lastIndexOf(config.getPathSeparatorSymbol()));
-    }
-
-    @Override
-    public long getDirByteSize(String remoteFilePath) throws StorageMethodException, StorageConnectionException {
+    public long getDirByteSize(String path) throws StorageMethodException, StorageConnectionException {
         try {
             Pair<Session, ChannelSftp> client = getClient();
             ChannelSftp sftpChannel = client.getRight();
             
             long dirSize = 0;
-            if (!sftpChannel.stat(remoteFilePath).isDir()) {
-                dirSize += sftpChannel.stat(remoteFilePath).getSize();
+            if (!sftpChannel.stat(path).isDir()) {
+                dirSize += sftpChannel.stat(path).getSize();
             } else {
-                for (ChannelSftp.LsEntry entry : sftpChannel.ls(remoteFilePath)) {
+                for (ChannelSftp.LsEntry entry : sftpChannel.ls(path)) {
                     if (entry.getFilename().equals(".") || entry.getFilename().equals("..")) {
                         continue;
                     }
-                    dirSize += getDirByteSize(resolve(remoteFilePath, entry.getFilename()));
+                    dirSize += getDirByteSize(resolve(path, entry.getFilename()));
                 }
             }
             return dirSize;
         } catch (SftpException e) {
-            throw new StorageMethodException("Failed to get \"%s\" dir size using SFTP connection".formatted(remoteFilePath), e);
+            throw new StorageMethodException("Failed to get \"%s\" dir size using SFTP connection".formatted(path), e);
         }
     }
 
@@ -246,12 +236,12 @@ public class SftpStorage implements Storage {
     }
 
     @Override
-    public void uploadFile(InputStream sourceStream, String newFileName, String remoteParentDir, StorageProgressListener progressListener) throws StorageLimitException, StorageMethodException, StorageConnectionException {
+    public void uploadFile(InputStream sourceStream, String newFileName, String targetParentDir, StorageProgressListener progressListener) throws StorageLimitException, StorageMethodException, StorageConnectionException {
         Pair<Session, ChannelSftp> client = getClient();
         ChannelSftp sftp = client.getRight();
 
         try {
-            String remotePath = resolve(remoteParentDir, newFileName);
+            String remotePath = resolve(targetParentDir, newFileName);
             sftp.put(sourceStream, remotePath, new SftpStorageProgressListener(progressListener));
         } catch (SftpException e) {
             throw new StorageMethodException("Failed to upload stream to SFTP server");
@@ -259,12 +249,12 @@ public class SftpStorage implements Storage {
     }
 
     @Override
-    public InputStream downloadFile(String remotePath, StorageProgressListener progressListener) throws StorageMethodException, StorageConnectionException {
+    public InputStream downloadFile(String sourcePath, StorageProgressListener progressListener) throws StorageMethodException, StorageConnectionException {
         Pair<Session, ChannelSftp> client = getClient();
         ChannelSftp sftp = client.getRight();
 
         try {
-            return sftp.get(remotePath, new SftpStorageProgressListener(progressListener));
+            return sftp.get(sourcePath, new SftpStorageProgressListener(progressListener));
         } catch (SftpException e) {
             throw new StorageMethodException("Failed to download file \"%s\" from SFTP server", e);
         }

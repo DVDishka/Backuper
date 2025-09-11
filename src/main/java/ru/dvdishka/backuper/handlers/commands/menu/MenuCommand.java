@@ -56,7 +56,7 @@ public class MenuCommand extends Command {
                 .append(Component.text("Backup menu")
                         .decorate(TextDecoration.BOLD))
                 .append(Component.space())
-                .append(Component.text("(%s)".formatted(storage))
+                .append(Component.text("(%s)".formatted(storage.getId()))
                         .color(TextColor.fromHexString("#129c9b"))
                         .decorate(TextDecoration.BOLD));
 
@@ -71,7 +71,7 @@ public class MenuCommand extends Command {
             if (Backup.BackupFileType.DIR.equals(backup.getFileType())) {
                 message = message
                         .append(Component.text("[TO ZIP]")
-                                .clickEvent(ClickEvent.runCommand("/backuper menu %s \"%s\" toZIPConfirmation".formatted(storage, backup.getName())))
+                                .clickEvent(ClickEvent.runCommand("/backuper menu %s \"%s\" toZIPConfirmation".formatted(storage.getId(), backup.getName())))
                                 .decorate(TextDecoration.BOLD)
                                 .color(TextColor.color(0x4974B)))
                         .append(Component.space());
@@ -80,7 +80,7 @@ public class MenuCommand extends Command {
             if (Backup.BackupFileType.ZIP.equals(backup.getFileType())) {
                 message = message
                         .append(Component.text("[UNZIP]")
-                                .clickEvent(ClickEvent.runCommand("/backuper menu %s \"%s\" unZIPConfirmation".formatted(storage, backup.getName())))
+                                .clickEvent(ClickEvent.runCommand("/backuper menu %s \"%s\" unZIPConfirmation".formatted(storage.getId(), backup.getName())))
                                 .decorate(TextDecoration.BOLD)
                                 .color(TextColor.color(0x4974B)))
                         .append(Component.space());
@@ -89,7 +89,7 @@ public class MenuCommand extends Command {
             if (Backuper.getInstance().getStorageManager().getStorages().size() >= 2) {
                 message = message
                         .append(Component.text("[COPY TO]")
-                                .clickEvent(ClickEvent.suggestCommand("/backuper menu %s \"%s\" copyToConfirmation ".formatted(storage, backup.getName())))
+                                .clickEvent(ClickEvent.suggestCommand("/backuper menu %s \"%s\" copyToConfirmation ".formatted(storage.getId(), backup.getName())))
                                 .decorate(TextDecoration.BOLD)
                                 .color(TextColor.color(17, 102, 212)))
                         .append(Component.space());
@@ -97,7 +97,7 @@ public class MenuCommand extends Command {
 
             message = message
                     .append(Component.text("[DELETE]")
-                            .clickEvent(ClickEvent.runCommand("/backuper menu %s \"%s\" deleteConfirmation".formatted(storage, backup.getName())))
+                            .clickEvent(ClickEvent.runCommand("/backuper menu %s \"%s\" deleteConfirmation".formatted(storage.getId(), backup.getName())))
                             .decorate(TextDecoration.BOLD)
                             .color(TextColor.color(0xB02100)));
 

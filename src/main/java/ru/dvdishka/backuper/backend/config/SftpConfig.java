@@ -8,7 +8,7 @@ import ru.dvdishka.backuper.Backuper;
 import java.io.InputStreamReader;
 
 @Getter
-public class SftpConfig implements StorageConfig {
+public class SftpConfig implements PathStorageConfig {
 
     private String id;
 

@@ -94,14 +94,12 @@ public class CommandManager {
 
         CommandTree backupReloadCommandTree = new CommandTree("backuper").withPermission(Permission.BACKUPER.getPermission());
         backupReloadCommandTree
-                .then(new LiteralArgument("config").withPermission(Permission.CONFIG.getPermission())
-                        .then(new LiteralArgument("reload").withPermission(Permission.CONFIG_RELOAD.getPermission())
-                                .executes((sender, args) -> {
-                                    Backuper.getInstance().getScheduleManager().runAsync(() -> {
-                                        new ReloadCommand(sender, args).execute();
-                                    });
-                                })
-                        )
+                .then(new LiteralArgument("reload").withPermission(Permission.CONFIG_RELOAD.getPermission())
+                        .executes((sender, args) -> {
+                            Backuper.getInstance().getScheduleManager().runAsync(() -> {
+                                new ReloadCommand(sender, args).execute();
+                            });
+                        })
                 )
         ;
         backupReloadCommandTree.register();

@@ -41,7 +41,7 @@ public class TransferDirsAsZipTask extends BaseTask implements DoubleStorageTask
         this.targetStorage = targetStorage;
         this.sourceDirs = sourceDirs;
         this.targetParentDir = targetParentDir;
-        this.targetZipFileName = "%s in progress".formatted(targetZipFileName);
+        this.targetZipFileName = targetZipFileName;
         this.createRootDirInTargetZIP = createRootDirInTargetZIP;
         this.forceExcludedDirs = forceExcludedDirs;
     }
@@ -60,11 +60,7 @@ public class TransferDirsAsZipTask extends BaseTask implements DoubleStorageTask
                      ZipOutputStream targetZipOutputStream = new ZipOutputStream(bufferedOutputStream)) {
 
                     for (String sourceDirToAdd : sourceDirs) {
-
-                        if (cancelled) {
-                            break;
-                        }
-
+                        if (cancelled) return;
                         if (createRootDirInTargetZIP) {
                             addDirToZip(targetZipOutputStream, sourceDirToAdd, sourceStorage.getFileNameFromPath(sourceDirToAdd));
                         } else {
@@ -80,7 +76,6 @@ public class TransferDirsAsZipTask extends BaseTask implements DoubleStorageTask
 
             progressListener = new BasicStorageProgressListener();
             targetStorage.uploadFile(pipedInputStream, targetZipFileName, targetParentDir, progressListener);
-            targetStorage.renameFile(targetStorage.resolve(targetParentDir, targetZipFileName), targetZipFileName.replace(" in progress", ""));
         }
     }
 
@@ -119,25 +114,23 @@ public class TransferDirsAsZipTask extends BaseTask implements DoubleStorageTask
         if (sourceStorage instanceof LocalStorage && !forceExcludedDirs && Utils.isExcludedDirectory(new File(sourceDir), sender)) return;
         try {
             if (sourceStorage.isFile(sourceDir)) {
-                try (BufferedInputStream bis = new BufferedInputStream(
-                        new FileInputStream(sourceDir), FILE_BUFFER_SIZE)) {
+                try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(sourceDir), FILE_BUFFER_SIZE)) {
 
                     ZipEntry entry = new ZipEntry(relativeDirPath);
                     if (isAlreadyCompressed(sourceStorage, sourceDir)) {
                         entry.setMethod(ZipEntry.STORED);
-                        entry.setSize(sourceDir.length());
-                        entry.setCompressedSize(sourceDir.length());
+                        entry.setCompressedSize(sourceStorage.getDirByteSize(sourceDir));
                         entry.setCrc(calculateCRC(sourceDir));
                     } else {
                         zip.setLevel(targetStorage.getConfig().getZipCompressionLevel());
                     }
+                    entry.setSize(sourceStorage.getDirByteSize(sourceDir));
                     zip.putNextEntry(entry);
                     byte[] buffer = new byte[FILE_BUFFER_SIZE];
                     int read;
                     while ((read = bis.read(buffer)) != -1) {
-                        if (cancelled) break;
+                        if (cancelled) return;
                         zip.write(buffer, 0, read);
-                        incrementCurrentProgress(read);
                     }
                     zip.closeEntry();
                 }
@@ -148,7 +141,7 @@ public class TransferDirsAsZipTask extends BaseTask implements DoubleStorageTask
         }
         if (sourceStorage.isDir(sourceDir)) {
             try {
-                ZipEntry entry = new ZipEntry(relativeDirPath);
+                ZipEntry entry = new ZipEntry(relativeDirPath.endsWith("/") ? relativeDirPath : "%s/".formatted(relativeDirPath));
                 zip.putNextEntry(entry);
                 zip.closeEntry();
 

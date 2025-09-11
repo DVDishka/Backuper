@@ -33,7 +33,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.util.List;
 
 @Getter
 public class Backuper extends JavaPlugin implements Listener {
@@ -86,7 +85,11 @@ public class Backuper extends JavaPlugin implements Listener {
     public void shutdown() {
         storageManager.saveSizeCache();
         Task setWorldsWritableTask = new SetWorldsWritableTask();
-        getTaskManager().startTask(setWorldsWritableTask, Bukkit.getConsoleSender(), List.of());
+        try {
+            getTaskManager().startTaskRaw(setWorldsWritableTask, Bukkit.getConsoleSender());
+        } catch (Exception e) {
+            Backuper.getInstance().getLogManager().warn(e);
+        }
         Backuper.getInstance().getScheduleManager().destroy(this);
         configManager.setConfigField("lastBackup", configManager.getLastBackup());
         configManager.setConfigField("lastChange", configManager.getLastChange());
@@ -200,7 +203,9 @@ public class Backuper extends JavaPlugin implements Listener {
 
         Component header = Component.empty();
         header = header
-                .append(Component.text("Issue tracking"));
+                .append(Component.text("Issue tracking")
+                        .decorate(TextDecoration.BOLD)
+                        .color(NamedTextColor.RED));
 
         Component message = Component.empty();
         message = message

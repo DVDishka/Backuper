@@ -17,7 +17,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LocalStorage implements Storage {
+public class LocalStorage implements PathStorage {
 
     @Setter
     private String id = null;
@@ -134,26 +134,16 @@ public class LocalStorage implements Storage {
     }
 
     @Override
-    public String getFileNameFromPath(String path) throws StorageMethodException, StorageConnectionException {
-        return path.substring(path.lastIndexOf(config.getPathSeparatorSymbol()) + 1);
-    }
-
-    @Override
-    public String getParentPath(String path) throws StorageMethodException, StorageConnectionException {
-        return path.substring(0, path.lastIndexOf(config.getPathSeparatorSymbol()));
-    }
-
-    @Override
-    public long getDirByteSize(String remoteFilePath) throws StorageMethodException, StorageConnectionException {
+    public long getDirByteSize(String path) throws StorageMethodException, StorageConnectionException {
         try {
-            File file = new File(remoteFilePath);
+            File file = new File(path);
             if (!file.exists()) {
-                throw new StorageMethodException("File or directory does not exist: %s".formatted(remoteFilePath));
+                throw new StorageMethodException("File or directory does not exist: %s".formatted(path));
             }
             
             return Utils.getFileFolderByteSize(file);
         } catch (Exception e) {
-            throw new StorageMethodException("Failed to get \"%s\" dir size using local storage".formatted(remoteFilePath), e);
+            throw new StorageMethodException("Failed to get \"%s\" dir size using local storage".formatted(path), e);
         }
     }
 
@@ -177,8 +167,8 @@ public class LocalStorage implements Storage {
     }
 
     @Override
-    public void uploadFile(InputStream sourceStream, String newFileName, String remoteParentDir, StorageProgressListener progressListener) throws StorageLimitException, StorageMethodException, StorageConnectionException {
-        File target = new File(resolve(remoteParentDir, newFileName));
+    public void uploadFile(InputStream sourceStream, String newFileName, String targetParentDir, StorageProgressListener progressListener) throws StorageLimitException, StorageMethodException, StorageConnectionException {
+        File target = new File(resolve(targetParentDir, newFileName));
 
         try {
             Files.copy(sourceStream, target.toPath());
@@ -189,16 +179,16 @@ public class LocalStorage implements Storage {
     }
 
     @Override
-    public InputStream downloadFile(String remotePath, StorageProgressListener progressListener) throws StorageMethodException, StorageConnectionException {
-        File file = new File(remotePath);
+    public InputStream downloadFile(String sourcePath, StorageProgressListener progressListener) throws StorageMethodException, StorageConnectionException {
+        File file = new File(sourcePath);
         if (!file.exists()) {
-            throw new StorageMethodException("Source file \"%s\" does not exist".formatted(remotePath));
+            throw new StorageMethodException("Source file \"%s\" does not exist".formatted(sourcePath));
         }
 
         try {
             return new FileInputStream(file);
         } catch (IOException e) {
-            throw new StorageMethodException("Failed to get file's \"%s\" input stream from \"%s\" storage".formatted(remotePath, id), e);
+            throw new StorageMethodException("Failed to get file's \"%s\" input stream from \"%s\" storage".formatted(sourcePath, id), e);
         }
     }
 

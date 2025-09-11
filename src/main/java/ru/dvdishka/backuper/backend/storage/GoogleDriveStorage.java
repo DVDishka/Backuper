@@ -318,26 +318,26 @@ public class GoogleDriveStorage implements UserAuthStorage {
     }
 
     @Override
-    public long getDirByteSize(String fileId) throws StorageQuotaExceededException, StorageMethodException, StorageConnectionException {
+    public long getDirByteSize(String path) throws StorageQuotaExceededException, StorageMethodException, StorageConnectionException {
         try {
             return ((Retriable<Long>) () -> {
                 Drive service = getClient();
                 
-                if (!isFile(fileId)) {
+                if (!isFile(path)) {
                     long size = 0;
-                    List<String> files = ls(fileId);
+                    List<String> files = ls(path);
                     for (String file : files) {
-                        size += getDirByteSize(getFileByName(file, fileId).getId());
+                        size += getDirByteSize(getFileByName(file, path).getId());
                     }
                     return size;
                 } else {
-                    com.google.api.services.drive.model.File driveFile = service.files().get(fileId).setFields("size").execute();
+                    com.google.api.services.drive.model.File driveFile = service.files().get(path).setFields("size").execute();
                     Long size = driveFile.getSize();
                     return size != null ? size : 0;
                 }
             }).retry(RETRIES);
         } catch (IOException e) {
-            throw new StorageMethodException("Failed to get file byte size for \"%s\"".formatted(fileId), e);
+            throw new StorageMethodException("Failed to get file byte size for \"%s\"".formatted(path), e);
         }
     }
 
@@ -429,9 +429,9 @@ public class GoogleDriveStorage implements UserAuthStorage {
     /**
      * @param sourceStream    inputStream to upload
      * @param newFileName       GoogleDrive new file name
-     * @param parentDirId GoogleDrive parent folder ID or an empty string
+     * @param targetParentDir GoogleDrive parent folder ID or an empty string
      **/
-    public void uploadFile(InputStream sourceStream, String newFileName, String parentDirId, StorageProgressListener progressListener) throws StorageMethodException, StorageConnectionException, Storage.StorageLimitException, Storage.StorageQuotaExceededException {
+    public void uploadFile(InputStream sourceStream, String newFileName, String targetParentDir, StorageProgressListener progressListener) throws StorageMethodException, StorageConnectionException, Storage.StorageLimitException, Storage.StorageQuotaExceededException {
         try {
             ((Retriable<Void>) () -> {
                 Drive service = getClient();
@@ -442,8 +442,8 @@ public class GoogleDriveStorage implements UserAuthStorage {
                 com.google.api.services.drive.model.File driveFileMeta = new com.google.api.services.drive.model.File();
                 driveFileMeta.setAppProperties(fileAppProperties);
                 driveFileMeta.setName(newFileName);
-                if (!Objects.equals(parentDirId, "")) {
-                    driveFileMeta.setParents(List.of(parentDirId));
+                if (!Objects.equals(targetParentDir, "")) {
+                    driveFileMeta.setParents(List.of(targetParentDir));
                 }
 
                 Drive.Files.Create driveFileCreate = service.files()
@@ -461,13 +461,13 @@ public class GoogleDriveStorage implements UserAuthStorage {
     }
 
     @Override
-    public InputStream downloadFile(String fileId, StorageProgressListener progressListener) throws StorageQuotaExceededException, StorageMethodException, StorageConnectionException {
+    public InputStream downloadFile(String sourcePath, StorageProgressListener progressListener) throws StorageQuotaExceededException, StorageMethodException, StorageConnectionException {
         try {
             return ((Retriable<InputStream>) () -> {
                 Drive service = getClient();
 
                 Drive.Files.Get getDriveFile = service.files()
-                        .get(fileId);
+                        .get(sourcePath);
                 getDriveFile.getMediaHttpDownloader().setProgressListener(new GoogleDriveStorageProgressListener(progressListener));
                 return getDriveFile.executeMediaAsInputStream();
             }).retry(RETRIES);

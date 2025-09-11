@@ -35,29 +35,25 @@ public class UnpackZipTask extends BaseTask implements SingleStorageTask {
     public void run() throws IOException {
 
         try (ZipInputStream zipInput = new ZipInputStream(storage.downloadFile(sourceZipDir, new BasicStorageProgressListener()))) {
-
             ZipEntry zipEntry;
             if (!storage.exists(targetFolderDir)) {
-                storage.createDir(storage.getFileNameFromPath(sourceZipDir), storage.getParentPath(targetFolderDir));
+                storage.createDir(storage.getFileNameFromPath(targetFolderDir), storage.getParentPath(targetFolderDir));
             }
 
             while (!cancelled && (zipEntry = zipInput.getNextEntry()) != null) {
                 final String name = zipEntry.getName();
                 try {
-
                     if (zipEntry.isDirectory()) {
-                        storage.createDir(storage.getFileNameFromPath(name), storage.resolve(targetFolderDir, storage.getParentPath(name)));
+                        storage.createDir(getFileNameFromZipPath(name), storage.resolve(targetFolderDir, getParentFromZipPath(name)));
                     } else {
                         StorageProgressListener progressListener = new BasicStorageProgressListener();
-                        storage.uploadFile(zipInput, storage.getFileNameFromPath(name), storage.resolve(targetFolderDir, name), progressListener);
+                        storage.uploadFile(zipInput, getFileNameFromZipPath(name), storage.resolve(targetFolderDir, getParentFromZipPath(name)), progressListener);
                         progressListeners.add(progressListener);
                     }
-
                 } catch (Exception e) {
                     warn("Something went wrong while trying to unpack file", sender);
                     warn(e);
                 }
-
                 zipInput.closeEntry();
             }
 
@@ -67,25 +63,16 @@ public class UnpackZipTask extends BaseTask implements SingleStorageTask {
 
     @Override
     public void prepareTask(CommandSender sender) {
-
         maxProgress = 0;
-
         try (ZipFile zipFile = new ZipFile(sourceZipDir)) {
-
             Enumeration<? extends ZipEntry> zipEntries = zipFile.entries();
-
             while (zipEntries.hasMoreElements()) {
-
-                if (cancelled) {
-                    break;
-                }
-
+                if (cancelled) return;
                 ZipEntry zipEntry = zipEntries.nextElement();
                 maxProgress += zipEntry.getSize();
             }
-
         } catch (Exception e) {
-            warn("Something went wrong while calculating UnpackZip task maxProgress", this.sender);
+            warn("Something went wrong while calculating %s task maxProgress".formatted(taskName), this.sender);
             warn(e);
         }
     }
@@ -103,5 +90,13 @@ public class UnpackZipTask extends BaseTask implements SingleStorageTask {
     @Override
     public Storage getStorage() {
         return storage;
+    }
+
+    private String getFileNameFromZipPath(String path) {
+        return path.substring(path.lastIndexOf("/") + 1);
+    }
+
+    private String getParentFromZipPath(String path) {
+        return path.substring(0, path.lastIndexOf("/") == -1 ? 0 : path.lastIndexOf("/"));
     }
 }

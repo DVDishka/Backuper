@@ -20,7 +20,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class FtpStorage implements Storage {
+public class FtpStorage implements PathStorage {
 
     @Setter
     private String id = null;
@@ -200,31 +200,21 @@ public class FtpStorage implements Storage {
     }
 
     @Override
-    public String getFileNameFromPath(String path) throws StorageMethodException, StorageConnectionException {
-        return path.substring(path.lastIndexOf(config.getPathSeparatorSymbol()) + 1);
-    }
-
-    @Override
-    public String getParentPath(String path) throws StorageMethodException, StorageConnectionException {
-        return path.substring(0, path.lastIndexOf(config.getPathSeparatorSymbol()));
-    }
-
-    @Override
-    public long getDirByteSize(String remoteFilePath) throws StorageMethodException, StorageConnectionException {
+    public long getDirByteSize(String path) throws StorageMethodException, StorageConnectionException {
         FTPClient ftp = getClient();
 
         try {
             long dirSize = 0;
             ftp.changeWorkingDirectory("");
-            FTPFile currentDir = ftp.mlistFile(remoteFilePath);
+            FTPFile currentDir = ftp.mlistFile(path);
 
             if (currentDir.isFile()) {
                 dirSize += currentDir.getSize();
             }
             if (currentDir.isDirectory()) {
 
-                if (!ftp.changeWorkingDirectory(remoteFilePath)) {
-                    throw new StorageMethodException("Failed to change Working directory to \"%s\" using FTP(S) connection".formatted(remoteFilePath));
+                if (!ftp.changeWorkingDirectory(path)) {
+                    throw new StorageMethodException("Failed to change Working directory to \"%s\" using FTP(S) connection".formatted(path));
                 }
                 FTPFile[] files = ftp.listFiles();
 
@@ -232,13 +222,13 @@ public class FtpStorage implements Storage {
                     if (file.getName().equals(".") || file.getName().equals("..")) {
                         continue;
                     }
-                    dirSize += getDirByteSize(resolve(remoteFilePath, file.getName()));
+                    dirSize += getDirByteSize(resolve(path, file.getName()));
                 }
             }
             ftp.changeWorkingDirectory("");
             return dirSize;
         } catch (IOException e) {
-            throw new StorageMethodException("Failed to get \"%s\" dir size using FTP(S) connection".formatted(remoteFilePath), e);
+            throw new StorageMethodException("Failed to get \"%s\" dir size using FTP(S) connection".formatted(path), e);
         }
     }
 
@@ -253,10 +243,10 @@ public class FtpStorage implements Storage {
     }
 
     @Override
-    public void uploadFile(InputStream sourceStream, String newFileName, String remoteParentDir, StorageProgressListener progressListener) throws StorageLimitException, StorageMethodException, StorageConnectionException {
+    public void uploadFile(InputStream sourceStream, String newFileName, String targetParentDir, StorageProgressListener progressListener) throws StorageLimitException, StorageMethodException, StorageConnectionException {
         FTPClient ftp = getClient();
 
-        String remotePath = resolve(remoteParentDir, newFileName);
+        String remotePath = resolve(targetParentDir, newFileName);
         try {
             ftp.setCopyStreamListener(new FtpStorageProgressListener(progressListener));
             if (!ftp.storeFile(remotePath, sourceStream)) {
@@ -271,14 +261,14 @@ public class FtpStorage implements Storage {
     }
 
     @Override
-    public InputStream downloadFile(String remotePath, StorageProgressListener progressListener) throws StorageMethodException, StorageConnectionException {
+    public InputStream downloadFile(String sourcePath, StorageProgressListener progressListener) throws StorageMethodException, StorageConnectionException {
         FTPClient ftp = getClient();
 
         try {
             ftp.setCopyStreamListener(new FtpStorageProgressListener(progressListener));
-            return ftp.retrieveFileStream(remotePath);
+            return ftp.retrieveFileStream(sourcePath);
         } catch (IOException e) {
-            throw new StorageMethodException("Failed to get \"%s\" file's input stream from \"%s\" FTP(S) storage".formatted(remotePath, this.getId()));
+            throw new StorageMethodException("Failed to get \"%s\" file's input stream from \"%s\" FTP(S) storage".formatted(sourcePath, this.getId()));
         } finally {
             ftp.setCopyStreamListener(null);
         }

@@ -9,7 +9,7 @@ import ru.dvdishka.backuper.backend.util.Utils;
 import java.io.InputStreamReader;
 
 @Getter
-public class LocalConfig implements StorageConfig {
+public class LocalConfig implements PathStorageConfig {
 
     private String id;
 

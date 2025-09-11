@@ -14,7 +14,7 @@ public class ReloadCommand extends Command {
 
     @Override
     public boolean check() {
-        if (sender.hasPermission(Permission.CONFIG_RELOAD.getPermission())) {
+        if (!sender.hasPermission(Permission.CONFIG_RELOAD.getPermission())) {
             returnFailure("Don't have enough permissions to perform this command");
             return false;
         }

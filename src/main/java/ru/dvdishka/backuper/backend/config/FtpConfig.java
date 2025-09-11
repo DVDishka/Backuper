@@ -8,7 +8,7 @@ import ru.dvdishka.backuper.Backuper;
 import java.io.InputStreamReader;
 
 @Getter
-public class FtpConfig implements StorageConfig {
+public class FtpConfig implements PathStorageConfig {
 
     private String id;
 
