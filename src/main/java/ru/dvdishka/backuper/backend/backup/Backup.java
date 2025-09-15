@@ -1,6 +1,5 @@
 package ru.dvdishka.backuper.backend.backup;
 
-import com.jcraft.jsch.SftpException;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.storage.Storage;
@@ -8,7 +7,6 @@ import ru.dvdishka.backuper.backend.task.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 public interface Backup extends Comparable<Backup> {
 
@@ -110,11 +108,8 @@ public interface Backup extends Comparable<Backup> {
         }
 
         @Override
-        public void prepareTask(CommandSender sender) throws ExecutionException, InterruptedException {
-
-            if (cancelled) {
-                return;
-            }
+        public void prepareTask(CommandSender sender) throws Throwable {
+            if (cancelled) return;
             deleteBackupTask = backup.getRawDeleteTask();
             Backuper.getInstance().getTaskManager().prepareTask(deleteBackupTask, sender);
         }
@@ -130,20 +125,14 @@ public interface Backup extends Comparable<Backup> {
         @Override
         public long getTaskMaxProgress() {
 
-            if (!isTaskPrepared()) {
-                return 0;
-            }
-
+            if (!isTaskPrepared()) return 0;
             return deleteBackupTask.getTaskMaxProgress();
         }
 
         @Override
         public long getTaskCurrentProgress() {
 
-            if (!isTaskPrepared()) {
-                return 0;
-            }
-
+            if (!isTaskPrepared()) return 0;
             return deleteBackupTask.getTaskCurrentProgress();
         }
     }
@@ -184,29 +173,24 @@ public interface Backup extends Comparable<Backup> {
         }
 
         @Override
-        public void prepareTask(CommandSender sender) throws SftpException {
-            if (cancelled) {
-                return;
-            }
-            unZipTask = backup.getRawUnZipTask();
+        public void prepareTask(CommandSender sender) throws Throwable {
+            if (cancelled) return;
             deleteZipTask = backup.getRawDeleteTask();
-            unZipTask.prepareTask(sender);
-            deleteZipTask.prepareTask(sender);
+            Backuper.getInstance().getTaskManager().prepareTask(deleteZipTask, sender);
+            unZipTask = backup.getRawUnZipTask();
+            Backuper.getInstance().getTaskManager().prepareTask(unZipTask, sender);
         }
 
         @Override
         public void cancel() {
             cancelled = true;
-            if (unZipTask != null) {
-                Backuper.getInstance().getTaskManager().cancelTaskRaw(unZipTask);
-            }
+            if (unZipTask != null) Backuper.getInstance().getTaskManager().cancelTaskRaw(unZipTask);
+            if (deleteZipTask != null) Backuper.getInstance().getTaskManager().cancelTaskRaw(deleteZipTask);
         }
 
         @Override
         public long getTaskMaxProgress() {
-            if (!isTaskPrepared()) {
-                return 0;
-            }
+            if (!isTaskPrepared()) return 0;
             return unZipTask.getTaskMaxProgress();
         }
 
@@ -242,22 +226,19 @@ public interface Backup extends Comparable<Backup> {
         }
 
         @Override
-        public void prepareTask(CommandSender sender) throws ExecutionException, InterruptedException {
-            if (cancelled) {
-                return;
-            }
-            toZipTask = backup.getRawToZipTask();
+        public void prepareTask(CommandSender sender) throws Throwable {
+            if (cancelled) return;
             deleteFolderTask = backup.getRawDeleteTask();
-            Backuper.getInstance().getTaskManager().prepareTask(toZipTask, sender);
             Backuper.getInstance().getTaskManager().prepareTask(deleteFolderTask, sender);
+            toZipTask = backup.getRawToZipTask();
+            Backuper.getInstance().getTaskManager().prepareTask(toZipTask, sender);
         }
 
         @Override
         public void cancel() {
             cancelled = true;
-            if (toZipTask != null) {
-                Backuper.getInstance().getTaskManager().cancelTaskRaw(toZipTask);
-            }
+            if (toZipTask != null) Backuper.getInstance().getTaskManager().cancelTaskRaw(toZipTask);
+            if (deleteFolderTask != null) Backuper.getInstance().getTaskManager().cancelTaskRaw(deleteFolderTask);
         }
 
         @Override

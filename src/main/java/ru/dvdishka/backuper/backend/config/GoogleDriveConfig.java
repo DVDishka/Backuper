@@ -30,25 +30,25 @@ public class GoogleDriveConfig implements StorageConfig {
     public GoogleDriveConfig load(ConfigurationSection config) {
         this.config = config;
         this.id = config.getName();
-        this.enabled = config.getBoolean("googleDrive.enabled", false);
-        this.autoBackup = config.getBoolean("googleDrive.autoBackup", true);
-        this.backupsFolderId = config.getString("googleDrive.backupsFolderId", "");
-        String googleDriveTokenFolder = config.getString("googleDrive.auth.tokenFolderPath", "plugins/Backuper/GoogleDrive/tokens");
+        this.enabled = config.getBoolean("enabled");
+        this.autoBackup = config.getBoolean("autoBackup");
+        this.backupsFolderId = config.getString("backupsFolderId");
+        String googleDriveTokenFolder = config.getString("auth.tokenFolderPath");
         this.tokenFolder = new File(googleDriveTokenFolder);
-        this.createBackuperFolder = config.getBoolean("googleDrive.createBackuperFolder", true);
-        this.backupsNumber = config.getInt("googleDrive.maxBackupsNumber", 0);
-        this.backupsWeight = config.getLong("googleDrive.maxBackupsWeight", 0) * 1_048_576L;
-        this.zipArchive = config.getBoolean("googleDrive.zipArchive", true);
-        int zipCompressionLevel = config.getInt("googleDrive.zipCompressionLevel", 5);
+        this.createBackuperFolder = config.getBoolean("createBackuperFolder");
+        this.backupsNumber = config.getInt("maxBackupsNumber");
+        this.backupsWeight = config.getLong("maxBackupsWeight") * 1_048_576L;
+        this.zipArchive = config.getBoolean("zipArchive");
+        int zipCompressionLevel = config.getInt("zipCompressionLevel");
 
         if (zipCompressionLevel > 9 || zipCompressionLevel < 0) {
             Backuper.getInstance().getLogManager().warn("Failed to load config value!");
             if (zipCompressionLevel < 0) {
-                Backuper.getInstance().getLogManager().warn("googleDrive.zipCompressionLevel must be >= 0, using 0 value...");
+                Backuper.getInstance().getLogManager().warn("zipCompressionLevel must be >= 0, using 0 value...");
                 zipCompressionLevel = 0;
             }
             if (zipCompressionLevel > 9) {
-                Backuper.getInstance().getLogManager().warn("googleDrive.zipCompressionLevel must be <= 9, using 9 value...");
+                Backuper.getInstance().getLogManager().warn("zipCompressionLevel must be <= 9, using 9 value...");
                 zipCompressionLevel = 9;
             }
         }

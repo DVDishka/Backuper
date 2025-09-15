@@ -30,18 +30,18 @@ public class FtpConfig implements PathStorageConfig {
     public FtpConfig load(ConfigurationSection config) {
         this.config = config;
         this.id = config.getName();
-        this.enabled = config.getBoolean("enabled", false);
-        this.autoBackup = config.getBoolean("autoBackup", true);
-        this.backupsFolder = config.getString("backupsFolder", "");
-        this.pathSeparatorSymbol = config.getString("pathSeparatorSymbol", "/");
-        this.backupsNumber = config.getInt("maxBackupsNumber", 0);
-        this.backupsWeight = config.getLong("maxBackupsWeight", 0) * 1_048_576L;
-        this.zipArchive = config.getBoolean("zipArchive", true);
-        int zipCompressionLevel = config.getInt("zipCompressionLevel", 5);
-        this.address = config.getString("auth.address", "");
-        this.port = config.getInt("auth.port", 21);
-        this.username = config.getString("auth.username", "");
-        this.password = config.getString("auth.password", "");
+        this.enabled = config.getBoolean("enabled");
+        this.autoBackup = config.getBoolean("autoBackup");
+        this.backupsFolder = config.getString("backupsFolder");
+        this.pathSeparatorSymbol = config.getString("pathSeparatorSymbol");
+        this.backupsNumber = config.getInt("maxBackupsNumber");
+        this.backupsWeight = config.getLong("maxBackupsWeight") * 1_048_576L;
+        this.zipArchive = config.getBoolean("zipArchive");
+        int zipCompressionLevel = config.getInt("zipCompressionLevel");
+        this.address = config.getString("auth.address");
+        this.port = config.getInt("auth.port");
+        this.username = config.getString("auth.username");
+        this.password = config.getString("auth.password");
 
         if (zipCompressionLevel > 9 || zipCompressionLevel < 0) {
             Backuper.getInstance().getLogManager().warn("Failed to load config value!");

@@ -8,10 +8,7 @@ import ru.dvdishka.backuper.backend.backup.BackupManager;
 import ru.dvdishka.backuper.backend.config.LocalConfig;
 import ru.dvdishka.backuper.backend.util.Utils;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
@@ -23,6 +20,8 @@ public class LocalStorage implements PathStorage {
     private String id = null;
     private final BackupManager backupManager;
     private final LocalConfig config;
+
+    private final int FILE_BUFFER_SIZE = 65536;
 
     public LocalStorage(LocalConfig config) {
         this.config = config;
@@ -112,14 +111,6 @@ public class LocalStorage implements PathStorage {
     }
 
     @Override
-    public String resolve(String path, String fileName) {
-        if (!path.endsWith(config.getPathSeparatorSymbol())) {
-            path = "%s%s".formatted(path, config.getPathSeparatorSymbol());
-        }
-        return "%s%s".formatted(path, fileName);
-    }
-
-    @Override
     public boolean exists(String path) throws StorageMethodException, StorageConnectionException {
         return new File(path).exists();
     }
@@ -170,16 +161,20 @@ public class LocalStorage implements PathStorage {
     public void uploadFile(InputStream sourceStream, String newFileName, String targetParentDir, StorageProgressListener progressListener) throws StorageLimitException, StorageMethodException, StorageConnectionException {
         File target = new File(resolve(targetParentDir, newFileName));
 
-        try {
-            Files.copy(sourceStream, target.toPath());
-            progressListener.incrementProgress(target.length());
+        try (OutputStream targetStream = new FileOutputStream(target)) {
+            byte[] buffer = new byte[FILE_BUFFER_SIZE];
+            int read;
+            while ((read = sourceStream.read(buffer)) != -1) {
+                targetStream.write(buffer, 0, read);
+                progressListener.incrementProgress(read);
+            }
         } catch (IOException e) {
             throw new StorageMethodException("Failed to copy stream to \"%s\" in %s storage".formatted(target.getAbsolutePath(), id), e);
         }
     }
 
     @Override
-    public InputStream downloadFile(String sourcePath, StorageProgressListener progressListener) throws StorageMethodException, StorageConnectionException {
+    public InputStream downloadFile(String sourcePath) throws StorageMethodException, StorageConnectionException {
         File file = new File(sourcePath);
         if (!file.exists()) {
             throw new StorageMethodException("Source file \"%s\" does not exist".formatted(sourcePath));
@@ -235,5 +230,13 @@ public class LocalStorage implements PathStorage {
     @Override
     public int getTransferSpeedMultiplier() {
         return 1;
+    }
+
+    @Override
+    public void destroy() {}
+
+    @Override
+    public void downloadCompleted() throws StorageMethodException, StorageConnectionException {
+        // Для локального хранилища не требуется дополнительных действий
     }
 }

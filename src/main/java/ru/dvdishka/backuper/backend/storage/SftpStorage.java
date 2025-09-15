@@ -28,7 +28,7 @@ public class SftpStorage implements PathStorage {
         this.backupManager = new BackupManager(this);
     }
 
-    private Pair<Session, ChannelSftp> getClient() throws StorageConnectionException {
+    private synchronized Pair<Session, ChannelSftp> getClient() throws StorageConnectionException {
         if (sshSession != null && sshSession.isConnected() && sftpChannel != null && sftpChannel.isConnected()) {
             try {
                 // Test if the connection is still alive
@@ -171,14 +171,6 @@ public class SftpStorage implements PathStorage {
     }
 
     @Override
-    public String resolve(String path, String fileName) {
-        if (!path.endsWith(config.getPathSeparatorSymbol())) {
-            path = "%s%s".formatted(path, config.getPathSeparatorSymbol());
-        }
-        return "%s%s".formatted(path, fileName);
-    }
-
-    @Override
     public boolean exists(String path) throws StorageMethodException, StorageConnectionException {
         try {
             getClient().getRight().stat(path);
@@ -249,12 +241,12 @@ public class SftpStorage implements PathStorage {
     }
 
     @Override
-    public InputStream downloadFile(String sourcePath, StorageProgressListener progressListener) throws StorageMethodException, StorageConnectionException {
+    public InputStream downloadFile(String sourcePath) throws StorageMethodException, StorageConnectionException {
         Pair<Session, ChannelSftp> client = getClient();
         ChannelSftp sftp = client.getRight();
 
         try {
-            return sftp.get(sourcePath, new SftpStorageProgressListener(progressListener));
+            return sftp.get(sourcePath);
         } catch (SftpException e) {
             throw new StorageMethodException("Failed to download file \"%s\" from SFTP server", e);
         }
@@ -301,7 +293,8 @@ public class SftpStorage implements PathStorage {
         return 8;
     }
 
-    public void disconnect() {
+    @Override
+    public void destroy() {
         try {
             if (sftpChannel != null && sftpChannel.isConnected()) {
                 sftpChannel.exit();
@@ -318,6 +311,11 @@ public class SftpStorage implements PathStorage {
         }
         sftpChannel = null;
         sshSession = null;
+    }
+
+    @Override
+    public void downloadCompleted() throws StorageMethodException, StorageConnectionException {
+        // Для SFTP не требуется дополнительных действий
     }
 
     private static class SftpStorageProgressListener implements SftpProgressMonitor {

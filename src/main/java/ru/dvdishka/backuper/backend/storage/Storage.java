@@ -55,7 +55,9 @@ public interface Storage {
 
     void uploadFile(InputStream sourceStream, String newFileName, String targetParentDir, StorageProgressListener progressListener) throws StorageLimitException, StorageMethodException, StorageConnectionException;
 
-    InputStream downloadFile(String sourcePath, StorageProgressListener progressListener) throws StorageMethodException, StorageConnectionException;
+    InputStream downloadFile(String sourcePath) throws StorageMethodException, StorageConnectionException;
+
+    void downloadCompleted() throws StorageMethodException, StorageConnectionException;
 
     void delete(String path) throws StorageMethodException, StorageConnectionException;
 
@@ -63,13 +65,16 @@ public interface Storage {
 
     int getTransferSpeedMultiplier();
 
+    void destroy();
+
     class StorageConnectionException extends RuntimeException {
         public StorageConnectionException(String message) {
             super(message);
         }
 
         public StorageConnectionException(String message, Exception e) {
-            super(message, e);
+            super("%s\n%s".formatted(message, e.getMessage()), e);
+            this.setStackTrace(e.getStackTrace());
         }
     }
 
@@ -79,7 +84,8 @@ public interface Storage {
         }
 
         public StorageMethodException(String message, Exception e) {
-            super(message, e);
+            super("%s\n%s".formatted(message, e.getMessage()), e);
+            this.setStackTrace(e.getStackTrace());
         }
     }
 

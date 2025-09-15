@@ -25,7 +25,6 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -126,14 +125,20 @@ public class StorageManager implements Listener {
         Backuper.getInstance().getLogManager().log("Indexing storages...");
         List<CompletableFuture<Void>> indexStorageFutures = new ArrayList<>();
 
-        for (Storage storage : storages.values()) {
+        for (Storage storage : getStorages()) {
             if (storage.getConfig().isEnabled()){
                 CompletableFuture<Void> indexStorageFuture = Backuper.getInstance().getScheduleManager().runAsync(() -> {
                     Backuper.getInstance().getScheduleManager().runAsync(() -> {
                         try {
-                            Backuper.getInstance().getLogManager().devLog("Indexing local storage...");
-                            new ListCommand(false, null, new CommandArguments(new Objects[]{}, new HashMap<>(), new String[]{}, new HashMap<>(), "")).execute();
-                            Backuper.getInstance().getLogManager().devLog("Local storage has been indexed");
+                            Backuper.getInstance().getLogManager().devLog("Indexing %s storage...".formatted(storage.getId()));
+                            new ListCommand(false, Bukkit.getConsoleSender(), new CommandArguments(
+                                    new Object[]{storage.getId()},
+                                    new HashMap<>(){{put("storage", storage.getId());}},
+                                    new String[]{storage.getId()},
+                                    new HashMap<>(){{put("storage", storage.getId());}},
+                                    "/backuper list %s".formatted(storage.getId())))
+                                    .execute();
+                            Backuper.getInstance().getLogManager().devLog("%s storage has been indexed".formatted(storage.getId()));
                         } catch (Exception e) {
                             Backuper.getInstance().getLogManager().warn("Failed to index storage %s".formatted(storage.getId()));
                             Backuper.getInstance().getLogManager().warn(e);
@@ -164,6 +169,12 @@ public class StorageManager implements Listener {
             }
         }
         sendUserAuthStoragesCheckResult(Bukkit.getConsoleSender());
+    }
+
+    public void destroy() {
+        for (Storage storage : storages.values()) {
+            storage.destroy();
+        }
     }
 
     private void sendUserAuthStoragesCheckResult(CommandSender sender) {

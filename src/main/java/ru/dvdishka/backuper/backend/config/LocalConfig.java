@@ -27,13 +27,13 @@ public class LocalConfig implements PathStorageConfig {
     public LocalConfig load(ConfigurationSection config) {
         this.config = config;
         this.id = config.getName();
-        this.enabled = config.getBoolean("enabled", true);
-        this.autoBackup = config.getBoolean("autoBackup", true);
-        int backupsNumber = config.getInt("maxBackupsNumber", 0);
-        long backupsWeight = config.getLong("maxBackupsWeight", 0) * 1_048_576L;
-        this.zipArchive = config.getBoolean("zipArchive", true);
-        this.backupsFolder = config.getString("backupsFolder", "plugins/Backuper/Backups");
-        int zipCompressionLevel = config.getInt("zipCompressionLevel", 5);
+        this.enabled = config.getBoolean("enabled");
+        this.autoBackup = config.getBoolean("autoBackup");
+        int backupsNumber = config.getInt("maxBackupsNumber");
+        long backupsWeight = config.getLong("maxBackupsWeight") * 1_048_576L;
+        this.zipArchive = config.getBoolean("zipArchive");
+        this.backupsFolder = config.getString("backupsFolder");
+        int zipCompressionLevel = config.getInt("zipCompressionLevel");
 
         if (backupsNumber < 0) {
             Backuper.getInstance().getLogManager().warn("Failed to load config value!");

@@ -33,17 +33,10 @@ public class DeleteDirTask extends BaseTask implements SingleStorageTask {
 
     private void deleteDir(String currentPath) {
 
-        if (cancelled) {
-            return;
-        }
-
+        if (cancelled) return;
         try {
             if (storage.isDir(currentPath)) {
-
                 for (String file : storage.ls(currentPath)) {
-                    if (file.equals(".") || file.equals("..")) {
-                        continue;
-                    }
                     deleteDir(storage.resolve(currentPath, file));
                 }
                 storage.delete(currentPath);

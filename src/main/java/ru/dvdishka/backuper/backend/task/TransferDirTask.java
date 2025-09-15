@@ -3,7 +3,6 @@ package ru.dvdishka.backuper.backend.task;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
 import org.bukkit.command.CommandSender;
-import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.storage.BasicStorageProgressListener;
 import ru.dvdishka.backuper.backend.storage.LocalStorage;
 import ru.dvdishka.backuper.backend.storage.Storage;
@@ -15,7 +14,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 public class TransferDirTask extends BaseTask implements DoubleStorageTask {
@@ -27,7 +25,6 @@ public class TransferDirTask extends BaseTask implements DoubleStorageTask {
     private final boolean createRootDirInTargetDir;
     private final boolean forceExcludedDirs;
 
-    private final ArrayList<CompletableFuture<Void>> jobs = new ArrayList<>();
     private ArrayList<StorageProgressListener> progressListeners;
     private long dirSize = 0;
 
@@ -83,27 +80,16 @@ public class TransferDirTask extends BaseTask implements DoubleStorageTask {
         }
 
         if (sourceStorage.isFile(sourceDir) && !sourceStorage.getFileNameFromPath(sourceDir).equals("session.lock")) {
-
             try {
                 final StorageProgressListener progressListener = new BasicStorageProgressListener();
                 progressListeners.add(progressListener);
-                CompletableFuture<Void> job = Backuper.getInstance().getScheduleManager().runAsync(() -> {
-                    try (InputStream inputStream = sourceStorage.downloadFile(sourceDir, new BasicStorageProgressListener())) {
-                        targetStorage.uploadFile(inputStream, sourceStorage.getFileNameFromPath(sourceDir), targetStorage.getParentPath(targetDir), progressListener);
-                    } catch (Exception e) {
-                        warn("Failed to send file \"%s\" to %s storage".formatted(sourceDir, targetStorage.getId()));
-                        warn(e);
-                    }
-                });
-
-                jobs.add(job);
-                try {
-                    job.join();
+                try (InputStream inputStream = sourceStorage.downloadFile(sourceDir)) {
+                    targetStorage.uploadFile(inputStream, sourceStorage.getFileNameFromPath(sourceDir), targetStorage.getParentPath(targetDir), progressListener);
                 } catch (Exception e) {
-                    if (!cancelled) {
-                        warn("Failed to send file \"%s\" to %s storage".formatted(sourceDir, targetStorage.getId()), sender);
-                        warn(e);
-                    }
+                    warn("Failed to send file \"%s\" to %s storage".formatted(sourceDir, targetStorage.getId()));
+                    warn(e);
+                } finally {
+                    sourceStorage.downloadCompleted();
                 }
 
             } catch (Exception e) {
@@ -141,9 +127,6 @@ public class TransferDirTask extends BaseTask implements DoubleStorageTask {
     @Override
     public void cancel() {
         cancelled = true;
-        for (CompletableFuture<Void> job : jobs) {
-            job.cancel(true);
-        }
     }
 
     @Override

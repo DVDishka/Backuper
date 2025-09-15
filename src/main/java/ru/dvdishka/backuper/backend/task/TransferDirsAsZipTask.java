@@ -114,13 +114,19 @@ public class TransferDirsAsZipTask extends BaseTask implements DoubleStorageTask
         if (sourceStorage instanceof LocalStorage && !forceExcludedDirs && Utils.isExcludedDirectory(new File(sourceDir), sender)) return;
         try {
             if (sourceStorage.isFile(sourceDir)) {
-                try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(sourceDir), FILE_BUFFER_SIZE)) {
+
+                long crc = 0;
+                if (isAlreadyCompressed(sourceStorage, sourceDir)) {
+                    crc = calculateCRC(sourceDir);
+                }
+                try (InputStream inputStream = sourceStorage.downloadFile(sourceDir);
+                     BufferedInputStream bis = new BufferedInputStream(inputStream, FILE_BUFFER_SIZE)) {
 
                     ZipEntry entry = new ZipEntry(relativeDirPath);
                     if (isAlreadyCompressed(sourceStorage, sourceDir)) {
                         entry.setMethod(ZipEntry.STORED);
                         entry.setCompressedSize(sourceStorage.getDirByteSize(sourceDir));
-                        entry.setCrc(calculateCRC(sourceDir));
+                        entry.setCrc(crc);
                     } else {
                         zip.setLevel(targetStorage.getConfig().getZipCompressionLevel());
                     }
@@ -133,6 +139,8 @@ public class TransferDirsAsZipTask extends BaseTask implements DoubleStorageTask
                         zip.write(buffer, 0, read);
                     }
                     zip.closeEntry();
+                } finally {
+                    sourceStorage.downloadCompleted();
                 }
             }
         } catch (Exception e) {
@@ -177,7 +185,7 @@ public class TransferDirsAsZipTask extends BaseTask implements DoubleStorageTask
      */
     private long calculateCRC(String path) throws IOException {
         try (BufferedInputStream bis = new BufferedInputStream(
-                sourceStorage.downloadFile(path, new BasicStorageProgressListener()), FILE_BUFFER_SIZE)) {
+                sourceStorage.downloadFile(path), FILE_BUFFER_SIZE)) {
             CRC32 crc = new CRC32();
             byte[] buffer = new byte[FILE_BUFFER_SIZE];
             int read;
@@ -185,6 +193,8 @@ public class TransferDirsAsZipTask extends BaseTask implements DoubleStorageTask
                 crc.update(buffer, 0, read);
             }
             return crc.getValue();
+        } finally {
+            sourceStorage.downloadCompleted();
         }
     }
 

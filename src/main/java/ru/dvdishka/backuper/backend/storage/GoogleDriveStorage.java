@@ -147,7 +147,7 @@ public class GoogleDriveStorage implements UserAuthStorage {
         }
     }
 
-    private Drive getClient() throws StorageConnectionException {
+    private synchronized Drive getClient() throws StorageConnectionException {
         if (driveService != null) {
             try {
                 // Test if the connection is still alive by making a simple request
@@ -461,14 +461,13 @@ public class GoogleDriveStorage implements UserAuthStorage {
     }
 
     @Override
-    public InputStream downloadFile(String sourcePath, StorageProgressListener progressListener) throws StorageQuotaExceededException, StorageMethodException, StorageConnectionException {
+    public InputStream downloadFile(String sourcePath) throws StorageQuotaExceededException, StorageMethodException, StorageConnectionException {
         try {
             return ((Retriable<InputStream>) () -> {
                 Drive service = getClient();
 
                 Drive.Files.Get getDriveFile = service.files()
                         .get(sourcePath);
-                getDriveFile.getMediaHttpDownloader().setProgressListener(new GoogleDriveStorageProgressListener(progressListener));
                 return getDriveFile.executeMediaAsInputStream();
             }).retry(RETRIES);
         } catch (Storage.StorageLimitException | IOException e) {
@@ -511,15 +510,15 @@ public class GoogleDriveStorage implements UserAuthStorage {
         return 15;
     }
 
-    public void disconnect() {
-        try {
-            // Google Drive doesn't require explicit disconnection like FTP/SFTP
-            // The Drive service will be garbage collected
-            driveService = null;
-            credential = null;
-        } catch (Exception ignored) {
-            // Ignore disconnect errors
-        }
+    @Override
+    public void destroy() {
+        driveService = null;
+        credential = null;
+    }
+
+    @Override
+    public void downloadCompleted() throws StorageMethodException, StorageConnectionException {
+        // Для Google Drive не требуется дополнительных действий
     }
 
     @FunctionalInterface

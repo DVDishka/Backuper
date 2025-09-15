@@ -6,7 +6,6 @@ import ru.dvdishka.backuper.backend.storage.Storage;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.concurrent.ExecutionException;
 
 public class DeleteBrokenBackupsTask extends BaseTask {
 
@@ -25,7 +24,7 @@ public class DeleteBrokenBackupsTask extends BaseTask {
     }
 
     @Override
-    public void prepareTask(CommandSender sender) throws ExecutionException, InterruptedException {
+    public void prepareTask(CommandSender sender) throws Throwable {
         if (cancelled) return;
 
         for (Storage storage : Backuper.getInstance().getStorageManager().getStorages()) {

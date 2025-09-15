@@ -66,7 +66,11 @@ public class BackupTask extends BaseTask {
             }
 
             if (!isTaskPrepared() && !cancelled) {
-                Backuper.getInstance().getTaskManager().prepareTask(this, sender);
+                try {
+                    Backuper.getInstance().getTaskManager().prepareTask(this, sender);
+                } catch (Throwable e) {
+                    throw new TaskException(this, e);
+                }
             }
             if (!cancelled) {
                 prepareTaskFuture.get();
@@ -93,23 +97,37 @@ public class BackupTask extends BaseTask {
                 warn(e);
             }
         }
+        HashMap<Storage, List<Task>> storageTasks = new HashMap<>();
         for (Task task : tasks) {
+            if (task instanceof DoubleStorageTask doubleStorageTask) {
+                storageTasks.compute(doubleStorageTask.getTargetStorage(), (storage, tasks) -> {
+                    if (tasks == null) tasks = new ArrayList<>();
+                    tasks.add(doubleStorageTask);
+                    return tasks;
+                });
+            } else {
+                Backuper.getInstance().getLogManager().warn("Non-DoubleStorageTask found in BackupTask tasks list: %s".formatted(task.getClass().getName()));
+            }
+        }
 
-            // Start task paralleled
-            if (!cancelled) {
-                taskFutures.add(Backuper.getInstance().getScheduleManager().runAsync(() -> {
+        for (Storage storage : storageTasks.keySet()) {
+            if (cancelled) break;
+
+            taskFutures.add(Backuper.getInstance().getScheduleManager().runAsync(() -> { // One thread for one storage
+                for (Task task : storageTasks.get(storage)) {
+                    if (cancelled) break;
                     try {
                         Backuper.getInstance().getTaskManager().startTaskRaw(task, sender);
                     } catch (TaskException e) {
                         warn(e);
                     }
-                }));
-            }
 
-            // Calculate a new backup size
-            if (!cancelled && (task instanceof TransferDirTask transferDirTask)) {
-                storageBackupByteSize.compute(transferDirTask.getTargetStorage(), (storage, size) -> size == null ? transferDirTask.getTaskMaxProgress() : size + transferDirTask.getTaskMaxProgress()); // There might be several tasks for one storage
-            }
+                    // Calculate a new backup size
+                    if (!cancelled && (task instanceof TransferDirTask transferDirTask)) {
+                        storageBackupByteSize.compute(transferDirTask.getTargetStorage(), (transferTaskStorage, size) -> size == null ? transferDirTask.getTaskMaxProgress() : size + transferDirTask.getTaskMaxProgress()); // There might be several tasks for one storage
+                    }
+                }
+            }));
         }
 
         CompletableFuture.allOf(taskFutures.toArray(new CompletableFuture[0])).join(); // Waiting for all tasks to be completed
@@ -121,28 +139,27 @@ public class BackupTask extends BaseTask {
 
         for (Storage storage : storages) {
             // RENAME TASK
-            if (!cancelled) {
+            if (cancelled) break;
 
-                devLog("The Rename \"in progress\" in %s storage task has been started".formatted(storage.getId()));
-                String fileType = "";
-                if (storage.getConfig().isZipArchive()) {
-                    fileType = ".zip";
-                }
-
-                try {
-                    storage.renameFile(storage.resolve(storage.getConfig().getBackupsFolder(), backupName + fileType), backupName.replace(" in progress", "") + fileType);
-
-                    // Add new backup size to cache (ONLY IF NOT ZIP. ZIP SIZE IS NOT COUNTED). MUST ONLY BE EXECUTED AFTER RENAMING
-                    if (!storage.getConfig().isZipArchive()) {
-                        storage.getBackupManager().saveBackupSizeToCache(backupName.replace(" in progress", ""), storageBackupByteSize.get(storage));
-                        devLog("New backup size in %s storage has been cached".formatted(storage.getId()));
-                    }
-                } catch (Exception e) {
-                    warn("Failed to rename file %s in %s storage".formatted(backupName, storage.getId()), sender);
-                    warn(e);
-                }
-                devLog("The Rename \"in progress\" Folder %s storage task has been finished".formatted(storage.getId()));
+            devLog("The Rename \"in progress\" in %s storage task has been started".formatted(storage.getId()));
+            String fileType = "";
+            if (storage.getConfig().isZipArchive()) {
+                fileType = ".zip";
             }
+
+            try {
+                storage.renameFile(storage.resolve(storage.getConfig().getBackupsFolder(), backupName + fileType), backupName.replace(" in progress", "") + fileType);
+
+                // Add new backup size to cache (ONLY IF NOT ZIP. ZIP SIZE IS NOT COUNTED). MUST ONLY BE EXECUTED AFTER RENAMING
+                if (!storage.getConfig().isZipArchive()) {
+                    storage.getBackupManager().saveBackupSizeToCache(backupName.replace(" in progress", ""), storageBackupByteSize.get(storage));
+                    devLog("New backup size in %s storage has been cached".formatted(storage.getId()));
+                }
+            } catch (Exception e) {
+                warn("Failed to rename file %s in %s storage".formatted(backupName, storage.getId()), sender);
+                warn(e);
+            }
+            devLog("The Rename \"in progress\" Folder %s storage task has been finished".formatted(storage.getId()));
         }
 
         // UPDATE VARIABLES
@@ -227,7 +244,11 @@ public class BackupTask extends BaseTask {
                     if (!storage.getConfig().isZipArchive()) {
                         Task task = new TransferDirTask(Backuper.getInstance().getStorageManager().getStorage("backuper"), additionalDirectoryToBackupFile.toPath().toAbsolutePath().normalize().toString(), storage, storage.resolve(storage.getConfig().getBackupsFolder(),
                                 backupName), true, false);
-                        Backuper.getInstance().getTaskManager().prepareTask(task, sender);
+                        try {
+                            Backuper.getInstance().getTaskManager().prepareTask(task, sender);
+                        } catch (Throwable e) {
+                            throw new TaskException(task, e);
+                        }
                         tasks.add(task);
                     } else {
                         dirsToAddToZip.add(additionalDirectoryToBackupFile.toPath().toAbsolutePath().normalize().toString());
@@ -240,7 +261,11 @@ public class BackupTask extends BaseTask {
 
             if (storage.getConfig().isZipArchive()) {
                 Task task = new TransferDirsAsZipTask(Backuper.getInstance().getStorageManager().getStorage("backuper"), dirsToAddToZip, storage, storage.getConfig().getBackupsFolder(), "%s.zip".formatted(backupName), true, false);
-                Backuper.getInstance().getTaskManager().prepareTask(task, sender);
+                try {
+                    Backuper.getInstance().getTaskManager().prepareTask(task, sender);
+                } catch (Throwable e) {
+                    throw new TaskException(task, e);
+                }
                 tasks.add(task);
             }
         } catch (Exception e) {

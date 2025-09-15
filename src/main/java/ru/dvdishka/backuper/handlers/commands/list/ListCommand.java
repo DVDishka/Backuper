@@ -41,7 +41,7 @@ public class ListCommand extends Command {
             return false;
         }
         if (!storage.checkConnection()) {
-            returnFailure("Failed to establish connection with storage %s storage".formatted(storage.getId()));
+            returnFailure("Failed to establish connection with %s storage".formatted(storage.getId()));
             return false;
         }
         if (!sender.hasPermission(Permission.LIST.getPermission(storage))) {
@@ -68,7 +68,7 @@ public class ListCommand extends Command {
                 .append(Component.text("Backup list")
                         .decorate(TextDecoration.BOLD))
                 .append(Component.space())
-                .append(Component.text("(%s)".formatted(storage))
+                .append(Component.text("(%s)".formatted(storage.getId()))
                         .color(TextColor.fromHexString("#129c9b"))
                         .decorate(TextDecoration.BOLD));
 
@@ -116,9 +116,8 @@ public class ListCommand extends Command {
 
     private Component createListMessage(int pageNumber, boolean pagedListMessage) {
         Component message = Component.empty();
-        // For console
+        // For players
         if (!(sender instanceof ConsoleCommandSender)) {
-
             message = message
                     .append(Component.text("<<<<<<<<")
                             .decorate(TextDecoration.BOLD)
@@ -151,13 +150,10 @@ public class ListCommand extends Command {
                             .color(TextColor.fromHexString("#129c9b"))
                             .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list %s %s".formatted(storage, pageNumber + 1))));
 
-        // For players
+        // For console
         } else {
-
             int backupIndex = 1;
-
             if (pagedListMessage) {
-
                 message = message
                         .append(Component.text("<".repeat(20))
                                 .decorate(TextDecoration.BOLD)
@@ -169,25 +165,18 @@ public class ListCommand extends Command {
                         .append(Component.newline());
 
                 for (TextComponent backupComponent : pages.get(pageNumber - 1)) {
-
-                    if (backupIndex > 1) {
-                        message = message
-                                .append(Component.newline());
-                    }
-
+                    if (backupIndex > 1) message = message.append(Component.newline());
                     String backupName = backupComponent.content();
-
                     message = message
                             .append(Component.text(backupName))
                             .append(Component.space())
-                            .append(Component.text(storage.getId()))
+                            .append(Component.text("(%s)".formatted(storage.getId())))
                             .append(Component.space())
                             .append(Component.text(backupNameFileType.get(backupName).name()))
                             .append(Component.space())
                             .append(Component.text(backupNameMbSize.get(backupName)))
                             .append(Component.space())
-                            .append(Component.text(" MB"));
-
+                            .append(Component.text("MB"));
                     backupIndex++;
                 }
 
@@ -214,13 +203,13 @@ public class ListCommand extends Command {
                         message = message
                                 .append(Component.text(backupComponent.content()))
                                 .append(Component.space())
-                                .append(Component.text(storage.getId()))
+                                .append(Component.text("(%s)".formatted(storage.getId())))
                                 .append(Component.space())
                                 .append(Component.text(backupNameFileType.get(backupName).name()))
                                 .append(Component.space())
                                 .append(Component.text(backupNameMbSize.get(backupName)))
                                 .append(Component.space())
-                                .append(Component.text(" MB"));
+                                .append(Component.text("MB"));
 
                         backupIndex++;
                     }

@@ -1,21 +1,18 @@
 package ru.dvdishka.backuper.backend.task;
 
+import lombok.Getter;
+
 public class TaskException extends Exception {
 
+    @Getter
     private final Task task;
-    private final Exception exception;
+    @Getter
+    private final Throwable exception;
 
-    public TaskException(Task task, Exception exception) {
+    public TaskException(Task task, Throwable exception) {
         super("An error occurred while executing task %s".formatted(task.getTaskName()));
         this.task = task;
         this.exception = exception;
-    }
-
-    public Exception getException() {
-        return this.exception;
-    }
-
-    public Task getTask() {
-        return this.task;
+        this.setStackTrace(exception.getStackTrace());
     }
 }

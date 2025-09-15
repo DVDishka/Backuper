@@ -3,12 +3,9 @@ package ru.dvdishka.backuper.backend.task;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
 import org.bukkit.command.CommandSender;
-import ru.dvdishka.backuper.backend.storage.Storage;
 
-import javax.naming.AuthenticationException;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 public interface Task {
 
@@ -32,7 +29,7 @@ public interface Task {
     /***
      * This method should only be used to declare Task's prepare logic, don't use it to prepare any task. Use TaskManager.prepareTask instead
      */
-    void prepareTask(CommandSender sender) throws ExecutionException, InterruptedException, AuthenticationException, IOException, Storage.StorageLimitException, Storage.StorageQuotaExceededException, SftpException;
+    void prepareTask(CommandSender sender) throws Throwable;
 
     /***
      * Don't use this method to start any task. Use TaskManager.startTaskRaw instead

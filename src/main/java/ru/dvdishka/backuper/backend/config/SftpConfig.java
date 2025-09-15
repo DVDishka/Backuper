@@ -35,23 +35,23 @@ public class SftpConfig implements PathStorageConfig {
     public SftpConfig load(ConfigurationSection config) {
         this.config = config;
         this.id = config.getName();
-        this.enabled = config.getBoolean("enabled", false);
-        this.autoBackup = config.getBoolean("autoBackup", true);
-        this.backupsFolder = config.getString("backupsFolder", "");
-        this.pathSeparatorSymbol = config.getString("pathSeparatorSymbol", "/");
-        int backupsNumber = config.getInt("maxBackupsNumber", 0);
-        long backupsWeight = config.getLong("maxBackupsWeight", 0) * 1_048_576L;
-        this.zipArchive = config.getBoolean("zipArchive", true);
-        int zipCompressionLevel = config.getInt("zipCompressionLevel", 5);
-        this.keyFilePath = config.getString("auth.keyFilePath", "");
-        this.authType = config.getString("auth.authType", "password");
-        this.username = config.getString("auth.username", "");
-        this.password = config.getString("auth.password", "");
-        this.address = config.getString("auth.address", "");
-        this.port = config.getInt("auth.port", 22);
-        this.useKnownHostsFile = config.getString("auth.useKnownHostsFile", "false");
-        this.knownHostsFilePath = config.getString("auth.knownHostsFilePath", "");
-        this.sshConfigFile = config.getString("auth.sshConfigFile", "");
+        this.enabled = config.getBoolean("enabled");
+        this.autoBackup = config.getBoolean("autoBackup");
+        this.backupsFolder = config.getString("backupsFolder");
+        this.pathSeparatorSymbol = config.getString("pathSeparatorSymbol");
+        int backupsNumber = config.getInt("maxBackupsNumber");
+        long backupsWeight = config.getLong("maxBackupsWeight") * 1_048_576L;
+        this.zipArchive = config.getBoolean("zipArchive");
+        int zipCompressionLevel = config.getInt("zipCompressionLevel");
+        this.keyFilePath = config.getString("auth.keyFilePath");
+        this.authType = config.getString("auth.authType");
+        this.username = config.getString("auth.username");
+        this.password = config.getString("auth.password");
+        this.address = config.getString("auth.address");
+        this.port = config.getInt("auth.port");
+        this.useKnownHostsFile = config.getString("auth.useKnownHostsFile");
+        this.knownHostsFilePath = config.getString("auth.knownHostsFilePath");
+        this.sshConfigFile = config.getString("auth.sshConfigFile");
 
         if (backupsNumber < 0) {
             Backuper.getInstance().getLogManager().warn("Failed to load config value!");

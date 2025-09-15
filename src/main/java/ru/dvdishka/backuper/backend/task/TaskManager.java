@@ -36,6 +36,7 @@ public class TaskManager {
                 Backuper.getInstance().getTaskManager().startTaskRaw(currentTask, sender);
             } catch (Exception e) {
                 Backuper.getInstance().getLogManager().warn("An error occurred while executing task %s".formatted(task.getTaskName()));
+                Backuper.getInstance().getLogManager().warn(e);
             }
             this.currentTaskPermissions = null;
             this.currentTask = null;
@@ -66,7 +67,7 @@ public class TaskManager {
     }
 
     public void startTaskRaw(Task task, CommandSender sender) throws TaskException {
-        Backuper.getInstance().getLogManager().devLog("Task %s has been started".formatted(task.getTaskName()));
+        Backuper.getInstance().getLogManager().devLog("Task %s started".formatted(task.getTaskName()));
         task.start(sender);
         Backuper.getInstance().getLogManager().devLog("Task %s completed".formatted(task.getTaskName()));
     }
@@ -78,16 +79,25 @@ public class TaskManager {
     /***
      * Preparation will be completed using a random thread, not current, but this method waits for preparation to be completed
      */
-    public void prepareTask(Task task, CommandSender sender) throws ExecutionException, InterruptedException {
+    public void prepareTask(Task task, CommandSender sender) throws Throwable {
         CompletableFuture<Void> prepareTaskFuture = Backuper.getInstance().getScheduleManager().runAsync(() -> {
+            Backuper.getInstance().getLogManager().devLog("Preparing task %s".formatted(task.getTaskName()));
             try {
                 task.prepareTask(sender);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 throw new RuntimeException(e);
+            } finally {
+                Backuper.getInstance().getLogManager().devLog("%s task preparation completed".formatted(task.getTaskName()));
             }
         });
         task.setPrepareTaskFuture(prepareTaskFuture);
-        prepareTaskFuture.get();
+        try {
+            prepareTaskFuture.get();
+        } catch (InterruptedException ignored) {
+            // No need to handle if it was interrupted
+        } catch (ExecutionException e) {
+            throw e.getCause().getCause();
+        }
     }
 
     public Result cancelTask(Task task, CommandSender sender) {

@@ -93,6 +93,7 @@ public class Backuper extends JavaPlugin implements Listener {
         Backuper.getInstance().getScheduleManager().destroy(this);
         configManager.setConfigField("lastBackup", configManager.getLastBackup());
         configManager.setConfigField("lastChange", configManager.getLastChange());
+        storageManager.destroy();
         scheduleManager.destroy(this);
         bstats.destroy();
     }
