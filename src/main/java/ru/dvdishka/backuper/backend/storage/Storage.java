@@ -90,16 +90,24 @@ public interface Storage {
     }
 
     class StorageLimitException extends RuntimeException {
+        public StorageLimitException(String message) {
+            super(message);
+        }
 
-        public StorageLimitException() {
-            super("Storage space limit reached");
+        public StorageLimitException(String message, Exception e) {
+            super("%s\n%s".formatted(message, e.getMessage()), e);
+            this.setStackTrace(e.getStackTrace());
         }
     }
 
     class StorageQuotaExceededException extends RuntimeException {
 
-        public StorageQuotaExceededException() {
-            super("Storage quota limit reached, try again later");
+        public StorageQuotaExceededException(String message) {
+            super(message);
         }
-    }
+
+        public StorageQuotaExceededException(String message, Exception e) {
+            super("%s\n%s".formatted(message, e.getMessage()), e);
+            this.setStackTrace(e.getStackTrace());
+        }    }
 }

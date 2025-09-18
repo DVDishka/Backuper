@@ -9,40 +9,58 @@ import ru.dvdishka.backuper.backend.config.FtpConfig;
 import java.io.IOException;
 import java.time.Duration;
 
-public class FtpClient {
+public class FtpClientProvider {
 
     private final FtpConfig config;
 
     private FTPClient ftpClient = null;
 
-    FtpClient(FtpConfig config) {
+    FtpClientProvider(FtpConfig config) {
         this.config = config;
     }
 
     synchronized FTPClient getClient() throws Storage.StorageConnectionException {
         if (ftpClient != null) {
             synchronized (ftpClient) {
-                try {
-                    if (!ftpClient.isConnected()) ftpClient.connect(config.getAddress(), config.getPort());
-                } catch (IOException ignored) {
-                    // We shouldn't handle it, we'll just try to establish a new connection
-                }
-                try {
-                    if (ftpClient.sendNoOp()) {
-                        ftpClient.changeWorkingDirectory("");
-                        return ftpClient;
-                    }
-                } catch (IOException ignored) {
-                    // We shouldn't handle it, we'll just try to establish a new connection
-                }
+                update();
+                return ftpClient;
             }
         }
 
-        FTPClient ftpClient = new FTPClient();
-
+        ftpClient = new FTPClient();
         // Enable FTP logging
         // ftpClient.addProtocolCommandListener(new PrintCommandListener(new PrintWriter(System.out)));
+        connect();
+        return ftpClient;
+    }
 
+    public void update() {
+        synchronized (ftpClient) {
+            try {
+                if (!ftpClient.isConnected() || !ftpClient.isAvailable()) {
+                    connect();
+                }
+                try {
+                    if (!ftpClient.sendNoOp()) {
+                        connect();
+                        ftpClient.sendNoOp();
+                    }
+                } catch (Exception e) {
+                    connect();
+                    ftpClient.sendNoOp();
+                }
+            } catch (IOException e) {
+                Backuper.getInstance().getLogManager().warn("Failed to reconnect to FTP(S) connection");
+                Backuper.getInstance().getLogManager().warn(e);
+            }
+            try {
+                ftpClient.changeWorkingDirectory("");
+            } catch (Exception ignored) {
+            }
+        }
+    }
+
+    private void connect() {
         ftpClient.setConnectTimeout(30 * 1000);
         ftpClient.setDefaultTimeout(90 * 1000);
         ftpClient.setDataTimeout(Duration.ofSeconds(90));
@@ -63,17 +81,6 @@ public class FtpClient {
                 // It only can't disconnect if it's already disconnected
             }
             throw new Storage.StorageConnectionException("Failed to establish FTP(S) connection");
-        }
-        try {
-            ftpClient.setKeepAlive(true);
-        } catch (Exception e) {
-            Backuper.getInstance().getLogManager().warn("Failed to set FTP(S) connection keep alive");
-        }
-
-        try {
-            ftpClient.setSoTimeout(10000);
-        } catch (Exception e) {
-            Backuper.getInstance().getLogManager().warn("Failed to set FTP(S) So timeout");
         }
 
         ftpClient.enterLocalPassiveMode();
@@ -101,8 +108,11 @@ public class FtpClient {
             throw new Storage.StorageConnectionException("Failed to set FTP(S) connection parameters", e);
         }
 
-        this.ftpClient = ftpClient;
-        return ftpClient;
+        try {
+            ftpClient.sendNoOp();
+        } catch (IOException e) {
+            Backuper.getInstance().getLogManager().warn("Failed to send FTP(S) server ping");
+        }
     }
 
     synchronized void disconnect() {
@@ -116,4 +126,3 @@ public class FtpClient {
         ftpClient = null;
     }
 }
-

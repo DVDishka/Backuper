@@ -35,7 +35,7 @@ public class StatusCommand extends Command {
     public void run() {
         long progress = Backuper.getInstance().getTaskManager().getCurrentTask().getTaskPercentProgress();
         TextColor color;
-        if (progress == 0) {
+        if (!Backuper.getInstance().getTaskManager().getCurrentTask().isTaskPrepared()) {
             color = TextColor.color(190, 20, 255);
         } else if (progress < 40) {
             color = TextColor.color(190, 0, 27);
