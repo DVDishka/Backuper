@@ -13,7 +13,7 @@ public class FtpClientProvider {
 
     private final FtpConfig config;
 
-    private FTPClient ftpClient = null;
+    private FTPClient ftpClient = null; // Effectively final
 
     FtpClientProvider(FtpConfig config) {
         this.config = config;
@@ -116,12 +116,12 @@ public class FtpClientProvider {
     }
 
     synchronized void disconnect() {
-        try {
-            if (ftpClient != null && ftpClient.isConnected()) {
+        if (ftpClient != null) {
+            try {
                 ftpClient.disconnect();
+            } catch (Exception ignored) {
+                // Ignore disconnect errors
             }
-        } catch (Exception ignored) {
-            // Ignore disconnect errors
         }
         ftpClient = null;
     }

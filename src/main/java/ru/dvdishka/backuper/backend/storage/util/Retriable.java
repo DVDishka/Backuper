@@ -1,5 +1,6 @@
 package ru.dvdishka.backuper.backend.storage.util;
 
+import com.jcraft.jsch.SftpException;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.storage.Storage;
 
@@ -14,7 +15,7 @@ public interface Retriable<T> {
     /***
      * Define the main logic to be retried here
      */
-    T run() throws IOException, Storage.StorageLimitException, Storage.StorageConnectionException;
+    T run() throws Exception;
 
     /***
      * Doesn't handle Storage exceptions

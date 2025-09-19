@@ -1,114 +1,108 @@
 package ru.dvdishka.backuper.backend.storage;
 
 import com.jcraft.jsch.*;
-import org.apache.commons.lang3.tuple.Pair;
+import lombok.Setter;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.backup.Backup;
 import ru.dvdishka.backuper.backend.backup.BackupManager;
 import ru.dvdishka.backuper.backend.config.SftpConfig;
+import ru.dvdishka.backuper.backend.storage.util.Retriable;
 
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 import java.util.Vector;
 
 public class SftpStorage implements PathStorage {
 
+    @Setter
     private String id = null;
     private final SftpConfig config;
     private final BackupManager backupManager;
 
-    private Session sshSession = null;
-    private ChannelSftp sftpChannel = null;
+    private final SftpClientProvider mainClient;
+    private final SftpClientProvider downloadClient;
+    private final SftpClientProvider uploadClient;
+
+    private static final Retriable.RetriableExceptionHandler retriableExceptionHandler = new Retriable.RetriableExceptionHandler() {
+
+        @Override
+        public void handleRegularException(Exception e) {
+            // Handle connection timeouts
+            if (e instanceof java.net.SocketTimeoutException ||
+                (e.getMessage() != null && e.getMessage().contains("Read timed out"))) {
+                Backuper.getInstance().getLogManager().devWarn("SFTP read timeout");
+            }
+            // Handle connection reset
+            else if (e instanceof java.net.SocketException &&
+                    (e.getMessage() != null && (e.getMessage().contains("Connection reset") ||
+                                              e.getMessage().contains("Connection closed") ||
+                                              e.getMessage().contains("Broken pipe")))) {
+                Backuper.getInstance().getLogManager().devWarn("SFTP connection reset");
+            }
+            // Handle SSH errors
+            else if (e instanceof JSchException &&
+                    e.getMessage() != null && e.getMessage().contains("session is down")) {
+                Backuper.getInstance().getLogManager().devWarn("SFTP session is down");
+            }
+        }
+
+        @Override
+        public RuntimeException handleFinalException(Exception e) {
+            // Authentication and connection errors
+            if (e instanceof JSchException) {
+                if (e.getMessage() != null) {
+                    // Authentication errors
+                    if (e.getMessage().contains("auth fail") ||
+                        e.getMessage().contains("Authentication fail")) {
+                        return new StorageConnectionException("Authentication failed to SFTP server", e);
+                    }
+                    // Host connection errors
+                    else if (e.getMessage().contains("UnknownHostException") ||
+                             e.getMessage().contains("Connection refused") ||
+                             e.getMessage().contains("connect failed")) {
+                        return new StorageConnectionException("Failed to establish connection to SFTP server", e);
+                    }
+                    // Timeout errors
+                    else if (e.getMessage().contains("timeout") ||
+                             e.getMessage().contains("timed out") ||
+                             e.getMessage().contains("session is down")) {
+                        return new StorageConnectionException("Connection timed out", e);
+                    }
+                }
+            }
+
+            // File operation errors
+            if (e instanceof SftpException) {
+                SftpException sftpException = (SftpException) e;
+                // "No such file" error
+                if (sftpException.id == 2) {
+                    return new StorageMethodException("File not found", e);
+                }
+                // "Permission denied" error
+                else if (sftpException.id == 3 || sftpException.id == 4) {
+                    return new StorageMethodException("Permission denied", e);
+                }
+                // "Disk full" error
+                else if (sftpException.id == 5 ||
+                        (e.getMessage() != null && (e.getMessage().contains("disk full") ||
+                                                  e.getMessage().contains("quota exceeded")))) {
+                    return new StorageLimitException("SFTP storage quota exceeded", e);
+                }
+            }
+
+            // Other errors
+            return new StorageMethodException(e.getMessage(), e);
+        }
+    };
 
     public SftpStorage(SftpConfig config) {
         this.config = config;
         this.backupManager = new BackupManager(this);
-    }
-
-    private synchronized Pair<Session, ChannelSftp> getClient() throws StorageConnectionException {
-        if (sshSession != null && sshSession.isConnected() && sftpChannel != null && sftpChannel.isConnected()) {
-            try {
-                // Test if the connection is still alive
-                sftpChannel.pwd();
-                return Pair.of(sshSession, sftpChannel);
-            } catch (SftpException ignored) {
-                // Connection is dead, we'll create a new one
-            }
-        }
-
-        if (!config.getAuthType().equals("password") && !config.getAuthType().equals("key") && !config.getAuthType().equals("key_pass")) {
-            throw new StorageConnectionException("Wrong auth type \"%s\"".formatted(config.getAuthType()));
-        }
-
-        JSch jsch = new JSch();
-        Session session = null;
-        ChannelSftp channel = null;
-
-        try {
-            if (!config.getSshConfigFile().isEmpty()) {
-                jsch.setConfigRepository(OpenSSHConfig.parseFile(config.getSshConfigFile()));
-            } else {
-                if (config.getAuthType().equals("key")) {
-                    jsch.addIdentity(config.getKeyFilePath());
-                }
-                if (config.getAuthType().equals("key_pass")) {
-                    jsch.addIdentity(config.getKeyFilePath(), config.getPassword());
-                }
-
-                session = jsch.getSession(config.getUsername(), config.getAddress(), config.getPort());
-
-                if (config.getAuthType().equals("password")) {
-                    session.setPassword(config.getPassword());
-                }
-
-                Properties config = new Properties();
-                if (this.config.getUseKnownHostsFile().equals("false")) {
-                    config.put("StrictHostKeyChecking", "no");
-                } else {
-                    config.put("StrictHostKeyChecking", "yes");
-                }
-                session.setConfig(config);
-
-                if (!this.config.getUseKnownHostsFile().equals("false")) {
-                    jsch.setKnownHosts(this.config.getKnownHostsFilePath());
-                }
-
-                session.connect(15000);
-                channel = (ChannelSftp) session.openChannel("sftp");
-                channel.connect(15000);
-
-                // Store the connection for reuse
-                this.sshSession = session; // Already not null
-                this.sftpChannel = channel; // Already not null
-
-                return Pair.of(session, channel);
-            }
-        } catch (Exception e) {
-            try {
-                if (channel != null) {
-                    channel.exit();
-                }
-            } catch (Exception ignored) {
-                // An error only occurs if the channel is null, so we don't need to handle it
-            }
-            try {
-                if (session != null) {
-                    session.disconnect();
-                }
-            } catch (Exception ignored) {
-                // An error only occurs if the ssh session is null, so we don't need to handle it
-            }
-            throw new StorageConnectionException("Failed to establish SFTP connection", e);
-        }
-
-        throw new StorageConnectionException("Failed to establish SFTP connection");
-    }
-
-    public void setId(String id) {
-        this.id = id;
+        this.mainClient = new SftpClientProvider(config);
+        this.downloadClient = new SftpClientProvider(config);
+        this.uploadClient = new SftpClientProvider(config);
     }
 
     @Override
@@ -144,7 +138,9 @@ public class SftpStorage implements PathStorage {
                 return false;
             }
 
-            getClient();
+            mainClient.getChannel();
+            downloadClient.getChannel();
+            uploadClient.getChannel();
             return true;
         } catch (Exception e) {
             Backuper.getInstance().getLogManager().warn("Failed to establish connection to the SFTP server", sender);
@@ -155,137 +151,127 @@ public class SftpStorage implements PathStorage {
 
     @Override
     public List<String> ls(String path) throws StorageMethodException, StorageConnectionException {
-        Pair<Session, ChannelSftp> client = getClient();
-        ChannelSftp sftp = client.getRight();
-
-        try {
-            Vector<ChannelSftp.LsEntry> ls = sftp.ls(path);
-            ArrayList<String> files = new ArrayList<>();
-            for (ChannelSftp.LsEntry entry : ls) {
-                files.add(entry.getFilename());
+        return ((Retriable<List<String>>) () -> {
+            ChannelSftp sftp = mainClient.getChannel();
+            synchronized (sftp) {
+                Vector<ChannelSftp.LsEntry> ls = sftp.ls(path);
+                ArrayList<String> files = new ArrayList<>();
+                for (ChannelSftp.LsEntry entry : ls) {
+                    files.add(entry.getFilename());
+                }
+                return files;
             }
-            return files;
-        } catch (SftpException e) {
-            throw new StorageMethodException("Failed to get file list from dir \"%s\" using SFTP connection".formatted(path), e);
-        }
+        }).retry(retriableExceptionHandler);
     }
 
     @Override
     public boolean exists(String path) throws StorageMethodException, StorageConnectionException {
-        try {
-            getClient().getRight().stat(path);
-            return true;
-        } catch (SftpException e) {
-            return false;
+        ChannelSftp sftp = mainClient.getChannel();
+        synchronized (sftp) {
+            try {
+                mainClient.getChannel().stat(path);
+                return true;
+            } catch (SftpException e) {
+                return false;
+            }
         }
     }
 
     @Override
     public boolean isFile(String path) throws StorageMethodException, StorageConnectionException {
-        Pair<Session, ChannelSftp> client = getClient();
-        ChannelSftp sftp = client.getRight();
-
-        try {
-            return !sftp.stat(path).isDir();
-        } catch (SftpException e) {
-            throw new StorageMethodException("Failed to check if \"%s\" is a file or dir".formatted(path));
-        }
+        return ((Retriable<Boolean>) () -> {
+            ChannelSftp sftp = mainClient.getChannel();
+            synchronized (sftp) {
+                return !sftp.stat(path).isDir();
+            }
+        }).retry(retriableExceptionHandler);
     }
 
     @Override
     public long getDirByteSize(String path) throws StorageMethodException, StorageConnectionException {
-        try {
-            Pair<Session, ChannelSftp> client = getClient();
-            ChannelSftp sftpChannel = client.getRight();
-            
-            long dirSize = 0;
-            if (!sftpChannel.stat(path).isDir()) {
-                dirSize += sftpChannel.stat(path).getSize();
-            } else {
-                for (ChannelSftp.LsEntry entry : sftpChannel.ls(path)) {
-                    if (entry.getFilename().equals(".") || entry.getFilename().equals("..")) {
-                        continue;
+        return ((Retriable<Long>) () -> {
+            ChannelSftp sftpChannel = mainClient.getChannel();
+            synchronized (sftpChannel) {
+                long dirSize = 0;
+                if (!sftpChannel.stat(path).isDir()) {
+                    dirSize += sftpChannel.stat(path).getSize();
+                } else {
+                    for (ChannelSftp.LsEntry entry : sftpChannel.ls(path)) {
+                        if (entry.getFilename().equals(".") || entry.getFilename().equals("..")) {
+                            continue;
+                        }
+                        dirSize += getDirByteSize(resolve(path, entry.getFilename()));
                     }
-                    dirSize += getDirByteSize(resolve(path, entry.getFilename()));
                 }
+                return dirSize;
             }
-            return dirSize;
-        } catch (SftpException e) {
-            throw new StorageMethodException("Failed to get \"%s\" dir size using SFTP connection".formatted(path), e);
-        }
+        }).retry(retriableExceptionHandler);
     }
 
     @Override
     public void createDir(String newDirName, String parentDir) throws StorageMethodException, StorageConnectionException {
-        Pair<Session, ChannelSftp> client = getClient();
-        ChannelSftp sftp = client.getRight();
-
-        try {
-            sftp.mkdir(resolve(parentDir, newDirName));
-        } catch (SftpException e) {
-            throw new StorageMethodException("Failed to create dir \"%s\" using SFTP connection".formatted(parentDir), e);
-        }
+        ((Retriable<Void>) () -> {
+            ChannelSftp sftp = mainClient.getChannel();
+            synchronized (sftp) {
+                sftp.mkdir(resolve(parentDir, newDirName));
+                return null;
+            }
+        }).retry(retriableExceptionHandler);
     }
 
     @Override
     public void uploadFile(InputStream sourceStream, String newFileName, String targetParentDir, StorageProgressListener progressListener) throws StorageLimitException, StorageMethodException, StorageConnectionException {
-        Pair<Session, ChannelSftp> client = getClient();
-        ChannelSftp sftp = client.getRight();
-
-        try {
-            String remotePath = resolve(targetParentDir, newFileName);
-            sftp.put(sourceStream, remotePath, new SftpStorageProgressListener(progressListener));
-        } catch (SftpException e) {
-            throw new StorageMethodException("Failed to upload stream to SFTP server");
-        }
+        ((Retriable<Void>) () -> {
+            ChannelSftp sftp = uploadClient.getChannel();
+            synchronized (sftp) {
+                String remotePath = resolve(targetParentDir, newFileName);
+                sftp.put(sourceStream, remotePath, new SftpStorageProgressListener(progressListener));
+                return null;
+            }
+        }).retry(retriableExceptionHandler);
     }
 
     @Override
     public InputStream downloadFile(String sourcePath) throws StorageMethodException, StorageConnectionException {
-        Pair<Session, ChannelSftp> client = getClient();
-        ChannelSftp sftp = client.getRight();
-
-        try {
-            return sftp.get(sourcePath);
-        } catch (SftpException e) {
-            throw new StorageMethodException("Failed to download file \"%s\" from SFTP server", e);
-        }
+        return ((Retriable<InputStream>) () -> {
+            ChannelSftp sftp = downloadClient.getChannel();
+            synchronized (sftp) {
+                return sftp.get(sourcePath);
+            }
+        }).retry(retriableExceptionHandler);
     }
 
     @Override
     public void delete(String path) throws StorageMethodException, StorageConnectionException {
-        Pair<Session, ChannelSftp> client = getClient();
-        ChannelSftp sftp = client.getRight();
-
-        try {
-            SftpATTRS stat = sftp.stat(path);
-            if (stat.isDir()) {
-                sftp.rmdir(path);
-            } else {
-                long fileSize = stat.getSize();
-                sftp.rm(path);
+        ((Retriable<Void>) () -> {
+            ChannelSftp sftp = mainClient.getChannel();
+            synchronized (sftp) {
+                SftpATTRS stat = sftp.stat(path);
+                if (stat.isDir()) {
+                    sftp.rmdir(path);
+                } else {
+                    long fileSize = stat.getSize();
+                    sftp.rm(path);
+                }
+                return null;
             }
-        } catch (SftpException e) {
-            throw new StorageMethodException("Failed to delete file/dir \"%s\" from SFTP server");
-        }
+        }).retry(retriableExceptionHandler);
     }
 
     @Override
     public void renameFile(String path, String newFileName) throws StorageMethodException, StorageConnectionException {
-        Pair<Session, ChannelSftp> client = getClient();
-        ChannelSftp sftp = client.getRight();
-
-        try {
-            String parentPath = "";
-            if (path.contains(config.getPathSeparatorSymbol())) {
-                parentPath = path.substring(0, path.lastIndexOf(config.getPathSeparatorSymbol()));
-                parentPath += config.getPathSeparatorSymbol();
+        ((Retriable<Void>) () -> {
+            ChannelSftp sftp = mainClient.getChannel();
+            synchronized (sftp) {
+                String parentPath = "";
+                if (path.contains(config.getPathSeparatorSymbol())) {
+                    parentPath = path.substring(0, path.lastIndexOf(config.getPathSeparatorSymbol()));
+                    parentPath += config.getPathSeparatorSymbol();
+                }
+                sftp.rename(path, parentPath + newFileName);
+                return null;
             }
-            sftp.rename(path, parentPath + newFileName);
-
-        } catch (SftpException e) {
-            throw new StorageMethodException("Failed to rename file \"%s\" to \"%s\" using SFTP connection".formatted(path, newFileName), e);
-        }
+        }).retry(retriableExceptionHandler);
     }
 
     @Override
@@ -295,27 +281,14 @@ public class SftpStorage implements PathStorage {
 
     @Override
     public void destroy() {
-        try {
-            if (sftpChannel != null && sftpChannel.isConnected()) {
-                sftpChannel.exit();
-            }
-        } catch (Exception ignored) {
-            // Ignore disconnect errors
-        }
-        try {
-            if (sshSession != null && sshSession.isConnected()) {
-                sshSession.disconnect();
-            }
-        } catch (Exception ignored) {
-            // Ignore disconnect errors
-        }
-        sftpChannel = null;
-        sshSession = null;
+        mainClient.disconnect();
+        downloadClient.disconnect();
+        uploadClient.disconnect();
     }
 
     @Override
     public void downloadCompleted() throws StorageMethodException, StorageConnectionException {
-        // Для SFTP не требуется дополнительных действий
+        // No additional actions required for SFTP
     }
 
     private static class SftpStorageProgressListener implements SftpProgressMonitor {
