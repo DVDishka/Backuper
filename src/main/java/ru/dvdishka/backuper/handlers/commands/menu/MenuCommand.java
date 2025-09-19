@@ -30,7 +30,7 @@ public class MenuCommand extends Command {
             return false;
         }
         if (!storage.checkConnection()) {
-            returnFailure("Failed to establish connection with storage %s".formatted(storage.getId()));
+            returnFailure("Failed to establish connection to storage %s".formatted(storage.getId()));
             return false;
         }
         backup = storage.getBackupManager().getBackup((String) arguments.get("backupName"));

@@ -4,6 +4,7 @@ import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.backup.Backup;
 import ru.dvdishka.backuper.backend.backup.BackupManager;
 import ru.dvdishka.backuper.backend.config.StorageConfig;
+import ru.dvdishka.backuper.backend.storage.util.BasicStorageProgressListener;
 
 import java.io.InputStream;
 import java.util.List;
@@ -55,7 +56,15 @@ public interface Storage {
 
     void uploadFile(InputStream sourceStream, String newFileName, String targetParentDir, StorageProgressListener progressListener) throws StorageLimitException, StorageMethodException, StorageConnectionException;
 
-    InputStream downloadFile(String sourcePath) throws StorageMethodException, StorageConnectionException;
+    default void uploadFile(InputStream sourceStream, String newFileName, String targetParentDir) throws StorageLimitException, StorageMethodException, StorageConnectionException {
+        uploadFile(sourceStream, newFileName, targetParentDir, new BasicStorageProgressListener());
+    }
+
+    InputStream downloadFile(String sourcePath, StorageProgressListener progressListener) throws StorageMethodException, StorageConnectionException;
+
+    default InputStream downloadFile(String sourcePath) throws StorageMethodException, StorageConnectionException {
+        return downloadFile(sourcePath, new BasicStorageProgressListener());
+    }
 
     void downloadCompleted() throws StorageMethodException, StorageConnectionException;
 

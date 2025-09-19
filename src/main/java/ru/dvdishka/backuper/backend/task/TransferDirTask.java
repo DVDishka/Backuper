@@ -1,18 +1,17 @@
 package ru.dvdishka.backuper.backend.task;
 
-import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
 import org.bukkit.command.CommandSender;
-import ru.dvdishka.backuper.backend.storage.BasicStorageProgressListener;
 import ru.dvdishka.backuper.backend.storage.LocalStorage;
 import ru.dvdishka.backuper.backend.storage.Storage;
 import ru.dvdishka.backuper.backend.storage.StorageProgressListener;
+import ru.dvdishka.backuper.backend.storage.util.BasicStorageProgressListener;
 import ru.dvdishka.backuper.backend.util.Utils;
 
 import javax.naming.AuthenticationException;
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 
@@ -28,6 +27,8 @@ public class TransferDirTask extends BaseTask implements DoubleStorageTask {
     private ArrayList<StorageProgressListener> progressListeners;
     private long dirSize = 0;
 
+    private static final int FILE_BUFFER_SIZE = 65536;
+
     /***
      * @param targetDir Not parent
      */
@@ -42,7 +43,7 @@ public class TransferDirTask extends BaseTask implements DoubleStorageTask {
     }
 
     @Override
-    public void run() throws IOException, JSchException, SftpException {
+    public void run() {
 
         if (createRootDirInTargetDir) {
             if (sourceStorage.isDir(sourceDir)) {
@@ -83,7 +84,7 @@ public class TransferDirTask extends BaseTask implements DoubleStorageTask {
             try {
                 final StorageProgressListener progressListener = new BasicStorageProgressListener();
                 progressListeners.add(progressListener);
-                try (InputStream inputStream = sourceStorage.downloadFile(sourceDir)) {
+                try (BufferedInputStream inputStream = new BufferedInputStream(sourceStorage.downloadFile(sourceDir), FILE_BUFFER_SIZE)) {
                     targetStorage.uploadFile(inputStream, sourceStorage.getFileNameFromPath(sourceDir), targetStorage.getParentPath(targetDir), progressListener);
                 } catch (Exception e) {
                     warn("Failed to send file \"%s\" to %s storage".formatted(sourceDir, targetStorage.getId()));
@@ -109,14 +110,8 @@ public class TransferDirTask extends BaseTask implements DoubleStorageTask {
 
     @Override
     public long getTaskCurrentProgress() {
-        if (progressListeners == null) {
-            return 0;
-        }
-        long currentProgress = 0;
-        for (StorageProgressListener progressListener : progressListeners) {
-            currentProgress += progressListener.getCurrentProgress();
-        }
-        return currentProgress;
+        if (progressListeners == null) return 0;
+        return progressListeners.stream().mapToLong(StorageProgressListener::getCurrentProgress).sum();
     }
 
     @Override

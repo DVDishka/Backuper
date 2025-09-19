@@ -174,14 +174,14 @@ public class LocalStorage implements PathStorage {
     }
 
     @Override
-    public InputStream downloadFile(String sourcePath) throws StorageMethodException, StorageConnectionException {
+    public InputStream downloadFile(String sourcePath, StorageProgressListener progressListener) throws StorageMethodException, StorageConnectionException {
         File file = new File(sourcePath);
         if (!file.exists()) {
             throw new StorageMethodException("Source file \"%s\" does not exist".formatted(sourcePath));
         }
 
         try {
-            return new FileInputStream(file);
+            return new LocalStorageFileInputStream(file, progressListener);
         } catch (IOException e) {
             throw new StorageMethodException("Failed to get file's \"%s\" input stream from \"%s\" storage".formatted(sourcePath, id), e);
         }
@@ -238,5 +238,42 @@ public class LocalStorage implements PathStorage {
     @Override
     public void downloadCompleted() throws StorageMethodException, StorageConnectionException {
         // Для локального хранилища не требуется дополнительных действий
+    }
+
+    private static class LocalStorageFileInputStream extends FileInputStream {
+
+        private final StorageProgressListener progressListener;
+
+        LocalStorageFileInputStream(File file, StorageProgressListener progressListener) throws FileNotFoundException {
+            super(file);
+            this.progressListener = progressListener;
+        }
+
+        @Override
+        public int read() throws IOException {
+            int result = super.read();
+            if (result != -1) {
+                progressListener.incrementProgress(1);
+            }
+            return result;
+        }
+
+        @Override
+        public int read(byte[] b) throws IOException {
+            int bytesRead = super.read(b);
+            if (bytesRead > 0) {
+                progressListener.incrementProgress(bytesRead);
+            }
+            return bytesRead;
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            int bytesRead = super.read(b, off, len);
+            if (bytesRead > 0) {
+                progressListener.incrementProgress(bytesRead);
+            }
+            return bytesRead;
+        }
     }
 }

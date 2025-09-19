@@ -115,7 +115,7 @@ public class FtpClientProvider {
         }
     }
 
-    synchronized void disconnect() {
+    void disconnect() {
         if (ftpClient != null) {
             try {
                 ftpClient.disconnect();

@@ -4,7 +4,6 @@ import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.storage.Storage;
 
-import java.io.IOException;
 import java.util.ArrayList;
 
 public class DeleteBrokenBackupsTask extends BaseTask {
@@ -12,7 +11,7 @@ public class DeleteBrokenBackupsTask extends BaseTask {
     private final ArrayList<Task> tasks = new ArrayList<>();
 
     @Override
-    public void run() throws IOException {
+    public void run() {
         for (Task task : tasks) {
             if (cancelled) return;
             try {
@@ -34,7 +33,7 @@ public class DeleteBrokenBackupsTask extends BaseTask {
             for (String file : storage.ls(storage.getConfig().getBackupsFolder())) {
                 if (cancelled) return;
                 if (file.replace(".zip", "").endsWith(" in progress")) {
-                    Task task = new DeleteDirTask(storage, file);
+                    Task task = new DeleteDirTask(storage, storage.resolve(storage.getConfig().getBackupsFolder(), file));
                     Backuper.getInstance().getTaskManager().prepareTask(task, sender);
                     tasks.add(task);
                 }

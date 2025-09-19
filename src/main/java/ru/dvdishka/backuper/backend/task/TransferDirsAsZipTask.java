@@ -2,10 +2,10 @@ package ru.dvdishka.backuper.backend.task;
 
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.backend.storage.BasicStorageProgressListener;
 import ru.dvdishka.backuper.backend.storage.LocalStorage;
 import ru.dvdishka.backuper.backend.storage.Storage;
 import ru.dvdishka.backuper.backend.storage.StorageProgressListener;
+import ru.dvdishka.backuper.backend.storage.util.BasicStorageProgressListener;
 import ru.dvdishka.backuper.backend.util.Utils;
 
 import java.io.*;
@@ -28,7 +28,7 @@ public class TransferDirsAsZipTask extends BaseTask implements DoubleStorageTask
     private final String targetParentDir;
     private final String targetZipFileName;
 
-    private StorageProgressListener progressListener;
+    private final List<StorageProgressListener> progressListeners = new java.util.ArrayList<>();
 
     /***
      * @param sourceDirs Absolute paths. Don't try to add there a file you want to send without createRootDirInTargetZIP a true option
@@ -47,7 +47,7 @@ public class TransferDirsAsZipTask extends BaseTask implements DoubleStorageTask
     }
 
     @Override
-    public void run() throws IOException {
+    public void run() {
 
         try (PipedInputStream pipedInputStream = new PipedInputStream(PIPE_BUFFER_SIZE);
              PipedOutputStream pipedOutputStream = new PipedOutputStream(pipedInputStream)) {
@@ -74,14 +74,15 @@ public class TransferDirsAsZipTask extends BaseTask implements DoubleStorageTask
                 }
             });
 
-            progressListener = new BasicStorageProgressListener();
-            targetStorage.uploadFile(pipedInputStream, targetZipFileName, targetParentDir, progressListener);
+            targetStorage.uploadFile(pipedInputStream, targetZipFileName, targetParentDir);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
     @Override
     public long getTaskCurrentProgress() {
-        return progressListener.getCurrentProgress();
+        return progressListeners.stream().mapToLong(StorageProgressListener::getCurrentProgress).sum();
     }
 
     @Override
@@ -119,7 +120,10 @@ public class TransferDirsAsZipTask extends BaseTask implements DoubleStorageTask
                 if (isAlreadyCompressed(sourceStorage, sourceDir)) {
                     crc = calculateCRC(sourceDir);
                 }
-                try (InputStream inputStream = sourceStorage.downloadFile(sourceDir);
+
+                StorageProgressListener downloadProgressListener = new BasicStorageProgressListener();
+                progressListeners.add(downloadProgressListener);
+                try (InputStream inputStream = sourceStorage.downloadFile(sourceDir, downloadProgressListener);
                      BufferedInputStream bis = new BufferedInputStream(inputStream, FILE_BUFFER_SIZE)) {
 
                     ZipEntry entry = new ZipEntry(relativeDirPath);

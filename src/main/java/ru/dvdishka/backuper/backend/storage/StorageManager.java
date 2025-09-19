@@ -163,9 +163,9 @@ public class StorageManager implements Listener {
     public void checkStoragesConnection() {
         for (Storage storage : storages.values()) {
             if (storage.checkConnection()){
-                Backuper.getInstance().getLogManager().log("Connection with %s storage established successfully".formatted(storage.getId()));
+                Backuper.getInstance().getLogManager().log("Connection to %s storage established successfully".formatted(storage.getId()));
             } else {
-                Backuper.getInstance().getLogManager().warn("Failed to establish connection with %s storage".formatted(storage.getId()));
+                Backuper.getInstance().getLogManager().warn("Failed to establish connection to %s storage".formatted(storage.getId()));
             }
         }
         sendUserAuthStoragesCheckResult(Bukkit.getConsoleSender());

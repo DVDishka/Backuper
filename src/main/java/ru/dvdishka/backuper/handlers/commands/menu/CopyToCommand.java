@@ -31,7 +31,7 @@ public class CopyToCommand extends ConfirmableCommand {
             return false;
         }
         if (!sourceStorage.checkConnection()) {
-            returnFailure("Failed to establish connection with storage %s".formatted(sourceStorage.getId()));
+            returnFailure("Failed to establish connection to storage %s".formatted(sourceStorage.getId()));
             return false;
         }
         backup = sourceStorage.getBackupManager().getBackup((String) arguments.get("backupName"));
@@ -45,7 +45,7 @@ public class CopyToCommand extends ConfirmableCommand {
             return false;
         }
         if (!sourceStorage.checkConnection()) {
-            returnFailure("Failed to establish connection with storage %s".formatted(targetStorage.getId()));
+            returnFailure("Failed to establish connection to storage %s".formatted(targetStorage.getId()));
             return false;
         }
         if (Backuper.getInstance().getTaskManager().isLocked()) {

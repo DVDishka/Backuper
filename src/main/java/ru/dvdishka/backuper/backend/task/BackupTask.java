@@ -8,7 +8,6 @@ import ru.dvdishka.backuper.backend.storage.Storage;
 import ru.dvdishka.backuper.backend.util.Utils;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -84,7 +83,7 @@ public class BackupTask extends BaseTask {
     }
 
     @Override
-    public void run() throws IOException {
+    public void run() {
 
         HashMap<Storage, Long> storageBackupByteSize = new HashMap<>();
         List<CompletableFuture<Void>> taskFutures = new ArrayList<>();

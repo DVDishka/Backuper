@@ -471,17 +471,19 @@ public class GoogleDriveStorage implements UserAuthStorage {
             driveFileCreate.getMediaHttpUploader().setChunkSize(MediaHttpUploader.MINIMUM_CHUNK_SIZE);
             driveFileCreate.getMediaHttpUploader().setProgressListener(new GoogleDriveStorageProgressListener(progressListener));
 
+            driveFileCreate.execute();
             return null;
         }).retry(retriableExceptionHandler);
     }
 
     @Override
-    public InputStream downloadFile(String sourcePath) throws StorageQuotaExceededException, StorageMethodException, StorageConnectionException {
+    public InputStream downloadFile(String sourcePath, StorageProgressListener progressListener) throws StorageQuotaExceededException, StorageMethodException, StorageConnectionException {
         return ((Retriable<InputStream>) () -> {
             Drive service = getClient();
 
-            Drive.Files.Get getDriveFile = service.files()
-                    .get(sourcePath);
+            Drive.Files.Get getDriveFile = service.files().get(sourcePath);
+            getDriveFile.getMediaHttpDownloader().setProgressListener(new GoogleDriveStorageProgressListener(progressListener));
+
             return getDriveFile.executeMediaAsInputStream();
         }).retry(retriableExceptionHandler);
     }

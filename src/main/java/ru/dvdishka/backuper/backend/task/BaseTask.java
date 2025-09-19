@@ -1,12 +1,9 @@
 package ru.dvdishka.backuper.backend.task;
 
-import com.jcraft.jsch.JSchException;
-import com.jcraft.jsch.SftpException;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.ApiStatus;
 import ru.dvdishka.backuper.Backuper;
 
-import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
 import static java.lang.Math.min;
@@ -55,7 +52,7 @@ public abstract class BaseTask implements Task {
      * This method should only be used to declare Task's run logic, don't use it to start any task. Use TaskManager.startTaskRaw instead
      */
     @ApiStatus.Internal
-    public abstract void run() throws IOException, JSchException, SftpException;
+    public abstract void run();
 
     /***
      * This method should only be used to declare Task's prepare logic, don't use it to prepare any task. Use TaskManager.prepareTask instead

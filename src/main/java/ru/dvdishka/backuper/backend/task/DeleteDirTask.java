@@ -1,11 +1,8 @@
 package ru.dvdishka.backuper.backend.task;
 
-import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.storage.Storage;
-
-import java.io.IOException;
 
 public class DeleteDirTask extends BaseTask implements SingleStorageTask {
 
@@ -19,8 +16,7 @@ public class DeleteDirTask extends BaseTask implements SingleStorageTask {
 
 
     @Override
-    public void run() throws IOException, JSchException, SftpException {
-
+    public void run() {
         if (!cancelled) {
             deleteDir(path);
         }

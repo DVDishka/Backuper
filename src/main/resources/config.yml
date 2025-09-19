@@ -172,3 +172,5 @@ storages:
       useKnownHostsFile: false
       # (Path) Path to local knownHostsFile if 'useKnownHostsFile: true'
       knownHostsFilePath: ''
+      # (Path)
+      sshConfigFilePath: ''

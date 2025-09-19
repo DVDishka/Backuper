@@ -247,8 +247,7 @@ public class FtpStorage implements PathStorage {
                 String remotePath = resolve(targetParentDir, newFileName);
                 ftp.setCopyStreamListener(new FtpStorageProgressListener(progressListener));
                 if (!ftp.storeFile(remotePath, sourceStream)) {
-                    throw new StorageMethodException("Failed to upload stream to \"%s\"".formatted(remotePath),
-                                                     new RuntimeException(ftp.getReplyString()));
+                    throw new StorageMethodException("Failed to upload stream to \"%s\"".formatted(remotePath), new RuntimeException(ftp.getReplyString()));
                 }
                 return null;
             }
@@ -256,11 +255,12 @@ public class FtpStorage implements PathStorage {
     }
 
     @Override
-    public InputStream downloadFile(String sourcePath) throws StorageMethodException, StorageConnectionException {
+    public InputStream downloadFile(String sourcePath, StorageProgressListener progressListener) throws StorageMethodException, StorageConnectionException {
         return ((Retriable<InputStream>) () -> {
             FTPClient ftp = downloadClient.getClient();
             synchronized (ftp) {
                 downloadClient.update();
+                ftp.setCopyStreamListener(new FtpStorageProgressListener(progressListener));
                 return ftp.retrieveFileStream(sourcePath);
             }
         }).retry(retriableExceptionHandler);

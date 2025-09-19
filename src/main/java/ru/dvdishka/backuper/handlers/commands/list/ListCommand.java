@@ -41,7 +41,7 @@ public class ListCommand extends Command {
             return false;
         }
         if (!storage.checkConnection()) {
-            returnFailure("Failed to establish connection with %s storage".formatted(storage.getId()));
+            returnFailure("Failed to establish connection to %s storage".formatted(storage.getId()));
             return false;
         }
         if (!sender.hasPermission(Permission.LIST.getPermission(storage))) {

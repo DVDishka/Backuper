@@ -5,7 +5,6 @@ import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.backup.Backup;
 import ru.dvdishka.backuper.backend.storage.Storage;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -20,7 +19,7 @@ public class DeleteOldBackupsTask extends BaseTask {
     }
 
     @Override
-    public void run() throws IOException {
+    public void run() {
         for (Task deleteDirTask : tasks) {
             if (!cancelled) {
                 try {

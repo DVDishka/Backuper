@@ -14,7 +14,7 @@ public class SftpConfig implements PathStorageConfig {
 
     private boolean enabled;
     private boolean autoBackup;
-    private String sshConfigFile;
+    private String sshConfigFilePath;
     private String backupsFolder;
     private String authType;
     private String username;
@@ -51,7 +51,7 @@ public class SftpConfig implements PathStorageConfig {
         this.port = config.getInt("auth.port");
         this.useKnownHostsFile = config.getString("auth.useKnownHostsFile");
         this.knownHostsFilePath = config.getString("auth.knownHostsFilePath");
-        this.sshConfigFile = config.getString("auth.sshConfigFile");
+        this.sshConfigFilePath = config.getString("auth.sshConfigFilePath");
 
         if (backupsNumber < 0) {
             Backuper.getInstance().getLogManager().warn("Failed to load config value!");

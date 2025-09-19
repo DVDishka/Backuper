@@ -18,28 +18,24 @@ public class SftpClientProvider {
 
     synchronized public ChannelSftp getChannel() {
         if (sshSession != null && sftpChannel != null) {
-            synchronized (sftpChannel) {
+            try {
+                // Test if the connection is still alive
+                sftpChannel.pwd();
+                return sftpChannel;
+            } catch (SftpException ignored) {
+                connect();
                 try {
-                    // Test if the connection is still alive
                     sftpChannel.pwd();
                     return sftpChannel;
-                } catch (SftpException ignored) {
-                    connect();
-                    try {
-                        sftpChannel.pwd();
-                        return sftpChannel;
-                    } catch (SftpException e) {
-                        throw new Storage.StorageConnectionException("Failed to connect to establish sftp connection", e);
-                    }
+                } catch (SftpException e) {
+                    throw new Storage.StorageConnectionException("Failed to connect to establish sftp connection", e);
                 }
             }
         }
         connect();
         try {
-            synchronized (sftpChannel) {
-                sftpChannel.pwd();
-                return sftpChannel;
-            }
+            sftpChannel.pwd();
+            return sftpChannel;
         } catch (SftpException e) {
             throw new Storage.StorageConnectionException("Failed to connect to establish sftp connection", e);
         }
@@ -56,8 +52,8 @@ public class SftpClientProvider {
         ChannelSftp channel = null;
 
         try {
-            if (!config.getSshConfigFile().isEmpty()) {
-                jsch.setConfigRepository(OpenSSHConfig.parseFile(config.getSshConfigFile()));
+            if (!config.getSshConfigFilePath().isEmpty()) {
+                jsch.setConfigRepository(OpenSSHConfig.parseFile(config.getSshConfigFilePath()));
             } else {
                 if (config.getAuthType().equals("key")) {
                     jsch.addIdentity(config.getKeyFilePath());
@@ -85,6 +81,7 @@ public class SftpClientProvider {
                 }
 
                 session.connect(15000);
+                session.setServerAliveInterval(60 * 1000);
                 channel = (ChannelSftp) session.openChannel("sftp");
                 channel.connect(15000);
 
@@ -108,11 +105,9 @@ public class SftpClientProvider {
             }
             throw new Storage.StorageConnectionException("Failed to establish SFTP connection", e);
         }
-
-        throw new Storage.StorageConnectionException("Failed to establish SFTP connection");
     }
 
-    synchronized void disconnect() {
+    void disconnect() {
         if (sftpChannel != null) {
             try {
                 sftpChannel.disconnect();

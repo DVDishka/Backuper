@@ -1,12 +1,13 @@
-package ru.dvdishka.backuper.backend.storage;
+package ru.dvdishka.backuper.backend.storage.util;
 
 import lombok.Setter;
+import ru.dvdishka.backuper.backend.storage.StorageProgressListener;
 
 import java.util.concurrent.atomic.AtomicLong;
 
 public class BasicStorageProgressListener implements StorageProgressListener {
 
-    AtomicLong progress = new AtomicLong(0);
+    volatile AtomicLong progress = new AtomicLong(0);
     @Setter
     long maxProgress = 0;
 
