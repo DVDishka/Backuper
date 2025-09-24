@@ -124,14 +124,12 @@ public interface Backup extends Comparable<Backup> {
 
         @Override
         public long getTaskMaxProgress() {
-
             if (!isTaskPrepared()) return 0;
             return deleteBackupTask.getTaskMaxProgress();
         }
 
         @Override
         public long getTaskCurrentProgress() {
-
             if (!isTaskPrepared()) return 0;
             return deleteBackupTask.getTaskCurrentProgress();
         }
@@ -191,15 +189,13 @@ public interface Backup extends Comparable<Backup> {
         @Override
         public long getTaskMaxProgress() {
             if (!isTaskPrepared()) return 0;
-            return unZipTask.getTaskMaxProgress();
+            return unZipTask.getTaskMaxProgress() + deleteZipTask.getTaskMaxProgress();
         }
 
         @Override
         public long getTaskCurrentProgress() {
-            if (!isTaskPrepared()) {
-                return 0;
-            }
-            return unZipTask.getTaskCurrentProgress();
+            if (!isTaskPrepared()) return 0;
+            return unZipTask.getTaskCurrentProgress() + deleteZipTask.getTaskCurrentProgress();
         }
     }
 
@@ -243,18 +239,14 @@ public interface Backup extends Comparable<Backup> {
 
         @Override
         public long getTaskMaxProgress() {
-            if (!isTaskPrepared()) {
-                return 0;
-            }
-            return toZipTask.getTaskMaxProgress();
+            if (!isTaskPrepared()) return 0;
+            return toZipTask.getTaskMaxProgress() + deleteFolderTask.getTaskMaxProgress();
         }
 
         @Override
         public long getTaskCurrentProgress() {
-            if (!isTaskPrepared()) {
-                return 0;
-            }
-            return toZipTask.getTaskCurrentProgress();
+            if (!isTaskPrepared()) return 0;
+            return toZipTask.getTaskCurrentProgress() + deleteFolderTask.getTaskCurrentProgress();
         }
     }
 }

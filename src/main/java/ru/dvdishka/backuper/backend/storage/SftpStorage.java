@@ -10,9 +10,7 @@ import ru.dvdishka.backuper.backend.config.SftpConfig;
 import ru.dvdishka.backuper.backend.storage.util.Retriable;
 
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 public class SftpStorage implements PathStorage {
 
@@ -150,12 +148,10 @@ public class SftpStorage implements PathStorage {
         return ((Retriable<List<String>>) () -> {
             synchronized (mainClient) {
                 ChannelSftp sftp = mainClient.getChannel();
-                Vector<ChannelSftp.LsEntry> ls = sftp.ls(path);
-                ArrayList<String> files = new ArrayList<>();
-                for (ChannelSftp.LsEntry entry : ls) {
-                    files.add(entry.getFilename());
-                }
-                return files;
+                return sftp.ls(path).stream()
+                        .map(ChannelSftp.LsEntry::getFilename)
+                        .filter(file -> !file.equals(".") && !file.equals(".."))
+                        .toList();
             }
         }).retry(retriableExceptionHandler);
     }
