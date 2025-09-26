@@ -274,14 +274,9 @@ public class BackupTask extends BaseTask {
     }
 
     private long getTaskProgressMultiplier(Task task) {
-        long deleteProgressMultiplier = 3;
-        final long transferProgressMultiplier = 5;
-        final long zipProgressMultiplier = 10;
-
         return switch (task) {
-            case DeleteOldBackupsTask deleteOldBackupsTask -> deleteProgressMultiplier;
-            case TransferDirTask transferDirTask -> transferProgressMultiplier * max(transferDirTask.getTargetStorage().getTransferSpeedMultiplier(), transferDirTask.getSourceStorage().getTransferSpeedMultiplier());
-            case TransferDirsAsZipTask addLocalDirToZipTask -> zipProgressMultiplier * max(addLocalDirToZipTask.getTargetStorage().getTransferSpeedMultiplier(), addLocalDirToZipTask.getSourceStorage().getTransferSpeedMultiplier());
+            case TransferDirTask transferDirTask -> max(transferDirTask.getTargetStorage().getTransferProgressMultiplier(), transferDirTask.getSourceStorage().getTransferProgressMultiplier());
+            case TransferDirsAsZipTask addLocalDirToZipTask -> max(addLocalDirToZipTask.getTargetStorage().getZipProgressMultiplier(), addLocalDirToZipTask.getSourceStorage().getZipProgressMultiplier());
             default -> 1;
         };
     }

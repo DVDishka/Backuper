@@ -3,7 +3,6 @@ package ru.dvdishka.backuper.backend.storage;
 import lombok.Setter;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.backend.backup.Backup;
 import ru.dvdishka.backuper.backend.backup.BackupManager;
 import ru.dvdishka.backuper.backend.config.LocalConfig;
 import ru.dvdishka.backuper.backend.util.Utils;
@@ -34,8 +33,8 @@ public class LocalStorage implements PathStorage {
     }
 
     @Override
-    public Backup.StorageType getType() {
-        return Backup.StorageType.LOCAL;
+    public StorageType getType() {
+        return StorageType.LOCAL;
     }
 
     @Override
@@ -228,7 +227,7 @@ public class LocalStorage implements PathStorage {
     }
 
     @Override
-    public int getTransferSpeedMultiplier() {
+    public int getStorageSpeedMultiplier() {
         return 1;
     }
 

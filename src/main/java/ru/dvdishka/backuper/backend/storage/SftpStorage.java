@@ -4,7 +4,6 @@ import com.jcraft.jsch.*;
 import lombok.Setter;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.backend.backup.Backup;
 import ru.dvdishka.backuper.backend.backup.BackupManager;
 import ru.dvdishka.backuper.backend.config.SftpConfig;
 import ru.dvdishka.backuper.backend.storage.util.Retriable;
@@ -110,8 +109,8 @@ public class SftpStorage implements PathStorage {
     }
 
     @Override
-    public Backup.StorageType getType() {
-        return Backup.StorageType.SFTP;
+    public StorageType getType() {
+        return StorageType.SFTP;
     }
 
     @Override
@@ -130,11 +129,17 @@ public class SftpStorage implements PathStorage {
     }
 
     @Override
-    public boolean checkConnection(CommandSender sender) {
+    public synchronized boolean checkConnection(CommandSender sender) {
         try {
-            mainClient.getChannel();
-            downloadClient.getChannel();
-            uploadClient.getChannel();
+            synchronized (mainClient) {
+                mainClient.getChannel();
+            }
+            synchronized (downloadClient) {
+                downloadClient.getChannel();
+            }
+            synchronized (uploadClient) {
+                uploadClient.getChannel();
+            }
             return true;
         } catch (Exception e) {
             Backuper.getInstance().getLogManager().warn("Failed to establish connection to the SFTP server", sender);
@@ -265,7 +270,7 @@ public class SftpStorage implements PathStorage {
     }
 
     @Override
-    public int getTransferSpeedMultiplier() {
+    public int getStorageSpeedMultiplier() {
         return 8;
     }
 

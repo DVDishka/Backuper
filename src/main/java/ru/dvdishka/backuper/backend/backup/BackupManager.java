@@ -72,7 +72,7 @@ public class BackupManager {
     public void saveBackupSizeToCache(String backupName, long byteSize) {
         cachedBackupsSize.put(backupName, byteSize);
 
-        if (Backup.StorageType.GOOGLE_DRIVE.equals(storage.getType())) {
+        if (StorageType.GOOGLE_DRIVE.equals(storage.getType())) {
             GoogleDriveBackup backup = (GoogleDriveBackup) getBackup(backupName);
             if (backup == null) throw new RuntimeException("Tried to save nonexistent backup's size to cache");
             backup.saveSizeToFileProperties(byteSize);

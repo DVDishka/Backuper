@@ -25,7 +25,7 @@ public class UnpackZipTask extends BaseTask implements SingleStorageTask {
         super();
         this.storage = storage;
         this.sourceZipDir = sourceZipDir;
-        this.targetFolderDir = "%s in progress".formatted(targetFolderDir);
+        this.targetFolderDir = targetFolderDir;
     }
 
     @Override
@@ -39,9 +39,10 @@ public class UnpackZipTask extends BaseTask implements SingleStorageTask {
             }
 
             while (!cancelled && (zipEntry = zipInput.getNextEntry()) != null) {
-                final String name = zipEntry.getName();
+                String name = zipEntry.getName();
                 try {
                     if (zipEntry.isDirectory()) {
+                        name = name.substring(0, name.length() - 1);
                         storage.createDir(getFileNameFromZipPath(name), storage.resolve(targetFolderDir, getParentFromZipPath(name)));
                     } else {
                         storage.uploadFile(zipInput, getFileNameFromZipPath(name), storage.resolve(targetFolderDir, getParentFromZipPath(name)));
@@ -52,8 +53,6 @@ public class UnpackZipTask extends BaseTask implements SingleStorageTask {
                 }
                 zipInput.closeEntry();
             }
-
-            storage.renameFile(targetFolderDir, storage.getFileNameFromPath(targetFolderDir).replace(" in progress", ""));
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {

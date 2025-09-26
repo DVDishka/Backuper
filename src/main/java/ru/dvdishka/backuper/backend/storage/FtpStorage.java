@@ -7,7 +7,6 @@ import org.apache.commons.net.io.CopyStreamEvent;
 import org.apache.commons.net.io.CopyStreamListener;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.backend.backup.Backup;
 import ru.dvdishka.backuper.backend.backup.BackupManager;
 import ru.dvdishka.backuper.backend.config.FtpConfig;
 import ru.dvdishka.backuper.backend.storage.util.Retriable;
@@ -104,8 +103,8 @@ public class FtpStorage implements PathStorage {
     }
 
     @Override
-    public Backup.StorageType getType() {
-        return Backup.StorageType.FTP;
+    public StorageType getType() {
+        return StorageType.FTP;
     }
 
     @Override
@@ -325,7 +324,7 @@ public class FtpStorage implements PathStorage {
     }
 
     @Override
-    public int getTransferSpeedMultiplier() {
+    public int getStorageSpeedMultiplier() {
         return 8;
     }
 

@@ -1,7 +1,6 @@
 package ru.dvdishka.backuper.backend.storage;
 
 import org.bukkit.command.CommandSender;
-import ru.dvdishka.backuper.backend.backup.Backup;
 import ru.dvdishka.backuper.backend.backup.BackupManager;
 import ru.dvdishka.backuper.backend.config.StorageConfig;
 import ru.dvdishka.backuper.backend.storage.util.BasicStorageProgressListener;
@@ -15,7 +14,7 @@ public interface Storage {
 
     String getId();
 
-    Backup.StorageType getType();
+    StorageType getType();
 
     StorageConfig getConfig();
 
@@ -72,7 +71,19 @@ public interface Storage {
 
     void renameFile(String path, String newFileName) throws StorageMethodException, StorageConnectionException;
 
-    int getTransferSpeedMultiplier();
+    int getStorageSpeedMultiplier();
+
+    default int getDeleteProgressMultiplier() {
+        return getStorageSpeedMultiplier();
+    }
+
+    default int getTransferProgressMultiplier() {
+        return getStorageSpeedMultiplier() * 5;
+    }
+
+    default int getZipProgressMultiplier() {
+        return getStorageSpeedMultiplier() * 10;
+    }
 
     void destroy();
 
@@ -118,5 +129,6 @@ public interface Storage {
         public StorageQuotaExceededException(String message, Exception e) {
             super("%s\n%s".formatted(message, e.getMessage()), e);
             this.setStackTrace(e.getStackTrace());
-        }    }
+        }
+    }
 }

@@ -5,8 +5,8 @@ import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.backup.Backup;
 import ru.dvdishka.backuper.backend.storage.Storage;
+import ru.dvdishka.backuper.backend.task.CopyToTask;
 import ru.dvdishka.backuper.backend.task.Task;
-import ru.dvdishka.backuper.backend.task.TransferDirTask;
 import ru.dvdishka.backuper.handlers.commands.ConfirmableCommand;
 import ru.dvdishka.backuper.handlers.commands.Permission;
 
@@ -68,19 +68,7 @@ public class CopyToCommand extends ConfirmableCommand {
 
     @Override
     public void run() {
-        Backuper.getInstance().getScheduleManager().runAsync(() -> {
-
-            Task task = new TransferDirTask(sourceStorage, backup.getPath(), targetStorage, targetStorage.getConfig().getBackupsFolder(), true, true);
-            Backuper.getInstance().getTaskManager().startTask(task, sender, List.of(Permission.STORAGE.getPermission(sourceStorage), Permission.STORAGE.getPermission(targetStorage)));
-
-            if (!task.isCancelled()) {
-                try {
-                    targetStorage.getBackupManager().saveBackupSizeToCache(backup.getName(), task.getTaskMaxProgress());
-                } catch (Exception e) {
-                    Backuper.getInstance().getLogManager().warn("Failed to rename backup \"in-progress\" file on FTP(S) server");
-                    Backuper.getInstance().getLogManager().warn(e);
-                }
-            }
-        });
+        Task task = new CopyToTask(backup, targetStorage);
+        Backuper.getInstance().getTaskManager().startTask(task, sender, List.of(Permission.STORAGE.getPermission(sourceStorage), Permission.STORAGE.getPermission(targetStorage)));
     }
 }

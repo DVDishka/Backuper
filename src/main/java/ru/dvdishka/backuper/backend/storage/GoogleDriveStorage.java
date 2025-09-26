@@ -29,7 +29,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.client.fluent.Request;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.backend.backup.Backup;
 import ru.dvdishka.backuper.backend.backup.BackupManager;
 import ru.dvdishka.backuper.backend.config.GoogleDriveConfig;
 import ru.dvdishka.backuper.backend.storage.util.Retriable;
@@ -229,8 +228,8 @@ public class GoogleDriveStorage implements UserAuthStorage {
     }
 
     @Override
-    public Backup.StorageType getType() {
-        return Backup.StorageType.GOOGLE_DRIVE;
+    public StorageType getType() {
+        return StorageType.GOOGLE_DRIVE;
     }
 
     @Override
@@ -511,7 +510,7 @@ public class GoogleDriveStorage implements UserAuthStorage {
     }
 
     @Override
-    public int getTransferSpeedMultiplier() {
+    public int getStorageSpeedMultiplier() {
         return 15;
     }
 

@@ -72,7 +72,6 @@ public class CommandManager {
                                 .includeSuggestions(ArgumentSuggestions.stringCollectionAsync((suggestionInfo) ->
                                         CompletableFuture.supplyAsync(() -> Backuper.getInstance().getStorageManager().getStorages().stream()
                                                 .filter(storage -> suggestionInfo.sender().hasPermission(Permission.LIST.getPermission(storage)))
-                                                .filter(Storage::checkConnection)
                                                 .map(Storage::getId).toList())))
 
                                 .executes((sender, args) -> {
@@ -110,7 +109,6 @@ public class CommandManager {
                         .then(new StringArgument("storage").includeSuggestions(ArgumentSuggestions.stringCollectionAsync((suggestionInfo) ->
                                         CompletableFuture.supplyAsync(() -> Backuper.getInstance().getStorageManager().getStorages().stream()
                                                 .filter(storage -> suggestionInfo.sender().hasPermission(Permission.STORAGE.getPermission(storage)))
-                                                .filter(Storage::checkConnection)
                                                 .map(Storage::getId).toList())))
 
                                 .then(new TextArgument("backupName").includeSuggestions(ArgumentSuggestions.stringCollectionAsync((info) ->
@@ -135,10 +133,12 @@ public class CommandManager {
                                                 .then(new StringArgument("targetStorage").includeSuggestions(ArgumentSuggestions.stringCollectionAsync((suggestionInfo) ->
                                                                 CompletableFuture.supplyAsync(() -> Backuper.getInstance().getStorageManager().getStorages().stream()
                                                                         .filter(storage -> suggestionInfo.sender().hasPermission(Permission.STORAGE.getPermission(storage)))
-                                                                        .filter(storage -> storage.getConfig().isEnabled() && !storage.getId().equals((String) suggestionInfo.previousArgs().get("storage")) && storage.checkConnection())
-                                                                        .map(Storage::getId).toList())))
+                                                                        .map(Storage::getId)
+                                                                        .filter(id -> !id.equals((String) suggestionInfo.previousArgs().get("storage"))).toList())))
                                                         .executes((sender, args) -> {
-                                                            new CopyToCommand(sender, args).execute();
+                                                            Backuper.getInstance().getScheduleManager().runAsync(() -> {
+                                                                new CopyToCommand(sender, args).execute();
+                                                            });
                                                         })
                                                 )
                                         )
