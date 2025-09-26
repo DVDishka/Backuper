@@ -28,7 +28,7 @@ public class BackupToZipTask extends BaseTask {
         } catch (Exception e) {
             warn(new TaskException(toZipTask, e));
         }
-        backup.getStorage().getBackupManager().cachedBackupsSize.invalidate(backup.getName());
+        backup.getStorage().getBackupManager().invalidateBackupSizeCache(backup.getName());
     }
 
     @Override

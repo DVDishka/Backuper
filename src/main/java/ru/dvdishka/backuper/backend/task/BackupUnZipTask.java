@@ -26,7 +26,7 @@ public class BackupUnZipTask extends BaseTask {
         } catch (TaskException e) {
             warn(e);
         }
-        backup.getStorage().getBackupManager().cachedBackupsSize.invalidate(backup.getName());
+        backup.getStorage().getBackupManager().invalidateBackupSizeCache(backup.getName());
     }
 
     @Override
@@ -48,14 +48,14 @@ public class BackupUnZipTask extends BaseTask {
     @Override
     public long getTaskMaxProgress() {
         if (!isTaskPrepared()) return 0;
-        return unZipTask.getTaskMaxProgress() * backup.getStorage().getTransferProgressMultiplier() +
+        return unZipTask.getTaskMaxProgress() * backup.getStorage().getZipProgressMultiplier() +
                 deleteZipTask.getTaskMaxProgress() * backup.getStorage().getDeleteProgressMultiplier();
     }
 
     @Override
     public long getTaskCurrentProgress() {
         if (!isTaskPrepared()) return 0;
-        return unZipTask.getTaskCurrentProgress() * backup.getStorage().getTransferProgressMultiplier() +
+        return unZipTask.getTaskCurrentProgress() * backup.getStorage().getZipProgressMultiplier() +
                 deleteZipTask.getTaskCurrentProgress() * backup.getStorage().getDeleteProgressMultiplier();
     }
 }

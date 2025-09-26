@@ -21,7 +21,6 @@ public class TransferDirTask extends BaseTask implements DoubleStorageTask {
     private final String sourceDir;
     private final Storage targetStorage;
     private String targetDir;
-    private final boolean createRootDirInTargetDir;
     private final boolean forceExcludedDirs;
 
     private ArrayList<StorageProgressListener> progressListeners;
@@ -32,12 +31,11 @@ public class TransferDirTask extends BaseTask implements DoubleStorageTask {
     /***
      * @param targetDir Not parent
      */
-    public TransferDirTask(Storage sourceStorage, String sourceDir, Storage targetStorage, String targetDir, boolean createRootDirInTargetDir, boolean forceExcludedDirs) {
+    public TransferDirTask(Storage sourceStorage, String sourceDir, Storage targetStorage, String targetDir, boolean forceExcludedDirs) {
         super();
         this.sourceStorage = sourceStorage;
         this.targetStorage = targetStorage;
         this.sourceDir = sourceDir;
-        this.createRootDirInTargetDir = createRootDirInTargetDir;
         this.targetDir = targetDir;
         this.forceExcludedDirs = forceExcludedDirs;
     }
@@ -45,11 +43,8 @@ public class TransferDirTask extends BaseTask implements DoubleStorageTask {
     @Override
     public void run() {
 
-        if (createRootDirInTargetDir) {
-            if (sourceStorage.isDir(sourceDir)) {
-                targetStorage.createDir(sourceStorage.getFileNameFromPath(sourceDir), targetDir);
-            }
-            targetDir = targetStorage.resolve(targetDir, sourceStorage.getFileNameFromPath(sourceDir));
+        if (!targetStorage.exists(targetDir) && sourceStorage.isDir(sourceDir)) {
+            targetStorage.createDir(targetStorage.getFileNameFromPath(targetDir), targetStorage.getParentPath(targetDir));
         }
 
         progressListeners = new ArrayList<>();

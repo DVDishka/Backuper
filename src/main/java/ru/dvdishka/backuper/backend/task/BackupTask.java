@@ -241,8 +241,10 @@ public class BackupTask extends BaseTask {
                     if (isExcludedDirectory) continue;
 
                     if (!storage.getConfig().isZipArchive()) {
-                        Task task = new TransferDirTask(Backuper.getInstance().getStorageManager().getStorage("backuper"), additionalDirectoryToBackupFile.toPath().toAbsolutePath().normalize().toString(), storage, storage.resolve(storage.getConfig().getBackupsFolder(),
-                                backupName), true, false);
+                        Task task = new TransferDirTask(Backuper.getInstance().getStorageManager().getStorage("backuper"),
+                                additionalDirectoryToBackupFile.toPath().toAbsolutePath().normalize().toString(),
+                                storage,
+                                storage.resolve(storage.resolve(storage.getConfig().getBackupsFolder(), backupName), additionalDirectoryToBackupFile.getName()), false);
                         try {
                             Backuper.getInstance().getTaskManager().prepareTask(task, sender);
                         } catch (Throwable e) {

@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class BasicStorageProgressListener implements StorageProgressListener {
 
-    volatile AtomicLong progress = new AtomicLong(0);
+    final AtomicLong progress = new AtomicLong(0);
     @Setter
     long maxProgress = 0;
 

@@ -37,9 +37,12 @@ public class CopyToTask extends BaseTask {
     @Override
     public void prepareTask(CommandSender sender) throws Throwable {
         if (cancelled) return;
-        copyToTask = new TransferDirTask(sourceBackup.getStorage(), sourceBackup.getPath(),
-                targetStorage, targetStorage.resolve(targetStorage.getConfig().getBackupsFolder(), sourceBackup.getInProgressFileName()),
-                true, false);
+        copyToTask = new TransferDirTask(
+                sourceBackup.getStorage(),
+                sourceBackup.getPath(),
+                targetStorage,
+                targetStorage.resolve(targetStorage.getConfig().getBackupsFolder(), sourceBackup.getInProgressFileName()),
+                false);
         Backuper.getInstance().getTaskManager().prepareTask(copyToTask, sender);
     }
 

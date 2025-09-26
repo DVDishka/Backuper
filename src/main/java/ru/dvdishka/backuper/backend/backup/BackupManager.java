@@ -79,6 +79,10 @@ public class BackupManager {
         }
     }
 
+    public void invalidateBackupSizeCache(String backupName) {
+        cachedBackupsSize.invalidate(backupName);
+    }
+
     public ConcurrentMap<String, Long> getSizeCache() {
         return cachedBackupsSize.asMap();
     }

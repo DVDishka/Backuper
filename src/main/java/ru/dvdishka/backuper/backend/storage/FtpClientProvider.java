@@ -21,21 +21,6 @@ public class FtpClientProvider {
 
     synchronized FTPClient getClient() throws Storage.StorageConnectionException {
         if (ftpClient != null) {
-            synchronized (ftpClient) {
-                update();
-                return ftpClient;
-            }
-        }
-
-        ftpClient = new FTPClient();
-        // Enable FTP logging
-        // ftpClient.addProtocolCommandListener(new PrintCommandListener(new PrintWriter(System.out)));
-        connect();
-        return ftpClient;
-    }
-
-    public void update() {
-        synchronized (ftpClient) {
             try {
                 if (!ftpClient.isConnected() || !ftpClient.isAvailable()) {
                     connect();
@@ -57,13 +42,20 @@ public class FtpClientProvider {
                 ftpClient.changeWorkingDirectory("");
             } catch (Exception ignored) {
             }
+            return ftpClient;
         }
+
+        ftpClient = new FTPClient();
+        // Enable FTP logging
+        // ftpClient.addProtocolCommandListener(new PrintCommandListener(new PrintWriter(System.out)));
+        connect();
+        return ftpClient;
     }
 
     private void connect() {
         ftpClient.setConnectTimeout(30 * 1000);
-        ftpClient.setDefaultTimeout(90 * 1000);
-        ftpClient.setDataTimeout(Duration.ofSeconds(90));
+        ftpClient.setDefaultTimeout(30 * 1000);
+        ftpClient.setDataTimeout(Duration.ofSeconds(30));
         ftpClient.setControlKeepAliveTimeout(Duration.ofMinutes(5));
         ftpClient.setControlEncoding("UTF-8");
 

@@ -22,7 +22,7 @@ public class BackupDeleteTask extends BaseTask {
             } catch (Exception e) {
                 warn(new TaskException(deleteBackupTask, e));
             }
-            backup.getStorage().getBackupManager().cachedBackupsSize.invalidate(backup.getName());
+            backup.getStorage().getBackupManager().invalidateBackupSizeCache(backup.getName());
         }
     }
 
