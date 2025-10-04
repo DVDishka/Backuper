@@ -1,7 +1,7 @@
 package ru.dvdishka.backuper;
 
 import dev.jorel.commandapi.CommandAPI;
-import dev.jorel.commandapi.CommandAPIBukkitConfig;
+import dev.jorel.commandapi.CommandAPIPaperConfig;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.dvdishka.backuper.backend.Initialization;
 import ru.dvdishka.backuper.backend.backup.Backup;
@@ -78,8 +78,7 @@ public class Backuper extends JavaPlugin {
     }
 
     public void onLoad() {
-
-        CommandAPI.onLoad(new CommandAPIBukkitConfig(this).useLatestNMSVersion(false));
+        CommandAPI.onLoad(new CommandAPIPaperConfig(this).fallbackToLatestNMS(true));
     }
 
     public void onDisable() {
