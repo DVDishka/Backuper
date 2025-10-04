@@ -4,22 +4,22 @@ import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPReply;
 import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.backend.config.FtpConfig;
+import ru.dvdishka.backuper.backend.storage.exception.StorageConnectionException;
 
 import java.io.IOException;
 import java.time.Duration;
 
 public class FtpClientProvider {
 
-    private final FtpConfig config;
+    private final FtpStorage storage;
 
     private FTPClient ftpClient = null; // Effectively final
 
-    FtpClientProvider(FtpConfig config) {
-        this.config = config;
+    FtpClientProvider(FtpStorage storage) {
+        this.storage = storage;
     }
 
-    synchronized FTPClient getClient() throws Storage.StorageConnectionException {
+    synchronized FTPClient getClient() throws StorageConnectionException {
         if (ftpClient != null) {
             try {
                 if (!ftpClient.isConnected() || !ftpClient.isAvailable()) {
@@ -60,9 +60,9 @@ public class FtpClientProvider {
         ftpClient.setControlEncoding("UTF-8");
 
         try {
-            ftpClient.connect(config.getAddress(), config.getPort());
+            ftpClient.connect(storage.getConfig().getAddress(), storage.getConfig().getPort());
         } catch (IOException e) {
-            throw new Storage.StorageConnectionException("Failed to establish FTP(S) connection", e);
+            throw new StorageConnectionException(storage, "Failed to establish FTP(S) connection", e);
         }
 
         int reply = ftpClient.getReplyCode();
@@ -72,14 +72,14 @@ public class FtpClientProvider {
             } catch (IOException ignored) {
                 // It only can't disconnect if it's already disconnected
             }
-            throw new Storage.StorageConnectionException("Failed to establish FTP(S) connection");
+            throw new StorageConnectionException(storage, "Failed to establish FTP(S) connection");
         }
 
         ftpClient.enterLocalPassiveMode();
         try {
-            ftpClient.login(config.getUsername(), config.getPassword());
+            ftpClient.login(storage.getConfig().getUsername(), storage.getConfig().getPassword());
         } catch (IOException e) {
-            throw new Storage.StorageConnectionException("Failed to login FTP(S) connection", e);
+            throw new StorageConnectionException(storage, "Failed to login FTP(S) connection", e);
         }
         reply = ftpClient.getReplyCode();
 
@@ -89,7 +89,7 @@ public class FtpClientProvider {
             } catch (IOException ignored) {
                 // It only can't disconnect if it's already disconnected
             }
-            throw new Storage.StorageConnectionException("Failed to establish FTP(S) connection");
+            throw new StorageConnectionException(storage, "Failed to establish FTP(S) connection");
         }
         try {
             ftpClient.setFileType(FTP.BINARY_FILE_TYPE, FTP.BINARY_FILE_TYPE);
@@ -97,7 +97,7 @@ public class FtpClientProvider {
             ftpClient.setListHiddenFiles(true);
             ftpClient.changeWorkingDirectory("");
         } catch (IOException e) {
-            throw new Storage.StorageConnectionException("Failed to set FTP(S) connection parameters", e);
+            throw new StorageConnectionException(storage, "Failed to set FTP(S) connection parameters", e);
         }
 
         try {

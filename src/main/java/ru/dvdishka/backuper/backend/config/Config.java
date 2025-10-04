@@ -30,7 +30,7 @@ public interface Config {
     }
 
     default Config repairThenLoad(ConfigurationSection config) {
-        org.bukkit.configuration.ConfigurationSection repairedConfig = repair(config);
+        org.bukkit.configuration.ConfigurationSection repairedConfig = config.createSection(config.getName(), repair(config).getValues(true));
         return load(repairedConfig);
     }
 }

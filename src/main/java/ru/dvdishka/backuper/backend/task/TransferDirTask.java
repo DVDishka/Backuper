@@ -5,6 +5,8 @@ import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.storage.LocalStorage;
 import ru.dvdishka.backuper.backend.storage.Storage;
 import ru.dvdishka.backuper.backend.storage.StorageProgressListener;
+import ru.dvdishka.backuper.backend.storage.exception.StorageLimitException;
+import ru.dvdishka.backuper.backend.storage.exception.StorageQuotaExceededException;
 import ru.dvdishka.backuper.backend.storage.util.BasicStorageProgressListener;
 import ru.dvdishka.backuper.backend.util.Utils;
 
@@ -54,7 +56,7 @@ public class TransferDirTask extends BaseTask implements DoubleStorageTask {
     }
 
     @Override
-    public void prepareTask(CommandSender sender) throws ExecutionException, InterruptedException, AuthenticationException, IOException, Storage.StorageLimitException, Storage.StorageQuotaExceededException, SftpException {
+    public void prepareTask(CommandSender sender) throws ExecutionException, InterruptedException, AuthenticationException, IOException, StorageLimitException, StorageQuotaExceededException, SftpException {
         if (sourceStorage instanceof LocalStorage && !forceExcludedDirs) {
             dirSize = Utils.getFileFolderByteSizeExceptExcluded(new File(sourceDir));
         } else {

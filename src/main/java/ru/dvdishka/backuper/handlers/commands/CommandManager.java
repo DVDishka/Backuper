@@ -33,30 +33,42 @@ public class CommandManager {
                                                 .filter(id -> !suggestionInfo.currentArg().contains(id)).toList())))
 
                                 .executes((sender, args) -> {
-                                    new BackupCommand(sender, args, "NOTHING").execute();
+                                    Backuper.getInstance().getScheduleManager().runAsync(() -> {
+                                        new BackupCommand(sender, args, "NOTHING").execute();
+                                    });
                                 })
                                 .then(new LongArgument("delaySeconds")
                                         .executes((sender, args) -> {
-                                            new BackupCommand(sender, args, "NOTHING").execute();
+                                            Backuper.getInstance().getScheduleManager().runAsync(() -> {
+                                                new BackupCommand(sender, args, "NOTHING").execute();
+                                            });
                                         })
                                 )
                                 .then(new LiteralArgument("stop").withPermission(Permission.STOP.getPermission())
                                         .executes((sender, args) -> {
-                                            new BackupCommand(sender, args, "STOP").execute();
+                                            Backuper.getInstance().getScheduleManager().runAsync(() -> {
+                                                new BackupCommand(sender, args, "STOP").execute();
+                                            });
                                         })
                                         .then(new LongArgument("delaySeconds")
                                                 .executes((sender, args) -> {
-                                                    new BackupCommand(sender, args, "STOP").execute();
+                                                    Backuper.getInstance().getScheduleManager().runAsync(() -> {
+                                                        new BackupCommand(sender, args, "STOP").execute();
+                                                    });
                                                 })
                                         )
                                 )
                                 .then(new LiteralArgument("restart").withPermission(Permission.RESTART.getPermission())
                                         .executes((sender, args) -> {
-                                            new BackupCommand(sender, args, "RESTART").execute();
+                                            Backuper.getInstance().getScheduleManager().runAsync(() -> {
+                                                new BackupCommand(sender, args, "RESTART").execute();
+                                            });
                                         })
                                         .then(new LongArgument("delaySeconds")
                                                 .executes((sender, args) -> {
-                                                    new BackupCommand(sender, args, "RESTART").execute();
+                                                    Backuper.getInstance().getScheduleManager().runAsync(() -> {
+                                                        new BackupCommand(sender, args, "RESTART").execute();
+                                                    });
                                                 })
                                         )
                                 )
@@ -143,7 +155,7 @@ public class CommandManager {
                                                 )
                                         )
                                         .then(new StringArgument("action")
-                                                .replaceSuggestions(ArgumentSuggestions.stringCollection((info) -> {
+                                                .replaceSuggestions(ArgumentSuggestions.stringCollectionAsync((info) -> CompletableFuture.supplyAsync(() -> {
                                                     List<String> suggestions = new ArrayList<>();
                                                     Storage storage = Backuper.getInstance().getStorageManager().getStorage((String) info.previousArgs().get("storage"));
                                                     if (storage == null || !info.sender().hasPermission(Permission.STORAGE.getPermission(storage))) return suggestions;
@@ -158,11 +170,8 @@ public class CommandManager {
                                                     }
                                                     suggestions.add("delete");
                                                     return suggestions;
-                                                }))
+                                                })))
                                                 .executes((sender, args) -> {
-                                                    Storage storage = Backuper.getInstance().getStorageManager().getStorage((String) args.get("storage"));
-                                                    if (storage == null) return;
-
                                                     if ("deleteConfirmation".equals(args.get("action"))) {
                                                         Backuper.getInstance().getScheduleManager().runAsync(() -> {
                                                             new DeleteCommand(sender, args).executeConfirm();
@@ -223,7 +232,9 @@ public class CommandManager {
                         )
                         .then(new LiteralArgument("status").withPermission(Permission.STATUS.getPermission())
                                 .executes((sender, args) -> {
-                                    new StatusCommand(sender, args).execute();
+                                    Backuper.getInstance().getScheduleManager().runAsync(() -> {
+                                        new StatusCommand(sender, args).execute();
+                                    });
                                 })
                         )
                 )
@@ -234,8 +245,8 @@ public class CommandManager {
         backupAccountCommandTree
                 .then(new LiteralArgument("account")
                         .then(new StringArgument("storage")
-                                .includeSuggestions(ArgumentSuggestions.stringCollection((info) ->
-                                        Backuper.getInstance().getStorageManager().getStorages().stream().filter(storage -> storage instanceof UserAuthStorage).map(Storage::getId).toList()))
+                                .includeSuggestions(ArgumentSuggestions.stringCollectionAsync((info) -> CompletableFuture.supplyAsync(() ->
+                                        Backuper.getInstance().getStorageManager().getStorages().stream().filter(storage -> storage instanceof UserAuthStorage).map(Storage::getId).toList())))
                                 .then(new LiteralArgument("link")
                                         .executes((sender, args) -> {
                                             Backuper.getInstance().getScheduleManager().runAsync(() -> {

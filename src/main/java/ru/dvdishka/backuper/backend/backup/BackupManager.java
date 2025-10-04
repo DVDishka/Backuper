@@ -4,6 +4,8 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.storage.*;
+import ru.dvdishka.backuper.backend.storage.exception.StorageConnectionException;
+import ru.dvdishka.backuper.backend.storage.exception.StorageMethodException;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -46,7 +48,7 @@ public class BackupManager {
         };
     }
 
-    public List<Backup> getBackupList() throws Storage.StorageConnectionException, Storage.StorageMethodException {
+    public List<Backup> getBackupList() throws StorageConnectionException, StorageMethodException {
 
         return backupList.get("all", (key) -> {
             List<Backup> backups = new ArrayList<>();

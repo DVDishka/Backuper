@@ -3,6 +3,9 @@ package ru.dvdishka.backuper.backend.storage;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.backup.BackupManager;
 import ru.dvdishka.backuper.backend.config.StorageConfig;
+import ru.dvdishka.backuper.backend.storage.exception.StorageConnectionException;
+import ru.dvdishka.backuper.backend.storage.exception.StorageLimitException;
+import ru.dvdishka.backuper.backend.storage.exception.StorageMethodException;
 import ru.dvdishka.backuper.backend.storage.util.BasicStorageProgressListener;
 
 import java.io.InputStream;
@@ -87,48 +90,4 @@ public interface Storage {
 
     void destroy();
 
-    class StorageConnectionException extends RuntimeException {
-        public StorageConnectionException(String message) {
-            super(message);
-        }
-
-        public StorageConnectionException(String message, Exception e) {
-            super("%s\n%s".formatted(message, e.getMessage()), e);
-            this.setStackTrace(e.getStackTrace());
-        }
-    }
-
-    class StorageMethodException extends RuntimeException {
-        public StorageMethodException(String message) {
-            super(message);
-        }
-
-        public StorageMethodException(String message, Exception e) {
-            super("%s\n%s".formatted(message, e.getMessage()), e);
-            this.setStackTrace(e.getStackTrace());
-        }
-    }
-
-    class StorageLimitException extends RuntimeException {
-        public StorageLimitException(String message) {
-            super(message);
-        }
-
-        public StorageLimitException(String message, Exception e) {
-            super("%s\n%s".formatted(message, e.getMessage()), e);
-            this.setStackTrace(e.getStackTrace());
-        }
-    }
-
-    class StorageQuotaExceededException extends RuntimeException {
-
-        public StorageQuotaExceededException(String message) {
-            super(message);
-        }
-
-        public StorageQuotaExceededException(String message, Exception e) {
-            super("%s\n%s".formatted(message, e.getMessage()), e);
-            this.setStackTrace(e.getStackTrace());
-        }
-    }
 }

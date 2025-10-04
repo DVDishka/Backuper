@@ -223,4 +223,34 @@ public class ListCommand extends Command {
         updateListPages();
         return pages.size();
     }
+
+    @Override
+    protected void returnFailure(String message) {
+        if (sendResult) super.returnFailure(message);
+    }
+
+    @Override
+    protected void returnFailure(String message, TextColor color) {
+        if (sendResult) super.returnFailure(message, color);
+    }
+
+    @Override
+    protected void returnSuccess(String message) {
+        if (sendResult) super.returnSuccess(message);
+    }
+
+    @Override
+    protected void returnSuccess(String message, TextColor color) {
+        if (sendResult) super.returnSuccess(message, color);
+    }
+
+    @Override
+    protected void returnWarning(String message) {
+        if (sendResult) super.returnWarning(message);
+    }
+
+    @Override
+    protected void returnWarning(String message, TextColor color) {
+        if (sendResult) super.returnWarning(message, color);
+    }
 }

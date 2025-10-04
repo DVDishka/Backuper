@@ -1,50 +1,50 @@
 package ru.dvdishka.backuper.backend.storage;
 
 import com.jcraft.jsch.*;
-import ru.dvdishka.backuper.backend.config.SftpConfig;
+import ru.dvdishka.backuper.backend.storage.exception.StorageConnectionException;
 
 import java.util.Properties;
 
 public class SftpClientProvider {
 
-    private final SftpConfig config;
+    private final SftpStorage storage;
 
     private Session sshSession = null; // Effectively final
     private ChannelSftp sftpChannel = null; // Effectively final
 
-    SftpClientProvider(SftpConfig config) {
-        this.config = config;
+    SftpClientProvider(SftpStorage storage) {
+        this.storage = storage;
     }
 
-    synchronized public ChannelSftp getChannel() {
+    synchronized ChannelSftp getChannel() {
         if (sshSession != null && sftpChannel != null) {
             try {
                 // Test if the connection is still alive
-                sftpChannel.pwd();
-                return sftpChannel;
-            } catch (SftpException ignored) {
+                if (sftpChannel.isConnected() && sftpChannel.pwd() != null) return sftpChannel;
+                sftpChannel.connect();
+            } catch (Exception ignored) {
                 connect();
                 try {
-                    sftpChannel.pwd();
-                    return sftpChannel;
+                    if (sftpChannel.isConnected() && sftpChannel.pwd() != null) return sftpChannel;
+                    throw new StorageConnectionException(storage, "Failed to connect to establish sftp connection");
                 } catch (SftpException e) {
-                    throw new Storage.StorageConnectionException("Failed to connect to establish sftp connection", e);
+                    throw new StorageConnectionException(storage, "Failed to connect to establish sftp connection", e);
                 }
             }
         }
         connect();
         try {
-            sftpChannel.pwd();
-            return sftpChannel;
+            if (sftpChannel.isConnected() && sftpChannel.pwd() != null) return sftpChannel;
+            throw new StorageConnectionException(storage, "Failed to connect to establish sftp connection");
         } catch (SftpException e) {
-            throw new Storage.StorageConnectionException("Failed to connect to establish sftp connection", e);
+            throw new StorageConnectionException(storage, "Failed to connect to establish sftp connection", e);
         }
     }
 
     private void connect() {
 
-        if (!config.getAuthType().equals("password") && !config.getAuthType().equals("key") && !config.getAuthType().equals("key_pass")) {
-            throw new Storage.StorageConnectionException("Wrong auth type \"%s\"".formatted(config.getAuthType()));
+        if (!storage.getConfig().getAuthType().equals("password") && !storage.getConfig().getAuthType().equals("key") && !storage.getConfig().getAuthType().equals("key_pass")) {
+            throw new StorageConnectionException(storage, "Wrong auth type \"%s\"".formatted(storage.getConfig().getAuthType()));
         }
 
         JSch jsch = new JSch();
@@ -52,32 +52,32 @@ public class SftpClientProvider {
         ChannelSftp channel = null;
 
         try {
-            if (!config.getSshConfigFilePath().isEmpty()) {
-                jsch.setConfigRepository(OpenSSHConfig.parseFile(config.getSshConfigFilePath()));
+            if (!storage.getConfig().getSshConfigFilePath().isEmpty()) {
+                jsch.setConfigRepository(OpenSSHConfig.parseFile(storage.getConfig().getSshConfigFilePath()));
             } else {
-                if (config.getAuthType().equals("key")) {
-                    jsch.addIdentity(config.getKeyFilePath());
+                if (storage.getConfig().getAuthType().equals("key")) {
+                    jsch.addIdentity(storage.getConfig().getKeyFilePath());
                 }
-                if (config.getAuthType().equals("key_pass")) {
-                    jsch.addIdentity(config.getKeyFilePath(), config.getPassword());
-                }
-
-                session = jsch.getSession(config.getUsername(), config.getAddress(), config.getPort());
-
-                if (config.getAuthType().equals("password")) {
-                    session.setPassword(config.getPassword());
+                if (storage.getConfig().getAuthType().equals("key_pass")) {
+                    jsch.addIdentity(storage.getConfig().getKeyFilePath(), storage.getConfig().getPassword());
                 }
 
-                Properties config = new Properties();
-                if (this.config.getUseKnownHostsFile().equals("false")) {
-                    config.put("StrictHostKeyChecking", "no");
+                session = jsch.getSession(storage.getConfig().getUsername(), storage.getConfig().getAddress(), storage.getConfig().getPort());
+
+                if (storage.getConfig().getAuthType().equals("password")) {
+                    session.setPassword(storage.getConfig().getPassword());
+                }
+
+                Properties properties = new Properties();
+                if (this.storage.getConfig().getUseKnownHostsFile().equals("false")) {
+                    properties.put("StrictHostKeyChecking", "no");
                 } else {
-                    config.put("StrictHostKeyChecking", "yes");
+                    properties.put("StrictHostKeyChecking", "yes");
                 }
-                session.setConfig(config);
+                session.setConfig(properties);
 
-                if (!this.config.getUseKnownHostsFile().equals("false")) {
-                    jsch.setKnownHosts(this.config.getKnownHostsFilePath());
+                if (!this.storage.getConfig().getUseKnownHostsFile().equals("false")) {
+                    jsch.setKnownHosts(this.storage.getConfig().getKnownHostsFilePath());
                 }
 
                 session.connect(15000);
@@ -103,7 +103,7 @@ public class SftpClientProvider {
             } catch (Exception ignored) {
                 // An error only occurs if the ssh session is null, so we don't need to handle it
             }
-            throw new Storage.StorageConnectionException("Failed to establish SFTP connection", e);
+            throw new StorageConnectionException(storage, "Failed to establish SFTP connection", e);
         }
     }
 

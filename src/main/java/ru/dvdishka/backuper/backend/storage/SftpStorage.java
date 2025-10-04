@@ -6,9 +6,13 @@ import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.backup.BackupManager;
 import ru.dvdishka.backuper.backend.config.SftpConfig;
+import ru.dvdishka.backuper.backend.storage.exception.StorageConnectionException;
+import ru.dvdishka.backuper.backend.storage.exception.StorageLimitException;
+import ru.dvdishka.backuper.backend.storage.exception.StorageMethodException;
 import ru.dvdishka.backuper.backend.storage.util.Retriable;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 public class SftpStorage implements PathStorage {
@@ -24,7 +28,7 @@ public class SftpStorage implements PathStorage {
 
     private static final int FILE_BUFFER_SIZE = 65536;
 
-    private static final Retriable.RetriableExceptionHandler retriableExceptionHandler = new Retriable.RetriableExceptionHandler() {
+    private final Retriable.RetriableExceptionHandler retriableExceptionHandler = new Retriable.RetriableExceptionHandler() {
 
         @Override
         public void handleRegularException(Exception e) {
@@ -55,19 +59,19 @@ public class SftpStorage implements PathStorage {
                     // Authentication errors
                     if (e.getMessage().contains("auth fail") ||
                         e.getMessage().contains("Authentication fail")) {
-                        return new StorageConnectionException("Authentication failed to SFTP server", e);
+                        return new StorageConnectionException(getStorage(), "Authentication failed to SFTP server", e);
                     }
                     // Host connection errors
                     else if (e.getMessage().contains("UnknownHostException") ||
                              e.getMessage().contains("Connection refused") ||
                              e.getMessage().contains("connect failed")) {
-                        return new StorageConnectionException("Failed to establish connection to SFTP server", e);
+                        return new StorageConnectionException(getStorage(), "Failed to establish connection to SFTP server", e);
                     }
                     // Timeout errors
                     else if (e.getMessage().contains("timeout") ||
                              e.getMessage().contains("timed out") ||
                              e.getMessage().contains("session is down")) {
-                        return new StorageConnectionException("Connection timed out", e);
+                        return new StorageConnectionException(getStorage(), "Connection timed out", e);
                     }
                 }
             }
@@ -76,31 +80,35 @@ public class SftpStorage implements PathStorage {
             if (e instanceof SftpException sftpException) {
                 // "No such file" error
                 if (sftpException.id == 2) {
-                    return new StorageMethodException("File not found", e);
+                    return new StorageMethodException(getStorage(), "File not found", e);
                 }
                 // "Permission denied" error
                 else if (sftpException.id == 3 || sftpException.id == 4) {
-                    return new StorageMethodException("Permission denied", e);
+                    return new StorageMethodException(getStorage(), "Permission denied", e);
                 }
                 // "Disk full" error
                 else if (sftpException.id == 5 ||
                         (e.getMessage() != null && (e.getMessage().contains("disk full") ||
                                                   e.getMessage().contains("quota exceeded")))) {
-                    return new StorageLimitException("SFTP storage quota exceeded", e);
+                    return new StorageLimitException(getStorage(), "SFTP storage quota exceeded", e);
                 }
             }
 
             // Other errors
-            return new StorageMethodException(e.getMessage(), e);
+            return new StorageMethodException(getStorage(), e.getMessage(), e);
+        }
+
+        public Storage getStorage() {
+            return SftpStorage.this;
         }
     };
 
     public SftpStorage(SftpConfig config) {
         this.config = config;
         this.backupManager = new BackupManager(this);
-        this.mainClient = new SftpClientProvider(config);
-        this.downloadClient = new SftpClientProvider(config);
-        this.uploadClient = new SftpClientProvider(config);
+        this.mainClient = new SftpClientProvider(this);
+        this.downloadClient = new SftpClientProvider(this);
+        this.uploadClient = new SftpClientProvider(this);
     }
 
     @Override
@@ -129,17 +137,11 @@ public class SftpStorage implements PathStorage {
     }
 
     @Override
-    public synchronized boolean checkConnection(CommandSender sender) {
+    public boolean checkConnection(CommandSender sender) {
         try {
-            synchronized (mainClient) {
-                mainClient.getChannel();
-            }
-            synchronized (downloadClient) {
-                downloadClient.getChannel();
-            }
-            synchronized (uploadClient) {
-                uploadClient.getChannel();
-            }
+            mainClient.getChannel();
+            downloadClient.getChannel();
+            uploadClient.getChannel();
             return true;
         } catch (Exception e) {
             Backuper.getInstance().getLogManager().warn("Failed to establish connection to the SFTP server", sender);
@@ -187,21 +189,23 @@ public class SftpStorage implements PathStorage {
     @Override
     public long getDirByteSize(String path) throws StorageMethodException, StorageConnectionException {
         return ((Retriable<Long>) () -> {
+            List<ChannelSftp.LsEntry> files = new ArrayList<>();
+            long dirSize = 0;
             synchronized (mainClient) {
                 ChannelSftp sftp = mainClient.getChannel();
-                long dirSize = 0;
                 if (!sftp.stat(path).isDir()) {
                     dirSize += sftp.stat(path).getSize();
                 } else {
-                    for (ChannelSftp.LsEntry entry : sftp.ls(path)) {
-                        if (entry.getFilename().equals(".") || entry.getFilename().equals("..")) {
-                            continue;
-                        }
-                        dirSize += getDirByteSize(resolve(path, entry.getFilename()));
-                    }
+                    files = sftp.ls(path);
                 }
-                return dirSize;
             }
+            for (ChannelSftp.LsEntry entry : files) {
+                if (entry.getFilename().equals(".") || entry.getFilename().equals("..")) {
+                    continue;
+                }
+                dirSize += getDirByteSize(resolve(path, entry.getFilename()));
+            }
+            return dirSize;
         }).retry(retriableExceptionHandler);
     }
 
@@ -220,6 +224,7 @@ public class SftpStorage implements PathStorage {
     public void uploadFile(InputStream sourceStream, String newFileName, String targetParentDir, StorageProgressListener progressListener) throws StorageLimitException, StorageMethodException, StorageConnectionException {
         ((Retriable<Void>) () -> {
             synchronized (uploadClient) {
+                if (sourceStream.markSupported()) sourceStream.reset();
                 ChannelSftp sftp = uploadClient.getChannel();
                 sftp.put(sourceStream, resolve(targetParentDir, newFileName), new SftpStorageProgressListener(progressListener), ChannelSftp.OVERWRITE);
                 return null;

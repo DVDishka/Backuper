@@ -84,7 +84,7 @@ storages:
 
     # Google Drive folder ID where backups will be stored
     backupsFolderId: ''
-    # Do you want the Backuper to create its own folder in specified in `backupsFolderId` directory to store backups there?
+    # Do you want the Backuper to create its own folder in the specified in `backupsFolderId` directory to store backups there?
     createBackuperFolder: true
 
     # (>= 0) Max backups in backups folder, 0 to make it unlimited

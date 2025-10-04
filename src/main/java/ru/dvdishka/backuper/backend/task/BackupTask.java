@@ -113,18 +113,42 @@ public class BackupTask extends BaseTask {
             if (cancelled) break;
 
             taskFutures.add(Backuper.getInstance().getScheduleManager().runAsync(() -> { // One thread for one storage
-                for (Task task : storageTasks.get(storage)) {
-                    if (cancelled) break;
-                    try {
+                try {
+                    for (Task task : storageTasks.get(storage)) {
+                        if (cancelled) break;
+
                         Backuper.getInstance().getTaskManager().startTaskRaw(task, sender);
-                    } catch (TaskException e) {
-                        warn(e);
+
+                        // Calculate a new backup size
+                        if (!cancelled && (task instanceof TransferDirTask transferDirTask)) {
+                            storageBackupByteSize.compute(transferDirTask.getTargetStorage(), (transferTaskStorage, size) -> size == null ? transferDirTask.getTaskMaxProgress() : size + transferDirTask.getTaskMaxProgress()); // There might be several tasks for one storage
+                        }
                     }
 
-                    // Calculate a new backup size
-                    if (!cancelled && (task instanceof TransferDirTask transferDirTask)) {
-                        storageBackupByteSize.compute(transferDirTask.getTargetStorage(), (transferTaskStorage, size) -> size == null ? transferDirTask.getTaskMaxProgress() : size + transferDirTask.getTaskMaxProgress()); // There might be several tasks for one storage
+                    // RENAME TASK
+                    if (!cancelled) {
+                        devLog("The Rename \"in progress\" in %s storage task has been started".formatted(storage.getId()));
+                        String fileType = "";
+                        if (storage.getConfig().isZipArchive()) {
+                            fileType = ".zip";
+                        }
+
+                        try {
+                            storage.renameFile(storage.resolve(storage.getConfig().getBackupsFolder(), backupName + fileType), backupName.replace(" in progress", "") + fileType);
+
+                            // Add new backup size to cache (ONLY IF NOT ZIP. ZIP SIZE IS NOT COUNTED). MUST ONLY BE EXECUTED AFTER RENAMING
+                            if (!storage.getConfig().isZipArchive()) {
+                                storage.getBackupManager().saveBackupSizeToCache(backupName.replace(" in progress", ""), storageBackupByteSize.get(storage));
+                                devLog("New backup size in %s storage has been cached".formatted(storage.getId()));
+                            }
+                        } catch (Exception e) {
+                            warn("Failed to rename file %s in %s storage".formatted(backupName, storage.getId()), sender);
+                            warn(e);
+                        }
+                        devLog("The Rename \"in progress\" Folder %s storage task has been finished".formatted(storage.getId()));
                     }
+                } catch (TaskException e) {
+                    warn(e);
                 }
             }));
         }
@@ -134,31 +158,6 @@ public class BackupTask extends BaseTask {
             Backuper.getInstance().getTaskManager().startTaskRaw(new SetWorldsWritableTask(), sender); // We should unlock folders even if they weren't locked
         } catch (TaskException e) {
             warn(e);
-        }
-
-        for (Storage storage : storages) {
-            // RENAME TASK
-            if (cancelled) break;
-
-            devLog("The Rename \"in progress\" in %s storage task has been started".formatted(storage.getId()));
-            String fileType = "";
-            if (storage.getConfig().isZipArchive()) {
-                fileType = ".zip";
-            }
-
-            try {
-                storage.renameFile(storage.resolve(storage.getConfig().getBackupsFolder(), backupName + fileType), backupName.replace(" in progress", "") + fileType);
-
-                // Add new backup size to cache (ONLY IF NOT ZIP. ZIP SIZE IS NOT COUNTED). MUST ONLY BE EXECUTED AFTER RENAMING
-                if (!storage.getConfig().isZipArchive()) {
-                    storage.getBackupManager().saveBackupSizeToCache(backupName.replace(" in progress", ""), storageBackupByteSize.get(storage));
-                    devLog("New backup size in %s storage has been cached".formatted(storage.getId()));
-                }
-            } catch (Exception e) {
-                warn("Failed to rename file %s in %s storage".formatted(backupName, storage.getId()), sender);
-                warn(e);
-            }
-            devLog("The Rename \"in progress\" Folder %s storage task has been finished".formatted(storage.getId()));
         }
 
         // UPDATE VARIABLES

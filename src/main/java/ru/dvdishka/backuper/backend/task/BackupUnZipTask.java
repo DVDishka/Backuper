@@ -34,6 +34,7 @@ public class BackupUnZipTask extends BaseTask {
         if (cancelled) return;
         deleteZipTask = new DeleteDirTask(backup.getStorage(), backup.getPath());
         Backuper.getInstance().getTaskManager().prepareTask(deleteZipTask, sender);
+        backup.getStorage().createDir(backup.getInProgressFileName(Backup.BackupFileType.DIR), backup.getStorage().getConfig().getBackupsFolder()); // For ID based filesystems
         unZipTask = new UnpackZipTask(backup.getStorage(), backup.getPath(), backup.getInProgressPath(Backup.BackupFileType.DIR));
         Backuper.getInstance().getTaskManager().prepareTask(unZipTask, sender);
     }

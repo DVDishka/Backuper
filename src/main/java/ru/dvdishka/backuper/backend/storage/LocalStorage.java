@@ -5,6 +5,9 @@ import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.backup.BackupManager;
 import ru.dvdishka.backuper.backend.config.LocalConfig;
+import ru.dvdishka.backuper.backend.storage.exception.StorageConnectionException;
+import ru.dvdishka.backuper.backend.storage.exception.StorageLimitException;
+import ru.dvdishka.backuper.backend.storage.exception.StorageMethodException;
 import ru.dvdishka.backuper.backend.util.Utils;
 
 import java.io.*;
@@ -91,12 +94,12 @@ public class LocalStorage implements PathStorage {
         try {
             File directory = new File(path);
             if (!directory.exists() || !directory.isDirectory()) {
-                throw new StorageMethodException("Directory does not exist or is not a directory: %s".formatted(path));
+                throw new StorageMethodException(this, "Directory does not exist or is not a directory: %s".formatted(path));
             }
             
             File[] files = directory.listFiles();
             if (files == null) {
-                throw new StorageMethodException("Failed to list files in directory: %s".formatted(path));
+                throw new StorageMethodException(this, "Failed to list files in directory: %s".formatted(path));
             }
             
             List<String> fileNames = new ArrayList<>();
@@ -105,7 +108,7 @@ public class LocalStorage implements PathStorage {
             }
             return fileNames;
         } catch (Exception e) {
-            throw new StorageMethodException("Failed to get file list from dir \"%s\" using local storage".formatted(path), e);
+            throw new StorageMethodException(this, "Failed to get file list from dir \"%s\" using local storage".formatted(path), e);
         }
     }
 
@@ -118,7 +121,7 @@ public class LocalStorage implements PathStorage {
     public boolean isFile(String path) throws StorageMethodException, StorageConnectionException {
         File file = new File(path);
         if (!file.exists()) {
-            throw new StorageMethodException("File \"%s\" does not exist".formatted(path));
+            throw new StorageMethodException(this, "File \"%s\" does not exist".formatted(path));
         }
         return file.isFile();
     }
@@ -128,12 +131,12 @@ public class LocalStorage implements PathStorage {
         try {
             File file = new File(path);
             if (!file.exists()) {
-                throw new StorageMethodException("File or directory does not exist: %s".formatted(path));
+                throw new StorageMethodException(this, "File or directory does not exist: %s".formatted(path));
             }
             
             return Utils.getFileFolderByteSize(file);
         } catch (Exception e) {
-            throw new StorageMethodException("Failed to get \"%s\" dir size using local storage".formatted(path), e);
+            throw new StorageMethodException(this, "Failed to get \"%s\" dir size using local storage".formatted(path), e);
         }
     }
 
@@ -143,16 +146,16 @@ public class LocalStorage implements PathStorage {
             File folder = new File(resolve(parentDir, newDirName));
             if (folder.exists()) {
                 if (!folder.isDirectory()) {
-                    throw new StorageMethodException("Path exists but is not a directory: %s".formatted(parentDir));
+                    throw new StorageMethodException(this, "Path exists but is not a directory: %s".formatted(parentDir));
                 }
                 return; // Folder already exists
             }
             
             if (!folder.mkdirs()) {
-                throw new StorageMethodException("Failed to create directory: %s".formatted(parentDir));
+                throw new StorageMethodException(this, "Failed to create directory: %s".formatted(parentDir));
             }
         } catch (Exception e) {
-            throw new StorageMethodException("Failed to create dir \"%s\" using local storage".formatted(parentDir), e);
+            throw new StorageMethodException(this, "Failed to create dir \"%s\" using local storage".formatted(parentDir), e);
         }
     }
 
@@ -161,6 +164,7 @@ public class LocalStorage implements PathStorage {
         File target = new File(resolve(targetParentDir, newFileName));
 
         try (OutputStream targetStream = new FileOutputStream(target)) {
+            if (sourceStream.markSupported()) sourceStream.reset();
             byte[] buffer = new byte[FILE_BUFFER_SIZE];
             int read;
             while ((read = sourceStream.read(buffer)) != -1) {
@@ -168,7 +172,7 @@ public class LocalStorage implements PathStorage {
                 progressListener.incrementProgress(read);
             }
         } catch (IOException e) {
-            throw new StorageMethodException("Failed to copy stream to \"%s\" in %s storage".formatted(target.getAbsolutePath(), id), e);
+            throw new StorageMethodException(this, "Failed to copy stream to \"%s\" in %s storage".formatted(target.getAbsolutePath(), id), e);
         }
     }
 
@@ -176,13 +180,13 @@ public class LocalStorage implements PathStorage {
     public InputStream downloadFile(String sourcePath, StorageProgressListener progressListener) throws StorageMethodException, StorageConnectionException {
         File file = new File(sourcePath);
         if (!file.exists()) {
-            throw new StorageMethodException("Source file \"%s\" does not exist".formatted(sourcePath));
+            throw new StorageMethodException(this, "Source file \"%s\" does not exist".formatted(sourcePath));
         }
 
         try {
             return new LocalStorageFileInputStream(file, progressListener);
         } catch (IOException e) {
-            throw new StorageMethodException("Failed to get file's \"%s\" input stream from \"%s\" storage".formatted(sourcePath, id), e);
+            throw new StorageMethodException(this, "Failed to get file's \"%s\" input stream from \"%s\" storage".formatted(sourcePath, id), e);
         }
     }
 
@@ -190,7 +194,7 @@ public class LocalStorage implements PathStorage {
     public void delete(String path) throws StorageMethodException, StorageConnectionException {
         File file = new File(path);
         if (!file.delete()) {
-            throw new StorageMethodException("Failed to delete \"%s\" file/dir from local storage".formatted(path));
+            throw new StorageMethodException(this, "Failed to delete \"%s\" file/dir from local storage".formatted(path));
         }
     }
 
@@ -200,15 +204,15 @@ public class LocalStorage implements PathStorage {
         File targetFile = new File(resolve(getParentPath(path), newFileName));
 
         if (!sourceFile.exists())
-            throw new StorageMethodException("Source file does not exist: %s".formatted(path));
+            throw new StorageMethodException(this, "Source file does not exist: %s".formatted(path));
         if (targetFile.exists())
-            throw new StorageMethodException("Target file already exists: %s".formatted(newFileName));
+            throw new StorageMethodException(this, "Target file already exists: %s".formatted(newFileName));
 
         // Create parent directories if they don't exist
         File parentDir = targetFile.getParentFile();
         if (parentDir != null && !parentDir.exists()) {
             if (!parentDir.mkdirs()) {
-                throw new StorageMethodException("Failed to create parent directory for: %s".formatted(newFileName));
+                throw new StorageMethodException(this, "Failed to create parent directory for: %s".formatted(newFileName));
             }
         }
 
@@ -221,7 +225,7 @@ public class LocalStorage implements PathStorage {
                 }
                 break;
             } catch (Exception e) {
-                if (i == 999999) throw new StorageMethodException("Failed to rename file \"%s\" to \"%s\" using local storage".formatted(path, newFileName), e);
+                if (i == 999999) throw new StorageMethodException(this, "Failed to rename file \"%s\" to \"%s\" using local storage".formatted(path, newFileName), e);
             }
         }
     }

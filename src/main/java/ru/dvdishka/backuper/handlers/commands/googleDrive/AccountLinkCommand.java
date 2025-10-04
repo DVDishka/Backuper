@@ -5,6 +5,7 @@ import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.storage.Storage;
 import ru.dvdishka.backuper.backend.storage.UserAuthStorage;
+import ru.dvdishka.backuper.backend.storage.exception.StorageConnectionException;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.handlers.commands.Permission;
 
@@ -44,7 +45,7 @@ public class AccountLinkCommand extends Command {
     public void run() {
         try {
             storage.authorizeForced(sender);
-        } catch (Storage.StorageConnectionException e) {
+        } catch (StorageConnectionException e) {
             Backuper.getInstance().getLogManager().warn("Failed to link account to %s storage".formatted(storage.getId()), sender);
             Backuper.getInstance().getLogManager().warn(e);
         }

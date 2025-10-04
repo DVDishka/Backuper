@@ -9,10 +9,15 @@ import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.backup.BackupManager;
 import ru.dvdishka.backuper.backend.config.FtpConfig;
+import ru.dvdishka.backuper.backend.storage.exception.StorageConnectionException;
+import ru.dvdishka.backuper.backend.storage.exception.StorageLimitException;
+import ru.dvdishka.backuper.backend.storage.exception.StorageMethodException;
 import ru.dvdishka.backuper.backend.storage.util.Retriable;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -27,17 +32,17 @@ public class FtpStorage implements PathStorage {
     private final FtpClientProvider downloadClient;
     private final FtpClientProvider uploadClient;
 
-    private static final Retriable.RetriableExceptionHandler retriableExceptionHandler = new Retriable.RetriableExceptionHandler() {
+    private final Retriable.RetriableExceptionHandler retriableExceptionHandler = new Retriable.RetriableExceptionHandler() {
 
         @Override
         public void handleRegularException(Exception e) {
             // Handle read errors and connection timeouts
-            if (e instanceof java.net.SocketTimeoutException ||
+            if (e instanceof SocketTimeoutException ||
                 e.getMessage() != null && e.getMessage().contains("Read timed out")) {
                 Backuper.getInstance().getLogManager().devWarn("FTP read timeout");
             }
             // Handle connection reset
-            else if (e instanceof java.net.SocketException &&
+            else if (e instanceof SocketException &&
                      (e.getMessage() != null && (e.getMessage().contains("Connection reset") ||
                                                e.getMessage().contains("Connection closed") ||
                                                e.getMessage().contains("Broken pipe")))) {
@@ -57,44 +62,48 @@ public class FtpStorage implements PathStorage {
                 if (e.getMessage() != null) {
                     // Authorization errors (code 421 - service unavailable)
                     if (e.getMessage().contains("421") || e.getMessage().contains("Failed to establish connection")) {
-                        return new StorageConnectionException("Failed to establish connection to FTP server", e);
+                        return new StorageConnectionException(getStorage(), "Failed to establish connection to FTP server", e);
                     }
                     // Timeout errors
                     else if (e.getMessage().contains("timed out") || e.getMessage().contains("Read timed out")) {
-                        return new StorageConnectionException("Connection timed out", e);
+                        return new StorageConnectionException(getStorage(), "Connection timed out", e);
                     }
                     // PASV mode errors
                     else if (e.getMessage().contains("Could not parse passive host information")) {
-                        return new StorageMethodException("Failed to establish passive connection", e);
+                        return new StorageMethodException(getStorage(), "Failed to establish passive connection", e);
                     }
                     // Quota and storage limit errors
                     else if (e.getMessage().contains("550") &&
                              (e.getMessage().contains("quota exceeded") || e.getMessage().contains("disk full"))) {
-                        return new StorageLimitException("FTP storage quota exceeded", e);
+                        return new StorageLimitException(getStorage(), "FTP storage quota exceeded", e);
                     }
                     // File access errors
                     else if (e.getMessage().contains("550") || e.getMessage().contains("Permission denied")) {
-                        return new StorageMethodException("Access denied or file not found", e);
+                        return new StorageMethodException(getStorage(), "Access denied or file not found", e);
                     }
                 }
             }
 
             // Stream errors (in is null)
             if (e.getMessage() != null && e.getMessage().contains("in is null")) {
-                return new StorageMethodException("Failed to get input stream", e);
+                return new StorageMethodException(getStorage(), "Failed to get input stream", e);
             }
 
             // Other errors
-            return new StorageMethodException(e.getMessage(), e);
+            return new StorageMethodException(getStorage(), e.getMessage(), e);
+        }
+
+        public Storage getStorage() {
+            return FtpStorage.this;
         }
     };
 
     public FtpStorage(FtpConfig config) {
         this.config = config;
         this.backupManager = new BackupManager(this);
-        this.mainClient = new FtpClientProvider(config);
-        this.downloadClient = new FtpClientProvider(config);
-        this.uploadClient = new FtpClientProvider(config);
+        this.mainClient = new FtpClientProvider(this);
+        this.downloadClient = new FtpClientProvider(this);
+        this.uploadClient = new FtpClientProvider(this);
     }
 
     @Override
@@ -123,7 +132,7 @@ public class FtpStorage implements PathStorage {
     }
 
     @Override
-    public synchronized boolean checkConnection(CommandSender sender) {
+    public boolean checkConnection(CommandSender sender) {
         try {
             mainClient.getClient();
             downloadClient.getClient();
@@ -187,9 +196,10 @@ public class FtpStorage implements PathStorage {
     @Override
     public long getDirByteSize(String path) throws StorageMethodException, StorageConnectionException {
         return ((Retriable<Long>) () -> {
+            FTPFile[] files = new FTPFile[0];
+            long dirSize = 0;
             synchronized (mainClient) {
                 FTPClient ftp = mainClient.getClient();
-                long dirSize = 0;
                 FTPFile currentDir = ftp.mlistFile(path);
 
                 if (currentDir == null) {
@@ -201,22 +211,21 @@ public class FtpStorage implements PathStorage {
                 }
                 else if (currentDir.isDirectory()) {
                     if (!ftp.changeWorkingDirectory(path)) {
-                        throw new StorageMethodException("Failed to change Working directory to \"%s\" using FTP(S) connection".formatted(path));
+                        throw new StorageMethodException(this, "Failed to change Working directory to \"%s\" using FTP(S) connection".formatted(path));
                     }
-                    FTPFile[] files = ftp.listFiles();
+                    files = ftp.listFiles();
                     if (files == null) {
-                        throw new IOException("Failed to list files in directory: " + path);
-                    }
-
-                    for (FTPFile file : files) {
-                        if (file.getName().equals(".") || file.getName().equals("..")) {
-                            continue;
-                        }
-                        dirSize += getDirByteSize(resolve(path, file.getName()));
+                        throw new StorageMethodException(this, "Failed to list files in directory: " + path);
                     }
                 }
-                return dirSize;
             }
+            for (FTPFile file : files) {
+                if (file.getName().equals(".") || file.getName().equals("..")) {
+                    continue;
+                }
+                dirSize += getDirByteSize(resolve(path, file.getName()));
+            }
+            return dirSize;
         }).retry(retriableExceptionHandler);
     }
 
@@ -236,11 +245,12 @@ public class FtpStorage implements PathStorage {
             throws StorageLimitException, StorageMethodException, StorageConnectionException {
         ((Retriable<Void>) () -> {
             synchronized (uploadClient) {
+                if (sourceStream.markSupported()) sourceStream.reset();
                 FTPClient ftp = uploadClient.getClient();
                 String remotePath = resolve(targetParentDir, newFileName);
                 ftp.setCopyStreamListener(new FtpStorageProgressListener(progressListener));
                 if (!ftp.storeFile(remotePath, sourceStream)) {
-                    throw new StorageMethodException("Failed to upload stream to \"%s\"".formatted(remotePath), new RuntimeException(ftp.getReplyString()));
+                    throw new StorageMethodException(this, "Failed to upload stream to \"%s\"".formatted(remotePath), new RuntimeException(ftp.getReplyString()));
                 }
                 return null;
             }

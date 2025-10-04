@@ -1,6 +1,8 @@
 package ru.dvdishka.backuper.backend.storage;
 
 import ru.dvdishka.backuper.backend.config.PathStorageConfig;
+import ru.dvdishka.backuper.backend.storage.exception.StorageConnectionException;
+import ru.dvdishka.backuper.backend.storage.exception.StorageMethodException;
 
 public interface PathStorage extends Storage {
 

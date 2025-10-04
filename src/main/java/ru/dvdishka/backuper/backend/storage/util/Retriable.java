@@ -1,10 +1,10 @@
 package ru.dvdishka.backuper.backend.storage.util;
 
-import com.jcraft.jsch.SftpException;
 import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.backend.storage.Storage;
-
-import java.io.IOException;
+import ru.dvdishka.backuper.backend.storage.exception.StorageConnectionException;
+import ru.dvdishka.backuper.backend.storage.exception.StorageLimitException;
+import ru.dvdishka.backuper.backend.storage.exception.StorageMethodException;
+import ru.dvdishka.backuper.backend.storage.exception.StorageQuotaExceededException;
 
 @FunctionalInterface
 public interface Retriable<T> {
@@ -19,12 +19,12 @@ public interface Retriable<T> {
 
     /***
      * Doesn't handle Storage exceptions
-     * @throws Storage.StorageMethodException Something went wrong while executing some operation even after retries
-     * @throws Storage.StorageConnectionException Failed to connect to storage even after retries
-     * @throws Storage.StorageLimitException Storage limit exceeded
-     * @throws Storage.StorageQuotaExceededException Storage quota exceeded even after retries
+     * @throws StorageMethodException Something went wrong while executing some operation even after retries
+     * @throws StorageConnectionException Failed to connect to storage even after retries
+     * @throws StorageLimitException Storage limit exceeded
+     * @throws StorageQuotaExceededException Storage quota exceeded even after retries
      */
-    default T retry(RetriableExceptionHandler exceptionHandler, int retries, int retryDelayMillis) throws Storage.StorageMethodException, Storage.StorageConnectionException, Storage.StorageLimitException, Storage.StorageQuotaExceededException {
+    default T retry(RetriableExceptionHandler exceptionHandler, int retries, int retryDelayMillis) throws StorageMethodException, StorageConnectionException, StorageLimitException, StorageQuotaExceededException {
         int completedRetries = 0;
 
         while (completedRetries < retries) {
@@ -35,16 +35,16 @@ public interface Retriable<T> {
 
                 if (completedRetries == retries) {
                     switch (e) {
-                        case Storage.StorageConnectionException storageConnectionException -> throw storageConnectionException;
-                        case Storage.StorageLimitException storageLimitException -> throw storageLimitException;
-                        case Storage.StorageQuotaExceededException storageQuotaExceededException -> throw storageQuotaExceededException;
-                        case Storage.StorageMethodException storageMethodException -> throw storageMethodException;
+                        case StorageConnectionException storageConnectionException -> throw storageConnectionException;
+                        case StorageLimitException storageLimitException -> throw storageLimitException;
+                        case StorageQuotaExceededException storageQuotaExceededException -> throw storageQuotaExceededException;
+                        case StorageMethodException storageMethodException -> throw storageMethodException;
                         default -> throw exceptionHandler.handleFinalException(e);
                     }
                 } else {
                     Backuper.getInstance().getLogManager().devWarn("Operation failed, retrying in " + (retryDelayMillis / 1000) + " seconds... (" + completedRetries + "/" + retries + ")");
                     Backuper.getInstance().getLogManager().devWarn(e);
-                    if (!(e instanceof Storage.StorageLimitException || e instanceof Storage.StorageQuotaExceededException || e instanceof Storage.StorageConnectionException || e instanceof Storage.StorageMethodException)) {
+                    if (!(e instanceof StorageLimitException || e instanceof StorageQuotaExceededException || e instanceof StorageConnectionException || e instanceof StorageMethodException)) {
                         exceptionHandler.handleRegularException(e);
                     }
                 }
@@ -56,17 +56,17 @@ public interface Retriable<T> {
         }
 
         // Unreachable code
-        throw new Storage.StorageMethodException("Unexpected error in Retriable logic");
+        throw new RuntimeException("Unexpected error in Retriable logic");
     }
 
     /***
      * Doesn't handle Storage exceptions
-     * @throws Storage.StorageMethodException Something went wrong while executing some operation even after retries
-     * @throws Storage.StorageConnectionException Failed to connect to storage even after retries
-     * @throws Storage.StorageLimitException Storage limit exceeded
-     * @throws Storage.StorageQuotaExceededException Storage quota exceeded even after retries
+     * @throws StorageMethodException Something went wrong while executing some operation even after retries
+     * @throws StorageConnectionException Failed to connect to storage even after retries
+     * @throws StorageLimitException Storage limit exceeded
+     * @throws StorageQuotaExceededException Storage quota exceeded even after retries
      */
-    default T retry(RetriableExceptionHandler exceptionHandler) throws Storage.StorageMethodException, Storage.StorageConnectionException, Storage.StorageLimitException, Storage.StorageQuotaExceededException {
+    default T retry(RetriableExceptionHandler exceptionHandler) throws StorageMethodException, StorageConnectionException, StorageLimitException, StorageQuotaExceededException {
         return retry(exceptionHandler, DEFAULT_RETRIES, DEFAULT_RETRY_DELAY_MILLIS);
     }
 

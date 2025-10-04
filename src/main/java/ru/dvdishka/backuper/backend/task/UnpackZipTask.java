@@ -7,6 +7,8 @@ import ru.dvdishka.backuper.backend.storage.util.BasicStorageProgressListener;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -41,11 +43,20 @@ public class UnpackZipTask extends BaseTask implements SingleStorageTask {
             while (!cancelled && (zipEntry = zipInput.getNextEntry()) != null) {
                 String name = zipEntry.getName();
                 try {
+                    List<String> entryRelativeListedPath = new ArrayList<>();
+                    String currentRelativePath = name;
+                    while (!(currentRelativePath = getParentFromZipPath(currentRelativePath)).isEmpty()) entryRelativeListedPath.add(getParentFromZipPath(currentRelativePath));
+                    entryRelativeListedPath = entryRelativeListedPath.reversed();
+                    String entryParentRelativePath = targetFolderDir;
+                    for (String dir : entryRelativeListedPath) {
+                        storage.resolve(entryParentRelativePath, dir);
+                    }
+
                     if (zipEntry.isDirectory()) {
                         name = name.substring(0, name.length() - 1);
-                        storage.createDir(getFileNameFromZipPath(name), storage.resolve(targetFolderDir, getParentFromZipPath(name)));
+                        storage.createDir(getFileNameFromZipPath(name), entryParentRelativePath);
                     } else {
-                        storage.uploadFile(zipInput, getFileNameFromZipPath(name), storage.resolve(targetFolderDir, getParentFromZipPath(name)));
+                        storage.uploadFile(zipInput, getFileNameFromZipPath(name), entryParentRelativePath);
                     }
                 } catch (Exception e) {
                     warn("Something went wrong while trying to unpack file", sender);

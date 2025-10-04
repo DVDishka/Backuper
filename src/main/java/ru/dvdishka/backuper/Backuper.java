@@ -72,9 +72,11 @@ public class Backuper extends JavaPlugin implements Listener {
 
         configManager.load(configFile, Bukkit.getConsoleSender());
         scheduleManager = new ScheduleManager(); // Should be initialized after the config file
-        storageManager.loadSizeCache();
-        storageManager.checkStoragesConnection();
-        storageManager.indexStorages();
+        scheduleManager.runAsync(() -> {
+            storageManager.loadSizeCache();
+            storageManager.checkStoragesConnection();
+            storageManager.indexStorages();
+        });
         bstats.init(this);
         checkDependencies();
         checkPluginVersion();
