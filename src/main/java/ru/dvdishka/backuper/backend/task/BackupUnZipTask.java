@@ -20,13 +20,14 @@ public class BackupUnZipTask extends BaseTask {
         try {
             if (!cancelled) Backuper.getInstance().getTaskManager().startTaskRaw(unZipTask, sender);
             if (!cancelled) {
+                backup.getStorage().getBackupManager().invalidateBackupSizeCache(backup.getName());
                 Backuper.getInstance().getTaskManager().startTaskRaw(deleteZipTask, sender);
                 backup.getStorage().renameFile(backup.getInProgressPath(Backup.BackupFileType.DIR), backup.getFileName(Backup.BackupFileType.DIR));
+                backup.getStorage().getBackupManager().saveBackupSizeToCache(backup.getName(), unZipTask.getBytesUploaded());
             }
         } catch (TaskException e) {
             warn(e);
         }
-        backup.getStorage().getBackupManager().invalidateBackupSizeCache(backup.getName());
     }
 
     @Override

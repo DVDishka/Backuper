@@ -12,6 +12,7 @@ import org.bukkit.command.ConsoleCommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.backup.Backup;
 import ru.dvdishka.backuper.backend.storage.Storage;
+import ru.dvdishka.backuper.backend.util.UIUtils;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.handlers.commands.Permission;
 
@@ -69,7 +70,7 @@ public class ListCommand extends Command {
                         .decorate(TextDecoration.BOLD))
                 .append(Component.space())
                 .append(Component.text("(%s)".formatted(storage.getId()))
-                        .color(TextColor.fromHexString("#129c9b"))
+                        .color(UIUtils.getSecondaryColor())
                         .decorate(TextDecoration.BOLD));
 
         int pageNumber = (Integer) arguments.getOrDefault("pageNumber", 1);
@@ -121,13 +122,13 @@ public class ListCommand extends Command {
             message = message
                     .append(Component.text("<<<<<<<<")
                             .decorate(TextDecoration.BOLD)
-                            .color(TextColor.fromHexString("#129c9b"))
+                            .color(UIUtils.getSecondaryColor())
                             .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list %s %s".formatted(storage, pageNumber - 1))))
                     .append(Component.text(String.valueOf(pageNumber))
                             .decorate(TextDecoration.BOLD))
                     .append(Component.text(">>>>>>>>")
                             .decorate(TextDecoration.BOLD)
-                            .color(TextColor.fromHexString("#129c9b"))
+                            .color(UIUtils.getSecondaryColor())
                             .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list %s %s".formatted(storage, pageNumber + 1))))
                     .append(Component.newline());
 
@@ -141,13 +142,13 @@ public class ListCommand extends Command {
             message = message
                     .append(Component.text("<<<<<<<<")
                             .decorate(TextDecoration.BOLD)
-                            .color(TextColor.fromHexString("#129c9b"))
+                            .color(UIUtils.getSecondaryColor())
                             .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list %s %s".formatted(storage, pageNumber - 1))))
                     .append(Component.text(String.valueOf(pageNumber))
                             .decorate(TextDecoration.BOLD))
                     .append(Component.text(">>>>>>>>")
                             .decorate(TextDecoration.BOLD)
-                            .color(TextColor.fromHexString("#129c9b"))
+                            .color(UIUtils.getSecondaryColor())
                             .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list %s %s".formatted(storage, pageNumber + 1))));
 
         // For console
@@ -157,11 +158,11 @@ public class ListCommand extends Command {
                 message = message
                         .append(Component.text("<".repeat(20))
                                 .decorate(TextDecoration.BOLD)
-                                .color(TextColor.fromHexString("#129c9b")))
+                                .color(UIUtils.getSecondaryColor()))
                         .append(Component.text(pageNumber))
                         .append(Component.text(">".repeat(20))
                                 .decorate(TextDecoration.BOLD)
-                                .color(TextColor.fromHexString("#129c9b")))
+                                .color(UIUtils.getSecondaryColor()))
                         .append(Component.newline());
 
                 for (TextComponent backupComponent : pages.get(pageNumber - 1)) {
@@ -184,11 +185,11 @@ public class ListCommand extends Command {
                         .append(Component.newline())
                         .append(Component.text("<".repeat(20))
                                 .decorate(TextDecoration.BOLD)
-                                .color(TextColor.fromHexString("#129c9b")))
+                                .color(UIUtils.getSecondaryColor()))
                         .append(Component.text(pageNumber))
                         .append(Component.text(">".repeat(20))
                                 .decorate(TextDecoration.BOLD)
-                                .color(TextColor.fromHexString("#129c9b")));
+                                .color(UIUtils.getSecondaryColor()));
             } else {
                 for (List<TextComponent> page : pages) {
                     for (TextComponent backupComponent : page) {

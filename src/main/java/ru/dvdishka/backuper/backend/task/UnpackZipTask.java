@@ -19,7 +19,8 @@ public class UnpackZipTask extends BaseTask implements SingleStorageTask {
     private final String sourceZipDir;
     private final String targetFolderDir;
 
-    private StorageProgressListener progressListener;
+    private StorageProgressListener downloadProgressListener;
+    private final List<StorageProgressListener> uploadProgressListeners = new ArrayList<>();
 
     private static final int STREAM_BUFFER_SIZE = 1048576;
 
@@ -35,8 +36,8 @@ public class UnpackZipTask extends BaseTask implements SingleStorageTask {
 
     @Override
     public void run() {
-        progressListener = new BasicStorageProgressListener();
-        try (InputStream directInputStream = storage.downloadFile(sourceZipDir, progressListener);
+        downloadProgressListener = new BasicStorageProgressListener();
+        try (InputStream directInputStream = storage.downloadFile(sourceZipDir, downloadProgressListener);
              BufferedInputStream bufferedInputStream = new BufferedInputStream(directInputStream, STREAM_BUFFER_SIZE);
              ZipInputStream zipInput = new ZipInputStream(bufferedInputStream)) {
             ZipEntry zipEntry;
@@ -60,7 +61,9 @@ public class UnpackZipTask extends BaseTask implements SingleStorageTask {
                     if (zipEntry.isDirectory()) {
                         storage.createDir(getFileNameFromZipPath(name), entryParentRelativePath);
                     } else {
-                        storage.uploadFile(zipInput, getFileNameFromZipPath(name), entryParentRelativePath);
+                        StorageProgressListener uploadProgressListener = new BasicStorageProgressListener();
+                        uploadProgressListeners.add(uploadProgressListener);
+                        storage.uploadFile(zipInput, getFileNameFromZipPath(name), entryParentRelativePath, uploadProgressListener);
                     }
                 } catch (Exception e) {
                     warn("Something went wrong while trying to unpack file", sender);
@@ -83,7 +86,7 @@ public class UnpackZipTask extends BaseTask implements SingleStorageTask {
 
     @Override
     public long getTaskCurrentProgress() {
-        return progressListener.getCurrentProgress();
+        return downloadProgressListener.getCurrentProgress();
     }
 
     @Override
@@ -102,5 +105,9 @@ public class UnpackZipTask extends BaseTask implements SingleStorageTask {
 
     private String getParentFromZipPath(String path) {
         return path.substring(0, path.lastIndexOf("/") == -1 ? 0 : path.lastIndexOf("/"));
+    }
+
+    public long getBytesUploaded() {
+        return uploadProgressListeners.stream().mapToLong(StorageProgressListener::getCurrentProgress).sum();
     }
 }

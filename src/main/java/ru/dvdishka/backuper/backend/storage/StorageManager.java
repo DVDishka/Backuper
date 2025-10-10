@@ -38,7 +38,7 @@ public class StorageManager implements Listener {
     public StorageManager() {
         // Register default local storage that'll be used to create backups
         LocalConfig config = new LocalConfig();
-        LocalStorage storage = new LocalStorage(config.load(config.getDefaultConfig()));
+        LocalStorage storage = new LocalStorage(config.load(config.getDefaultConfig(), "backuper"));
         registerStorage("backuper", storage);
     }
 

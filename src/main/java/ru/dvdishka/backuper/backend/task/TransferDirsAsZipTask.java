@@ -10,6 +10,7 @@ import ru.dvdishka.backuper.backend.util.Utils;
 
 import java.io.*;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -28,7 +29,8 @@ public class TransferDirsAsZipTask extends BaseTask implements DoubleStorageTask
     private final String targetParentDir;
     private final String targetZipFileName;
 
-    private final List<StorageProgressListener> progressListeners = new java.util.ArrayList<>();
+    private final List<StorageProgressListener> downloadProgressListeners = new java.util.ArrayList<>();
+    private final AtomicLong bytesUploaded = new AtomicLong(0);
 
     /***
      * @param sourceDirs Absolute paths. Don't try to add there a file you want to send without createRootDirInTargetZIP a true option
@@ -81,7 +83,7 @@ public class TransferDirsAsZipTask extends BaseTask implements DoubleStorageTask
 
     @Override
     public long getTaskCurrentProgress() {
-        return progressListeners.stream().mapToLong(StorageProgressListener::getCurrentProgress).sum();
+        return downloadProgressListeners.stream().mapToLong(StorageProgressListener::getCurrentProgress).sum();
     }
 
     @Override
@@ -122,7 +124,7 @@ public class TransferDirsAsZipTask extends BaseTask implements DoubleStorageTask
                 }
 
                 StorageProgressListener downloadProgressListener = new BasicStorageProgressListener();
-                progressListeners.add(downloadProgressListener);
+                downloadProgressListeners.add(downloadProgressListener);
                 try (InputStream directInputStream = sourceStorage.downloadFile(sourceDir, downloadProgressListener);
                      BufferedInputStream bufferedInputStream = new BufferedInputStream(directInputStream, FILE_BUFFER_SIZE)) {
 
@@ -141,6 +143,7 @@ public class TransferDirsAsZipTask extends BaseTask implements DoubleStorageTask
                     while ((read = bufferedInputStream.read(buffer)) != -1) {
                         if (cancelled) return;
                         zip.write(buffer, 0, read);
+                        bytesUploaded.getAndAdd(read);
                     }
                     zip.closeEntry();
                 } finally {
@@ -200,6 +203,10 @@ public class TransferDirsAsZipTask extends BaseTask implements DoubleStorageTask
         } finally {
             sourceStorage.downloadCompleted();
         }
+    }
+
+    public long getBytesUploaded() {
+        return bytesUploaded.get();
     }
 
     @Override

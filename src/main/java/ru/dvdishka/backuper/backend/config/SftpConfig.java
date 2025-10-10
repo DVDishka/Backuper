@@ -32,7 +32,7 @@ public class SftpConfig implements PathStorageConfig {
 
     private ConfigurationSection config;
 
-    public SftpConfig load(ConfigurationSection config) {
+    public SftpConfig load(ConfigurationSection config, String name) {
         this.config = config;
         this.id = config.getName();
         this.enabled = config.getBoolean("enabled");

@@ -117,7 +117,7 @@ public class UIUtils {
         framedMessage = framedMessage
                 .append(Component.text("-".repeat(dashNumber))
                         .decorate(TextDecoration.BOLD)
-                        .color(TextColor.color(0x143E77)))
+                        .color(UIUtils.getMainColor()))
                 .append(Component.newline());
 
         framedMessage = framedMessage
@@ -127,7 +127,7 @@ public class UIUtils {
         framedMessage = framedMessage
                 .append(Component.text("-".repeat(dashNumber))
                         .decorate(TextDecoration.BOLD)
-                        .color(TextColor.fromHexString("#129c9b")))
+                        .color(UIUtils.getSecondaryColor()))
                 .append(Component.newline());
 
         framedMessage = framedMessage.append(message);
@@ -136,7 +136,7 @@ public class UIUtils {
                 .append(Component.newline())
                 .append(Component.text("-".repeat(dashNumber))
                         .decorate(TextDecoration.BOLD)
-                        .color(TextColor.color(0x143E77)));
+                        .color(UIUtils.getMainColor()));
 
         return framedMessage;
     }
@@ -152,7 +152,7 @@ public class UIUtils {
         framedMessage = framedMessage
                 .append(Component.text("-".repeat(dashNumber))
                         .decorate(TextDecoration.BOLD)
-                        .color(TextColor.color(0x143E77)))
+                        .color(UIUtils.getMainColor()))
                 .append(Component.newline());
 
         framedMessage = framedMessage.append(message);
@@ -161,7 +161,7 @@ public class UIUtils {
                 .append(Component.newline())
                 .append(Component.text("-".repeat(dashNumber))
                         .decorate(TextDecoration.BOLD)
-                        .color(TextColor.color(0x143E77)));
+                        .color(UIUtils.getMainColor()));
         return framedMessage;
     }
 
@@ -231,5 +231,13 @@ public class UIUtils {
                 notificationSound(player);
             }
         }
+    }
+
+    public static TextColor getMainColor() {
+        return TextColor.color(0x550D77);
+    }
+
+    public static TextColor getSecondaryColor() {
+        return TextColor.color(0x831012);
     }
 }

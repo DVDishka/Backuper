@@ -23,7 +23,7 @@ public class ServerConfig implements Config {
     private ConfigurationSection config;
 
     @Override
-    public Config load(ConfigurationSection config) {
+    public Config load(ConfigurationSection config, String name) {
         this.config = config;
         this.alertBackupMessage = config.getString("alertBackupMessage");
         this.alertBackupRestartMessage = config.getString("alertBackupRestartMessage");

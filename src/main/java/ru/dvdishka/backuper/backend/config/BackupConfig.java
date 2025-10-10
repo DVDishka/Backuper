@@ -31,7 +31,7 @@ public class BackupConfig implements Config {
     @Setter
     private ConfigurationSection config;
 
-    public BackupConfig load(ConfigurationSection config) {
+    public BackupConfig load(ConfigurationSection config, String name) {
         this.config = config;
         boolean autoBackup = config.getBoolean("autoBackup");
         CronExpression autoBackupCron = null;

@@ -6,6 +6,7 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
+import ru.dvdishka.backuper.backend.util.UIUtils;
 import ru.dvdishka.backuper.handlers.commands.ConfirmableCommand;
 
 public class CancelCommand extends ConfirmableCommand {
@@ -38,7 +39,7 @@ public class CancelCommand extends ConfirmableCommand {
                 .append(Component.space())
                 .append(Component.text(Backuper.getInstance().getTaskManager().getCurrentTask().getTaskName())
                         .decorate(TextDecoration.BOLD)
-                        .color(TextColor.fromHexString("#129c9b")))
+                        .color(UIUtils.getSecondaryColor()))
                 .append(Component.newline())
                 .append(Component.text("Task progress:"))
                 .append(Component.space())

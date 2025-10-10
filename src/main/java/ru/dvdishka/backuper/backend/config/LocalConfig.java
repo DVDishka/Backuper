@@ -24,9 +24,9 @@ public class LocalConfig implements PathStorageConfig {
 
     private ConfigurationSection config;
 
-    public LocalConfig load(ConfigurationSection config) {
+    public LocalConfig load(ConfigurationSection config, String name) {
         this.config = config;
-        this.id = config.getName();
+        this.id = name;
         this.enabled = config.getBoolean("enabled");
         this.autoBackup = config.getBoolean("autoBackup");
         int backupsNumber = config.getInt("maxBackupsNumber");

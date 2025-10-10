@@ -11,6 +11,7 @@ import org.bukkit.command.ConsoleCommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.backup.Backup;
 import ru.dvdishka.backuper.backend.storage.Storage;
+import ru.dvdishka.backuper.backend.util.UIUtils;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.handlers.commands.Permission;
 
@@ -57,7 +58,7 @@ public class MenuCommand extends Command {
                         .decorate(TextDecoration.BOLD))
                 .append(Component.space())
                 .append(Component.text("(%s)".formatted(storage.getId()))
-                        .color(TextColor.fromHexString("#129c9b"))
+                        .color(UIUtils.getSecondaryColor())
                         .decorate(TextDecoration.BOLD));
 
         Component message = Component.empty();

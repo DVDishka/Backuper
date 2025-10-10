@@ -22,13 +22,13 @@ public class BackupToZipTask extends BaseTask {
         try {
             if (!cancelled) Backuper.getInstance().getTaskManager().startTaskRaw(toZipTask, sender);
             if (!cancelled) {
+                backup.getStorage().getBackupManager().invalidateBackupSizeCache(backup.getName());
                 Backuper.getInstance().getTaskManager().startTaskRaw(deleteFolderTask, sender);
                 backup.getStorage().renameFile(backup.getInProgressPath(Backup.BackupFileType.ZIP), backup.getFileName(Backup.BackupFileType.ZIP));
             }
         } catch (Exception e) {
             warn(new TaskException(toZipTask, e));
         }
-        backup.getStorage().getBackupManager().invalidateBackupSizeCache(backup.getName());
     }
 
     @Override
