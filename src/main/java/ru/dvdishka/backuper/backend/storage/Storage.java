@@ -7,6 +7,7 @@ import ru.dvdishka.backuper.backend.storage.exception.StorageConnectionException
 import ru.dvdishka.backuper.backend.storage.exception.StorageLimitException;
 import ru.dvdishka.backuper.backend.storage.exception.StorageMethodException;
 import ru.dvdishka.backuper.backend.storage.util.BasicStorageProgressListener;
+import ru.dvdishka.backuper.backend.storage.util.StorageProgressListener;
 
 import java.io.InputStream;
 import java.util.List;

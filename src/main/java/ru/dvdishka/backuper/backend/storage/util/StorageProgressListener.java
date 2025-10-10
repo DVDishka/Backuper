@@ -1,4 +1,4 @@
-package ru.dvdishka.backuper.backend.storage;
+package ru.dvdishka.backuper.backend.storage.util;
 
 public interface StorageProgressListener {
 

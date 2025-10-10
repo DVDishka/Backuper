@@ -125,7 +125,7 @@ public class CommandManager {
 
                                 .then(new TextArgument("backupName").includeSuggestions(ArgumentSuggestions.stringCollectionAsync((info) ->
                                                 CompletableFuture.supplyAsync(() -> {
-                                                    Storage storage = Backuper.getInstance().getStorageManager().getStorage((String) info.previousArgs().get("storage"));
+                                                        Storage storage = Backuper.getInstance().getStorageManager().getStorage((String) info.previousArgs().get("storage"));
                                                     if (storage == null || !info.sender().hasPermission(Permission.LIST.getPermission(storage))) return new ArrayList<>();
 
                                                     List<Backup> backups = storage.getBackupManager().getBackupList();

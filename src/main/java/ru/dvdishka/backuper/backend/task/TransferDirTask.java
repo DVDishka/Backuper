@@ -4,16 +4,17 @@ import com.jcraft.jsch.SftpException;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.storage.LocalStorage;
 import ru.dvdishka.backuper.backend.storage.Storage;
-import ru.dvdishka.backuper.backend.storage.StorageProgressListener;
 import ru.dvdishka.backuper.backend.storage.exception.StorageLimitException;
 import ru.dvdishka.backuper.backend.storage.exception.StorageQuotaExceededException;
 import ru.dvdishka.backuper.backend.storage.util.BasicStorageProgressListener;
+import ru.dvdishka.backuper.backend.storage.util.StorageProgressListener;
 import ru.dvdishka.backuper.backend.util.Utils;
 
 import javax.naming.AuthenticationException;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 
@@ -22,49 +23,43 @@ public class TransferDirTask extends BaseTask implements DoubleStorageTask {
     private final Storage sourceStorage;
     private final String sourceDir;
     private final Storage targetStorage;
-    private String targetDir;
+    private final String targetParentDir; // We have to provide parent path, not target because if it's a file, not a dir it has no id in id-based storages
+    private final String targetFileName;
     private final boolean forceExcludedDirs;
 
     private ArrayList<StorageProgressListener> progressListeners;
-    private long dirSize = 0;
 
-    private static final int FILE_BUFFER_SIZE = 65536;
+    private static final int STREAM_BUFFER_SIZE = 1048576;
 
-    /***
-     * @param targetDir Not parent
-     */
-    public TransferDirTask(Storage sourceStorage, String sourceDir, Storage targetStorage, String targetDir, boolean forceExcludedDirs) {
+    public TransferDirTask(Storage sourceStorage, String sourceDir, Storage targetStorage, String targetParentDir, String targetFileName, boolean forceExcludedDirs) {
         super();
         this.sourceStorage = sourceStorage;
         this.targetStorage = targetStorage;
         this.sourceDir = sourceDir;
-        this.targetDir = targetDir;
+        this.targetParentDir = targetParentDir;
+        this.targetFileName = targetFileName;
         this.forceExcludedDirs = forceExcludedDirs;
     }
 
     @Override
     public void run() {
-
-        if (!targetStorage.exists(targetDir) && sourceStorage.isDir(sourceDir)) {
-            targetStorage.createDir(targetStorage.getFileNameFromPath(targetDir), targetStorage.getParentPath(targetDir));
-        }
-
         progressListeners = new ArrayList<>();
         if (!cancelled) {
-            sendFolder(sourceDir, targetDir);
+            sendFolder(sourceDir, targetParentDir, targetFileName);
         }
     }
 
     @Override
     public void prepareTask(CommandSender sender) throws ExecutionException, InterruptedException, AuthenticationException, IOException, StorageLimitException, StorageQuotaExceededException, SftpException {
+        if (maxProgress != 0) return;
         if (sourceStorage instanceof LocalStorage && !forceExcludedDirs) {
-            dirSize = Utils.getFileFolderByteSizeExceptExcluded(new File(sourceDir));
+            maxProgress = Utils.getFileFolderByteSizeExceptExcluded(new File(sourceDir));
         } else {
-            dirSize = sourceStorage.getDirByteSize(sourceDir);
+            maxProgress = sourceStorage.getDirByteSize(sourceDir);
         }
     }
 
-    private void sendFolder(final String sourceDir, final String targetDir) {
+    private void sendFolder(final String sourceDir, final String targetParentDir, String targetFileName) { // We have to provide parent path, not target because if it's a file, not a dir it has no id in id-based storages
         if (cancelled) return;
 
         if (!sourceStorage.exists(sourceDir)) {
@@ -81,8 +76,9 @@ public class TransferDirTask extends BaseTask implements DoubleStorageTask {
             try {
                 final StorageProgressListener progressListener = new BasicStorageProgressListener();
                 progressListeners.add(progressListener);
-                try (BufferedInputStream inputStream = new BufferedInputStream(sourceStorage.downloadFile(sourceDir), FILE_BUFFER_SIZE)) {
-                    targetStorage.uploadFile(inputStream, sourceStorage.getFileNameFromPath(sourceDir), targetStorage.getParentPath(targetDir), progressListener);
+                try (InputStream directInputStream = sourceStorage.downloadFile(sourceDir);
+                     BufferedInputStream inputStream = new BufferedInputStream(directInputStream, STREAM_BUFFER_SIZE)) {
+                    targetStorage.uploadFile(inputStream, targetFileName, targetParentDir, progressListener);
                 } catch (Exception e) {
                     warn("Failed to send file \"%s\" to %s storage".formatted(sourceDir, targetStorage.getId()));
                     warn(e);
@@ -96,11 +92,9 @@ public class TransferDirTask extends BaseTask implements DoubleStorageTask {
             }
         }
         if (sourceStorage.isDir(sourceDir)) {
+            targetStorage.createDir(targetFileName, targetParentDir);
             for (String file : sourceStorage.ls(sourceDir)) {
-                if (sourceStorage.isDir(sourceStorage.resolve(sourceDir, file))) {
-                    targetStorage.createDir(file, targetDir);
-                }
-                sendFolder(sourceStorage.resolve(sourceDir, file), targetStorage.resolve(targetDir, file));
+                sendFolder(sourceStorage.resolve(sourceDir, file), targetStorage.resolve(targetParentDir, targetFileName), file);
             }
         }
     }
@@ -109,11 +103,6 @@ public class TransferDirTask extends BaseTask implements DoubleStorageTask {
     public long getTaskCurrentProgress() {
         if (progressListeners == null) return 0;
         return progressListeners.stream().mapToLong(StorageProgressListener::getCurrentProgress).sum();
-    }
-
-    @Override
-    public long getTaskMaxProgress() {
-        return dirSize;
     }
 
     @Override

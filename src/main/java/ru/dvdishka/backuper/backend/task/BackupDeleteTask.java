@@ -7,7 +7,7 @@ import ru.dvdishka.backuper.backend.backup.Backup;
 public class BackupDeleteTask extends BaseTask {
 
     private final Backup backup;
-    private Task deleteBackupTask;
+    private DeleteDirTask deleteBackupTask;
 
     public BackupDeleteTask(Backup backup) {
         super();
@@ -30,6 +30,7 @@ public class BackupDeleteTask extends BaseTask {
     public void prepareTask(CommandSender sender) throws Throwable {
         if (cancelled) return;
         deleteBackupTask = new DeleteDirTask(backup.getStorage(), backup.getPath());
+        deleteBackupTask.maxProgress = backup.getByteSize();
         Backuper.getInstance().getTaskManager().prepareTask(deleteBackupTask, sender);
     }
 

@@ -1,7 +1,7 @@
 package ru.dvdishka.backuper;
 
 import dev.jorel.commandapi.CommandAPI;
-import dev.jorel.commandapi.CommandAPIBukkitConfig;
+import dev.jorel.commandapi.CommandAPIPaperConfig;
 import lombok.Getter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -101,7 +101,7 @@ public class Backuper extends JavaPlugin implements Listener {
     }
 
     public void onLoad() {
-        CommandAPI.onLoad(new CommandAPIBukkitConfig(this).useLatestNMSVersion(false));
+        CommandAPI.onLoad(new CommandAPIPaperConfig(this).fallbackToLatestNMS(true));
     }
 
     public void onDisable() {

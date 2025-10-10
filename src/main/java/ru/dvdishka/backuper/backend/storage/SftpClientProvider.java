@@ -16,7 +16,7 @@ public class SftpClientProvider {
         this.storage = storage;
     }
 
-    synchronized ChannelSftp getChannel() {
+    synchronized ChannelSftp getClient() {
         if (sshSession != null && sftpChannel != null) {
             try {
                 // Test if the connection is still alive

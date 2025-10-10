@@ -10,6 +10,7 @@ import ru.dvdishka.backuper.backend.storage.exception.StorageConnectionException
 import ru.dvdishka.backuper.backend.storage.exception.StorageLimitException;
 import ru.dvdishka.backuper.backend.storage.exception.StorageMethodException;
 import ru.dvdishka.backuper.backend.storage.util.Retriable;
+import ru.dvdishka.backuper.backend.storage.util.StorageProgressListener;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -139,9 +140,9 @@ public class SftpStorage implements PathStorage {
     @Override
     public boolean checkConnection(CommandSender sender) {
         try {
-            mainClient.getChannel();
-            downloadClient.getChannel();
-            uploadClient.getChannel();
+            mainClient.getClient();
+            downloadClient.getClient();
+            uploadClient.getClient();
             return true;
         } catch (Exception e) {
             Backuper.getInstance().getLogManager().warn("Failed to establish connection to the SFTP server", sender);
@@ -154,7 +155,7 @@ public class SftpStorage implements PathStorage {
     public List<String> ls(String path) throws StorageMethodException, StorageConnectionException {
         return ((Retriable<List<String>>) () -> {
             synchronized (mainClient) {
-                ChannelSftp sftp = mainClient.getChannel();
+                ChannelSftp sftp = mainClient.getClient();
                 return sftp.ls(path).stream()
                         .map(ChannelSftp.LsEntry::getFilename)
                         .filter(file -> !file.equals(".") && !file.equals(".."))
@@ -166,7 +167,7 @@ public class SftpStorage implements PathStorage {
     @Override
     public boolean exists(String path) throws StorageMethodException, StorageConnectionException {
         synchronized (mainClient) {
-            ChannelSftp sftp = mainClient.getChannel();
+            ChannelSftp sftp = mainClient.getClient();
             try {
                 sftp.stat(path);
                 return true;
@@ -180,7 +181,7 @@ public class SftpStorage implements PathStorage {
     public boolean isFile(String path) throws StorageMethodException, StorageConnectionException {
         return ((Retriable<Boolean>) () -> {
             synchronized (mainClient) {
-                ChannelSftp sftp = mainClient.getChannel();
+                ChannelSftp sftp = mainClient.getClient();
                 return !sftp.stat(path).isDir();
             }
         }).retry(retriableExceptionHandler);
@@ -192,7 +193,7 @@ public class SftpStorage implements PathStorage {
             List<ChannelSftp.LsEntry> files = new ArrayList<>();
             long dirSize = 0;
             synchronized (mainClient) {
-                ChannelSftp sftp = mainClient.getChannel();
+                ChannelSftp sftp = mainClient.getClient();
                 if (!sftp.stat(path).isDir()) {
                     dirSize += sftp.stat(path).getSize();
                 } else {
@@ -213,7 +214,7 @@ public class SftpStorage implements PathStorage {
     public void createDir(String newDirName, String parentDir) throws StorageMethodException, StorageConnectionException {
         ((Retriable<Void>) () -> {
             synchronized (mainClient) {
-                ChannelSftp sftp = mainClient.getChannel();
+                ChannelSftp sftp = mainClient.getClient();
                 sftp.mkdir(resolve(parentDir, newDirName));
                 return null;
             }
@@ -224,8 +225,7 @@ public class SftpStorage implements PathStorage {
     public void uploadFile(InputStream sourceStream, String newFileName, String targetParentDir, StorageProgressListener progressListener) throws StorageLimitException, StorageMethodException, StorageConnectionException {
         ((Retriable<Void>) () -> {
             synchronized (uploadClient) {
-                if (sourceStream.markSupported()) sourceStream.reset();
-                ChannelSftp sftp = uploadClient.getChannel();
+                ChannelSftp sftp = uploadClient.getClient();
                 sftp.put(sourceStream, resolve(targetParentDir, newFileName), new SftpStorageProgressListener(progressListener), ChannelSftp.OVERWRITE);
                 return null;
             }
@@ -236,7 +236,7 @@ public class SftpStorage implements PathStorage {
     public InputStream downloadFile(String sourcePath, StorageProgressListener progressListener) throws StorageMethodException, StorageConnectionException {
         return ((Retriable<InputStream>) () -> {
             synchronized (downloadClient) {
-                ChannelSftp sftp = downloadClient.getChannel();
+                ChannelSftp sftp = downloadClient.getClient();
                 return sftp.get(sourcePath, new SftpStorageProgressListener(progressListener));
             }
         }).retry(retriableExceptionHandler);
@@ -246,7 +246,7 @@ public class SftpStorage implements PathStorage {
     public void delete(String path) throws StorageMethodException, StorageConnectionException {
         ((Retriable<Void>) () -> {
             synchronized (mainClient) {
-                ChannelSftp sftp = mainClient.getChannel();
+                ChannelSftp sftp = mainClient.getClient();
                 SftpATTRS stat = sftp.stat(path);
                 if (stat.isDir()) {
                     sftp.rmdir(path);
@@ -262,7 +262,7 @@ public class SftpStorage implements PathStorage {
     public void renameFile(String path, String newFileName) throws StorageMethodException, StorageConnectionException {
         ((Retriable<Void>) () -> {
             synchronized (mainClient) {
-                ChannelSftp sftp = mainClient.getChannel();
+                ChannelSftp sftp = mainClient.getClient();
                 String parentPath = "";
                 if (path.contains(config.getPathSeparatorSymbol())) {
                     parentPath = path.substring(0, path.lastIndexOf(config.getPathSeparatorSymbol()));

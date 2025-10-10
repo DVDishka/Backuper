@@ -35,8 +35,10 @@ public class BackupToZipTask extends BaseTask {
     public void prepareTask(CommandSender sender) throws Throwable {
         if (cancelled) return;
         deleteFolderTask = new DeleteDirTask(backup.getStorage(), backup.getPath());
+        deleteFolderTask.maxProgress = backup.getByteSize();
         Backuper.getInstance().getTaskManager().prepareTask(deleteFolderTask, sender);
         toZipTask = new TransferDirsAsZipTask(backup.getStorage(), List.of(backup.getPath()), backup.getStorage(), backup.getStorage().getConfig().getBackupsFolder(), backup.getInProgressFileName(Backup.BackupFileType.ZIP), false, true);
+        toZipTask.maxProgress = backup.getByteSize();
         Backuper.getInstance().getTaskManager().prepareTask(toZipTask, sender);
     }
 

@@ -24,6 +24,7 @@ public class DeleteDirTask extends BaseTask implements SingleStorageTask {
 
     @Override
     public void prepareTask(CommandSender sender) throws SftpException {
+        if  (maxProgress != 0) return;
         maxProgress = storage.getDirByteSize(path);
     }
 

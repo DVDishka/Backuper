@@ -1,7 +1,6 @@
 package ru.dvdishka.backuper.backend.storage.util;
 
 import lombok.Setter;
-import ru.dvdishka.backuper.backend.storage.StorageProgressListener;
 
 import java.util.concurrent.atomic.AtomicLong;
 

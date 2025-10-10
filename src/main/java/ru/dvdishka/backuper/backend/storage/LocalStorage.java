@@ -8,6 +8,8 @@ import ru.dvdishka.backuper.backend.config.LocalConfig;
 import ru.dvdishka.backuper.backend.storage.exception.StorageConnectionException;
 import ru.dvdishka.backuper.backend.storage.exception.StorageLimitException;
 import ru.dvdishka.backuper.backend.storage.exception.StorageMethodException;
+import ru.dvdishka.backuper.backend.storage.util.StorageProgressInputStream;
+import ru.dvdishka.backuper.backend.storage.util.StorageProgressListener;
 import ru.dvdishka.backuper.backend.util.Utils;
 
 import java.io.*;
@@ -164,7 +166,6 @@ public class LocalStorage implements PathStorage {
         File target = new File(resolve(targetParentDir, newFileName));
 
         try (OutputStream targetStream = new FileOutputStream(target)) {
-            if (sourceStream.markSupported()) sourceStream.reset();
             byte[] buffer = new byte[FILE_BUFFER_SIZE];
             int read;
             while ((read = sourceStream.read(buffer)) != -1) {
@@ -184,7 +185,7 @@ public class LocalStorage implements PathStorage {
         }
 
         try {
-            return new LocalStorageFileInputStream(file, progressListener);
+            return new StorageProgressInputStream(new FileInputStream(file), progressListener);
         } catch (IOException e) {
             throw new StorageMethodException(this, "Failed to get file's \"%s\" input stream from \"%s\" storage".formatted(sourcePath, id), e);
         }
@@ -241,42 +242,5 @@ public class LocalStorage implements PathStorage {
     @Override
     public void downloadCompleted() throws StorageMethodException, StorageConnectionException {
         // Для локального хранилища не требуется дополнительных действий
-    }
-
-    private static class LocalStorageFileInputStream extends FileInputStream {
-
-        private final StorageProgressListener progressListener;
-
-        LocalStorageFileInputStream(File file, StorageProgressListener progressListener) throws FileNotFoundException {
-            super(file);
-            this.progressListener = progressListener;
-        }
-
-        @Override
-        public int read() throws IOException {
-            int result = super.read();
-            if (result != -1) {
-                progressListener.incrementProgress(1);
-            }
-            return result;
-        }
-
-        @Override
-        public int read(byte[] b) throws IOException {
-            int bytesRead = super.read(b);
-            if (bytesRead > 0) {
-                progressListener.incrementProgress(bytesRead);
-            }
-            return bytesRead;
-        }
-
-        @Override
-        public int read(byte[] b, int off, int len) throws IOException {
-            int bytesRead = super.read(b, off, len);
-            if (bytesRead > 0) {
-                progressListener.incrementProgress(bytesRead);
-            }
-            return bytesRead;
-        }
     }
 }

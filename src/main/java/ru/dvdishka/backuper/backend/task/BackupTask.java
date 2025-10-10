@@ -243,7 +243,9 @@ public class BackupTask extends BaseTask {
                         Task task = new TransferDirTask(Backuper.getInstance().getStorageManager().getStorage("backuper"),
                                 additionalDirectoryToBackupFile.toPath().toAbsolutePath().normalize().toString(),
                                 storage,
-                                storage.resolve(storage.resolve(storage.getConfig().getBackupsFolder(), backupName), additionalDirectoryToBackupFile.getName()), false);
+                                storage.resolve(storage.getConfig().getBackupsFolder(), backupName),
+                                additionalDirectoryToBackupFile.getName(),
+                                false);
                         try {
                             Backuper.getInstance().getTaskManager().prepareTask(task, sender);
                         } catch (Throwable e) {

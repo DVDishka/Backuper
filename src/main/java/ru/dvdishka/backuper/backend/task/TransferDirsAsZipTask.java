@@ -4,8 +4,8 @@ import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.storage.LocalStorage;
 import ru.dvdishka.backuper.backend.storage.Storage;
-import ru.dvdishka.backuper.backend.storage.StorageProgressListener;
 import ru.dvdishka.backuper.backend.storage.util.BasicStorageProgressListener;
+import ru.dvdishka.backuper.backend.storage.util.StorageProgressListener;
 import ru.dvdishka.backuper.backend.util.Utils;
 
 import java.io.*;
@@ -55,8 +55,7 @@ public class TransferDirsAsZipTask extends BaseTask implements DoubleStorageTask
             Backuper.getInstance().getScheduleManager().runAsync(() -> {
 
                 // Use BufferedOutputStream for better performance
-                try (BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(pipedOutputStream,
-                        STREAM_BUFFER_SIZE);
+                try (BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(pipedOutputStream, STREAM_BUFFER_SIZE);
                      ZipOutputStream targetZipOutputStream = new ZipOutputStream(bufferedOutputStream)) {
 
                     for (String sourceDirToAdd : sourceDirs) {
@@ -87,6 +86,7 @@ public class TransferDirsAsZipTask extends BaseTask implements DoubleStorageTask
 
     @Override
     public void prepareTask(CommandSender sender) {
+        if (maxProgress != 0) return;
         if (sourceStorage instanceof LocalStorage && !forceExcludedDirs) {
             for (String dir : sourceDirs) {
                 this.maxProgress += Utils.getFileFolderByteSizeExceptExcluded(new File(dir));
@@ -123,8 +123,8 @@ public class TransferDirsAsZipTask extends BaseTask implements DoubleStorageTask
 
                 StorageProgressListener downloadProgressListener = new BasicStorageProgressListener();
                 progressListeners.add(downloadProgressListener);
-                try (InputStream inputStream = sourceStorage.downloadFile(sourceDir, downloadProgressListener);
-                     BufferedInputStream bis = new BufferedInputStream(inputStream, FILE_BUFFER_SIZE)) {
+                try (InputStream directInputStream = sourceStorage.downloadFile(sourceDir, downloadProgressListener);
+                     BufferedInputStream bufferedInputStream = new BufferedInputStream(directInputStream, FILE_BUFFER_SIZE)) {
 
                     ZipEntry entry = new ZipEntry(relativeDirPath);
                     if (isAlreadyCompressed(sourceStorage, sourceDir)) {
@@ -138,7 +138,7 @@ public class TransferDirsAsZipTask extends BaseTask implements DoubleStorageTask
                     zip.putNextEntry(entry);
                     byte[] buffer = new byte[FILE_BUFFER_SIZE];
                     int read;
-                    while ((read = bis.read(buffer)) != -1) {
+                    while ((read = bufferedInputStream.read(buffer)) != -1) {
                         if (cancelled) return;
                         zip.write(buffer, 0, read);
                     }

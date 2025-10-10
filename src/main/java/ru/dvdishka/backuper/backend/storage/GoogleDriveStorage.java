@@ -37,6 +37,8 @@ import ru.dvdishka.backuper.backend.storage.exception.StorageLimitException;
 import ru.dvdishka.backuper.backend.storage.exception.StorageMethodException;
 import ru.dvdishka.backuper.backend.storage.exception.StorageQuotaExceededException;
 import ru.dvdishka.backuper.backend.storage.util.Retriable;
+import ru.dvdishka.backuper.backend.storage.util.StorageProgressInputStream;
+import ru.dvdishka.backuper.backend.storage.util.StorageProgressListener;
 import ru.dvdishka.backuper.backend.util.ObfuscateUtils;
 import ru.dvdishka.backuper.backend.util.UIUtils;
 
@@ -51,8 +53,11 @@ public class GoogleDriveStorage implements UserAuthStorage {
     private final GoogleDriveConfig config;
     private final BackupManager backupManager;
 
-    private Drive driveService = null;
     private Credential credential = null;
+
+    private final GoogleDriveClientProvider mainClient;
+    private final GoogleDriveClientProvider downloadClient;
+    private final GoogleDriveClientProvider uploadClient;
 
     private static final String AUTH_SERVICE_URL = "https://auth.backuper-mc.com";
     private static final String APPLICATION_NAME = "BACKUPER";
@@ -111,9 +116,12 @@ public class GoogleDriveStorage implements UserAuthStorage {
     public GoogleDriveStorage(GoogleDriveConfig config) {
         this.config = config;
         this.backupManager = new BackupManager(this);
+        this.mainClient = new GoogleDriveClientProvider(this);
+        this.downloadClient = new GoogleDriveClientProvider(this);
+        this.uploadClient = new GoogleDriveClientProvider(this);
     }
 
-    public void authorizeForced(CommandSender sender) throws StorageConnectionException {
+    synchronized public void authorizeForced(CommandSender sender) throws StorageConnectionException {
         try {
             this.credential = null;
 
@@ -154,7 +162,7 @@ public class GoogleDriveStorage implements UserAuthStorage {
         }
     }
 
-    private Credential returnCredentialIfAuthorized() throws StorageConnectionException {
+    synchronized Credential returnCredentialIfAuthorized() throws StorageConnectionException {
         try {
             boolean checkConnection = credential == null;
 
@@ -214,39 +222,6 @@ public class GoogleDriveStorage implements UserAuthStorage {
         }
     }
 
-    private synchronized Drive getClient() throws StorageConnectionException {
-        if (driveService != null) {
-            try {
-                // Test if the connection is still alive by making a simple request
-                driveService.files().get("").execute().getName();
-                return driveService;
-            } catch (Exception ignored) {
-                // Connection is dead, we'll create a new one
-                driveService = null;
-            }
-        }
-
-        try {
-            Credential credential = returnCredentialIfAuthorized();
-            if (credential == null) {
-                throw new StorageConnectionException(this, "Not authorized in Google Drive!");
-            }
-
-            driveService = new Drive.Builder(NET_HTTP_TRANSPORT, JSON_FACTORY, credential)
-                    .setApplicationName(APPLICATION_NAME)
-                    .setHttpRequestInitializer(httpRequest -> {
-                        credential.initialize(httpRequest);
-                        httpRequest.setConnectTimeout(300 * 60000);
-                        httpRequest.setReadTimeout(300 * 60000);
-                    })
-                    .build();
-
-            return driveService;
-        } catch (Exception e) {
-            throw new StorageConnectionException(this, "Not authorized in Google Drive!", e);
-        }
-    }
-
     @Override
     public String getId() {
         return this.id;
@@ -275,12 +250,9 @@ public class GoogleDriveStorage implements UserAuthStorage {
     @Override
     public boolean checkConnection(CommandSender sender) {
         try {
-            if (!config.isEnabled()) {
-                Backuper.getInstance().getLogManager().warn("Google Drive storage is disabled in config.yml", sender);
-                return false;
-            }
-
-            getClient();
+            mainClient.getClient();
+            downloadClient.getClient();
+            uploadClient.getClient();
             return true;
         } catch (Exception e) {
             Backuper.getInstance().getLogManager().warn("Not authorized in Google Drive", sender);
@@ -290,17 +262,17 @@ public class GoogleDriveStorage implements UserAuthStorage {
     }
 
     public void addProperty(String fileId, String key, String value) throws StorageQuotaExceededException, StorageMethodException, StorageConnectionException {
-
-        Drive service = getClient();
-
         ((Retriable<Void>) () -> {
-            Map<String, String> appProperties = service.files().get(fileId).setFields("appProperties").execute().getAppProperties();
-            appProperties.put(key, value);
-            service.files().update(fileId, new com.google.api.services.drive.model.File()
-                            .setAppProperties(appProperties))
-                    .setFields("appProperties")
-                    .execute();
-            return null;
+            synchronized (mainClient) {
+                Drive service = mainClient.getClient();
+                Map<String, String> appProperties = service.files().get(fileId).setFields("appProperties").execute().getAppProperties();
+                appProperties.put(key, value);
+                service.files().update(fileId, new com.google.api.services.drive.model.File()
+                                .setAppProperties(appProperties))
+                        .setFields("appProperties")
+                        .execute();
+                return null;
+            }
         }).retry(retriableExceptionHandler);
     }
 
@@ -317,40 +289,43 @@ public class GoogleDriveStorage implements UserAuthStorage {
     /**
      * @param driveFileId Parent Google Drive file ID. "drive" to get all drive files. "" to get all files
      * @param query       Additional parameters to find some file faster. "appProperties has { key='backuper' and value='true' }" will be added in the query string anyway
-     * @return Returns files ids
+     * @return Returns List of File objects that contains only name and id of the file
      * */
     public List<com.google.api.services.drive.model.File> ls(String driveFileId, String query) throws StorageQuotaExceededException, StorageMethodException, StorageConnectionException {
         return ((Retriable<List<com.google.api.services.drive.model.File>>) () -> {
-            Drive service = getClient();
-            String pageToken = null;
-            List<com.google.api.services.drive.model.File> driveFiles = new ArrayList<>();
+            synchronized (mainClient) {
+                String pageToken = null;
+                List<com.google.api.services.drive.model.File> driveFiles = new ArrayList<>();
+                Drive service = mainClient.getClient();
 
-            do {
-                Drive.Files.List lsRequest = service.files().list()
-                        .setPageToken(pageToken);
-                String q = "appProperties has { key='backuper' and value='true' }";
-                if (query != null) {
-                    q = "%s and %s".formatted(q, query);
-                }
+                do {
+                    Drive.Files.List lsRequest = service.files().list()
+                            .setFields("nextPageToken, files(id, name)")
+                            .setPageToken(pageToken);
+                    String q = "appProperties has { key='backuper' and value='true' }";
+                    if (query != null) {
+                        q = "%s and %s".formatted(q, query);
+                    }
 
-                if (driveFileId != null && driveFileId.equals("drive")) {
-                    lsRequest = lsRequest.setSpaces("drive");
-                }
+                    if (driveFileId != null && driveFileId.equals("drive")) {
+                        lsRequest = lsRequest.setSpaces("drive");
+                    }
 
-                if (driveFileId != null && !driveFileId.isEmpty() && !driveFileId.equals("drive")) {
-                    q = "%s and '%s' in parents".formatted(q, driveFileId);
-                }
-                lsRequest = lsRequest.setQ(q);
+                    if (driveFileId != null && !driveFileId.isEmpty() && !driveFileId.equals("drive")) {
+                        q = "%s and '%s' in parents".formatted(q, driveFileId);
+                    }
+                    lsRequest = lsRequest.setQ(q);
 
-                FileList driveFileList = lsRequest.execute();
+                    FileList driveFileList = lsRequest.execute();
 
-                driveFiles.addAll(driveFileList.getFiles());
+                    driveFiles.addAll(driveFileList.getFiles());
 
-                pageToken = driveFileList.getNextPageToken();
+                    pageToken = driveFileList.getNextPageToken();
 
-            } while (pageToken != null);
+                } while (pageToken != null);
 
-            return driveFiles;
+                return driveFiles;
+            }
         }).retry(retriableExceptionHandler);
     }
 
@@ -370,7 +345,12 @@ public class GoogleDriveStorage implements UserAuthStorage {
     @Override
     public boolean exists(String path) throws StorageMethodException, StorageConnectionException {
         try {
-            isFile(path);
+            Drive service = mainClient.getClient();
+            service.files().get(path)
+                    .setFields("mimeType")
+                    .execute()
+                    .getMimeType()
+                    .equals(FOLDER_MIME_TYPE);
             return true;
         } catch (Exception e) {
             return false;
@@ -380,9 +360,7 @@ public class GoogleDriveStorage implements UserAuthStorage {
     @Override
     public long getDirByteSize(String path) throws StorageQuotaExceededException, StorageMethodException, StorageConnectionException {
         return ((Retriable<Long>) () -> {
-            Drive service = getClient();
-
-            if (!isFile(path)) {
+            if (isDir(path)) {
                 long size = 0;
                 List<String> files = ls(path);
                 for (String file : files) {
@@ -390,9 +368,12 @@ public class GoogleDriveStorage implements UserAuthStorage {
                 }
                 return size;
             } else {
-                com.google.api.services.drive.model.File driveFile = service.files().get(path).setFields("size").execute();
-                Long size = driveFile.getSize();
-                return size != null ? size : 0;
+                synchronized (mainClient) {
+                    Drive service = mainClient.getClient();
+                    com.google.api.services.drive.model.File driveFile = service.files().get(path).setFields("size").execute();
+                    Long size = driveFile.getSize();
+                    return size != null ? size : 0;
+                }
             }
         }).retry(retriableExceptionHandler);
     }
@@ -400,51 +381,57 @@ public class GoogleDriveStorage implements UserAuthStorage {
     @Override
     public boolean isFile(String driveFileId) throws StorageMethodException, StorageConnectionException, StorageQuotaExceededException {
         return ((Retriable<Boolean>) () -> {
-            Drive service = getClient();
-            return service.files().get(driveFileId)
-                    .setFields("mimeType")
-                    .execute()
-                    .getMimeType()
-                    .equals(FOLDER_MIME_TYPE);
+            synchronized (mainClient) {
+                Drive service = mainClient.getClient();
+                return !service.files().get(driveFileId)
+                        .setFields("mimeType")
+                        .execute()
+                        .getMimeType()
+                        .equals(FOLDER_MIME_TYPE);
+            }
         }).retry(retriableExceptionHandler);
     }
 
     @Override
     public String getFileNameFromPath(String path) throws StorageMethodException, StorageConnectionException {
-        try {
-            return getClient().files().get(path).setFields("name").execute().getName();
-        } catch (IOException e) {
-            throw new StorageMethodException(this, "Failed to get file name with id \"%s\"".formatted(path), e);
-        }
+        return ((Retriable<String>) () -> {
+            synchronized (mainClient) {
+                return mainClient.getClient().files().get(path).setFields("name").execute().getName();
+            }
+        }).retry(retriableExceptionHandler);
+
     }
 
     @Override
     public String getParentPath(String path) throws StorageMethodException, StorageConnectionException {
-        try {
-            return getClient().files().get(path).setFields("parents").execute().getParents().getFirst();
-        } catch (IOException e) {
-            throw new StorageMethodException(this, "Failed to get parent path of file with id \"%s\"".formatted(path), e);
-        }
+        return ((Retriable<String>) () -> {
+            synchronized (mainClient) {
+                return mainClient.getClient().files().get(path).setFields("parents").execute().getParents().getFirst();
+            }
+        }).retry(retriableExceptionHandler);
+
     }
 
     public com.google.api.services.drive.model.File getFileByName(String fileName, String parentId) throws StorageQuotaExceededException, StorageMethodException, StorageConnectionException {
         return ((Retriable<com.google.api.services.drive.model.File>) () -> {
-            Drive service = getClient();
+            synchronized (mainClient) {
+                Drive service = mainClient.getClient();
 
-            String q = "";
-            q += "name = '%s'".formatted(fileName);
-            q += " and appProperties has { key='backuper' and value='true' }";
+                String q = "";
+                q += "name = '%s'".formatted(fileName);
+                q += " and appProperties has { key='backuper' and value='true' }";
 
-            Drive.Files.List lsRequest = service.files().list();
+                Drive.Files.List lsRequest = service.files().list();
 
-            if (parentId != null && !parentId.isEmpty()) {
-                q += " and '%s' in parents".formatted(parentId);
+                if (parentId != null && !parentId.isEmpty()) {
+                    q += " and '%s' in parents".formatted(parentId);
+                }
+
+                lsRequest.setQ(q);
+
+                FileList driveFileList = lsRequest.execute();
+                return !driveFileList.getFiles().isEmpty() ? driveFileList.getFiles().getFirst() : null;
             }
-
-            lsRequest.setQ(q);
-
-            FileList driveFileList = lsRequest.execute();
-            return !driveFileList.getFiles().isEmpty() ? driveFileList.getFiles().getFirst() : null;
         }).retry(retriableExceptionHandler);
     }
 
@@ -454,20 +441,22 @@ public class GoogleDriveStorage implements UserAuthStorage {
 
     public void createDir(String folderName, String parentFolderId, Map<String, String> properties) throws StorageQuotaExceededException, StorageLimitException, StorageMethodException, StorageConnectionException {
         ((Retriable<Void>) () -> {
-            Drive service = getClient();
+            synchronized (mainClient) {
+                Drive service = mainClient.getClient();
 
-            properties.put("backuper", "true");
+                properties.put("backuper", "true");
 
-            com.google.api.services.drive.model.File driveFileMeta = new com.google.api.services.drive.model.File();
-            driveFileMeta.setName(folderName);
-            driveFileMeta.setAppProperties(properties);
-            if (!Objects.equals(parentFolderId, "")) {
-                driveFileMeta.setParents(List.of(parentFolderId));
+                com.google.api.services.drive.model.File driveFileMeta = new com.google.api.services.drive.model.File();
+                driveFileMeta.setName(folderName);
+                driveFileMeta.setAppProperties(properties);
+                if (!Objects.equals(parentFolderId, "")) {
+                    driveFileMeta.setParents(List.of(parentFolderId));
+                }
+                driveFileMeta.setMimeType(FOLDER_MIME_TYPE);
+                service.files().create(driveFileMeta).execute();
+
+                return null;
             }
-            driveFileMeta.setMimeType(FOLDER_MIME_TYPE);
-            service.files().create(driveFileMeta).execute();
-
-            return null;
         }).retry(retriableExceptionHandler);
     }
 
@@ -478,62 +467,81 @@ public class GoogleDriveStorage implements UserAuthStorage {
      **/
     public void uploadFile(InputStream sourceStream, String newFileName, String targetParentDir, StorageProgressListener progressListener) throws StorageMethodException, StorageConnectionException, StorageLimitException, StorageQuotaExceededException {
         ((Retriable<Void>) () -> {
-            if (sourceStream.markSupported()) sourceStream.reset();
-            Drive service = getClient();
+            synchronized (uploadClient) {
+                Drive service = uploadClient.getClient();
 
-            Map<String, String> fileAppProperties = new HashMap<>();
-            fileAppProperties.put("backuper", "true");
+                Map<String, String> fileAppProperties = new HashMap<>();
+                fileAppProperties.put("backuper", "true");
 
-            com.google.api.services.drive.model.File driveFileMeta = new com.google.api.services.drive.model.File();
-            driveFileMeta.setAppProperties(fileAppProperties);
-            driveFileMeta.setName(newFileName);
-            if (!Objects.equals(targetParentDir, "")) {
-                driveFileMeta.setParents(List.of(targetParentDir));
+                com.google.api.services.drive.model.File driveFileMeta = new com.google.api.services.drive.model.File();
+                driveFileMeta.setAppProperties(fileAppProperties);
+                driveFileMeta.setName(newFileName);
+                if (!Objects.equals(targetParentDir, "")) {
+                    driveFileMeta.setParents(List.of(targetParentDir));
+                }
+
+                // Creating an interlayer stream to not let GoogleDrive close the source stream
+                try (InputStream interStream = new InputStream() {
+                    @Override
+                    public int read() throws IOException {
+                        return sourceStream.read();
+                    }
+
+                    @Override
+                    public int read(byte[] b, int off, int len) throws IOException {
+                        return sourceStream.read(b, off, len);
+                    }
+                }) {
+
+                    Drive.Files.Create driveFileCreate = service.files()
+                            .create(driveFileMeta, new InputStreamContent("", interStream))
+                            .setUploadType("resumable")
+                            .setFields("id, parents, appProperties");
+                    driveFileCreate.getMediaHttpUploader().setProgressListener(new GoogleDriveStorageProgressListener(progressListener));
+
+                    driveFileCreate.execute();
+                }
+                return null;
             }
-
-            Drive.Files.Create driveFileCreate = service.files()
-                    .create(driveFileMeta, new InputStreamContent("", sourceStream))
-                    .setUploadType("resumable")
-                    .setFields("id, parents, appProperties");
-            driveFileCreate.getMediaHttpUploader().setChunkSize(MediaHttpUploader.MINIMUM_CHUNK_SIZE);
-            driveFileCreate.getMediaHttpUploader().setProgressListener(new GoogleDriveStorageProgressListener(progressListener));
-
-            driveFileCreate.execute();
-            return null;
         }).retry(retriableExceptionHandler);
     }
 
     @Override
     public InputStream downloadFile(String sourcePath, StorageProgressListener progressListener) throws StorageQuotaExceededException, StorageMethodException, StorageConnectionException {
         return ((Retriable<InputStream>) () -> {
-            Drive service = getClient();
+            synchronized (downloadClient) {
+                Drive service = downloadClient.getClient();
 
-            Drive.Files.Get getDriveFile = service.files().get(sourcePath);
-            getDriveFile.getMediaHttpDownloader().setProgressListener(new GoogleDriveStorageProgressListener(progressListener));
-
-            return getDriveFile.executeMediaAsInputStream();
+                Drive.Files.Get getDriveFile = service.files().get(sourcePath);
+                // getMediaHttpDownloader().setProgressListener() doesn't work so we should just wrap input stream to track it's progress
+                return new StorageProgressInputStream(getDriveFile.executeMediaAsInputStream(), progressListener);
+            }
         }).retry(retriableExceptionHandler);
     }
 
     @Override
     public void delete(String id) throws StorageQuotaExceededException, StorageMethodException, StorageConnectionException {
         ((Retriable<Void>) () -> {
-            Drive service = getClient();
-            service.files().delete(id).execute();
-            return null;
+            synchronized (mainClient) {
+                Drive service = mainClient.getClient();
+                service.files().delete(id).execute();
+                return null;
+            }
         }).retry(retriableExceptionHandler);
     }
 
     @Override
     public void renameFile(String fileId, String newFileName) throws StorageQuotaExceededException, StorageMethodException, StorageConnectionException {
         ((Retriable<Void>) () -> {
-            Drive service = getClient();
+            synchronized (mainClient) {
+                Drive service = mainClient.getClient();
 
-            service.files().update(fileId, new com.google.api.services.drive.model.File()
-                            .setName(newFileName))
-                    .setFields("name")
-                    .execute();
-            return null;
+                service.files().update(fileId, new com.google.api.services.drive.model.File()
+                                .setName(newFileName))
+                        .setFields("name")
+                        .execute();
+                return null;
+            }
         }).retry(retriableExceptionHandler);
     }
 
@@ -544,13 +552,15 @@ public class GoogleDriveStorage implements UserAuthStorage {
 
     @Override
     public void destroy() {
-        driveService = null;
+        mainClient.disconnect();
+        downloadClient.disconnect();
+        uploadClient.disconnect();
         credential = null;
     }
 
     @Override
     public void downloadCompleted() throws StorageMethodException, StorageConnectionException {
-        // Для Google Drive не требуется дополнительных действий
+        // No actions required
     }
 
     private static class MyAuthorizationCodeInstalledApp {

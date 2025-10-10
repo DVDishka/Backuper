@@ -13,6 +13,7 @@ import ru.dvdishka.backuper.backend.storage.exception.StorageConnectionException
 import ru.dvdishka.backuper.backend.storage.exception.StorageLimitException;
 import ru.dvdishka.backuper.backend.storage.exception.StorageMethodException;
 import ru.dvdishka.backuper.backend.storage.util.Retriable;
+import ru.dvdishka.backuper.backend.storage.util.StorageProgressListener;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -245,7 +246,6 @@ public class FtpStorage implements PathStorage {
             throws StorageLimitException, StorageMethodException, StorageConnectionException {
         ((Retriable<Void>) () -> {
             synchronized (uploadClient) {
-                if (sourceStream.markSupported()) sourceStream.reset();
                 FTPClient ftp = uploadClient.getClient();
                 String remotePath = resolve(targetParentDir, newFileName);
                 ftp.setCopyStreamListener(new FtpStorageProgressListener(progressListener));

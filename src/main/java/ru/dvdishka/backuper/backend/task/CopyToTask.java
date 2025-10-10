@@ -41,8 +41,10 @@ public class CopyToTask extends BaseTask {
                 sourceBackup.getStorage(),
                 sourceBackup.getPath(),
                 targetStorage,
-                targetStorage.resolve(targetStorage.getConfig().getBackupsFolder(), sourceBackup.getInProgressFileName()),
+                targetStorage.getConfig().getBackupsFolder(),
+                sourceBackup.getInProgressFileName(),
                 false);
+        copyToTask.maxProgress = sourceBackup.getByteSize();
         Backuper.getInstance().getTaskManager().prepareTask(copyToTask, sender);
     }
 
