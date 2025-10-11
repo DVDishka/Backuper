@@ -80,7 +80,7 @@ public class ScheduleManager {
             Backuper.getInstance().getLogManager().warn("Failed to shutdown Quartz Scheduler");
             Backuper.getInstance().getLogManager().warn(e);
         }
-        this.mainExecutorService.shutdown();
+        this.mainExecutorService.shutdownNow();
     }
 
     /***

@@ -13,13 +13,12 @@ import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.server.ServerLoadEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.dvdishka.backuper.backend.Bstats;
 import ru.dvdishka.backuper.backend.LogManager;
 import ru.dvdishka.backuper.backend.ScheduleManager;
+import ru.dvdishka.backuper.backend.autobackup.AutoBackupScheduleManager;
 import ru.dvdishka.backuper.backend.config.ConfigManager;
-import ru.dvdishka.backuper.backend.quartzjob.AutoBackupQuartzJob;
 import ru.dvdishka.backuper.backend.storage.StorageManager;
 import ru.dvdishka.backuper.backend.task.SetWorldsWritableTask;
 import ru.dvdishka.backuper.backend.task.Task;
@@ -43,10 +42,13 @@ public class Backuper extends JavaPlugin implements Listener {
     private ScheduleManager scheduleManager;
     private StorageManager storageManager;
     private CommandManager commandManager;
+    private AutoBackupScheduleManager autoBackupScheduleManager;
     private Bstats bstats;
 
     @Getter
     private static Backuper instance;
+
+    public static boolean restarting = false;
 
     public void onEnable() {
         instance = this;
@@ -62,8 +64,10 @@ public class Backuper extends JavaPlugin implements Listener {
         this.configManager = new ConfigManager();
         this.logManager = new LogManager();
         this.taskManager = new TaskManager();
+        this.taskManager.forceLock();
         this.storageManager = new StorageManager();
         this.commandManager = new CommandManager();
+        this.autoBackupScheduleManager = new AutoBackupScheduleManager();
         this.bstats = new Bstats();
 
         File pluginDir = new File("plugins/Backuper");
@@ -81,10 +85,15 @@ public class Backuper extends JavaPlugin implements Listener {
         checkDependencies();
         checkPluginVersion();
         sendIssueToGitHub(Bukkit.getConsoleSender());
-        sendPluginVersionCheckResult(Bukkit.getConsoleSender());
+        Backuper.getInstance().getScheduleManager().runAsync(() ->
+            sendPluginVersionCheckResult(Bukkit.getConsoleSender())
+        );
+        taskManager.forceUnlock();
+        autoBackupScheduleManager.init();
     }
 
     public void shutdown() {
+        taskManager.forceLock();
         storageManager.saveSizeCache();
         Task setWorldsWritableTask = new SetWorldsWritableTask();
         try {
@@ -96,6 +105,7 @@ public class Backuper extends JavaPlugin implements Listener {
         configManager.setConfigField("lastBackup", configManager.getLastBackup());
         configManager.setConfigField("lastChange", configManager.getLastChange());
         storageManager.destroy();
+        autoBackupScheduleManager.destroy();
         scheduleManager.destroy(this);
         bstats.destroy();
     }
@@ -108,11 +118,6 @@ public class Backuper extends JavaPlugin implements Listener {
         shutdown();
         CommandAPI.onDisable();
         Backuper.getInstance().getLogManager().log("Backuper plugin has been disabled!");
-    }
-
-    @EventHandler
-    public void onStartCompleted(ServerLoadEvent event) {
-        new AutoBackupQuartzJob().init();
     }
 
     @EventHandler

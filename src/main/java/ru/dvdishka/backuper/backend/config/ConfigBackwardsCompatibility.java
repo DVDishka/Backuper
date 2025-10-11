@@ -82,6 +82,7 @@ public class ConfigBackwardsCompatibility {
         }
 
         {// Migrating from Time/Period format to Cron
+            int backupPeriod = config.getInt("backup.backupPeriod", 1440);
             int backupTime = config.getInt("backup.backupTime", -1);
 
             if (backupTime < -1 || backupTime > 23) {
@@ -90,15 +91,19 @@ public class ConfigBackwardsCompatibility {
                 backupTime = -1;
             }
 
-            String cron;
+            if (backupPeriod <= 0 && backupPeriod != -1) {
+                Backuper.getInstance().getLogManager().warn("Failed to load config value!");
+                Backuper.getInstance().getLogManager().warn("backup.backupPeriod must be > 0, using default 1440 value...");
+                backupPeriod = 1440;
+            }
+
+            String cron = "";
             if (backupTime != -1) {
                 cron = "0 0 %s 1/1 * ? *".formatted(backupTime);
-            } else {
-                cron = "0 0 0 1/1 * ? *";
-                Backuper.getInstance().getLogManager().warn("The format of the auto-backup schedule definition has changed! Please go to Backuper's config.yml and define the schedule using the new format! Your old schedule will not work now!");
             }
 
             config.set("backup.autoBackupCron", cron);
+            config.set("backup.autoBackupPeriod", backupPeriod);
         }
 
         {// New storages format

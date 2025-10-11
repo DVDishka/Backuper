@@ -7,7 +7,6 @@ import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.storage.Storage;
 import ru.dvdishka.backuper.backend.task.BackupTask;
 import ru.dvdishka.backuper.backend.task.Task;
-import ru.dvdishka.backuper.backend.util.UIUtils;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.handlers.commands.Permission;
 
@@ -71,7 +70,7 @@ public class BackupCommand extends Command {
 
         if (Backuper.getInstance().getConfigManager().getServerConfig().getAlertTimeBeforeRestart() != -1) {
             Backuper.getInstance().getScheduleManager().runGlobalRegionDelayed(Backuper.getInstance(), () -> {
-                UIUtils.sendBackupAlert(min(Backuper.getInstance().getConfigManager().getServerConfig().getAlertTimeBeforeRestart(), delay), afterBackup);
+                Backuper.getInstance().getAutoBackupScheduleManager().getAutoBackupJob().executeAlert(min(Backuper.getInstance().getConfigManager().getServerConfig().getAlertTimeBeforeRestart(), delay), afterBackup);
             }, max((delay - Backuper.getInstance().getConfigManager().getServerConfig().getAlertTimeBeforeRestart()) * 20, 1));
         }
 

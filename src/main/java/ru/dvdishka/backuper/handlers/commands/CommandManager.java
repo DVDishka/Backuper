@@ -14,7 +14,6 @@ import ru.dvdishka.backuper.handlers.commands.reload.ReloadCommand;
 import ru.dvdishka.backuper.handlers.commands.task.CancelCommand;
 import ru.dvdishka.backuper.handlers.commands.task.StatusCommand;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -124,17 +123,14 @@ public class CommandManager {
                                                 .map(Storage::getId).toList())))
 
                                 .then(new TextArgument("backupName").includeSuggestions(ArgumentSuggestions.stringCollectionAsync((info) ->
-                                                CompletableFuture.supplyAsync(() -> {
-                                                        Storage storage = Backuper.getInstance().getStorageManager().getStorage((String) info.previousArgs().get("storage"));
-                                                    if (storage == null || !info.sender().hasPermission(Permission.LIST.getPermission(storage))) return new ArrayList<>();
+                                                    CompletableFuture.supplyAsync(() -> {
+                                                            Storage storage = Backuper.getInstance().getStorageManager().getStorage((String) info.previousArgs().get("storage"));
+                                                        if (storage == null || !info.sender().hasPermission(Permission.LIST.getPermission(storage))) return new ArrayList<>();
 
-                                                    List<Backup> backups = storage.getBackupManager().getBackupList();
-                                                    List<LocalDateTime> backupDateTimes = backups.stream().map(Backup::getLocalDateTime).sorted().toList().reversed();
-                                                    ArrayList<String> backupSuggestions = new ArrayList<>();
-                                                    for (Backup backup : backups) {
-                                                        backupSuggestions.add("\"%s\"".formatted(backup.getName()));
-                                                    }
-                                                    return backupSuggestions;
+                                                        return storage.getBackupManager().getBackupList().stream()
+                                                                .sorted(Backup::compareTo)
+                                                                .map(backup -> "\"%s\"".formatted(backup.getName()))
+                                                                .toList();
                                                 })))
                                         .executes((sender, args) -> {
                                             Backuper.getInstance().getScheduleManager().runAsync(() -> {
@@ -146,7 +142,7 @@ public class CommandManager {
                                                                 CompletableFuture.supplyAsync(() -> Backuper.getInstance().getStorageManager().getStorages().stream()
                                                                         .filter(storage -> suggestionInfo.sender().hasPermission(Permission.STORAGE.getPermission(storage)))
                                                                         .map(Storage::getId)
-                                                                        .filter(id -> !id.equals((String) suggestionInfo.previousArgs().get("storage"))).toList())))
+                                                                        .filter(id -> !id.equals(suggestionInfo.previousArgs().get("storage"))).toList())))
                                                         .executes((sender, args) -> {
                                                             Backuper.getInstance().getScheduleManager().runAsync(() -> {
                                                                 new CopyToCommand(sender, args).execute();

@@ -50,6 +50,7 @@ public class BackupTask extends BaseTask {
                     Backuper.getInstance().getConfigManager().getLastBackup() >= Backuper.getInstance().getConfigManager().getLastChange()) {
 
                 log("The backup cycle will be skipped since there were no changes from the previous backup", sender);
+                Backuper.getInstance().getConfigManager().updateLastBackup();
 
                 if (afterBackup.equals("RESTART")) {
                     Backuper.getInstance().getScheduleManager().runGlobalRegionDelayed(Backuper.getInstance(), () -> {

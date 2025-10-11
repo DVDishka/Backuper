@@ -18,7 +18,7 @@ public class ReloadCommand extends Command {
             returnFailure("Don't have enough permissions to perform this command");
             return false;
         }
-        if (Backuper.getInstance().getTaskManager().isLocked()) {
+        if (Backuper.getInstance().getTaskManager().isLocked() || Backuper.restarting) {
             returnFailure("Blocked by another operation!");
             return false;
         }
@@ -28,8 +28,10 @@ public class ReloadCommand extends Command {
 
     @Override
     public void run() {
+        Backuper.restarting = true;
         Backuper.getInstance().shutdown();
         Backuper.getInstance().init();
         returnSuccess("Reloading completed");
+        Backuper.restarting = false;
     }
 }

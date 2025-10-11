@@ -190,7 +190,7 @@ public class StorageManager implements Listener {
 
                 Component message = Component.empty();
                 message = message
-                        .append(Component.text("%s storage is enabled, but account is not linked!")
+                        .append(Component.text("%s storage is enabled, but account is not linked!".formatted(storage.getId()))
                                 .decorate(TextDecoration.BOLD)
                                 .color(NamedTextColor.RED))
                         .append(Component.newline())

@@ -17,6 +17,7 @@ import java.util.List;
 public class BackupConfig implements Config {
 
     private boolean autoBackup;
+    private long autoBackupPeriod;
     private CronExpression autoBackupCron;
     private String backupFileNameFormat;
     private List<String> addDirectoryToBackup;
@@ -34,13 +35,13 @@ public class BackupConfig implements Config {
     public BackupConfig load(ConfigurationSection config, String name) {
         this.config = config;
         boolean autoBackup = config.getBoolean("autoBackup");
+        this.autoBackupPeriod = config.getLong("autoBackupPeriod");
         CronExpression autoBackupCron = null;
-        if (autoBackup) {
+        if (autoBackup && !config.getString("autoBackupCron").isEmpty()) {
             try {
                 autoBackupCron = new CronExpression(config.getString("autoBackupCron"));
             } catch (ParseException e) {
-                autoBackup = false;
-                Backuper.getInstance().getLogManager().warn("Failed to parse backup.autoBackupCron! Disabling auto backup...");
+                Backuper.getInstance().getLogManager().warn("Failed to parse backup.autoBackupCron! Using autoBackupPeriod instead");
                 Backuper.getInstance().getLogManager().warn(e);
             }
         }

@@ -20,9 +20,10 @@ public class TaskManager {
     @Getter
     private Task currentTask;
     private List<String> currentTaskPermissions;
+    boolean forceLock = false;
 
     private Result start(Task task, CommandSender sender, List<String> permissions, Function<Runnable, CompletableFuture<Void>> taskExecutor) {
-        if (currentTask != null) {
+        if (isLocked()) {
             return Result.LOCKED.sendMessage(task, sender);
         }
         if (!hasPermissions(permissions, sender)) {
@@ -116,7 +117,7 @@ public class TaskManager {
     }
 
     public boolean isLocked() {
-        return currentTask != null;
+        return currentTask != null && !forceLock;
     }
 
     private boolean hasPermissions(List<String> permissions, CommandSender sender) {
@@ -228,5 +229,13 @@ public class TaskManager {
 
     private void sendCancellingMessage(CommandSender sender) {
         UIUtils.sendMessage("Cancelling %s task...".formatted(currentTask.getTaskName()), sender);
+    }
+
+    public void forceLock() {
+        forceLock = true;
+    }
+
+    public void forceUnlock() {
+        forceLock = false;
     }
 }

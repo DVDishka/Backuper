@@ -6,12 +6,8 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
-import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
-import org.bukkit.entity.Player;
-import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.handlers.commands.Permission;
 
 public class UIUtils {
     public static void returnFailure(String message, CommandSender sender) {
@@ -189,48 +185,6 @@ public class UIUtils {
 
     public static void sendFramedMessage(Component message, CommandSender sender) {
         sendFramedMessage(message, 42, sender);
-    }
-
-    public static void sendBackupAlert(long timeSeconds, String afterBackup) {
-
-        boolean restart = false;
-
-        if (afterBackup.equals("STOP")) {
-            Backuper.getInstance().getLogManager().log(Backuper.getInstance().getConfigManager().getServerConfig().getAlertBackupRestartMessage().formatted(timeSeconds));
-            restart = true;
-        }
-        if (afterBackup.equals("RESTART")) {
-            Backuper.getInstance().getLogManager().log(Backuper.getInstance().getConfigManager().getServerConfig().getAlertBackupRestartMessage().formatted(timeSeconds));
-            restart = true;
-        }
-        if (afterBackup.equals("NOTHING")) {
-            Backuper.getInstance().getLogManager().log(Backuper.getInstance().getConfigManager().getServerConfig().getAlertBackupMessage().formatted(timeSeconds));
-        }
-
-        for (Player player : Bukkit.getOnlinePlayers()) {
-
-            if (!player.hasPermission(Permission.ALERT.getPermission())) {
-                continue;
-            }
-
-            if (restart || !Backuper.getInstance().getConfigManager().getServerConfig().isAlertOnlyServerRestart()) {
-
-                Component header = Component.empty();
-
-                header = header
-                        .append(Component.text("Alert")
-                                .decorate(TextDecoration.BOLD));
-
-                Component message = Component.empty();
-
-                message = message
-                        .append(Component.text((restart ? Backuper.getInstance().getConfigManager().getServerConfig().getAlertBackupRestartMessage() :
-                                Backuper.getInstance().getConfigManager().getServerConfig().getAlertBackupMessage()).formatted(timeSeconds)));
-
-                sendFramedMessage(header, message, 15, player);
-                notificationSound(player);
-            }
-        }
     }
 
     public static TextColor getMainColor() {
