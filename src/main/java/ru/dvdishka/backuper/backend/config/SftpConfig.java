@@ -34,7 +34,7 @@ public class SftpConfig implements PathStorageConfig {
 
     public SftpConfig load(ConfigurationSection config, String name) {
         this.config = config;
-        this.id = config.getName();
+        this.id = name;
         this.enabled = config.getBoolean("enabled");
         this.autoBackup = config.getBoolean("autoBackup");
         this.backupsFolder = config.getString("backupsFolder");

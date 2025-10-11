@@ -26,9 +26,8 @@ public class CopyToTask extends BaseTask {
             if (!cancelled) {
                 Backuper.getInstance().getTaskManager().startTaskRaw(copyToTask, sender);
                 targetStorage.renameFile(targetStorage.resolve(targetStorage.getConfig().getBackupsFolder(), sourceBackup.getInProgressFileName()), sourceBackup.getFileName());
-            }
-            if (!cancelled && Backup.BackupFileType.DIR.equals(sourceBackup.getFileType()))
                 targetStorage.getBackupManager().saveBackupSizeToCache(sourceBackup.getName(), sourceBackup.getByteSize());
+            }
         } catch (Exception e) {
             warn(new TaskException(copyToTask, e));
         }

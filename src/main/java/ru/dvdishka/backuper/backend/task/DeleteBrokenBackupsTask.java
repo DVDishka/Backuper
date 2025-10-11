@@ -27,7 +27,6 @@ public class DeleteBrokenBackupsTask extends BaseTask {
         if (cancelled) return;
 
         for (Storage storage : Backuper.getInstance().getStorageManager().getStorages()) {
-            if (!storage.getConfig().isEnabled()) continue;
             if (!storage.checkConnection(sender)) continue;
 
             for (String file : storage.ls(storage.getConfig().getBackupsFolder())) {

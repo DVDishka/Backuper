@@ -174,7 +174,7 @@ public class GoogleDriveStorage implements UserAuthStorage {
                     .setAccessType("offline")
                     .build();
 
-            credential = flow.loadCredential("user");
+            credential = flow.loadCredential(id);
 
             if (credential != null
                     && (credential.getRefreshToken() != null
@@ -269,7 +269,6 @@ public class GoogleDriveStorage implements UserAuthStorage {
 
     /**
      * @param driveFileId Parent Google Drive file ID. "drive" to get all drive files. "" To get all files
-     * @param driveFileId Parent Google Drive file ID. "drive" to get all drive files. "" To get all files
      * @return Returns files names
      **/
     @Override
@@ -280,7 +279,7 @@ public class GoogleDriveStorage implements UserAuthStorage {
     /**
      * @param driveFileId Parent Google Drive file ID. "drive" to get all drive files. "" to get all files
      * @param query       Additional parameters to find some file faster. "appProperties has { key='backuper' and value='true' }" will be added in the query string anyway
-     * @return Returns List of File objects that contains only name and id of the file
+     * @return Returns List of File objects that contains only the name and id of the file
      * */
     public List<com.google.api.services.drive.model.File> ls(String driveFileId, String query) throws StorageQuotaExceededException, StorageMethodException, StorageConnectionException {
         return ((Retriable<List<com.google.api.services.drive.model.File>>) () -> {
@@ -291,6 +290,7 @@ public class GoogleDriveStorage implements UserAuthStorage {
             do {
                 Drive.Files.List lsRequest = service.files().list()
                         .setFields("nextPageToken, files(id, name)")
+                        .setPageSize(1000)
                         .setPageToken(pageToken);
                 String q = "appProperties has { key='backuper' and value='true' }";
                 if (query != null) {
