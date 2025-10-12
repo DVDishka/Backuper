@@ -98,7 +98,7 @@ storages:
     # (true/false) Should backups be packaged in a zip archive
     zipArchive: true
     # (0 - 9) archive compression level. A higher value may reduce file size but may also increase the time required to archive and decompress
-    zipCompressionLevel: 2
+    zipCompressionLevel: 5
 
     auth:
       # Directory where you want to store your Google authentication tokens

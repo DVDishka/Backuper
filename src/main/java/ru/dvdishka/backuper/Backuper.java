@@ -56,6 +56,9 @@ public class Backuper extends JavaPlugin implements Listener {
         registerEventHandlers();
         init();
         commandManager.registerCommands(); // Shouldn't be reloaded with plugin reload using command /backuper config reload
+        scheduleManager.runAsync(() -> { // Very big performance impact if run it on every reload
+            storageManager.indexStorages();
+        });
 
         Backuper.getInstance().getLogManager().log("Backuper plugin has been enabled!");
     }
@@ -79,7 +82,6 @@ public class Backuper extends JavaPlugin implements Listener {
         scheduleManager.runAsync(() -> {
             storageManager.loadSizeCache();
             storageManager.checkStoragesConnection();
-            storageManager.indexStorages();
         });
         bstats.init(this);
         checkDependencies();
