@@ -16,7 +16,9 @@ public abstract class BaseTask implements Task {
     protected long currentProgress = 0;
     protected long maxProgress = 0;
     protected boolean cancelled = false;
+
     protected CompletableFuture<Void> prepareTaskFuture = null;
+    protected CompletableFuture<Void> taskFuture = null;
 
     protected BaseTask() {}
 
@@ -97,9 +99,24 @@ public abstract class BaseTask implements Task {
     @ApiStatus.Internal
     public abstract void cancel();
 
-    @ApiStatus.Internal
+    @Override
     public void setPrepareTaskFuture(CompletableFuture<Void> future) {
         this.prepareTaskFuture = future;
+    }
+
+    @Override
+    public CompletableFuture<Void> getPrepareTaskFuture() {
+        return prepareTaskFuture;
+    }
+
+    @Override
+    public void setTaskFuture(CompletableFuture<Void> future) {
+        this.taskFuture = future;
+    }
+
+    @Override
+    public CompletableFuture<Void> getTaskFuture() {
+        return taskFuture;
     }
 
     protected void warn(String message) {

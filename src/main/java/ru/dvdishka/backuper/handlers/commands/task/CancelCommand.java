@@ -54,6 +54,6 @@ public class CancelCommand extends ConfirmableCommand {
 
     @Override
     public void run() {
-        Backuper.getInstance().getTaskManager().cancelTask(Backuper.getInstance().getTaskManager().getCurrentTask(), sender);
+        Backuper.getInstance().getTaskManager().cancelCurrentTask(sender);
     }
 }

@@ -43,6 +43,7 @@ public class TaskManager {
             this.currentTask = null;
             Result.COMPLETED.sendMessage(task, sender);
         });
+        currentTask.setTaskFuture(taskFuture);
         if (taskFuture.isDone()) {
             return Result.COMPLETED;
         } else {
@@ -75,6 +76,16 @@ public class TaskManager {
 
     public void cancelTaskRaw(Task task) {
         task.cancel();
+        if (task.getPrepareTaskFuture() != null) {
+            task.getPrepareTaskFuture().cancel(true);
+            task.getPrepareTaskFuture().join();
+            task.setPrepareTaskFuture(null);
+        }
+        if (task.getTaskFuture() != null) {
+            task.getTaskFuture().cancel(true);
+            task.getTaskFuture().join();
+            task.setTaskFuture(null);
+        }
     }
 
     /***
@@ -101,17 +112,17 @@ public class TaskManager {
         }
     }
 
-    public Result cancelTask(Task task, CommandSender sender) {
+    public Result cancelCurrentTask(CommandSender sender) {
         if (currentTask == null) {
-            return Result.NO_TASK_RUNNING.sendMessage(task, sender);
+            return Result.NO_TASK_RUNNING.sendMessage(null, sender);
         }
         if (!hasPermissions(currentTaskPermissions, sender)) {
-            return Result.NO_PERMISSION.sendMessage(task, sender);
+            return Result.NO_PERMISSION.sendMessage(currentTask, sender);
         }
-        sendCancellingMessage(sender);// Message that a cancelling process is started. (Cancelling may take a while)
-        task.cancel();
+        sendCancellingMessage(sender); // Message that a cancelling process is started. (Cancelling may take a while)
+        cancelTaskRaw(currentTask);
+        Result.CANCELLED.sendMessage(currentTask, sender);
         currentTask = null;
-        Result.CANCELLED.sendMessage(task, sender);
         startTask(new DeleteBrokenBackupsTask(), sender, currentTaskPermissions);
         return Result.CANCELLED;
     }

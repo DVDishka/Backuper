@@ -37,11 +37,17 @@ public interface Task {
     void start(CommandSender sender) throws TaskException;
 
     /***
-     * This method should only be used to declare Task's cancel logic, don't use it to cancel any task. Use TaskManager.cancel instead
+     * This method should only be used to declare Task's cancel logic, don't use it to cancel any task. Use TaskManager.cancelCurrentTask instead
      */
     void cancel();
 
     void setPrepareTaskFuture(CompletableFuture<Void> future);
+
+    CompletableFuture<Void> getPrepareTaskFuture();
+
+    void setTaskFuture(CompletableFuture<Void> future);
+
+    CompletableFuture<Void> getTaskFuture();
 
     boolean isTaskPrepared();
 }
