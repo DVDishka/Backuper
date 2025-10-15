@@ -23,9 +23,9 @@ storages:
 ### Basic Settings
 
 ```yaml
-type: local                  # Storage type - must be 'local' for local file system storage
-enabled: true                # Enable/disable this storage (true/false)
-autoBackup: true             # Include this storage in automatic backups (true/false)
+type: local
+enabled: true
+autoBackup: true
 ```
 
 - **type**: Defines the storage implementation. Must be `local` for local file system storage.
@@ -35,7 +35,7 @@ autoBackup: true             # Include this storage in automatic backups (true/f
 ### Location
 
 ```yaml
-backupsFolder: ./plugins/Backuper/Backups  # Directory where backups will be stored
+backupsFolder: ./plugins/Backuper/Backups
 ```
 
 - **backupsFolder**: Full path to the directory where backup files will be stored. Can be relative to server directory or absolute path.
@@ -51,8 +51,8 @@ backupsFolder: ./plugins/Backuper/Backups  # Directory where backups will be sto
 ### Backup Limits
 
 ```yaml
-maxBackupsNumber: 0          # Maximum number of backups to keep (0 = unlimited)
-maxBackupsWeight: 0          # Maximum total size of all backups in MB (0 = unlimited)
+maxBackupsNumber: 0
+maxBackupsWeight: 0
 ```
 
 - **maxBackupsNumber**: Limits the number of backup files/folders stored. When exceeded, oldest backups are deleted automatically. Set to `0` for unlimited backups.
@@ -61,11 +61,11 @@ maxBackupsWeight: 0          # Maximum total size of all backups in MB (0 = unli
 ### Compression
 
 ```yaml
-zipArchive: true             # Store backups as ZIP files (true/false)
-zipCompressionLevel: 5       # ZIP compression level (0-9)
+zipArchive: true
+zipCompressionLevel: 5
 ```
 
-- **zipArchive**: When `true`, backups are stored as compressed ZIP files. When `false`, backups are stored as folder structures (faster but larger).
+- **zipArchive**: When `true`, backups are stored as compressed ZIP files. When `false`, backups are stored as folder structures.
 - **zipCompressionLevel**: Controls ZIP compression strength. Higher values create smaller files but take more time:
   - `0` - No compression (fastest, largest files)
   - `1-3` - Low compression (fast, moderate file size)

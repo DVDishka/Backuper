@@ -35,9 +35,9 @@ storages:
 ### Basic Settings
 
 ```yaml
-type: sftp                   # Storage type - must be 'sftp' for SFTP server storage
-enabled: true                # Enable/disable this storage (true/false)
-autoBackup: true             # Include this storage in automatic backups (true/false)
+type: sftp
+enabled: true
+autoBackup: true
 ```
 
 - **type**: Defines the storage implementation. Must be `sftp` for SFTP (SSH File Transfer Protocol) server storage.
@@ -47,8 +47,8 @@ autoBackup: true             # Include this storage in automatic backups (true/f
 ### Location
 
 ```yaml
-backupsFolder: ./            # Directory on SFTP server where backups will be stored
-pathSeparatorSymbol: /       # Path separator symbol used on SFTP server
+backupsFolder: ./
+pathSeparatorSymbol: /
 ```
 
 - **backupsFolder**: Directory path on the SFTP server where backup files will be stored. Can be relative to user's home directory or absolute path.
@@ -60,8 +60,8 @@ pathSeparatorSymbol: /       # Path separator symbol used on SFTP server
 ### Backup Limits
 
 ```yaml
-maxBackupsNumber: 0          # Maximum number of backups to keep (0 = unlimited)
-maxBackupsWeight: 0          # Maximum total size of all backups in MB (0 = unlimited)
+maxBackupsNumber: 0
+maxBackupsWeight: 0
 ```
 
 - **maxBackupsNumber**: Limits the number of backup files stored on SFTP server. When exceeded, oldest backups are deleted automatically. Set to `0` for unlimited backups.
@@ -70,11 +70,11 @@ maxBackupsWeight: 0          # Maximum total size of all backups in MB (0 = unli
 ### Compression
 
 ```yaml
-zipArchive: true             # Store backups as ZIP files (true/false)
-zipCompressionLevel: 5       # ZIP compression level (0-9)
+zipArchive: true
+zipCompressionLevel: 5
 ```
 
-- **zipArchive**: When `true`, backups are stored as compressed ZIP files. When `false`, backups are stored as folder structures (faster upload but larger transfer size).
+- **zipArchive**: When `true`, backups are stored as compressed ZIP files. When `false`, backups are stored as folder structures.
 - **zipCompressionLevel**: Controls ZIP compression strength. Higher values create smaller files but take more time:
   - `0` - No compression (fastest, largest files)
   - `1-3` - Low compression (fast, moderate file size)
@@ -85,15 +85,15 @@ zipCompressionLevel: 5       # ZIP compression level (0-9)
 
 ```yaml
 auth:
-  address: ''                # SFTP server hostname or IP address
-  port: 22                   # SFTP server port number
-  authType: password         # Authentication method
-  username: ''               # SFTP server username
-  password: ''               # SFTP server password or SSH key passphrase
-  keyFilePath: ''            # Path to SSH private key file
-  useKnownHostsFile: false   # Whether to use SSH known_hosts file
-  knownHostsFilePath: ''     # Path to SSH known_hosts file
-  sshConfigFilePath: ''      # Path to OpenSSH configuration file
+  address: ''
+  port: 22
+  authType: password
+  username: ''
+  password: ''
+  keyFilePath: ''
+  useKnownHostsFile: false
+  knownHostsFilePath: ''
+  sshConfigFilePath: ''
 ```
 
 - **address**: Hostname or IP address of the SFTP server (e.g., `sftp.example.com` or `192.168.1.100`).

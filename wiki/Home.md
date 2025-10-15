@@ -46,6 +46,53 @@ Simple backup plugin for Paper/Folia with **FTP/SFTP/Google Drive** support.
 
 ---
 
+## ⚙️ Basic Configuration ⚙️
+
+After installing the plugin, configure the main settings in `plugins/Backuper/config.yml`:
+
+### Backup Settings
+
+```yaml
+backup:
+  autoBackup: true
+  autoBackupPeriod: 1440
+  autoBackupCron: ''
+```
+
+- **autoBackup** - Enable/disable automatic backups
+- **autoBackupPeriod** - Backup interval in minutes (1440 = 24 hours). Used only when autoBackupCron is empty
+- **autoBackupCron** - Backup schedule ([CronMaker](http://www.cronmaker.com) for custom schedules). If specified, this value is used instead of autoBackupPeriod
+
+### Local Storage
+
+```yaml
+storages:
+  local:
+    type: local
+    enabled: true
+    autoBackup: true
+    
+    backupsFolder: ./plugins/Backuper/Backups
+    
+    maxBackupsNumber: 10
+    maxBackupsWeight: 0
+    
+    zipArchive: true
+    zipCompressionLevel: 5
+```
+
+- **enabled** - Enable/disable this storage
+- **autoBackup** - Save automatic backups to this storage
+- **backupsFolder** - Directory where backups will be stored
+- **maxBackupsNumber** - Maximum number of backups to keep (0 = unlimited)
+- **maxBackupsWeight** - Maximum total size in MB (0 = unlimited)
+- **zipArchive** - Store as ZIP files or folders
+- **zipCompressionLevel** - Compression level (0-9)
+
+For detailed configuration and remote storage options (**FTP/SFTP/Google Drive**), see [[Configuration]]
+
+---
+
 ## 💾 Storage Types 💾
 
 - **Local** - Store backups on the same server
@@ -70,10 +117,11 @@ See [[Permissions System|Permissions-System]]
 
 ## 🔄 Version Compatibility 🔄
 
-### Version Numbering (X.Y.Z)
+### Version Numbering (X.Y.Z(A))
 - **X** - Breaking changes without backward compatibility
 - **Y** - Significant changes with backward compatibility  
 - **Z** - Minor changes and improvements
+- **A** - Bugfixes or security/stability improvements (hotfixes)
 
 ### Major Version Changes
 - **1.x.x → 2.x.x**: Complete permission and command system overhaul

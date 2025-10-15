@@ -27,9 +27,9 @@ storages:
 ### Basic Settings
 
 ```yaml
-type: googleDrive            # Storage type - must be 'googleDrive' for Google Drive storage
-enabled: true                # Enable/disable this storage (true/false)
-autoBackup: true             # Include this storage in automatic backups (true/false)
+type: googleDrive
+enabled: true
+autoBackup: true
 ```
 
 - **type**: Defines the storage implementation. Must be `googleDrive` for Google Drive cloud storage.
@@ -39,8 +39,8 @@ autoBackup: true             # Include this storage in automatic backups (true/f
 ### Location
 
 ```yaml
-backupsFolderId: ''          # Google Drive folder ID where backups will be stored
-createBackuperFolder: true   # Whether to create a dedicated Backuper folder
+backupsFolderId: ''
+createBackuperFolder: true
 ```
 
 - **backupsFolderId**: Google Drive folder ID where backups will be stored. Leave empty (`''`) to use the root directory of Google Drive. To use a specific folder, provide the folder ID (found in the Google Drive URL).
@@ -49,8 +49,8 @@ createBackuperFolder: true   # Whether to create a dedicated Backuper folder
 ### Backup Limits
 
 ```yaml
-maxBackupsNumber: 0          # Maximum number of backups to keep (0 = unlimited)
-maxBackupsWeight: 0          # Maximum total size of all backups in MB (0 = unlimited)
+maxBackupsNumber: 0
+maxBackupsWeight: 0
 ```
 
 - **maxBackupsNumber**: Limits the number of backup files stored on Google Drive. When exceeded, oldest backups are deleted automatically. Set to `0` for unlimited backups.
@@ -59,22 +59,22 @@ maxBackupsWeight: 0          # Maximum total size of all backups in MB (0 = unli
 ### Compression
 
 ```yaml
-zipArchive: true             # Store backups as ZIP files (true/false)
-zipCompressionLevel: 5       # ZIP compression level (0-9)
+zipArchive: true
+zipCompressionLevel: 5
 ```
 
-- **zipArchive**: When `true`, backups are stored as compressed ZIP files. When `false`, backups are stored as folder structures (slower upload and larger storage usage).
-- **zipCompressionLevel**: Controls ZIP compression strength. For Google Drive, lower values are recommended for faster uploads:
-  - `0` - No compression (fastest upload, largest files)
-  - `1-3` - Low compression (fast upload, moderate file size) - **Recommended for Google Drive**
+- **zipArchive**: When `true`, backups are stored as compressed ZIP files. When `false`, backups are stored as folder structures.
+- **zipCompressionLevel**: Controls ZIP compression strength. Higher values create smaller files but take more time:
+  - `0` - No compression (fastest, largest files)
+  - `1-3` - Low compression (fast, moderate file size)
   - `4-6` - Balanced compression (moderate speed and size)
-  - `7-9` - High compression (slower upload, smallest files)
+  - `7-9` - High compression (slower, smallest files)
 
 ### Authentication
 
 ```yaml
 auth:
-  tokenFolderPath: ./plugins/Backuper/GoogleDrive/tokens  # Directory for storing authentication tokens
+  tokenFolderPath: ./plugins/Backuper/GoogleDrive/tokens
 ```
 
 - **tokenFolderPath**: Directory where Google Drive authentication tokens will be stored. These tokens are used to maintain access to your Google Drive account without repeated login prompts.
