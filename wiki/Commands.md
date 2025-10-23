@@ -1,5 +1,3 @@
-# Commands Reference
-
 ## Backup Commands
 
 ### Manual Backup

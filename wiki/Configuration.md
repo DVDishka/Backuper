@@ -1,5 +1,3 @@
-# Configuration
-
 ## Backup Section
 
 ### Automatic Backup

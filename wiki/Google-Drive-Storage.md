@@ -1,5 +1,3 @@
-# Google Drive Storage
-
 ## Default Configuration
 
 ```yaml

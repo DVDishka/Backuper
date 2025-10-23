@@ -18,6 +18,7 @@ Simple backup plugin for Paper/Folia with **FTP/SFTP/Google Drive** support.
 
 ## 🔗 Pages 🔗
 
+* [📖 Wiki](https://github.com/DVDishka/Backuper/wiki)
 * [<img width="20px" src="https://raw.githubusercontent.com/DVDishka/Backuper/refs/heads/master/images/backuper_logo.svg"></img>](https://backuper-mc.com)[ Backuper](https://backuper-mc.com)
 * [<img width="20px" src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"></img>](https://github.com/DVDishka/Backuper)[ GitHub](https://github.com/DVDishka/Backuper)
 * [<img width="20px" src="https://i.imgur.com/o104U27.png"></img>](https://modrinth.com/plugin/backuper)[ Modrinth](https://modrinth.com/plugin/backuper)

@@ -1,5 +1,3 @@
-# Storages Section Configuration
-
 ## Storage Types
 
 - `local` - Local file system storage

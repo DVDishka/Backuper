@@ -1,5 +1,3 @@
-# FTP Storage
-
 ## Default Configuration
 
 ```yaml

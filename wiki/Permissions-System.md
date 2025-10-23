@@ -1,5 +1,3 @@
-# Permissions System
-
 ## Permissions
 
 ### Core Permission

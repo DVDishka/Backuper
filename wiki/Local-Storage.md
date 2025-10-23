@@ -1,5 +1,3 @@
-# Local Storage
-
 ## Default Configuration
 
 ```yaml

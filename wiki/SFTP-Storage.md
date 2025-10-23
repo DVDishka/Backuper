@@ -1,5 +1,3 @@
-# SFTP Storage
-
 ## Default Configuration
 
 ```yaml
