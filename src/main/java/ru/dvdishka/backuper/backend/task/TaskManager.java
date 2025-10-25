@@ -79,12 +79,10 @@ public class TaskManager {
         if (task.getPrepareTaskFuture() != null) {
             task.getPrepareTaskFuture().cancel(true);
             task.getPrepareTaskFuture().join();
-            task.setPrepareTaskFuture(null);
         }
         if (task.getTaskFuture() != null) {
             task.getTaskFuture().cancel(true);
             task.getTaskFuture().join();
-            task.setTaskFuture(null);
         }
     }
 

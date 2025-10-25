@@ -23,7 +23,7 @@ public class UnZIPCommand extends ConfirmableCommand {
     public boolean check() {
         storage = Backuper.getInstance().getStorageManager().getStorage((String) arguments.get("storage"));
         if (storage == null) {
-            returnFailure("Wrong storage name %s".formatted((String) arguments.get("storage")));
+            returnFailure("Wrong storage name %s".formatted(arguments.get("storage")));
             return false;
         }
         if (!storage.checkConnection()) {
@@ -32,7 +32,7 @@ public class UnZIPCommand extends ConfirmableCommand {
         }
         backup = storage.getBackupManager().getBackup((String) arguments.get("backupName"));
         if (backup == null) {
-            returnFailure("Wrong backup name %s".formatted((String) arguments.get("backupName")));
+            returnFailure("Wrong backup name %s".formatted(arguments.get("backupName")));
             return false;
         }
         if (Backup.BackupFileType.DIR.equals(backup.getFileType())) {
@@ -49,7 +49,6 @@ public class UnZIPCommand extends ConfirmableCommand {
         }
 
         setMessage(backup);
-        setMainCommand("/backuper menu %s \"%s\" unZIP");
         return true;
     }
 

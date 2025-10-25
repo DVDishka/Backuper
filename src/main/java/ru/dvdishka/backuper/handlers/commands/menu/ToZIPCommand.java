@@ -49,7 +49,6 @@ public class ToZIPCommand extends ConfirmableCommand {
         }
 
         setMessage(backup);
-        setMainCommand("/backuper menu %s \"%s\" toZIP");
         return true;
     }
 

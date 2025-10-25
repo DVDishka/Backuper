@@ -41,6 +41,7 @@ public class ListCommand extends Command {
             returnFailure("Wrong storage name %s".formatted((String) arguments.get("storage")));
             return false;
         }
+        if (sendResult) sendMessage("Creating a list of backups may take some time...");
         if (!storage.checkConnection()) {
             returnFailure("Failed to establish connection to %s storage".formatted(storage.getId()));
             return false;
@@ -50,10 +51,9 @@ public class ListCommand extends Command {
             return false;
         }
 
-        if (sendResult) sendMessage("Creating a list of backups may take some time...");
         int listPageCount = getListPageCount(); // Page update happens there
         int pageNumber = (Integer) arguments.getOrDefault("pageNumber", 1);
-        if (pageNumber < 1 || pageNumber > listPageCount) {
+        if (pageNumber < 1) {
             returnFailure("Invalid page number!");
             return false;
         }
@@ -123,33 +123,35 @@ public class ListCommand extends Command {
                     .append(Component.text("<<<<<<<<")
                             .decorate(TextDecoration.BOLD)
                             .color(UIUtils.getSecondaryColor())
-                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list %s %s".formatted(storage, pageNumber - 1))))
+                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list %s %s".formatted(storage.getId(), pageNumber - 1))))
                     .append(Component.text(String.valueOf(pageNumber))
                             .decorate(TextDecoration.BOLD))
                     .append(Component.text(">>>>>>>>")
                             .decorate(TextDecoration.BOLD)
                             .color(UIUtils.getSecondaryColor())
-                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list %s %s".formatted(storage, pageNumber + 1))))
+                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list %s %s".formatted(storage.getId(), pageNumber + 1))))
                     .append(Component.newline());
 
-            for (TextComponent backupComponent : pages.get(pageNumber - 1)) {
-                message = message
-                        .append(Component.space())
-                        .append(backupComponent)
-                        .append(Component.newline());
+            if (pages.size() >= pageNumber) {
+                for (TextComponent backupComponent : pages.get(pageNumber - 1)) {
+                    message = message
+                            .append(Component.space())
+                            .append(backupComponent)
+                            .append(Component.newline());
+                }
             }
 
             message = message
                     .append(Component.text("<<<<<<<<")
                             .decorate(TextDecoration.BOLD)
                             .color(UIUtils.getSecondaryColor())
-                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list %s %s".formatted(storage, pageNumber - 1))))
+                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list %s %s".formatted(storage.getId(), pageNumber - 1))))
                     .append(Component.text(String.valueOf(pageNumber))
                             .decorate(TextDecoration.BOLD))
                     .append(Component.text(">>>>>>>>")
                             .decorate(TextDecoration.BOLD)
                             .color(UIUtils.getSecondaryColor())
-                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list %s %s".formatted(storage, pageNumber + 1))));
+                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list %s %s".formatted(storage.getId(), pageNumber + 1))));
 
         // For console
         } else {
@@ -165,20 +167,22 @@ public class ListCommand extends Command {
                                 .color(UIUtils.getSecondaryColor()))
                         .append(Component.newline());
 
-                for (TextComponent backupComponent : pages.get(pageNumber - 1)) {
-                    if (backupIndex > 1) message = message.append(Component.newline());
-                    String backupName = backupComponent.content();
-                    message = message
-                            .append(Component.text(backupName))
-                            .append(Component.space())
-                            .append(Component.text("(%s)".formatted(storage.getId())))
-                            .append(Component.space())
-                            .append(Component.text(backupNameFileType.get(backupName).name()))
-                            .append(Component.space())
-                            .append(Component.text(backupNameMbSize.get(backupName)))
-                            .append(Component.space())
-                            .append(Component.text("MB"));
-                    backupIndex++;
+                if (pages.size() >= pageNumber) {
+                    for (TextComponent backupComponent : pages.get(pageNumber - 1)) {
+                        if (backupIndex > 1) message = message.append(Component.newline());
+                        String backupName = backupComponent.content();
+                        message = message
+                                .append(Component.text(backupName))
+                                .append(Component.space())
+                                .append(Component.text("(%s)".formatted(storage.getId())))
+                                .append(Component.space())
+                                .append(Component.text(backupNameFileType.get(backupName).name()))
+                                .append(Component.space())
+                                .append(Component.text(backupNameMbSize.get(backupName)))
+                                .append(Component.space())
+                                .append(Component.text("MB"));
+                        backupIndex++;
+                    }
                 }
 
                 message = message

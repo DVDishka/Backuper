@@ -46,7 +46,6 @@ public class DeleteCommand extends ConfirmableCommand {
         }
 
         setMessage(backup);
-        setMainCommand("/backuper menu %s \"%s\" delete");
         return true;
     }
 

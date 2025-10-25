@@ -62,7 +62,6 @@ public class CopyToCommand extends ConfirmableCommand {
         }
 
         setMessage(backup);
-        setMainCommand("/backuper menu %s \"%s\" copyTo %s".formatted(sourceStorage.getId(), backup.getName(), targetStorage.getId()));
         return true;
     }
 

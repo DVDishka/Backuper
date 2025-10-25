@@ -1,7 +1,6 @@
 package ru.dvdishka.backuper.handlers.commands;
 
 import dev.jorel.commandapi.executors.CommandArguments;
-import lombok.Setter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
@@ -13,8 +12,6 @@ import ru.dvdishka.backuper.backend.backup.Backup;
 public abstract class ConfirmableCommand extends Command {
 
     protected Component message = null;
-    @Setter
-    protected String mainCommand;
 
     protected ConfirmableCommand(CommandSender sender, CommandArguments arguments) {
         super(sender, arguments);
@@ -35,7 +32,7 @@ public abstract class ConfirmableCommand extends Command {
         }
         message = message
                 .append(Component.text("[CONFIRM]")
-                        .clickEvent(ClickEvent.runCommand(this.mainCommand))
+                        .clickEvent(ClickEvent.callback((audience) -> execute()))
                         .color(TextColor.color(0xB02100))
                         .decorate(TextDecoration.BOLD));
 

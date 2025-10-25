@@ -48,7 +48,6 @@ public class CancelCommand extends ConfirmableCommand {
                         .color(color));
 
         setMessage(message);
-        setMainCommand("/backuper task cancel");
         return true;
     }
 
