@@ -1,5 +1,6 @@
 package ru.dvdishka.backuper.backend;
 
+import net.kyori.adventure.text.Component;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import ru.dvdishka.backuper.Backuper;
@@ -20,6 +21,19 @@ public class LogManager {
 
         if (!(sender instanceof ConsoleCommandSender)) {
             try {
+                UIUtils.sendMessage(text, sender);
+            } catch (Exception ignored) {
+            }
+        }
+    }
+
+    public void log(Component text, CommandSender sender) {
+
+        Backuper.getInstance().getComponentLogger().info(text);
+
+        if (!(sender instanceof ConsoleCommandSender)) {
+            try {
+                text = Component.newline().append(text); // For better framed messages formatting
                 UIUtils.sendMessage(text, sender);
             } catch (Exception ignored) {
             }

@@ -43,7 +43,7 @@ public class TaskManager {
             this.currentTask = null;
             Result.COMPLETED.sendMessage(task, sender);
         });
-        currentTask.setTaskFuture(taskFuture);
+        task.setTaskFuture(taskFuture);
         if (taskFuture.isDone()) {
             return Result.COMPLETED;
         } else {
@@ -77,12 +77,20 @@ public class TaskManager {
     public void cancelTaskRaw(Task task) {
         task.cancel();
         if (task.getPrepareTaskFuture() != null) {
-            task.getPrepareTaskFuture().cancel(true);
-            task.getPrepareTaskFuture().join();
+            try {
+                task.getPrepareTaskFuture().cancel(false);
+                task.getPrepareTaskFuture().join();
+            } catch (Exception e) {
+                // No need to handle if it was interrupted
+            }
         }
         if (task.getTaskFuture() != null) {
-            task.getTaskFuture().cancel(true);
-            task.getTaskFuture().join();
+            try {
+                task.getTaskFuture().cancel(false);
+                task.getTaskFuture().join();
+            } catch (Exception e) {
+                // No need to handle if it was interrupted
+            }
         }
     }
 
@@ -119,9 +127,6 @@ public class TaskManager {
         }
         sendCancellingMessage(sender); // Message that a cancelling process is started. (Cancelling may take a while)
         cancelTaskRaw(currentTask);
-        Result.CANCELLED.sendMessage(currentTask, sender);
-        currentTask = null;
-        startTask(new DeleteBrokenBackupsTask(), sender, currentTaskPermissions);
         return Result.CANCELLED;
     }
 
@@ -161,7 +166,7 @@ public class TaskManager {
          * @return Returns itself
          */
         public Result sendMessage(Task task, CommandSender sender) {
-            UIUtils.sendMessage(getMessage(task, sender), sender);
+            Backuper.getInstance().getLogManager().log(getMessage(task, sender), sender);
             return this;
         }
 
@@ -172,8 +177,8 @@ public class TaskManager {
                     .append(Component.text("The "))
                     .append(Component.text(task.getTaskName())
                             .decorate(TextDecoration.BOLD)
-                            .color(TextColor.color(0x4974B)))
-                    .append(Component.text(" task completed"));
+                            .color(TextColor.color(task.isCancelled() ? 0xB02100 : 0x4974B)))
+                    .append(Component.text(" task %s".formatted(task.isCancelled() ? "cancelled" : "completed")));
 
             if (!(sender instanceof ConsoleCommandSender)) {
                 return UIUtils.getFramedMessage(message, 15, sender);
@@ -237,7 +242,7 @@ public class TaskManager {
     }
 
     private void sendCancellingMessage(CommandSender sender) {
-        UIUtils.sendMessage("Cancelling %s task...".formatted(currentTask.getTaskName()), sender);
+        Backuper.getInstance().getLogManager().log("Cancelling %s task...".formatted(currentTask.getTaskName()), sender);
     }
 
     public void forceLock() {

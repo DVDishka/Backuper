@@ -32,7 +32,7 @@ public abstract class ConfirmableCommand extends Command {
         }
         message = message
                 .append(Component.text("[CONFIRM]")
-                        .clickEvent(ClickEvent.callback((audience) -> execute()))
+                        .clickEvent(ClickEvent.callback((audience) -> this.execute()))
                         .color(TextColor.color(0xB02100))
                         .decorate(TextDecoration.BOLD));
 

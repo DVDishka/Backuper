@@ -17,6 +17,8 @@ public class AutoBackupScheduleManager {
             this.autoBackupJobScheduler = new AutoBackupPeriodJobScheduler(this);
         }
 
+        if (!Backuper.getInstance().getConfigManager().getBackupConfig().isAutoBackup()) return;
+
         Backuper.getInstance().getScheduleManager().runAsync(() -> {
             Backuper.getInstance().getLogManager().log("Initializing auto backup...");
 

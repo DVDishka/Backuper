@@ -55,7 +55,8 @@ public class StatusCommand extends Command {
                 .append(Component.newline())
                 .append(Component.text("Task progress:"))
                 .append(Component.space())
-                .append(Component.text(!Backuper.getInstance().getTaskManager().getCurrentTask().isTaskPrepared() ? "Preparing..." : "%s%%".formatted(progress))
+                .append(Component.text((!Backuper.getInstance().getTaskManager().getCurrentTask().isTaskPrepared() ? "Preparing..." : "%s%%".formatted(progress)) +
+                                (Backuper.getInstance().getTaskManager().getCurrentTask().isCancelled() ? " (Cancelling...)" : ""))
                         .decorate(TextDecoration.BOLD)
                         .color(color));
 
