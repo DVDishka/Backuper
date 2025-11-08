@@ -43,22 +43,8 @@ public abstract class Command {
         UIUtils.returnSuccess(message, sender);
     }
 
-    @SuppressWarnings("unused")
-    protected void returnSuccess(String message, TextColor color) {
-        UIUtils.returnSuccess(message, sender, color);
-    }
-
     protected void returnFailure(String message) {
         UIUtils.returnFailure(message, sender);
-    }
-
-    @SuppressWarnings("unused")
-    protected void returnFailure(String message, TextColor color) {
-        UIUtils.returnFailure(message, sender, color);
-    }
-
-    protected void returnWarning(String message, TextColor color) {
-        UIUtils.returnWarning(message, sender, color);
     }
 
     protected void returnWarning(String message) {
@@ -74,7 +60,7 @@ public abstract class Command {
     }
 
     protected void buttonSound() {
-        UIUtils.normalSound(sender);
+        UIUtils.buttonSound(sender);
     }
 
     protected void successSound() {

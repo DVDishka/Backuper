@@ -21,7 +21,7 @@ public interface Backup extends Comparable<Backup> {
         return getLocalDateTime().format(Backuper.getInstance().getConfigManager().getBackupConfig().getDateTimeFormatter());
     }
 
-    private long calculateByteSize() {
+    default long calculateByteSize() {
         return getStorage().getDirByteSize(getPath());
     }
 

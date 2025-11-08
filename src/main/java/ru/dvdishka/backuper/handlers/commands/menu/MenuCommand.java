@@ -2,6 +2,7 @@ package ru.dvdishka.backuper.handlers.commands.menu;
 
 import dev.jorel.commandapi.executors.CommandArguments;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickCallback;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.TextColor;
@@ -14,6 +15,8 @@ import ru.dvdishka.backuper.backend.storage.Storage;
 import ru.dvdishka.backuper.backend.util.UIUtils;
 import ru.dvdishka.backuper.handlers.commands.Command;
 import ru.dvdishka.backuper.handlers.commands.Permission;
+
+import java.util.HashMap;
 
 public class MenuCommand extends Command {
 
@@ -72,7 +75,26 @@ public class MenuCommand extends Command {
             if (Backup.BackupFileType.DIR.equals(backup.getFileType())) {
                 message = message
                         .append(Component.text("[TO ZIP]")
-                                .clickEvent(ClickEvent.runCommand("/backuper menu %s \"%s\" toZIPConfirmation".formatted(storage.getId(), backup.getName())))
+                                .clickEvent(ClickEvent.callback((audience) -> {
+                                    new ToZIPCommand((CommandSender) audience,
+                                            new CommandArguments(
+                                                    new Object[]{backup.getStorage().getId(), backup.getName()},
+                                                    new HashMap<>(){
+                                                        {
+                                                            put("storage", backup.getStorage().getId());
+                                                            put("backupName", backup.getName());
+                                                        }
+                                                    },
+                                                    new String[]{ backup.getStorage().getId(), backup.getName() },
+                                                    new HashMap<>() {
+                                                        {
+                                                            put("storage", backup.getStorage().getId());
+                                                            put("backupName", backup.getName());
+                                                        }
+                                                    },
+                                                    "/backuper menu \"%s\" \"%s\" tozip".formatted(backup.getStorage().getId(), backup.getName())
+                                            )).executeConfirm();
+                                }))
                                 .decorate(TextDecoration.BOLD)
                                 .color(TextColor.color(0x4974B)))
                         .append(Component.space());
@@ -81,7 +103,26 @@ public class MenuCommand extends Command {
             if (Backup.BackupFileType.ZIP.equals(backup.getFileType())) {
                 message = message
                         .append(Component.text("[UNZIP]")
-                                .clickEvent(ClickEvent.runCommand("/backuper menu %s \"%s\" unZIPConfirmation".formatted(storage.getId(), backup.getName())))
+                                .clickEvent(ClickEvent.callback((audience) -> {
+                                    new UnZIPCommand((CommandSender) audience,
+                                            new CommandArguments(
+                                                    new Object[]{backup.getStorage().getId(), backup.getName()},
+                                                    new HashMap<>(){
+                                                        {
+                                                            put("storage", backup.getStorage().getId());
+                                                            put("backupName", backup.getName());
+                                                        }
+                                                    },
+                                                    new String[]{ backup.getStorage().getId(), backup.getName() },
+                                                    new HashMap<>() {
+                                                        {
+                                                            put("storage", backup.getStorage().getId());
+                                                            put("backupName", backup.getName());
+                                                        }
+                                                    },
+                                                    "/backuper menu \"%s\" \"%s\" unzip".formatted(backup.getStorage().getId(), backup.getName())
+                                            )).executeConfirm();
+                                }))
                                 .decorate(TextDecoration.BOLD)
                                 .color(TextColor.color(0x4974B)))
                         .append(Component.space());
@@ -90,7 +131,7 @@ public class MenuCommand extends Command {
             if (Backuper.getInstance().getStorageManager().getStorages().size() >= 2) {
                 message = message
                         .append(Component.text("[COPY TO]")
-                                .clickEvent(ClickEvent.suggestCommand("/backuper menu %s \"%s\" copyToConfirmation ".formatted(storage.getId(), backup.getName())))
+                                .clickEvent(ClickEvent.suggestCommand("/backuper menu %s \"%s\" copyto ".formatted(storage.getId(), backup.getName())))
                                 .decorate(TextDecoration.BOLD)
                                 .color(TextColor.color(17, 102, 212)))
                         .append(Component.space());
@@ -98,7 +139,26 @@ public class MenuCommand extends Command {
 
             message = message
                     .append(Component.text("[DELETE]")
-                            .clickEvent(ClickEvent.runCommand("/backuper menu %s \"%s\" deleteConfirmation".formatted(storage.getId(), backup.getName())))
+                            .clickEvent(ClickEvent.callback((audience) -> {
+                                new DeleteCommand((CommandSender) audience,
+                                        new CommandArguments(
+                                                new Object[]{backup.getStorage().getId(), backup.getName()},
+                                                new HashMap<>(){
+                                                    {
+                                                        put("storage", backup.getStorage().getId());
+                                                        put("backupName", backup.getName());
+                                                    }
+                                                },
+                                                new String[]{ backup.getStorage().getId(), backup.getName() },
+                                                new HashMap<>() {
+                                                    {
+                                                        put("storage", backup.getStorage().getId());
+                                                        put("backupName", backup.getName());
+                                                    }
+                                                },
+                                                "/backuper menu \"%s\" \"%s\" delete".formatted(backup.getStorage().getId(), backup.getName())
+                                        )).executeConfirm();
+                            }))
                             .decorate(TextDecoration.BOLD)
                             .color(TextColor.color(0xB02100)));
 

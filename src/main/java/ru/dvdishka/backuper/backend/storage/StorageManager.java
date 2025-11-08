@@ -121,43 +121,28 @@ public class StorageManager implements Listener {
         }
     }
 
+    /***
+     * Starts indexing process for each storage but doesn't wait for it's end
+     */
     public void indexStorages() {
-        Backuper.getInstance().getLogManager().log("Indexing storages...");
-        List<CompletableFuture<Void>> indexStorageFutures = new ArrayList<>();
-
         for (Storage storage : getStorages()) {
-            if (storage.getConfig().isEnabled()){
-                CompletableFuture<Void> indexStorageFuture = Backuper.getInstance().getScheduleManager().runAsync(() -> {
-                    Backuper.getInstance().getScheduleManager().runAsync(() -> {
-                        try {
-                            Backuper.getInstance().getLogManager().devLog("Indexing %s storage...".formatted(storage.getId()));
-                            new ListCommand(false, Bukkit.getConsoleSender(), new CommandArguments(
-                                    new Object[]{storage.getId()},
-                                    new HashMap<>(){{put("storage", storage.getId());}},
-                                    new String[]{storage.getId()},
-                                    new HashMap<>(){{put("storage", storage.getId());}},
-                                    "/backuper list %s".formatted(storage.getId())))
-                                    .execute();
-                            Backuper.getInstance().getLogManager().devLog("%s storage has been indexed".formatted(storage.getId()));
-                        } catch (Exception e) {
-                            Backuper.getInstance().getLogManager().warn("Failed to index storage %s".formatted(storage.getId()));
-                            Backuper.getInstance().getLogManager().warn(e);
-                        }
-                    });
-                });
-                indexStorageFutures.add(indexStorageFuture);
-            }
+            Backuper.getInstance().getScheduleManager().runAsync(() -> {
+                try {
+                    Backuper.getInstance().getLogManager().devLog("Indexing %s storage...".formatted(storage.getId()));
+                    new ListCommand(false, Bukkit.getConsoleSender(), new CommandArguments(
+                            new Object[]{storage.getId()},
+                            new HashMap<>(){{put("storage", storage.getId());}},
+                            new String[]{storage.getId()},
+                            new HashMap<>(){{put("storage", storage.getId());}},
+                            "/backuper list %s".formatted(storage.getId())))
+                            .execute();
+                    Backuper.getInstance().getLogManager().devLog("%s storage indexing completed".formatted(storage.getId()));
+                } catch (Exception e) {
+                    Backuper.getInstance().getLogManager().warn("Failed to index storage %s".formatted(storage.getId()));
+                    Backuper.getInstance().getLogManager().warn(e);
+                }
+            });
         }
-
-        try {
-            CompletableFuture.allOf(indexStorageFutures.toArray(new CompletableFuture[0])).get();
-        } catch (ExecutionException e) {
-            Backuper.getInstance().getLogManager().warn("Failed to index storages");
-            Backuper.getInstance().getLogManager().warn(e);
-        } catch (InterruptedException ignored) {
-            // There is no problem if indexing was interrupted by ScheduleManager
-        }
-        Backuper.getInstance().getLogManager().log("Storages indexing completed");
     }
 
     public void checkStoragesConnection() {

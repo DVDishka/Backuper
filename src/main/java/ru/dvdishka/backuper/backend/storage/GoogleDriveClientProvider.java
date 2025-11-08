@@ -25,7 +25,7 @@ public class GoogleDriveClientProvider {
         if (driveService != null) {
             try {
                 // Test if the connection is still alive by making a simple request
-                driveService.files().get("").execute().getName();
+                driveService.files().get("").setFields("name").execute().getName();
                 return driveService;
             } catch (Exception ignored) {
                 // Connection is dead, we'll create a new one

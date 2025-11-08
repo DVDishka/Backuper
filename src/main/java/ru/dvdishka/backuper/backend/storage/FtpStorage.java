@@ -177,8 +177,7 @@ public class FtpStorage implements PathStorage {
         return ((Retriable<Boolean>) () -> {
             synchronized (mainClient) {
                 FTPClient ftp = mainClient.getClient();
-                FTPFile file = ftp.mlistFile(path);
-                return file != null;
+                return ftp.changeWorkingDirectory(path);
             }
         }).retry(retriableExceptionHandler);
     }
@@ -188,8 +187,11 @@ public class FtpStorage implements PathStorage {
         return ((Retriable<Boolean>) () -> {
             synchronized (mainClient) {
                 FTPClient ftp = mainClient.getClient();
-                FTPFile file = ftp.mlistFile(path);
-                return file != null && file.isFile();
+                String parentPath = getParentPath(path);
+                String fileName = getFileNameFromPath(path);
+
+                ftp.changeWorkingDirectory(parentPath);
+                return ftp.listFiles(fileName).length == 1 && ftp.listFiles(fileName)[0].getName().equals(fileName); // Directory contains at least "." and ".."
             }
         }).retry(retriableExceptionHandler);
     }
@@ -201,16 +203,15 @@ public class FtpStorage implements PathStorage {
             long dirSize = 0;
             synchronized (mainClient) {
                 FTPClient ftp = mainClient.getClient();
-                FTPFile currentDir = ftp.mlistFile(path);
+                String parentPath = getParentPath(path);
+                String fileName = getFileNameFromPath(path);
 
-                if (currentDir == null) {
-                    throw new IOException("File not found: " + path);
-                }
+                ftp.changeWorkingDirectory(parentPath);
 
-                if (currentDir.isFile()) {
-                    dirSize += currentDir.getSize();
+                if (isFile(path)) {
+                    dirSize += Long.valueOf(ftp.getSize(fileName));
                 }
-                else if (currentDir.isDirectory()) {
+                if (isDir(path)) {
                     if (!ftp.changeWorkingDirectory(path)) {
                         throw new StorageMethodException(this, "Failed to change Working directory to \"%s\" using FTP(S) connection".formatted(path));
                     }
@@ -235,7 +236,8 @@ public class FtpStorage implements PathStorage {
         ((Retriable<Void>) () -> {
             synchronized (mainClient) {
                 FTPClient ftp = mainClient.getClient();
-                ftp.mkd(resolve(parentDir, newDirName));
+                ftp.changeWorkingDirectory(parentDir);
+                ftp.mkd(newDirName);
                 return null;
             }
         }).retry(retriableExceptionHandler);
@@ -247,10 +249,10 @@ public class FtpStorage implements PathStorage {
         ((Retriable<Void>) () -> {
             synchronized (uploadClient) {
                 FTPClient ftp = uploadClient.getClient();
-                String remotePath = resolve(targetParentDir, newFileName);
                 ftp.setCopyStreamListener(new FtpStorageProgressListener(progressListener));
-                if (!ftp.storeFile(remotePath, sourceStream)) {
-                    throw new StorageMethodException(this, "Failed to upload stream to \"%s\"".formatted(remotePath), new RuntimeException(ftp.getReplyString()));
+                ftp.changeWorkingDirectory(targetParentDir);
+                if (!ftp.storeFile(newFileName, sourceStream)) {
+                    throw new StorageMethodException(this, "Failed to upload stream to \"%s\"".formatted(this.resolve(ftp.printWorkingDirectory(), newFileName)), new RuntimeException(ftp.getReplyString()));
                 }
                 return null;
             }
@@ -262,7 +264,11 @@ public class FtpStorage implements PathStorage {
         return ((Retriable<InputStream>) () -> {
             synchronized (downloadClient) {
                 FTPClient ftp = downloadClient.getClient();
-                return new FtpStorageInputStream(ftp.retrieveFileStream(sourcePath), progressListener);
+                String parentPath = getParentPath(sourcePath);
+                String fileName = getFileNameFromPath(sourcePath);
+
+                ftp.changeWorkingDirectory(parentPath);
+                return new FtpStorageInputStream(ftp.retrieveFileStream(fileName), progressListener);
             }
         }).retry(retriableExceptionHandler);
     }
@@ -287,12 +293,14 @@ public class FtpStorage implements PathStorage {
         ((Retriable<Void>) () -> {
             synchronized (mainClient) {
                 FTPClient ftp = mainClient.getClient();
-                boolean isFilePath = isFile(path);
+                String parentPath = getParentPath(path);
+                String fileName = getFileNameFromPath(path);
 
-                if (isFilePath) {
-                    ftp.deleteFile(path);
+                ftp.changeWorkingDirectory(parentPath);
+                if (this.isFile(path)) {
+                    ftp.deleteFile(fileName);
                 } else {
-                    ftp.removeDirectory(path);
+                    ftp.removeDirectory(fileName);
                 }
                 return null;
             }
@@ -304,12 +312,11 @@ public class FtpStorage implements PathStorage {
         ((Retriable<Void>) () -> {
             synchronized (mainClient) {
                 FTPClient ftp = mainClient.getClient();
-                String parentPath = "";
-                if (path.contains(config.getPathSeparatorSymbol())) {
-                    parentPath = path.substring(0, path.lastIndexOf(config.getPathSeparatorSymbol()));
-                    parentPath += config.getPathSeparatorSymbol();
-                }
-                ftp.rename(path, parentPath + newFileName);
+                String parentPath = getParentPath(path);
+                String fileName = getFileNameFromPath(path);
+
+                ftp.changeWorkingDirectory(parentPath);
+                ftp.rename(fileName, newFileName);
                 return null;
             }
         }).retry(retriableExceptionHandler);

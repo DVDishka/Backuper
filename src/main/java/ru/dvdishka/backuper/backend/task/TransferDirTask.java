@@ -27,7 +27,7 @@ public class TransferDirTask extends BaseTask implements DoubleStorageTask {
     private final String targetFileName;
     private final boolean forceExcludedDirs;
 
-    private ArrayList<StorageProgressListener> progressListeners;
+    private ArrayList<StorageProgressListener> downloadProgressListeners;
 
     private static final int STREAM_BUFFER_SIZE = 1048576;
 
@@ -43,7 +43,7 @@ public class TransferDirTask extends BaseTask implements DoubleStorageTask {
 
     @Override
     public void run() {
-        progressListeners = new ArrayList<>();
+        downloadProgressListeners = new ArrayList<>();
         if (!cancelled) {
             sendFolder(sourceDir, targetParentDir, targetFileName);
         }
@@ -75,10 +75,10 @@ public class TransferDirTask extends BaseTask implements DoubleStorageTask {
         if (sourceStorage.isFile(sourceDir) && !sourceStorage.getFileNameFromPath(sourceDir).equals("session.lock")) {
             try {
                 final StorageProgressListener progressListener = new BasicStorageProgressListener();
-                progressListeners.add(progressListener);
-                try (InputStream directInputStream = sourceStorage.downloadFile(sourceDir);
+                downloadProgressListeners.add(progressListener);
+                try (InputStream directInputStream = sourceStorage.downloadFile(sourceDir, progressListener);
                      BufferedInputStream inputStream = new BufferedInputStream(directInputStream, STREAM_BUFFER_SIZE)) {
-                    targetStorage.uploadFile(inputStream, targetFileName, targetParentDir, progressListener);
+                    targetStorage.uploadFile(inputStream, targetFileName, targetParentDir);
                 } catch (Exception e) {
                     warn("Failed to send file \"%s\" to %s storage".formatted(sourceDir, targetStorage.getId()));
                     warn(e);
@@ -101,8 +101,8 @@ public class TransferDirTask extends BaseTask implements DoubleStorageTask {
 
     @Override
     public long getTaskCurrentProgress() {
-        if (progressListeners == null) return 0;
-        return progressListeners.stream().mapToLong(StorageProgressListener::getCurrentProgress).sum();
+        if (downloadProgressListeners == null) return 0;
+        return downloadProgressListeners.stream().mapToLong(StorageProgressListener::getCurrentProgress).sum();
     }
 
     @Override

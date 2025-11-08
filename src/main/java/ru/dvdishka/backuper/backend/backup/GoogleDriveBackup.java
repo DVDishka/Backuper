@@ -24,6 +24,16 @@ public class GoogleDriveBackup implements Backup {
         return backupName;
     }
 
+    @Override
+    public long calculateByteSize() {
+        try {
+            String stringSize = getDriveFile().getAppProperties().get("size");
+            return Long.parseLong(stringSize);
+        } catch (Exception e) {
+            return Backup.super.calculateByteSize();
+        }
+    }
+
     /**
      * Puts given size to file`s appProperties
      */
@@ -43,7 +53,6 @@ public class GoogleDriveBackup implements Backup {
      * @return Returns null if this backup doesn't exist
      */
     public File getDriveFile() {
-
         try {
             return storage.getFileByName(backupName + (BackupFileType.ZIP.equals(getFileType()) ? ".zip" : ""),
                     storage.getConfig().getBackupsFolderId());

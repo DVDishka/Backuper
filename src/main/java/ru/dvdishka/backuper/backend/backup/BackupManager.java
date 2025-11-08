@@ -21,7 +21,7 @@ public class BackupManager {
 
     private final HashMap<String, Backup> backups = new HashMap<>();
     final Cache<String, Long> cachedBackupsSize = Caffeine.newBuilder().build();
-    private final Cache<String, List<Backup>> backupList = Caffeine
+    private final Cache<String, List<Backup>> cacheGetBackupList = Caffeine
             .newBuilder()
             .expireAfterWrite(5, TimeUnit.SECONDS)
             .expireAfterAccess(5, TimeUnit.SECONDS)
@@ -49,8 +49,7 @@ public class BackupManager {
     }
 
     public List<Backup> getBackupList() throws StorageConnectionException, StorageMethodException {
-
-        return backupList.get("all", (key) -> {
+        return cacheGetBackupList.get("all", (key) -> {
             List<Backup> backups = new ArrayList<>();
             for (String fileName : storage.ls(storage.getConfig().getBackupsFolder())) {
                 Backup backup = getBackup(fileName.replace(".zip", ""));

@@ -19,10 +19,10 @@ public class Bstats {
         Backuper.getInstance().getLogManager().log("Initializing BStats...");
         bStats = new Metrics(plugin, bStatsId);
 
-        bStats.addCustomChart(new SimplePie("local_storages_amount", () -> String.valueOf(Backuper.getInstance().getStorageManager().getStorages().stream().filter(storage -> storage instanceof LocalStorage && storage.getConfig().isEnabled()).count())));
-        bStats.addCustomChart(new SimplePie("ftp_storages_amount", () -> String.valueOf(Backuper.getInstance().getStorageManager().getStorages().stream().filter(storage -> storage instanceof FtpStorage && storage.getConfig().isEnabled()).count())));
-        bStats.addCustomChart(new SimplePie("sftp_storages_amount", () -> String.valueOf(Backuper.getInstance().getStorageManager().getStorages().stream().filter(storage -> storage instanceof SftpStorage && storage.getConfig().isEnabled()).count())));
-        bStats.addCustomChart(new SimplePie("google_drive_storages_amount", () -> String.valueOf(Backuper.getInstance().getStorageManager().getStorages().stream().filter(storage -> storage instanceof GoogleDriveStorage && storage.getConfig().isEnabled()).count())));
+        bStats.addCustomChart(new SimplePie("local_storages_amount", () -> String.valueOf(Backuper.getInstance().getStorageManager().getStorages().stream().filter(storage -> storage instanceof LocalStorage).count())));
+        bStats.addCustomChart(new SimplePie("ftp_storages_amount", () -> String.valueOf(Backuper.getInstance().getStorageManager().getStorages().stream().filter(storage -> storage instanceof FtpStorage).count())));
+        bStats.addCustomChart(new SimplePie("sftp_storages_amount", () -> String.valueOf(Backuper.getInstance().getStorageManager().getStorages().stream().filter(storage -> storage instanceof SftpStorage).count())));
+        bStats.addCustomChart(new SimplePie("google_drive_storages_amount", () -> String.valueOf(Backuper.getInstance().getStorageManager().getStorages().stream().filter(storage -> storage instanceof GoogleDriveStorage).count())));
 
         Backuper.getInstance().getLogManager().log("BStats initialization completed");
     }

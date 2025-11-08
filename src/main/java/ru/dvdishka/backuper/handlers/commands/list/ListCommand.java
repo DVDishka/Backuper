@@ -41,7 +41,7 @@ public class ListCommand extends Command {
             returnFailure("Wrong storage name %s".formatted((String) arguments.get("storage")));
             return false;
         }
-        if (sendResult) sendMessage("Creating a list of backups may take some time...");
+        sendMessage("Creating a list of backups may take some time...");
         if (!storage.checkConnection()) {
             returnFailure("Failed to establish connection to %s storage".formatted(storage.getId()));
             return false;
@@ -74,12 +74,10 @@ public class ListCommand extends Command {
                         .decorate(TextDecoration.BOLD));
 
         int pageNumber = (Integer) arguments.getOrDefault("pageNumber", 1);
-        if (sendResult) {
-            if (!(sender instanceof ConsoleCommandSender)) {
-                sendFramedMessage(header, createListMessage(pageNumber, true), 15);
-            } else {
-                sendFramedMessage(header, createListMessage(pageNumber, arguments.get("pageNumber") != null), 41);
-            }
+        if (!(sender instanceof ConsoleCommandSender)) {
+            sendFramedMessage(header, createListMessage(pageNumber, true), 15);
+        } else {
+            sendFramedMessage(header, createListMessage(pageNumber, arguments.get("pageNumber") != null), 41);
         }
         buttonSound();
     }
@@ -235,18 +233,8 @@ public class ListCommand extends Command {
     }
 
     @Override
-    protected void returnFailure(String message, TextColor color) {
-        if (sendResult) super.returnFailure(message, color);
-    }
-
-    @Override
     protected void returnSuccess(String message) {
         if (sendResult) super.returnSuccess(message);
-    }
-
-    @Override
-    protected void returnSuccess(String message, TextColor color) {
-        if (sendResult) super.returnSuccess(message, color);
     }
 
     @Override
@@ -255,7 +243,27 @@ public class ListCommand extends Command {
     }
 
     @Override
-    protected void returnWarning(String message, TextColor color) {
-        if (sendResult) super.returnWarning(message, color);
+    protected void sendMessage(String message) {
+        if (sendResult) super.sendMessage(message);
+    }
+
+    @Override
+    protected void sendFramedMessage(Component message) {
+        if (sendResult) super.sendFramedMessage(message);
+    }
+
+    @Override
+    protected void sendFramedMessage(Component message, int dashNumber) {
+        if (sendResult) super.sendFramedMessage(message, dashNumber);
+    }
+
+    @Override
+    protected void sendFramedMessage(Component header, Component message) {
+        if (sendResult) super.sendFramedMessage(header, message);
+    }
+
+    @Override
+    protected void sendFramedMessage(Component header, Component message, int dashNumber) {
+        if (sendResult) super.sendFramedMessage(header, message, dashNumber);
     }
 }

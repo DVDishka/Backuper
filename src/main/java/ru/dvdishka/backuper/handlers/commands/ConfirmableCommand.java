@@ -2,6 +2,7 @@ package ru.dvdishka.backuper.handlers.commands;
 
 import dev.jorel.commandapi.executors.CommandArguments;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickCallback;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.TextColor;
@@ -32,7 +33,9 @@ public abstract class ConfirmableCommand extends Command {
         }
         message = message
                 .append(Component.text("[CONFIRM]")
-                        .clickEvent(ClickEvent.callback((audience) -> this.execute()))
+                        .clickEvent(ClickEvent.callback(
+                                (audience) -> this.execute(),
+                                ClickCallback.Options.builder().uses(1).build()))
                         .color(TextColor.color(0xB02100))
                         .decorate(TextDecoration.BOLD));
 
@@ -54,6 +57,6 @@ public abstract class ConfirmableCommand extends Command {
 
     protected void setMessage(Backup backup) {
         this.message = Component.text(backup.getFormattedName())
-                .hoverEvent(HoverEvent.showText(Component.text("(%s) (%s)) %s MB".formatted(backup.getStorage().getId(), backup.getFileType().name(), backup.getMbSize()))));
+                .hoverEvent(HoverEvent.showText(Component.text("(%s) (%s) %s MB".formatted(backup.getStorage().getId(), backup.getFileType().name(), backup.getMbSize()))));
     }
 }

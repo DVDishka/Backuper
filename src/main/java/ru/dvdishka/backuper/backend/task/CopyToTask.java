@@ -42,7 +42,7 @@ public class CopyToTask extends BaseTask {
                 targetStorage,
                 targetStorage.getConfig().getBackupsFolder(),
                 sourceBackup.getInProgressFileName(),
-                false);
+                true); // We have to force excluded dirs because everything in the backup directory is excluded
         copyToTask.maxProgress = sourceBackup.getByteSize();
         Backuper.getInstance().getTaskManager().prepareTask(copyToTask, sender);
     }

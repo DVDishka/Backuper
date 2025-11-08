@@ -137,7 +137,7 @@ public class CommandManager {
                                                 new MenuCommand(sender, args).execute();
                                             });
                                         })
-                                        .then(new LiteralArgument("copyTo")
+                                        .then(new LiteralArgument("copyto")
                                                 .then(new StringArgument("targetStorage").includeSuggestions(ArgumentSuggestions.stringCollectionAsync((suggestionInfo) ->
                                                                 CompletableFuture.supplyAsync(() -> Backuper.getInstance().getStorageManager().getStorages().stream()
                                                                         .filter(storage -> suggestionInfo.sender().hasPermission(Permission.STORAGE.getPermission(storage)))
@@ -150,56 +150,25 @@ public class CommandManager {
                                                         })
                                                 )
                                         )
-                                        .then(new StringArgument("action")
-                                                .replaceSuggestions(ArgumentSuggestions.stringCollectionAsync((info) -> CompletableFuture.supplyAsync(() -> {
-                                                    List<String> suggestions = new ArrayList<>();
-                                                    Storage storage = Backuper.getInstance().getStorageManager().getStorage((String) info.previousArgs().get("storage"));
-                                                    if (storage == null || !info.sender().hasPermission(Permission.STORAGE.getPermission(storage))) return suggestions;
-
-                                                    String backupName = (String) info.previousArgs().get("backupName");
-                                                    Backup backup = storage.getBackupManager().getBackup(backupName);
-                                                    if (Backup.BackupFileType.DIR.equals(backup.getFileType())) {
-                                                        suggestions.add("toZIP");
-                                                    }
-                                                    if (Backup.BackupFileType.ZIP.equals(backup.getFileType())) {
-                                                        suggestions.add("unZIP");
-                                                    }
-                                                    suggestions.add("delete");
-                                                    return suggestions;
-                                                })))
+                                        .then(new LiteralArgument("delete")
                                                 .executes((sender, args) -> {
-                                                    if ("deleteConfirmation".equals(args.get("action"))) {
-                                                        Backuper.getInstance().getScheduleManager().runAsync(() -> {
-                                                            new DeleteCommand(sender, args).executeConfirm();
-                                                        });
-                                                    }
-                                                    if ("delete".equals(args.get("action"))) {
-                                                        Backuper.getInstance().getScheduleManager().runAsync(() -> {
-                                                            new DeleteCommand(sender, args).execute();
-                                                        });
-                                                    }
-
-                                                    if ("toZIPConfirmation".equals(args.get("action"))) {
-                                                        Backuper.getInstance().getScheduleManager().runAsync(() -> {
-                                                            new ToZIPCommand(sender, args).executeConfirm();
-                                                        });
-                                                    }
-                                                    if (Objects.equals(args.get("action"), "toZIP")) {
-                                                        Backuper.getInstance().getScheduleManager().runAsync(() -> {
-                                                            new ToZIPCommand(sender, args).execute();
-                                                        });
-                                                    }
-
-                                                    if (("unZIPConfirmation").equals(args.get("action"))) {
-                                                        Backuper.getInstance().getScheduleManager().runAsync(() -> {
-                                                            new UnZIPCommand(sender, args).executeConfirm();
-                                                        });
-                                                    }
-                                                    if ("unZIP".equals(args.get("action"))) {
-                                                        Backuper.getInstance().getScheduleManager().runAsync(() -> {
-                                                            new UnZIPCommand(sender, args).execute();
-                                                        });
-                                                    }
+                                                    Backuper.getInstance().getScheduleManager().runAsync(() -> {
+                                                        new DeleteCommand(sender, args).execute();
+                                                    });
+                                                })
+                                        )
+                                        .then(new LiteralArgument("unzip")
+                                                .executes((sender, args) -> {
+                                                    Backuper.getInstance().getScheduleManager().runAsync(() -> {
+                                                        new UnZIPCommand(sender, args).execute();
+                                                    });
+                                                })
+                                        )
+                                        .then(new LiteralArgument("tozip")
+                                                .executes((sender, args) -> {
+                                                    Backuper.getInstance().getScheduleManager().runAsync(() -> {
+                                                        new ToZIPCommand(sender, args).execute();
+                                                    });
                                                 })
                                         )
                                 )

@@ -8,60 +8,36 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
+import ru.dvdishka.backuper.Backuper;
 
 public class UIUtils {
-    public static void returnFailure(String message, CommandSender sender) {
-        try {
-            sender.sendMessage(Component.text(message).color(NamedTextColor.RED));
-        } catch (Exception ignored) {
-        }
-    }
 
-    public static void returnFailure(String message, CommandSender sender, TextColor color) {
-        try {
-            sender.sendMessage(Component.text(message).color(color));
-        } catch (Exception ignored) {
-        }
+    public static void returnFailure(String message, CommandSender sender) {
+        Component text = Component.text(message).color(NamedTextColor.RED);
+        sendMessage(text, sender);
     }
 
     public static void returnSuccess(String message, CommandSender sender) {
-        try {
-            sender.sendMessage(Component.text(message));
-        } catch (Exception ignored) {
-        }
-    }
-
-    public static void returnSuccess(String message, CommandSender sender, TextColor color) {
-        try {
-            sender.sendMessage(Component.text(message).color(color));
-        } catch (Exception ignored) {
-        }
+        Component text = Component.text(message).color(NamedTextColor.GREEN);
+        sendMessage(text, sender);
     }
 
     public static void returnWarning(String message, CommandSender sender) {
-        try {
-            sender.sendMessage(Component.text(message).color(NamedTextColor.RED));
-        } catch (Exception ignored) {
-        }
-    }
-
-    public static void returnWarning(String message, CommandSender sender, TextColor color) {
-        try {
-            sender.sendMessage(Component.text(message).color(color));
-        } catch (Exception ignored) {
-        }
+        Component text = Component.text(message).color(NamedTextColor.YELLOW);
+        sendMessage(text, sender);
     }
 
     public static void sendMessage(String message, CommandSender sender) {
-        try {
-            sender.sendMessage(message);
-        } catch (Exception ignored) {
-        }
+        sendMessage(Component.text(message), sender);
     }
 
     public static void sendMessage(Component message, CommandSender sender) {
         try {
-            sender.sendMessage(message);
+            if (sender instanceof ConsoleCommandSender) {
+                Backuper.getInstance().getLogManager().log(message, sender);
+            } else {
+                sender.sendMessage(message);
+            }
         } catch (Exception ignored) {
         }
     }
@@ -74,7 +50,7 @@ public class UIUtils {
         }
     }
 
-    public static void normalSound(CommandSender sender) {
+    public static void buttonSound(CommandSender sender) {
         try {
             Class.forName("net.kyori.adventure.sound.Sound").getMethod("sound");
             sender.playSound(Sound.sound(Sound.sound(Key.key("ui.button.click"), Sound.Source.MASTER, 50, 1)).build());
@@ -170,17 +146,11 @@ public class UIUtils {
     }
 
     public static void sendFramedMessage(Component header, Component message, int dashNumber, CommandSender sender) {
-        try {
-            sender.sendMessage(getFramedMessage(header, message, dashNumber, sender));
-        } catch (Exception ignored) {
-        }
+        sendMessage(getFramedMessage(header, message, dashNumber, sender), sender);
     }
 
     public static void sendFramedMessage(Component message, int dashNumber, CommandSender sender) {
-        try {
-            sender.sendMessage(getFramedMessage(message, dashNumber, sender));
-        } catch (Exception ignored) {
-        }
+        sendMessage(getFramedMessage(message, dashNumber, sender), sender);
     }
 
     public static void sendFramedMessage(Component message, CommandSender sender) {

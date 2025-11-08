@@ -29,7 +29,11 @@ public class LogManager {
 
     public void log(Component text, CommandSender sender) {
 
-        Backuper.getInstance().getComponentLogger().info(text);
+        Component consoleText = text;
+        if (!(sender instanceof ConsoleCommandSender)) {
+            consoleText = Component.newline().append(text);
+        }
+        Backuper.getInstance().getComponentLogger().info(consoleText);
 
         if (!(sender instanceof ConsoleCommandSender)) {
             try {

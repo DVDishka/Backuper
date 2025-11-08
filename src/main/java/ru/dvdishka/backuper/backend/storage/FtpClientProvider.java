@@ -14,6 +14,7 @@ public class FtpClientProvider {
     private final FtpStorage storage;
 
     private FTPClient ftpClient = null; // Effectively final
+    private String defaultPath = ".";
 
     FtpClientProvider(FtpStorage storage) {
         this.storage = storage;
@@ -39,7 +40,7 @@ public class FtpClientProvider {
                 Backuper.getInstance().getLogManager().warn(e);
             }
             try {
-                ftpClient.changeWorkingDirectory("");
+                ftpClient.changeWorkingDirectory(defaultPath);
             } catch (Exception ignored) {
             }
             return ftpClient;
@@ -49,6 +50,11 @@ public class FtpClientProvider {
         // Enable FTP logging
         // ftpClient.addProtocolCommandListener(new PrintCommandListener(new PrintWriter(System.out)));
         connect();
+        try {
+            defaultPath = ftpClient.printWorkingDirectory();
+        } catch (IOException e) {
+            Backuper.getInstance().getLogManager().warn("Failed to get default %s working directory".formatted(storage.getId()));
+        }
         return ftpClient;
     }
 
