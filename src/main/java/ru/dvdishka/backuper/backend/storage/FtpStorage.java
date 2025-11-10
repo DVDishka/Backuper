@@ -166,6 +166,9 @@ public class FtpStorage implements PathStorage {
 
     @Override
     public String resolve(String path, String fileName) {
+        if (path == null) {
+            return fileName;
+        }
         if (!path.endsWith(config.getPathSeparatorSymbol())) {
             path = "%s%s".formatted(path, config.getPathSeparatorSymbol());
         }
@@ -177,7 +180,11 @@ public class FtpStorage implements PathStorage {
         return ((Retriable<Boolean>) () -> {
             synchronized (mainClient) {
                 FTPClient ftp = mainClient.getClient();
-                return ftp.changeWorkingDirectory(path);
+                String parentPath = getParentPath(path);
+                String fileName = getFileNameFromPath(path);
+
+                if (!ftp.changeWorkingDirectory(parentPath)) return false;
+                return Arrays.stream(ftp.listFiles()).map(FTPFile::getName).anyMatch(name -> name.equals(fileName));
             }
         }).retry(retriableExceptionHandler);
     }
@@ -190,8 +197,12 @@ public class FtpStorage implements PathStorage {
                 String parentPath = getParentPath(path);
                 String fileName = getFileNameFromPath(path);
 
-                ftp.changeWorkingDirectory(parentPath);
-                return ftp.listFiles(fileName).length == 1 && ftp.listFiles(fileName)[0].getName().equals(fileName); // Directory contains at least "." and ".."
+                if (!ftp.changeWorkingDirectory(path)) {
+                    if (!ftp.changeWorkingDirectory(parentPath)) return false;
+                    return Arrays.stream(ftp.listFiles()).map(FTPFile::getName).anyMatch(name -> name.equals(fileName));
+                }
+                FTPFile[] listFiles = ftp.listFiles();
+                return listFiles.length == 0 || listFiles.length == 1 && listFiles[0].getName().equals(getFileNameFromPath(path)); // Directory contains at least "." and ".."
             }
         }).retry(retriableExceptionHandler);
     }
@@ -212,9 +223,7 @@ public class FtpStorage implements PathStorage {
                     dirSize += Long.valueOf(ftp.getSize(fileName));
                 }
                 if (isDir(path)) {
-                    if (!ftp.changeWorkingDirectory(path)) {
-                        throw new StorageMethodException(this, "Failed to change Working directory to \"%s\" using FTP(S) connection".formatted(path));
-                    }
+                    // Current directory is already changed by isDir method
                     files = ftp.listFiles();
                     if (files == null) {
                         throw new StorageMethodException(this, "Failed to list files in directory: " + path);
@@ -297,9 +306,15 @@ public class FtpStorage implements PathStorage {
                 String fileName = getFileNameFromPath(path);
 
                 ftp.changeWorkingDirectory(parentPath);
-                if (this.isFile(path)) {
+                if (isFile(path)) {
+                    mainClient.resetWorkingDirectory(); // Working directory might be changed by isFile method
+                    ftp.changeWorkingDirectory(parentPath);
+
                     ftp.deleteFile(fileName);
                 } else {
+                    mainClient.resetWorkingDirectory(); // Working directory might be changed by isFile method
+                    ftp.changeWorkingDirectory(parentPath);
+
                     ftp.removeDirectory(fileName);
                 }
                 return null;

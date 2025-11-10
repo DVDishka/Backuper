@@ -39,10 +39,7 @@ public class FtpClientProvider {
                 Backuper.getInstance().getLogManager().warn("Failed to reconnect to FTP(S) connection");
                 Backuper.getInstance().getLogManager().warn(e);
             }
-            try {
-                ftpClient.changeWorkingDirectory(defaultPath);
-            } catch (Exception ignored) {
-            }
+            resetWorkingDirectory();
             return ftpClient;
         }
 
@@ -56,6 +53,13 @@ public class FtpClientProvider {
             Backuper.getInstance().getLogManager().warn("Failed to get default %s working directory".formatted(storage.getId()));
         }
         return ftpClient;
+    }
+
+    synchronized void resetWorkingDirectory() {
+        try {
+            ftpClient.changeWorkingDirectory(defaultPath);
+        } catch (Exception ignored) {
+        }
     }
 
     private void connect() {
@@ -101,7 +105,6 @@ public class FtpClientProvider {
             ftpClient.setFileType(FTP.BINARY_FILE_TYPE, FTP.BINARY_FILE_TYPE);
             ftpClient.setFileTransferMode(FTP.STREAM_TRANSFER_MODE);
             ftpClient.setListHiddenFiles(true);
-            ftpClient.changeWorkingDirectory("");
         } catch (IOException e) {
             throw new StorageConnectionException(storage, "Failed to set FTP(S) connection parameters", e);
         }
