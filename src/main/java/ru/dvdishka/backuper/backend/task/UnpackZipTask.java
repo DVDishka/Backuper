@@ -59,6 +59,7 @@ public class UnpackZipTask extends BaseTask implements SingleStorageTask {
                     }
 
                     if (zipEntry.isDirectory()) {
+                        if (zipEntry.getName().equals("/")) continue; // Root dir is already created
                         storage.createDir(getFileNameFromZipPath(name), entryParentRelativePath);
                     } else {
                         StorageProgressListener uploadProgressListener = new BasicStorageProgressListener();
