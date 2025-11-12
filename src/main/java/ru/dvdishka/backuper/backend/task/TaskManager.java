@@ -210,7 +210,7 @@ public class TaskManager {
                         .append(Component.text("[CANCEL]")
                                 .decorate(TextDecoration.BOLD)
                                 .color(TextColor.color(0xB02100))
-                                .clickEvent(ClickEvent.runCommand("/backuper task cancelConfirmation")));
+                                .clickEvent(ClickEvent.runCommand("/backuper task cancel")));
             } else {
 
                 header = header

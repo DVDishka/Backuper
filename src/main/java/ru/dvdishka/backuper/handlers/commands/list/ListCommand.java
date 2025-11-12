@@ -5,7 +5,6 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
-import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
@@ -46,7 +45,7 @@ public class ListCommand extends Command {
             returnFailure("Failed to establish connection to %s storage".formatted(storage.getId()));
             return false;
         }
-        if (!sender.hasPermission(Permission.LIST.getPermission(storage))) {
+        if (!sender.hasPermission(Permission.STORAGE.getPermission(storage))) {
             returnFailure("Don't have enough permissions to perform this command");
             return false;
         }

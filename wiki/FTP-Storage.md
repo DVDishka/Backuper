@@ -91,9 +91,8 @@ auth:
 
 ## Required Permissions
 
-- `backuper.yourStorageId` - Required for storage to appear in command suggestions
+- `backuper.yourStorageId` - Required for storage to appear in command suggestions and to view backups
 - `backuper.yourStorageId.backup` - Create backups
-- `backuper.yourStorageId.list` - View and manage backups
 - `backuper.yourStorageId.list.delete` - Delete backups
 - `backuper.yourStorageId.list.tozip` - Convert folder backups to ZIP archives
 - `backuper.yourStorageId.list.unzip` - Extract ZIP backups to folder structures

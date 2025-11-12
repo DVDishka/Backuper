@@ -47,7 +47,6 @@ import ru.dvdishka.backuper.backend.util.UIUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -565,8 +564,6 @@ public class GoogleDriveStorage implements UserAuthStorage {
                     .append(Component.text("Account linking"));
 
             Component message = Component.empty()
-                    .append(Component.text("Log in to your Google Account:")
-                            .color(UIUtils.getSecondaryColor()))
                     .append(Component.space())
                     .append(Component.text(url)
                             .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.OPEN_URL, url))

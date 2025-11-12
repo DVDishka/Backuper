@@ -1,7 +1,9 @@
 package ru.dvdishka.backuper.handlers.commands;
 
+import lombok.Getter;
 import ru.dvdishka.backuper.backend.storage.Storage;
 
+@Getter
 public enum Permission {
 
     BACKUPER("backuper"),
@@ -14,7 +16,6 @@ public enum Permission {
     BACKUP("backuper.%s.backup"),
     TO_ZIP("backuper.%s.list.tozip"),
     UNZIP("backuper.%s.list.unzip"),
-    LIST("backuper.%s.list"),
     DELETE("backuper.%s.list.delete"),
     ACCOUNT("backuper.%s.account"),
 
@@ -31,9 +32,5 @@ public enum Permission {
 
     public String getPermission(Storage storage) {
         return this.permission.formatted(storage.getId());
-    }
-
-    public String getPermission() {
-        return this.permission;
     }
 }

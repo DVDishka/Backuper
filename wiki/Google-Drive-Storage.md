@@ -41,7 +41,17 @@ backupsFolderId: ''
 createBackuperFolder: true
 ```
 
-- **backupsFolderId**: Google Drive folder ID where backups will be stored. Leave empty (`''`) to use the root directory of Google Drive. To use a specific folder, provide the folder ID (found in the Google Drive URL).
+- **backupsFolderId**: Google Drive folder ID where backups will be stored. Leave empty (`''`) to use the root directory of Google Drive. To use a specific folder, provide the folder ID. 
+  
+  **How to get folder ID:**
+  1. Open Google Drive in your web browser
+  2. Open the folder you want to use for backups
+  3. Look at the URL in your browser's address bar
+  4. The folder ID is the long string after `/folders/` in the URL
+  
+  Example URL: `https://drive.google.com/drive/folders/1a2B3c4D5e6F7g8H9i0J`
+  
+  Folder ID: `1a2B3c4D5e6F7g8H9i0J`
 - **createBackuperFolder**: When `true`, Backuper will create its own subfolder within the specified folder (or root directory if `backupsFolderId` is empty) to organize backups. When `false`, backups are stored directly in the specified folder or root directory.
 
 ### Backup Limits
@@ -92,10 +102,9 @@ This will:
 
 ## Required Permissions
 
-- `backuper.yourStorageId` - Required for storage to appear in command suggestions
+- `backuper.yourStorageId` - Required for storage to appear in command suggestions and to view backups
 - `backuper.yourStorageId.account` - Link/unlink Google account (required for `/backuper account yourStorageId link` command and Google OAuth authentication)
 - `backuper.yourStorageId.backup` - Create backups
-- `backuper.yourStorageId.list` - View and manage backups
 - `backuper.yourStorageId.list.delete` - Delete backups
 - `backuper.yourStorageId.list.tozip` - Convert folder backups to ZIP archives
 - `backuper.yourStorageId.list.unzip` - Extract ZIP backups to folder structures

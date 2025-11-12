@@ -2,7 +2,6 @@ package ru.dvdishka.backuper.handlers.commands.menu;
 
 import dev.jorel.commandapi.executors.CommandArguments;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.event.ClickCallback;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.TextColor;
@@ -42,7 +41,7 @@ public class MenuCommand extends Command {
             returnFailure("Wrong backup name %s".formatted((String) arguments.get("backupName")));
             return false;
         }
-        if (!sender.hasPermission(Permission.LIST.getPermission(storage))) {
+        if (!sender.hasPermission(Permission.STORAGE.getPermission(storage))) {
             returnFailure("Don't have enough permissions to perform this command");
             return false;
         }

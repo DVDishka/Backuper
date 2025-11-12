@@ -72,7 +72,7 @@ public class StatusCommand extends Command {
                     .append(Component.text("[CANCEL]")
                             .decorate(TextDecoration.BOLD)
                             .color(TextColor.color(0xB02100))
-                            .clickEvent(ClickEvent.runCommand("/backuper task cancelConfirmation")));
+                            .clickEvent(ClickEvent.runCommand("/backuper task cancel")));
         }
 
         if (!(sender instanceof ConsoleCommandSender)) {

@@ -2,7 +2,6 @@ package ru.dvdishka.backuper.handlers.commands;
 
 import dev.jorel.commandapi.executors.CommandArguments;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.backend.util.UIUtils;
 

@@ -15,8 +15,6 @@ import ru.dvdishka.backuper.handlers.commands.task.CancelCommand;
 import ru.dvdishka.backuper.handlers.commands.task.StatusCommand;
 
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 public class CommandManager {
@@ -82,7 +80,7 @@ public class CommandManager {
                         .then(new StringArgument("storage")
                                 .includeSuggestions(ArgumentSuggestions.stringCollectionAsync((suggestionInfo) ->
                                         CompletableFuture.supplyAsync(() -> Backuper.getInstance().getStorageManager().getStorages().stream()
-                                                .filter(storage -> suggestionInfo.sender().hasPermission(Permission.LIST.getPermission(storage)))
+                                                .filter(storage -> suggestionInfo.sender().hasPermission(Permission.STORAGE.getPermission(storage)))
                                                 .map(Storage::getId).toList())))
 
                                 .executes((sender, args) -> {
@@ -125,7 +123,7 @@ public class CommandManager {
                                 .then(new TextArgument("backupName").includeSuggestions(ArgumentSuggestions.stringCollectionAsync((info) ->
                                                     CompletableFuture.supplyAsync(() -> {
                                                             Storage storage = Backuper.getInstance().getStorageManager().getStorage((String) info.previousArgs().get("storage"));
-                                                        if (storage == null || !info.sender().hasPermission(Permission.LIST.getPermission(storage))) return new ArrayList<>();
+                                                        if (storage == null || !info.sender().hasPermission(Permission.STORAGE.getPermission(storage))) return new ArrayList<>();
 
                                                         return storage.getBackupManager().getBackupList().stream()
                                                                 .sorted(Backup::compareTo)
@@ -180,19 +178,11 @@ public class CommandManager {
         CommandTree backupTaskCommandTree = new CommandTree("backuper").withPermission(Permission.BACKUPER.getPermission());
         backupTaskCommandTree
                 .then(new LiteralArgument("task")
-                        .then(new StringArgument("action").replaceSuggestions(ArgumentSuggestions.strings("cancel"))
+                        .then(new LiteralArgument("cancel")
                                 .executes((sender, args) -> {
-
-                                    if ("cancelConfirmation".equals(args.get("action"))) {
-                                        Backuper.getInstance().getScheduleManager().runAsync(() -> {
-                                            new CancelCommand(sender, args).executeConfirm();
-                                        });
-                                    }
-                                    if ("cancel".equals(args.get("action"))) {
-                                        Backuper.getInstance().getScheduleManager().runAsync(() -> {
-                                            new CancelCommand(sender, args).execute();
-                                        });
-                                    }
+                                    Backuper.getInstance().getScheduleManager().runAsync(() -> {
+                                        new CancelCommand(sender, args).execute();
+                                    });
                                 })
                         )
                         .then(new LiteralArgument("status").withPermission(Permission.STATUS.getPermission())
@@ -211,7 +201,11 @@ public class CommandManager {
                 .then(new LiteralArgument("account")
                         .then(new StringArgument("storage")
                                 .includeSuggestions(ArgumentSuggestions.stringCollectionAsync((info) -> CompletableFuture.supplyAsync(() ->
-                                        Backuper.getInstance().getStorageManager().getStorages().stream().filter(storage -> storage instanceof UserAuthStorage).map(Storage::getId).toList())))
+                                        Backuper.getInstance().getStorageManager().getStorages().stream()
+                                                .filter(storage -> info.sender().hasPermission(Permission.ACCOUNT.getPermission(storage)))
+                                                .filter(storage -> storage instanceof UserAuthStorage)
+                                                .map(Storage::getId)
+                                                .toList())))
                                 .then(new LiteralArgument("link")
                                         .executes((sender, args) -> {
                                             Backuper.getInstance().getScheduleManager().runAsync(() -> {

@@ -26,9 +26,8 @@ backuper.status                     # Check task status and progress
 ### Storage Permissions
 
 ```
-backuper.{storageId}               # Required for storage to appear in command suggestions
+backuper.{storageId}               # Required for storage to appear in command suggestions and to view backups in storage
 backuper.{storageId}.backup        # Create backups to specific storage
-backuper.{storageId}.list          # View and manage backups in storage
 backuper.{storageId}.list.delete   # Delete backups from storage
 backuper.{storageId}.list.tozip    # Convert backups to ZIP (local only)
 backuper.{storageId}.list.unzip    # Extract backups from ZIP (local only)
@@ -48,7 +47,6 @@ backuper
 ├── backuper.status
 └── backuper.{storageId}
     ├── backuper.{storageId}.backup
-    ├── backuper.{storageId}.list
     ├── backuper.{storageId}.list.delete
     ├── backuper.{storageId}.list.tozip
     ├── backuper.{storageId}.list.unzip
