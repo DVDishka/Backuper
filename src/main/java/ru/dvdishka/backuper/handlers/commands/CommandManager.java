@@ -2,6 +2,7 @@ package ru.dvdishka.backuper.handlers.commands;
 
 import dev.jorel.commandapi.CommandTree;
 import dev.jorel.commandapi.arguments.*;
+import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.backup.Backup;
 import ru.dvdishka.backuper.backend.storage.Storage;
@@ -15,6 +16,7 @@ import ru.dvdishka.backuper.handlers.commands.task.CancelCommand;
 import ru.dvdishka.backuper.handlers.commands.task.StatusCommand;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 
 public class CommandManager {
@@ -23,11 +25,7 @@ public class CommandManager {
         CommandTree backupCommandTree = new CommandTree("backuper").withPermission(Permission.BACKUPER.getPermission());
         backupCommandTree
                 .then(new LiteralArgument("backup")
-                        .then(new StringArgument("storage").includeSuggestions(ArgumentSuggestions.stringCollectionAsync((suggestionInfo) ->
-                                        CompletableFuture.supplyAsync(() -> Backuper.getInstance().getStorageManager().getStorages().stream()
-                                                .filter(storage -> suggestionInfo.sender().hasPermission(Permission.BACKUP.getPermission(storage)))
-                                                .map(storage -> "%s-".formatted(storage.getId()))
-                                                .filter(id -> !suggestionInfo.currentArg().contains(id)).toList())))
+                        .then(new StringArgument("storage").includeSuggestions(getMultiStorageSuggestion())
 
                                 .executes((sender, args) -> {
                                     Backuper.getInstance().getScheduleManager().runAsync(() -> {
@@ -78,10 +76,7 @@ public class CommandManager {
         backupListCommandTree
                 .then(new LiteralArgument("list")
                         .then(new StringArgument("storage")
-                                .includeSuggestions(ArgumentSuggestions.stringCollectionAsync((suggestionInfo) ->
-                                        CompletableFuture.supplyAsync(() -> Backuper.getInstance().getStorageManager().getStorages().stream()
-                                                .filter(storage -> suggestionInfo.sender().hasPermission(Permission.STORAGE.getPermission(storage)))
-                                                .map(Storage::getId).toList())))
+                                .includeSuggestions(getSingleStorageSuggestion())
 
                                 .executes((sender, args) -> {
                                     Backuper.getInstance().getScheduleManager().runAsync(() -> {
@@ -115,10 +110,7 @@ public class CommandManager {
         CommandTree backupMenuCommandTree = new CommandTree("backuper").withPermission(Permission.BACKUPER.getPermission());
         backupMenuCommandTree
                 .then(new LiteralArgument("menu")
-                        .then(new StringArgument("storage").includeSuggestions(ArgumentSuggestions.stringCollectionAsync((suggestionInfo) ->
-                                        CompletableFuture.supplyAsync(() -> Backuper.getInstance().getStorageManager().getStorages().stream()
-                                                .filter(storage -> suggestionInfo.sender().hasPermission(Permission.STORAGE.getPermission(storage)))
-                                                .map(Storage::getId).toList())))
+                        .then(new StringArgument("storage").includeSuggestions(getSingleStorageSuggestion())
 
                                 .then(new TextArgument("backupName").includeSuggestions(ArgumentSuggestions.stringCollectionAsync((info) ->
                                                     CompletableFuture.supplyAsync(() -> {
@@ -217,5 +209,34 @@ public class CommandManager {
                 )
         ;
         backupAccountCommandTree.register();
+    }
+
+    private ArgumentSuggestions<CommandSender> getSingleStorageSuggestion() {
+        return ArgumentSuggestions.stringCollectionAsync((suggestionInfo) ->
+                CompletableFuture.supplyAsync(() -> Backuper.getInstance().getStorageManager().getStorages().stream()
+                        .filter(storage -> suggestionInfo.sender().hasPermission(Permission.STORAGE.getPermission(storage)))
+                        .map(Storage::getId).toList()));
+    }
+
+    private ArgumentSuggestions<CommandSender> getMultiStorageSuggestion() {
+        return ArgumentSuggestions.stringCollectionAsync(suggestionInfo -> CompletableFuture.supplyAsync(() -> Backuper.getInstance().getStorageManager().getStorages().stream()
+                .filter(storage ->suggestionInfo.sender().hasPermission(Permission.BACKUP.getPermission(storage))) // Filter for player permissions
+                .filter(storage -> { // Filter for storageId starts with current argument
+                    String lastStorageString = suggestionInfo.currentArg().substring(!suggestionInfo.currentArg().contains("-") ? 0 : suggestionInfo.currentArg().lastIndexOf("-") + 1);
+                    if (Backuper.getInstance().getStorageManager().getStorage(lastStorageString) != null) return true; // If last argument is finished we should skip this filter
+                    return storage.getId().startsWith(lastStorageString);
+                })
+                .filter(storage -> Arrays.stream(suggestionInfo.currentArg().split("-")).noneMatch(currentArgumentStorage -> currentArgumentStorage.equals(storage.getId()))) // Filter if storage is already in arguments
+                .map(Storage::getId) // Map storages to ids
+                .map(id -> { // Finish suggestion strings
+                    String currentArg = suggestionInfo.currentArg();
+                    String lastStorageString = suggestionInfo.currentArg().substring(!suggestionInfo.currentArg().contains("-") ? 0 : suggestionInfo.currentArg().lastIndexOf("-") + 1);
+                    if (Backuper.getInstance().getStorageManager().getStorage(lastStorageString) != null) currentArg += "-"; // Add "-" if last argument is completed
+
+                    int lastIndex = currentArg.lastIndexOf("-") == -1 ? 0 : currentArg.lastIndexOf("-") + 1;
+                    return "%s%s".formatted(currentArg.substring(0, lastIndex), id);
+                })
+                .toList())
+        );
     }
 }
