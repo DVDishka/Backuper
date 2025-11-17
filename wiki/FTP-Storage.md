@@ -1,4 +1,4 @@
-## Default Configuration
+## Default Configuratio
 
 ```yaml
 storages:
