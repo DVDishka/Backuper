@@ -32,29 +32,14 @@ jobs:
       
       - name: Publish to Modrinth
         id: publish-modrinth
-        uses: Kir-Antipov/mc-publish@v3.3
+        uses: benwoo1110/modrinth-upload-action@v1
         with:
-          modrinth-id: Backuper
-          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
-          
+          api_token: ${{ secrets.MODRINTH_TOKEN }}
+          project_id: Backuper
+          version_number: ${{ github.event.release.tag_name }}
           files: target/Backuper-*.jar
-          
           name: Backuper ${{ github.event.release.tag_name }}
-          version: ${{ github.event.release.tag_name }}
-          version-type: release
-          
-          loaders: |
-            paper
-            folia
-          
-          game-versions: |
-            1.21.10
-            1.21.9
-            1.21.4
-            1.21.3
-            1.21.2
-            1.21.1
-            1.21
-            1.20.6
-          
           changelog: ${{ github.event.release.body }}
+          version_type: release
+          loaders: '["paper", "folia"]'
+          game_versions: '["1.21.10", "1.21.9", "1.21.4", "1.21.3", "1.21.2", "1.21.1", "1.21", "1.20.6"]'
