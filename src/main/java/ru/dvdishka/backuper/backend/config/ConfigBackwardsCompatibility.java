@@ -108,13 +108,29 @@ public class ConfigBackwardsCompatibility {
 
         {// New storages format
             ConfigurationSection localSection = config.getConfigurationSection("local");
-            localSection.set("type", "local");
+            try {
+                localSection.set("type", "local");
+            } catch (Exception e) {
+                // In case there is no local storage in this Backuper version
+            }
             ConfigurationSection ftpSection = config.getConfigurationSection("ftp");
-            ftpSection.set("type", "ftp");
+            try {
+                ftpSection.set("type", "ftp");
+            } catch (Exception e) {
+                // In case there is no ftp storage in this Backuper version
+            }
             ConfigurationSection sftpSection = config.getConfigurationSection("sftp");
-            sftpSection.set("type", "sftp");
+            try {
+                sftpSection.set("type", "sftp");
+            } catch (Exception e) {
+                // In case there is no sftp storage in this Backuper version
+            }
             ConfigurationSection googleDriveSection = config.getConfigurationSection("googleDrive");
-            googleDriveSection.set("type", "googleDrive");
+            try {
+                googleDriveSection.set("type", "googleDrive");
+            } catch (Exception e) {
+                // In case there is no googleDrive storage in this Backuper version
+            }
 
             config.set("local", null);
             config.set("ftp", null);
