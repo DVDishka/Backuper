@@ -79,17 +79,43 @@ jobs:
       - name: Get Modrinth download URL
         id: modrinth-url
         run: |
-          # Wait a moment for Modrinth to process the upload
-          sleep 5
+          # Wait for Modrinth to process the upload and make it available via API
+          sleep 10
           
-          # Get the version info from Modrinth API
-          VERSION_DATA=$(curl -s "https://api.modrinth.com/v2/project/Backuper/version/${{ github.event.release.tag_name }}")
+          # Retry logic to get the version info from Modrinth API
+          MAX_RETRIES=5
+          RETRY_COUNT=0
+          FILE_URL=""
           
-          # Extract the primary file URL
-          FILE_URL=$(echo "$VERSION_DATA" | jq -r '.files[0].url')
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            echo "Attempt $((RETRY_COUNT + 1)) of $MAX_RETRIES..."
+            
+            # Get the version info from Modrinth API
+            VERSION_DATA=$(curl -s "https://api.modrinth.com/v2/project/Backuper/version/${{ github.event.release.tag_name }}")
+            
+            # Extract the primary file URL
+            FILE_URL=$(echo "$VERSION_DATA" | jq -r '.files[0].url')
+            
+            # Check if we got a valid URL
+            if [ "$FILE_URL" != "null" ] && [ -n "$FILE_URL" ]; then
+              echo "Successfully retrieved Modrinth file URL: $FILE_URL"
+              break
+            fi
+            
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+              echo "Failed to get URL, retrying in 10 seconds..."
+              sleep 10
+            fi
+          done
+          
+          # Verify we got a valid URL
+          if [ "$FILE_URL" = "null" ] || [ -z "$FILE_URL" ]; then
+            echo "Error: Failed to retrieve Modrinth download URL after $MAX_RETRIES attempts"
+            exit 1
+          fi
           
           echo "file_url=$FILE_URL" >> $GITHUB_OUTPUT
-          echo "Modrinth file URL: $FILE_URL"
       
       - name: Publish to Hangar
         uses: Kir-Antipov/mc-publish@v3.3
