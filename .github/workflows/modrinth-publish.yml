@@ -54,5 +54,8 @@ jobs:
           
           changelog: ${{ github.event.release.body }}
           
+          # Update Modrinth project description with README.md
+          modrinth-body-file: README.md
+          
           # Don't fail if version already exists
           fail-if-version-exists: false

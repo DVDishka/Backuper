@@ -29,6 +29,7 @@ The workflow is triggered automatically when you:
 2. The workflow will:
    - Build the plugin JAR using Maven
    - Upload it to Modrinth with the release version and changelog
+   - Update the Modrinth project description with README.md content
    - Set the version type to "release"
    - Tag it with Paper and Folia loaders
 
