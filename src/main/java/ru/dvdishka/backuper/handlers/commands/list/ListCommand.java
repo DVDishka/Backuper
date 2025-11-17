@@ -5,257 +5,194 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
-import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
-import ru.dvdishka.backuper.backend.backup.*;
-import ru.dvdishka.backuper.backend.common.Logger;
-import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.utils.GoogleDriveUtils;
+import ru.dvdishka.backuper.Backuper;
+import ru.dvdishka.backuper.backend.backup.Backup;
+import ru.dvdishka.backuper.backend.storage.Storage;
+import ru.dvdishka.backuper.backend.util.UIUtils;
 import ru.dvdishka.backuper.handlers.commands.Command;
+import ru.dvdishka.backuper.handlers.commands.Permission;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 public class ListCommand extends Command {
 
-    public static ArrayList<ArrayList<TextComponent>> pages;
-    private String storage;
-    private boolean sendResult = true;
+    private List<List<TextComponent>> pages;
+    private Storage storage;
+    private final boolean sendResult;
 
-    private HashMap<String, Long> backupNameMbSize = new HashMap<>();
-    private HashMap<String, String> backupNameFileType = new HashMap<>();
+    private final HashMap<String, Long> backupNameMbSize = new HashMap<>();
+    private final HashMap<String, Backup.BackupFileType> backupNameFileType = new HashMap<>();
 
-    public ListCommand(String storage, CommandSender sender, CommandArguments arguments) {
+    public ListCommand(boolean sendResult, CommandSender sender, CommandArguments arguments) {
         super(sender, arguments);
-
-        this.storage = storage;
-    }
-
-    public ListCommand(String storage, boolean sendResult, CommandSender sender, CommandArguments arguments) {
-        super(sender, arguments);
-
-        this.storage = storage;
         this.sendResult = sendResult;
     }
 
     @Override
-    public void execute() {
-
-        if (storage.equals("local") && !Config.getInstance().getLocalConfig().isEnabled() ||
-                storage.equals("sftp") && !Config.getInstance().getSftpConfig().isEnabled() ||
-                storage.equals("ftp") && !Config.getInstance().getFtpConfig().isEnabled() ||
-                storage.equals("googleDrive") && (!Config.getInstance().getGoogleDriveConfig().isEnabled() ||
-                        !GoogleDriveUtils.isAuthorized(sender))) {
-            cancelSound();
-            if (!storage.equals("googleDrive")) {
-                returnFailure(storage + " storage is disabled!");
-            } else {
-                returnFailure(storage + " storage is disabled or Google account is not linked!");
-            }
-            return;
+    public boolean check() {
+        storage = Backuper.getInstance().getStorageManager().getStorage((String) arguments.get("storage"));
+        if (storage == null) {
+            returnFailure("Wrong storage name %s".formatted((String) arguments.get("storage")));
+            return false;
+        }
+        sendMessage("Creating a list of backups may take some time...");
+        if (!storage.checkConnection()) {
+            returnFailure("Failed to establish connection to %s storage".formatted(storage.getId()));
+            return false;
+        }
+        if (!sender.hasPermission(Permission.STORAGE.getPermission(storage))) {
+            returnFailure("Don't have enough permissions to perform this command");
+            return false;
         }
 
-        if (storage.equals("local")) {
-            File backupsFolder = new File(Config.getInstance().getLocalConfig().getBackupsFolder());
-            if (!backupsFolder.exists() || backupsFolder.listFiles() == null) {
-                returnFailure("Wrong local.backupsFolder config value! (Maybe the specified folder does not exist)");
-                cancelSound();
-                return;
-            }
-        }
-
-        if (sendResult) {
-            sendMessage("Creating a list of backups may take some time...");
-        }
-        buttonSound();
-
-        // PAGE UPDATING HAPPENS THERE
-        int listPageCount = getListPageCount();
-
-        if (listPageCount == 0) {
-            if (sendResult) {
-                returnFailure("There are no backups yet!");
-            }
-            cancelSound();
-            return;
-        }
-
+        int listPageCount = getListPageCount(); // Page update happens there
         int pageNumber = (Integer) arguments.getOrDefault("pageNumber", 1);
-
-        if (pageNumber < 1 || pageNumber > listPageCount) {
-            if (sendResult) {
-                returnFailure("Invalid page number!");
-            }
-            cancelSound();
-            return;
+        if (pageNumber < 1) {
+            returnFailure("Invalid page number!");
+            return false;
         }
 
+        return true;
+    }
+
+    @Override
+    public void run() {
         Component header = Component.empty();
 
         header = header
                 .append(Component.text("Backup list")
                         .decorate(TextDecoration.BOLD))
                 .append(Component.space())
-                .append(Component.text("(" + storage + ")")
-                        .color(TextColor.fromHexString("#129c9b"))
+                .append(Component.text("(%s)".formatted(storage.getId()))
+                        .color(UIUtils.getSecondaryColor())
                         .decorate(TextDecoration.BOLD));
 
-        if (sendResult) {
-            if (!(sender instanceof ConsoleCommandSender)) {
-                sendFramedMessage(header, createListMessage(pageNumber, true), 15);
-            } else {
-                sendFramedMessage(header, createListMessage(pageNumber, arguments.get("pageNumber") != null), 41);
-            }
+        int pageNumber = (Integer) arguments.getOrDefault("pageNumber", 1);
+        if (!(sender instanceof ConsoleCommandSender)) {
+            sendFramedMessage(header, createListMessage(pageNumber, true), 15);
+        } else {
+            sendFramedMessage(header, createListMessage(pageNumber, arguments.get("pageNumber") != null), 41);
         }
         buttonSound();
     }
 
     private void updateListPages() {
+        List<Backup> backups = new ArrayList<>(storage.getBackupManager().getBackupList());
+        backups.sort(Backup::compareTo);
+        backups = backups.reversed();
 
-        ArrayList<Backup> backups = null;
-
-        if (storage.equals("local")) {
-            backups = getSortedDecreaseLocalBackupList();
-        }
-        if (storage.equals("sftp")) {
-            backups = getSortedDecreaseSftpBackupList();
-        }
-        if (storage.equals("ftp")) {
-            backups = getSortedDecreaseFtpBackupList();
-        }
-        if (storage.equals("googleDrive")) {
-            backups = getSortedDecreaseGoogleDriveBackupList();
-        }
-
-        if (backups == null) {
-            Logger.getLogger().warn("Something went wrong while trying to get backup list!", sender);
-            return;
-        }
-
-        ArrayList<ArrayList<TextComponent>> pages = new ArrayList<>();
-
+        List<List<TextComponent>> pages = new ArrayList<>();
         for (int i = 1; i <= backups.size(); i++) {
-
             if (i % 10 == 1) {
                 pages.add(new ArrayList<>());
             }
-
             Backup backup = backups.get(i - 1);
             String backupName = backup.getName();
             String backupFormattedName = backup.getFormattedName();
 
-            String backupFileType = backup.getFileType();
-            long backupMbSize = backup.getMbSize(sender);
+            long backupMbSize = backup.getMbSize();
 
             backupNameMbSize.put(backupFormattedName, backupMbSize);
-            backupNameFileType.put(backupFormattedName, backupFileType);
+            backupNameFileType.put(backupFormattedName, backup.getFileType());
 
             HoverEvent<net.kyori.adventure.text.Component> hoverEvent = HoverEvent
-                    .showText(net.kyori.adventure.text.Component.text("(" + storage + ") " + backupFileType + " " + backupMbSize + " MB"));
-            ClickEvent clickEvent = ClickEvent.runCommand("/backuper menu " + storage + " \"" + backupName + "\"");
+                    .showText(net.kyori.adventure.text.Component.text("(%s) %s %s MB".formatted(backup.getStorage().getId(), backup.getFileType().name(), backupMbSize)));
+            ClickEvent clickEvent = ClickEvent.runCommand("/backuper menu %s \"%s\"".formatted(storage.getId(), backupName));
 
             pages.get((i - 1) / 10)
                     .add(net.kyori.adventure.text.Component.text(backupFormattedName)
                             .hoverEvent(hoverEvent)
                             .clickEvent(clickEvent));
         }
-
-        ListCommand.pages = pages;
+        this.pages = pages;
     }
 
     private Component createListMessage(int pageNumber, boolean pagedListMessage) {
-
         Component message = Component.empty();
-
-        // For console
+        // For players
         if (!(sender instanceof ConsoleCommandSender)) {
-
             message = message
                     .append(Component.text("<<<<<<<<")
                             .decorate(TextDecoration.BOLD)
-                            .color(TextColor.fromHexString("#129c9b"))
-                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list " + storage + " " + (pageNumber - 1))))
+                            .color(UIUtils.getSecondaryColor())
+                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list %s %s".formatted(storage.getId(), pageNumber - 1))))
                     .append(Component.text(String.valueOf(pageNumber))
                             .decorate(TextDecoration.BOLD))
                     .append(Component.text(">>>>>>>>")
                             .decorate(TextDecoration.BOLD)
-                            .color(TextColor.fromHexString("#129c9b"))
-                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list " + storage + " " + (pageNumber + 1))))
+                            .color(UIUtils.getSecondaryColor())
+                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list %s %s".formatted(storage.getId(), pageNumber + 1))))
                     .append(Component.newline());
 
-            for (TextComponent backupComponent : pages.get(pageNumber - 1)) {
-                message = message
-                        .append(Component.space())
-                        .append(backupComponent)
-                        .append(Component.newline());
+            if (pages.size() >= pageNumber) {
+                for (TextComponent backupComponent : pages.get(pageNumber - 1)) {
+                    message = message
+                            .append(Component.space())
+                            .append(backupComponent)
+                            .append(Component.newline());
+                }
             }
 
             message = message
                     .append(Component.text("<<<<<<<<")
                             .decorate(TextDecoration.BOLD)
-                            .color(TextColor.fromHexString("#129c9b"))
-                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list " + storage + " " + (pageNumber - 1))))
+                            .color(UIUtils.getSecondaryColor())
+                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list %s %s".formatted(storage.getId(), pageNumber - 1))))
                     .append(Component.text(String.valueOf(pageNumber))
                             .decorate(TextDecoration.BOLD))
                     .append(Component.text(">>>>>>>>")
                             .decorate(TextDecoration.BOLD)
-                            .color(TextColor.fromHexString("#129c9b"))
-                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list " + storage + " " + (pageNumber + 1))));
+                            .color(UIUtils.getSecondaryColor())
+                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list %s %s".formatted(storage.getId(), pageNumber + 1))));
 
-        // For players
+        // For console
         } else {
-
             int backupIndex = 1;
-
             if (pagedListMessage) {
-
                 message = message
                         .append(Component.text("<".repeat(20))
                                 .decorate(TextDecoration.BOLD)
-                                .color(TextColor.fromHexString("#129c9b")))
+                                .color(UIUtils.getSecondaryColor()))
                         .append(Component.text(pageNumber))
                         .append(Component.text(">".repeat(20))
                                 .decorate(TextDecoration.BOLD)
-                                .color(TextColor.fromHexString("#129c9b")))
+                                .color(UIUtils.getSecondaryColor()))
                         .append(Component.newline());
 
-                for (TextComponent backupComponent : pages.get(pageNumber - 1)) {
-
-                    if (backupIndex > 1) {
+                if (pages.size() >= pageNumber) {
+                    for (TextComponent backupComponent : pages.get(pageNumber - 1)) {
+                        if (backupIndex > 1) message = message.append(Component.newline());
+                        String backupName = backupComponent.content();
                         message = message
-                                .append(Component.newline());
+                                .append(Component.text(backupName))
+                                .append(Component.space())
+                                .append(Component.text("(%s)".formatted(storage.getId())))
+                                .append(Component.space())
+                                .append(Component.text(backupNameFileType.get(backupName).name()))
+                                .append(Component.space())
+                                .append(Component.text(backupNameMbSize.get(backupName)))
+                                .append(Component.space())
+                                .append(Component.text("MB"));
+                        backupIndex++;
                     }
-
-                    String backupName = backupComponent.content();
-
-                    message = message
-                            .append(Component.text(backupName))
-                            .append(Component.space())
-                            .append(Component.text(storage))
-                            .append(Component.space())
-                            .append(Component.text(backupNameFileType.get(backupName)))
-                            .append(Component.space())
-                            .append(Component.text(backupNameMbSize.get(backupName)))
-                            .append(Component.space())
-                            .append(Component.text(" MB"));
-
-                    backupIndex++;
                 }
 
                 message = message
                         .append(Component.newline())
                         .append(Component.text("<".repeat(20))
                                 .decorate(TextDecoration.BOLD)
-                                .color(TextColor.fromHexString("#129c9b")))
+                                .color(UIUtils.getSecondaryColor()))
                         .append(Component.text(pageNumber))
                         .append(Component.text(">".repeat(20))
                                 .decorate(TextDecoration.BOLD)
-                                .color(TextColor.fromHexString("#129c9b")));
+                                .color(UIUtils.getSecondaryColor()));
             } else {
-                for (ArrayList<TextComponent> page : pages) {
+                for (List<TextComponent> page : pages) {
                     for (TextComponent backupComponent : page) {
 
                         if (backupIndex > 1) {
@@ -268,13 +205,13 @@ public class ListCommand extends Command {
                         message = message
                                 .append(Component.text(backupComponent.content()))
                                 .append(Component.space())
-                                .append(Component.text(storage))
+                                .append(Component.text("(%s)".formatted(storage.getId())))
                                 .append(Component.space())
-                                .append(Component.text(backupNameFileType.get(backupName)))
+                                .append(Component.text(backupNameFileType.get(backupName).name()))
                                 .append(Component.space())
                                 .append(Component.text(backupNameMbSize.get(backupName)))
                                 .append(Component.space())
-                                .append(Component.text(" MB"));
+                                .append(Component.text("MB"));
 
                         backupIndex++;
                     }
@@ -285,53 +222,47 @@ public class ListCommand extends Command {
     }
 
     private int getListPageCount() {
-
         updateListPages();
         return pages.size();
     }
 
-    private ArrayList<Backup> getSortedDecreaseLocalBackupList() {
-
-        ArrayList<Backup> backups = new ArrayList<>(LocalBackup.getBackups());
-        sortBackupsDecrease(backups);
-        return backups;
+    @Override
+    protected void returnFailure(String message) {
+        if (sendResult) super.returnFailure(message);
     }
 
-    private ArrayList<Backup> getSortedDecreaseFtpBackupList() {
-
-        ArrayList<Backup> backups = new ArrayList<>(FtpBackup.getBackups());
-        sortBackupsDecrease(backups);
-        return backups;
+    @Override
+    protected void returnSuccess(String message) {
+        if (sendResult) super.returnSuccess(message);
     }
 
-    private ArrayList<Backup> getSortedDecreaseSftpBackupList() {
-
-        ArrayList<Backup> backups = new ArrayList<>(SftpBackup.getBackups());
-        sortBackupsDecrease(backups);
-        return backups;
+    @Override
+    protected void returnWarning(String message) {
+        if (sendResult) super.returnWarning(message);
     }
 
-    private ArrayList<Backup> getSortedDecreaseGoogleDriveBackupList() {
-
-        ArrayList<Backup> backups = new ArrayList<>(GoogleDriveBackup.getBackups());
-        sortBackupsDecrease(backups);
-        return backups;
+    @Override
+    protected void sendMessage(String message) {
+        if (sendResult) super.sendMessage(message);
     }
 
-    private void sortBackupsDecrease(ArrayList<Backup> backups) {
+    @Override
+    protected void sendFramedMessage(Component message) {
+        if (sendResult) super.sendFramedMessage(message);
+    }
 
-        for (int firstBackupsIndex = 0; firstBackupsIndex < backups.size(); firstBackupsIndex++) {
+    @Override
+    protected void sendFramedMessage(Component message, int dashNumber) {
+        if (sendResult) super.sendFramedMessage(message, dashNumber);
+    }
 
-            for (int secondBackupsIndex = firstBackupsIndex; secondBackupsIndex < backups.size(); secondBackupsIndex++) {
+    @Override
+    protected void sendFramedMessage(Component header, Component message) {
+        if (sendResult) super.sendFramedMessage(header, message);
+    }
 
-                if (backups.get(firstBackupsIndex).getLocalDateTime().isBefore(backups.get(secondBackupsIndex).getLocalDateTime())) {
-
-                    Backup save = backups.get(firstBackupsIndex);
-
-                    backups.set(firstBackupsIndex, backups.get(secondBackupsIndex));
-                    backups.set(secondBackupsIndex, save);
-                }
-            }
-        }
+    @Override
+    protected void sendFramedMessage(Component header, Component message, int dashNumber) {
+        if (sendResult) super.sendFramedMessage(header, message, dashNumber);
     }
 }

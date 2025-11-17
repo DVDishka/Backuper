@@ -1,30 +1,30 @@
 # DO NOT CHANGE
-configVersion: 12.0
+configVersion: 13.0
 lastBackup: 0
 lastChange: 0
 
 backup:
   # (true/false) Automatic backup once in a specified period
   autoBackup: true
-  # Set a format for backup file names (see java.time docs). It must contain information about both time and date
+  # (MINUTES > 0 or -1) Backup period. To use this value, you need to set autoBackupCron to an empty string and autoBackup to true
+  autoBackupPeriod: 1440
+  # (Expression) Auto-backup schedule expression. If it's defined, it'll be used instead of autoBackupPeriod. Use this site to generate your one: http://www.cronmaker.com
+  autoBackupCron: ''
+
+  # (Expression) Set a format for backup file names (see java.time docs). It must contain information about both time and date
   backupFileNameFormat: 'dd-MM-yyyy HH-mm-ss'
-  # (Path list) (An example of how to set a list is below) Full directory paths to folders/files that you want to be backed up. Worlds will be backed up automatically, so you do not need to specify world folders there (For example you can specify "plugins", "config") You can also specify all files with "*".
+  # (Path list) (An example of how to set a list is below) Full directory paths to folders/files that you want to be backed up. Worlds will be backed up automatically, so you do not need to specify world folders there (For example, you can specify "plugins", "config") You can also specify all files with "*".
   # addDirectoryToBackup:
   # - 'path1'
   # - 'path2'
   # - ...
   addDirectoryToBackup: []
-  # (Path list) (An example of how to set a list is below) Full directory paths to folders/files that you want to be excluded from backup. If you want to backup everything from the folder1 except some folder1/file1 you can specify folder1 in addDirectoryToBackup and folder1/file1 in excludeDirectoryFromBackup. (The backupsFolder directory will be excluded automatically to prevent the loop)
+  # (Path list) (An example of how to set a list is below) Full directory paths to folders/files that you want to be excluded from backup. If you want to backup everything from the folder1 except some folder1/file1, you can specify folder1 in addDirectoryToBackup and folder1/file1 in excludeDirectoryFromBackup. (The backupsFolder directory will be excluded automatically to prevent the loop)
   # excludeDirectoryFromBackup:
   # - 'path1'
   # - 'path2'
   # - ...
   excludeDirectoryFromBackup: []
-
-  # (MINUTES > 0 or -1) Backup period. To change this value you need to set backupTime to -1 and autoBackup to true
-  backupPeriod: 1440
-  # (0 - 23). Automatic backups will be made at this time every day. (backupPeriod will be automatically set to 24 hours). -1 to disable backup time fixation
-  backupTime: -1
 
   # (true/false) Sometimes errors may occur while creating a backup. When this option is enabled, such backups will be deleted
   deleteBrokenBackups: true
@@ -33,138 +33,147 @@ backup:
   # (STOP, RESTART, NOTHING) What to do after an automatic backup
   afterBackup: NOTHING
 
-  # (true/false) (True recommended) The backuper will mark all world folders as Read Only to prevent folder changing that may cause the backup crash. True value may cause access denied errors during the backup (you should just ignore that)
+  # (true/false) (True recommended) The backuper will mark all world folders as Read-Only to prevent folder changing that may cause the backup crash. True value may cause access denied errors during the backup (you should just ignore that)
   setWorldsReadOnly: false
-
-local:
-  # (true/false) Enable local storage to use it via the Backuper
-  enabled: true
-  # (true/false) With automatic backup, backups will be saved to specified local storage. Works only if 'enabled: true'
-  autoBackup: true
-
-  # (Path) Full directory where backups will be stored
-  backupsFolder: ./plugins/Backuper/Backups
-
-  # (>= 0) Max backups in backups folder, 0 to make it unlimited
-  maxBackupsNumber: 0
-  # (MB >= 0) Max backups folder weight, 0 to make it unlimited
-  maxBackupsWeight: 0
-
-  # (true/false) Should backups be packaged in a zip archive
-  zipArchive: true
-  # (0 - 9) archive compression level. A higher value may reduce file size, but may also increase the time required to archive and decompress
-  zipCompressionLevel: 5
-
-googleDrive:
-  # (true/false) Enable Google Drive storage to use it via Backuper
-  enabled: false
-  # (true/false) With automatic backup, backups will be saved to specified Google Drive. Works only if 'enabled: true'
-  autoBackup: true
-
-  # Google Drive folder ID where backups will be stored
-  backupsFolderId: ''
-  # Do you want the Backuper to create its own folder in specified in `backupsFolderId` directory to store backups there
-  createBackuperFolder: true
-
-  # (>= 0) Max backups in backups folder, 0 to make it unlimited
-  maxBackupsNumber: 0
-  # (MB >= 0) Max backups folder weight, 0 to make it unlimited
-  maxBackupsWeight: 0
-
-  # (true/false) Should backups be packaged in a zip archive
-  zipArchive: true
-  # (0 - 9) archive compression level. A higher value may reduce file size, but may also increase the time required to archive and decompress
-  zipCompressionLevel: 2
-
-  auth:
-    # Directory where you want to store your Google authentication tokens
-    tokenFolderPath: ./plugins/Backuper/GoogleDrive/tokens
-
-ftp:
-  # (true/false) Enable FTP storage to use it via the Backuper
-  enabled: false
-  # (true/false) With automatic backup, backups will be saved to specified FTP server. Works only if 'enabled: true'
-  autoBackup: true
-
-  # (Path) FTP server directory where backups will be stored
-  backupsFolder: ./
-  # (Symbol) Path separator symbol used on FTP SERVER. For example '/' on UNIX systems. (It is usually '/' even on Windows servers, so change it to '\' only if it does not works with '/')
-  pathSeparatorSymbol: /
-
-  # (>= 0) Max backups in backups folder, 0 to make it unlimited
-  maxBackupsNumber: 0
-  # (MB >= 0) Max backups folder weight, 0 to make it unlimited
-  maxBackupsWeight: 0
-
-  # (true/false) Should backups be packaged in a zip archive
-  zipArchive: true
-  # (0 - 9) archive compression level. A higher value may reduce file size, but may also increase the time required to archive and decompress
-  zipCompressionLevel: 5
-
-  auth:
-    # (Address) FTP server address
-    address: ''
-    # (Port) FTP server port
-    port: 21
-    # (Username) FTP server username to use for authentication
-    username: ''
-    # (Password) FTP server password to use for authentication
-    password: ''
-
-sftp:
-  # (true/false) Enable SFTP storage to use it via the Backuper
-  enabled: false
-  # (true/false) With automatic backup, backups will be saved to specified SFTP server. Works only if 'enabled: true'
-  autoBackup: true
-
-  # (Path) SFTP server directory where backups will be stored
-  backupsFolder: ./
-  # (Symbol) Path separator symbol used on SFTP SERVER. For example '/' on UNIX systems and '\' on windows
-  pathSeparatorSymbol: /
-
-  # (>= 0) Max backups in backups folder, 0 to make it unlimited
-  maxBackupsNumber: 0
-  # (MB >= 0) Max backups folder weight, 0 to make it unlimited
-  maxBackupsWeight: 0
-
-  # (true/false) Should backups be packaged in a zip archive
-  zipArchive: true
-  # (0 - 9) archive compression level. A higher value may reduce file size, but may also increase the time required to archive and decompress
-  zipCompressionLevel: 5
-
-  auth:
-    # (Address) SFTP server address
-    address: ''
-    # (Port) SFTP server port
-    port: 22
-    # (password/key) SFTP server authentication type
-    authType: password
-    # (Username) SFTP server username to use for authentication
-    username: ''
-    # (Password) SFTP server password to use for authentication
-    password: ''
-    # (Absolute Path) Local path to key file if 'authType: key'
-    keyFilePath: ''
-    # (true/false) Do you want to specify local knownHostsFile?
-    useKnownHostsFile: false
-    # (Path) Path to local knownHostsFile if 'useKnownHostsFile: true'
-    knownHostsFilePath: ''
 
 server:
   # (SECONDS < backupPeriod * 60 or -1) A notification about the server restart will be sent to all players on the server {alertTimeBeforeRestart} seconds before the restart. -1 to disable notifications
   alertTimeBeforeRestart: 60
-  # (true/false) Notifications will be sent only if the server will be restarted or stopped after the backup
+  # (true/false) Notifications will be sent only if the server is restarted or stopped after the backup
   alertOnlyServerRestart: true
-  # (String) Backup alert message. (%d is a seconds number placeholder)
+  # (String) Backup alert message. (%d is a number of seconds placeholder)
   alertBackupMessage: Server will be backed up in %d second(s)
-  # (String) Backup and restart alert message. (%d is a seconds number placeholder)
+  # (String) Backup and restart the alert message. (%d is a number of seconds placeholder)
   alertBackupRestartMessage: Server will be backed up and restarted in %d second(s)
 
   # (Path) Size cache file
   sizeCacheFile: ./plugins/Backuper/sizeCache.json
+  # (>= 0) Target number of threads that the backuper will use in parallel (It'll try, but it isn't a hard limitation) (0 to automatically set it equal to the number of threads on the server)
+  threadNumber: 0
 
   # (true/false) Check for new versions of the Backuper to stay up to date
   checkUpdates: true
 
   # (true/false) Better logging (Some statistic and other information for debugging, you probably don't need it)
   betterLogging: false
+
+storages:
+  local:
+    type: local
+    # (true/false) Enable local storage to use it via the Backuper
+    enabled: true
+    # (true/false) With automatic backup, backups will be saved to specified local storage. Works only if 'enabled: true'
+    autoBackup: true
+
+    # (Path) Full directory where backups will be stored
+    backupsFolder: ./plugins/Backuper/Backups
+
+    # (>= 0) Max backups in backups folder, 0 to make it unlimited
+    maxBackupsNumber: 0
+    # (MB >= 0) Max backups folder weight, 0 to make it unlimited
+    maxBackupsWeight: 0
+
+    # (true/false) Should backups be packaged in a zip archive
+    zipArchive: true
+    # (0 - 9) archive compression level. A higher value may reduce file size but may also increase the time required to archive and decompress
+    zipCompressionLevel: 5
+
+  googleDrive:
+    type: googleDrive
+    # (true/false) Enable Google Drive storage to use it via Backuper
+    enabled: false
+    # (true/false) With automatic backup, backups will be saved to specified Google Drive. Works only if 'enabled: true'
+    autoBackup: true
+
+    # Google Drive folder ID where backups will be stored
+    backupsFolderId: ''
+    # Do you want the Backuper to create its own folder in the specified in `backupsFolderId` directory to store backups there?
+    createBackuperFolder: true
+
+    # (>= 0) Max backups in backups folder, 0 to make it unlimited
+    maxBackupsNumber: 0
+    # (MB >= 0) Max backups folder weight, 0 to make it unlimited
+    maxBackupsWeight: 0
+
+    # (true/false) Should backups be packaged in a zip archive
+    zipArchive: true
+    # (0 - 9) archive compression level. A higher value may reduce file size but may also increase the time required to archive and decompress
+    zipCompressionLevel: 5
+
+    auth:
+      # Directory where you want to store your Google authentication tokens
+      tokenFolderPath: ./plugins/Backuper/GoogleDrive/tokens
+
+  ftp:
+    type: ftp
+    # (true/false) Enable FTP storage to use it via the Backuper
+    enabled: false
+    # (true/false) With automatic backup, backups will be saved to a specified FTP server. Works only if 'enabled: true'
+    autoBackup: true
+
+    # (Path) FTP server directory where backups will be stored
+    backupsFolder: ./
+    # (Symbol) Path separator symbol used on FTP SERVER. For example, '/' on UNIX systems. (It is usually '/' even on Windows servers, so change it to '\' only if it does not work with '/')
+    pathSeparatorSymbol: /
+
+    # (>= 0) Max backups in backups folder, 0 to make it unlimited
+    maxBackupsNumber: 0
+    # (MB >= 0) Max backups folder weight, 0 to make it unlimited
+    maxBackupsWeight: 0
+
+    # (true/false) Should backups be packaged in a zip archive
+    zipArchive: true
+    # (0 - 9) archive compression level. A higher value may reduce file size but may also increase the time required to archive and decompress
+    zipCompressionLevel: 5
+
+    auth:
+      # (Address) FTP server address
+      address: ''
+      # (Port) FTP server port
+      port: 21
+      # (Username) FTP server username to use for authentication
+      username: ''
+      # (Password) FTP server password to use for authentication
+      password: ''
+
+  sftp:
+    type: sftp
+    # (true/false) Enable SFTP storage to use it via the Backuper
+    enabled: false
+    # (true/false) With automatic backup, backups will be saved to a specified SFTP server. Works only if 'enabled: true'
+    autoBackup: true
+
+    # (Path) SFTP server directory where backups will be stored
+    backupsFolder: ./
+    # (Symbol) Path separator symbol used on SFTP SERVER. For example, '/' on UNIX systems and '\' on windows
+    pathSeparatorSymbol: /
+
+    # (>= 0) Max backups in backups folder, 0 to make it unlimited
+    maxBackupsNumber: 0
+    # (MB >= 0) Max backups folder weight, 0 to make it unlimited
+    maxBackupsWeight: 0
+
+    # (true/false) Should backups be packaged in a zip archive
+    zipArchive: true
+    # (0 - 9) archive compression level. A higher value may reduce file size but may also increase the time required to archive and decompress
+    zipCompressionLevel: 5
+
+    auth:
+      # (Address) SFTP server address
+      address: ''
+      # (Port) SFTP server port
+      port: 22
+      # (password/key) SFTP server authentication type
+      authType: password
+      # (Username) SFTP server username to use for authentication
+      username: ''
+      # (Password) SFTP server password to use for authentication
+      password: ''
+      # (Absolute Path) Local path to key file if 'authType: key'
+      keyFilePath: ''
+      # (true/false) Do you want to specify local knownHostsFile?
+      useKnownHostsFile: false
+      # (Path) Path to local knownHostsFile if 'useKnownHostsFile: true'
+      knownHostsFilePath: ''
+      # (Path)
+      sshConfigFilePath: ''

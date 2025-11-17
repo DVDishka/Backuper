@@ -1,33 +1,59 @@
 package ru.dvdishka.backuper.backend.config;
 
-import ru.dvdishka.backuper.backend.common.Logger;
-import ru.dvdishka.backuper.backend.utils.GoogleDriveUtils;
+import lombok.Getter;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
+import ru.dvdishka.backuper.Backuper;
+import ru.dvdishka.backuper.backend.storage.GoogleDriveStorage;
 
 import java.io.File;
+import java.io.InputStreamReader;
 import java.util.HashMap;
 
-public class GoogleDriveConfig {
+@Getter
+public class GoogleDriveConfig implements StorageConfig {
 
-    boolean enabled;
-    boolean autoBackup;
-    File tokenFolder;
-    String backupsFolderId;
-    boolean createBackuperFolder;
-    int backupsNumber;
-    long backupsWeight;
-    boolean zipArchive;
-    int zipCompressionLevel;
+    private String id;
 
-    public boolean isEnabled() {
-        return enabled;
-    }
+    private boolean enabled;
+    private boolean autoBackup;
+    private File tokenFolder;
+    private String backupsFolderId;
+    private boolean createBackuperFolder;
+    private int backupsNumber;
+    private long backupsWeight;
+    private boolean zipArchive;
+    private int zipCompressionLevel;
 
-    public boolean isAutoBackup() {
-        return autoBackup;
-    }
+    private ConfigurationSection config;
 
-    public File getTokenFolder() {
-        return tokenFolder;
+    public GoogleDriveConfig load(ConfigurationSection config, String name) {
+        this.config = config;
+        this.id = name;
+        this.enabled = config.getBoolean("enabled");
+        this.autoBackup = config.getBoolean("autoBackup");
+        this.backupsFolderId = config.getString("backupsFolderId");
+        String googleDriveTokenFolder = config.getString("auth.tokenFolderPath");
+        this.tokenFolder = new File(googleDriveTokenFolder);
+        this.createBackuperFolder = config.getBoolean("createBackuperFolder");
+        this.backupsNumber = config.getInt("maxBackupsNumber");
+        this.backupsWeight = config.getLong("maxBackupsWeight") * 1_048_576L;
+        this.zipArchive = config.getBoolean("zipArchive");
+        int zipCompressionLevel = config.getInt("zipCompressionLevel");
+
+        if (zipCompressionLevel > 9 || zipCompressionLevel < 0) {
+            Backuper.getInstance().getLogManager().warn("Failed to load config value!");
+            if (zipCompressionLevel < 0) {
+                Backuper.getInstance().getLogManager().warn("zipCompressionLevel must be >= 0, using 0 value...");
+                zipCompressionLevel = 0;
+            }
+            if (zipCompressionLevel > 9) {
+                Backuper.getInstance().getLogManager().warn("zipCompressionLevel must be <= 9, using 9 value...");
+                zipCompressionLevel = 9;
+            }
+        }
+        this.zipCompressionLevel = zipCompressionLevel;
+        return this;
     }
 
     public String getRawBackupFolderId() {
@@ -39,37 +65,34 @@ public class GoogleDriveConfig {
             return backupsFolderId;
         }
 
-        for (com.google.api.services.drive.model.File driveFile : GoogleDriveUtils.ls(backupsFolderId, "appProperties has { key='root' and value='true' }", null)) {
+        GoogleDriveStorage storage = (GoogleDriveStorage) Backuper.getInstance().getStorageManager().getStorage(id);
+        if (storage == null) {
+            throw new RuntimeException("Tried to get backupsFolder from unregistered \"%s\" GoogleDrive storage".formatted(id));
+        }
+
+        for (com.google.api.services.drive.model.File driveFile : storage.ls(backupsFolderId, "appProperties has { key='root' and value='true' }")) {
             if (driveFile.getName().equals("Backuper")) {
                 return driveFile.getId();
             }
         }
-
-        try {
-            HashMap<String, String> properties = new HashMap<>();
-            properties.put("root", "true");
-            return GoogleDriveUtils.createFolder("Backuper", backupsFolderId, properties, null);
-
-        } catch (Exception e) {
-            Logger.getLogger().warn("Failed to create Backuper folder in Google Drive. Check if Google Drive account is linked");
-            Logger.getLogger().warn(this.getClass(), e);
-            return null;
-        }
+        HashMap<String, String> properties = new HashMap<>();
+        properties.put("root", "true");
+        storage.createDir("Backuper", backupsFolderId, properties);
+        return storage.getFileByName("Backuper", backupsFolderId).getId();
     }
 
-    public int getBackupsNumber() {
-        return backupsNumber;
+    @Override
+    public String getBackupsFolder() {
+        return getBackupsFolderId();
     }
 
-    public long getBackupsWeight() {
-        return backupsWeight;
+    @Override
+    public String getId() {
+        return id;
     }
 
-    public boolean isZipArchive() {
-        return zipArchive;
-    }
-
-    public int getZipCompressionLevel() {
-        return zipCompressionLevel;
+    @Override
+    public ConfigurationSection getDefaultConfig() {
+        return YamlConfiguration.loadConfiguration(new InputStreamReader(Backuper.getInstance().getResource("google_drive_config.yml")));
     }
 }

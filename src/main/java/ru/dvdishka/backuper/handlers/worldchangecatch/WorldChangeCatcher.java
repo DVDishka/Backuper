@@ -7,57 +7,57 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.InventoryInteractEvent;
 import org.bukkit.event.player.*;
-import ru.dvdishka.backuper.backend.config.Config;
+import ru.dvdishka.backuper.Backuper;
 
 public class WorldChangeCatcher implements Listener {
 
     @EventHandler
     public static void onPlayerInteract(PlayerInteractEvent event) {
-        Config.getInstance().updateLastChange();
+        Backuper.getInstance().getConfigManager().updateLastChange();
     }
 
     @EventHandler
     public static void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
-        Config.getInstance().updateLastChange();
+        Backuper.getInstance().getConfigManager().updateLastChange();
     }
 
     @EventHandler
     public static void onPlayerInteractAtEntity(PlayerInteractAtEntityEvent event) {
-        Config.getInstance().updateLastChange();
+        Backuper.getInstance().getConfigManager().updateLastChange();
     }
 
     @EventHandler
     public static void onInventoryInteract(InventoryInteractEvent event) {
-        Config.getInstance().updateLastChange();
+        Backuper.getInstance().getConfigManager().updateLastChange();
     }
 
     @EventHandler
     public static void onBlockPlace(BlockPlaceEvent event) {
-        Config.getInstance().updateLastChange();
+        Backuper.getInstance().getConfigManager().updateLastChange();
     }
 
     @EventHandler
     public static void onBlockBreak(BlockBreakEvent event) {
-        Config.getInstance().updateLastChange();
+        Backuper.getInstance().getConfigManager().updateLastChange();
     }
 
     @EventHandler
     public static void onItemDrop(PlayerDropItemEvent event) {
-        Config.getInstance().updateLastChange();
+        Backuper.getInstance().getConfigManager().updateLastChange();
     }
 
     @EventHandler
     public static void onPlayerDeath(PlayerDeathEvent event) {
-        Config.getInstance().updateLastChange();
+        Backuper.getInstance().getConfigManager().updateLastChange();
     }
 
     @EventHandler
     public static void onPlayerQuit(PlayerQuitEvent event) {
-        Config.getInstance().updateLastChange();
+        Backuper.getInstance().getConfigManager().updateLastChange();
     }
 
     @EventHandler
     public static void onPlayerJoin(PlayerJoinEvent event) {
-        Config.getInstance().updateLastChange();
+        Backuper.getInstance().getConfigManager().updateLastChange();
     }
 }

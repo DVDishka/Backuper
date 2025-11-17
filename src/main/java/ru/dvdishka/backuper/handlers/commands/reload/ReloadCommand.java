@@ -3,13 +3,8 @@ package ru.dvdishka.backuper.handlers.commands.reload;
 import dev.jorel.commandapi.executors.CommandArguments;
 import org.bukkit.command.CommandSender;
 import ru.dvdishka.backuper.Backuper;
-import ru.dvdishka.backuper.backend.Initialization;
-import ru.dvdishka.backuper.backend.common.Scheduler;
-import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.utils.Utils;
 import ru.dvdishka.backuper.handlers.commands.Command;
-
-import java.io.File;
+import ru.dvdishka.backuper.handlers.commands.Permission;
 
 public class ReloadCommand extends Command {
 
@@ -18,27 +13,25 @@ public class ReloadCommand extends Command {
     }
 
     @Override
-    public void execute() {
-
-        if (Backuper.isLocked()) {
+    public boolean check() {
+        if (!sender.hasPermission(Permission.CONFIG_RELOAD.getPermission())) {
+            returnFailure("Don't have enough permissions to perform this command");
+            return false;
+        }
+        if (Backuper.getInstance().getTaskManager().isLocked() || Backuper.restarting) {
             returnFailure("Blocked by another operation!");
-            cancelSound();
-            return;
+            return false;
         }
 
-        buttonSound();
+        return true;
+    }
 
-        Config.getInstance().setConfigField("lastBackup", Config.getInstance().getLastBackup());
-        Config.getInstance().setConfigField("lastChange", Config.getInstance().getLastChange());
-
-        Scheduler.cancelTasks(Utils.plugin);
-
-        Initialization.initConfig(new File("plugins/Backuper/config.yml"), sender);
-        Initialization.checkStorages(sender);
-        Initialization.unifyBackupNameFormat(sender);
-
-        Initialization.initAutoBackup(sender);
-
-        successSound();
+    @Override
+    public void run() {
+        Backuper.restarting = true;
+        Backuper.getInstance().shutdown();
+        Backuper.getInstance().init();
+        returnSuccess("Reloading completed");
+        Backuper.restarting = false;
     }
 }

@@ -8,135 +8,129 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
-import ru.dvdishka.backuper.backend.backup.*;
-import ru.dvdishka.backuper.backend.config.Config;
-import ru.dvdishka.backuper.backend.utils.GoogleDriveUtils;
+import ru.dvdishka.backuper.Backuper;
+import ru.dvdishka.backuper.backend.backup.Backup;
+import ru.dvdishka.backuper.backend.storage.Storage;
+import ru.dvdishka.backuper.backend.util.UIUtils;
 import ru.dvdishka.backuper.handlers.commands.Command;
+import ru.dvdishka.backuper.handlers.commands.Permission;
+
+import java.util.HashMap;
 
 public class MenuCommand extends Command {
 
-    private String storage = "";
+    private Storage storage;
+    private Backup backup;
 
-    public MenuCommand(String storage, CommandSender sender, CommandArguments arguments) {
+    public MenuCommand(CommandSender sender, CommandArguments arguments) {
         super(sender, arguments);
+    }
 
-        this.storage = storage;
+    public boolean check() {
+        storage = Backuper.getInstance().getStorageManager().getStorage((String) arguments.get("storage"));
+        if (storage == null) {
+            returnFailure("Wrong storage name %s".formatted((String) arguments.get("storage")));
+            return false;
+        }
+        if (!storage.checkConnection()) {
+            returnFailure("Failed to establish connection to storage %s".formatted(storage.getId()));
+            return false;
+        }
+        backup = storage.getBackupManager().getBackup((String) arguments.get("backupName"));
+        if (backup == null) {
+            returnFailure("Wrong backup name %s".formatted((String) arguments.get("backupName")));
+            return false;
+        }
+        if (!sender.hasPermission(Permission.STORAGE.getPermission(storage))) {
+            returnFailure("Don't have enough permissions to perform this command");
+            return false;
+        }
+
+        return true;
     }
 
     @Override
-    public void execute() {
-
-        String backupName = (String) arguments.get("backupName");
-
-        if (storage.equals("local") && !Config.getInstance().getLocalConfig().isEnabled() ||
-                storage.equals("sftp") && !Config.getInstance().getSftpConfig().isEnabled() ||
-                storage.equals("ftp") && !Config.getInstance().getFtpConfig().isEnabled() ||
-                storage.equals("googleDrive") && (!Config.getInstance().getGoogleDriveConfig().isEnabled() ||
-                        !GoogleDriveUtils.isAuthorized(sender))) {
-            cancelSound();
-            if (!storage.equals("googleDrive")) {
-                returnFailure(storage + " storage is disabled!");
-            } else {
-                returnFailure(storage + " storage is disabled or Google account is not linked!");
-            }
-            return;
-        }
-
-        if (storage.equals("local") && !LocalBackup.checkBackupExistenceByName(backupName) ||
-                storage.equals("sftp") && !SftpBackup.checkBackupExistenceByName(backupName) ||
-                storage.equals("ftp") && !FtpBackup.checkBackupExistenceByName(backupName)
-                || storage.equals("googleDrive") && !GoogleDriveBackup.checkBackupExistenceByName(backupName)) {
-            cancelSound();
-            returnFailure("Backup does not exist!");
-            return;
-        }
-
-        assert backupName != null;
-
-        buttonSound();
-
-        Backup backup = null;
-        if (storage.equals("local")) {
-            backup = LocalBackup.getInstance(backupName);
-        }
-        if (storage.equals("sftp")) {
-            backup = SftpBackup.getInstance(backupName);
-        }
-        if (storage.equals("ftp")) {
-            backup = FtpBackup.getInstance(backupName);
-        }
-        if (storage.equals("googleDrive")) {
-            backup = GoogleDriveBackup.getInstance(backupName);
-        }
-
+    public void run() {
         String backupFormattedName = backup.getFormattedName();
-
-        long backupMbSize = backup.getMbSize(sender);
-        String zipOrFolder = backup.getFileType();
+        long backupMbSize = backup.getMbSize();
 
         Component header = Component.empty();
-
         header = header
                 .append(Component.text("Backup menu")
                         .decorate(TextDecoration.BOLD))
                 .append(Component.space())
-                .append(Component.text("(" + storage + ")")
-                        .color(TextColor.fromHexString("#129c9b"))
+                .append(Component.text("(%s)".formatted(storage.getId()))
+                        .color(UIUtils.getSecondaryColor())
                         .decorate(TextDecoration.BOLD));
-        ;
 
         Component message = Component.empty();
-
         if (!(sender instanceof ConsoleCommandSender)) {
-
             message = message
                     .append(Component.text(backupFormattedName)
-                            .hoverEvent(HoverEvent.showText(Component.text("(" + storage + ") " + zipOrFolder + " " + backupMbSize + " MB"))))
+                            .hoverEvent(HoverEvent.showText(Component.text("(%s) (%s) %s MB".formatted(storage.getId(), backup.getFileType().name(), backup.getMbSize())))))
                     .append(Component.newline())
                     .append(Component.newline());
 
-            if (storage.equals("local") && backup.getFileType().equals("(Folder)")) {
+            if (Backup.BackupFileType.DIR.equals(backup.getFileType())) {
                 message = message
                         .append(Component.text("[TO ZIP]")
-                                .clickEvent(ClickEvent.runCommand("/backuper menu " + storage + " \"" + backupName + "\"" + " toZIPConfirmation"))
+                                .clickEvent(ClickEvent.callback((audience) -> {
+                                    new ToZIPCommand((CommandSender) audience,
+                                            new CommandArguments(
+                                                    new Object[]{backup.getStorage().getId(), backup.getName()},
+                                                    new HashMap<>(){
+                                                        {
+                                                            put("storage", backup.getStorage().getId());
+                                                            put("backupName", backup.getName());
+                                                        }
+                                                    },
+                                                    new String[]{ backup.getStorage().getId(), backup.getName() },
+                                                    new HashMap<>() {
+                                                        {
+                                                            put("storage", backup.getStorage().getId());
+                                                            put("backupName", backup.getName());
+                                                        }
+                                                    },
+                                                    "/backuper menu \"%s\" \"%s\" tozip".formatted(backup.getStorage().getId(), backup.getName())
+                                            )).executeConfirm();
+                                }))
                                 .decorate(TextDecoration.BOLD)
                                 .color(TextColor.color(0x4974B)))
                         .append(Component.space());
             }
 
-            if (storage.equals("local") && backup.getFileType().equals("(ZIP)")) {
+            if (Backup.BackupFileType.ZIP.equals(backup.getFileType())) {
                 message = message
                         .append(Component.text("[UNZIP]")
-                                .clickEvent(ClickEvent.runCommand("/backuper menu " + storage + " \"" + backupName + "\"" + " unZIPConfirmation"))
+                                .clickEvent(ClickEvent.callback((audience) -> {
+                                    new UnZIPCommand((CommandSender) audience,
+                                            new CommandArguments(
+                                                    new Object[]{backup.getStorage().getId(), backup.getName()},
+                                                    new HashMap<>(){
+                                                        {
+                                                            put("storage", backup.getStorage().getId());
+                                                            put("backupName", backup.getName());
+                                                        }
+                                                    },
+                                                    new String[]{ backup.getStorage().getId(), backup.getName() },
+                                                    new HashMap<>() {
+                                                        {
+                                                            put("storage", backup.getStorage().getId());
+                                                            put("backupName", backup.getName());
+                                                        }
+                                                    },
+                                                    "/backuper menu \"%s\" \"%s\" unzip".formatted(backup.getStorage().getId(), backup.getName())
+                                            )).executeConfirm();
+                                }))
                                 .decorate(TextDecoration.BOLD)
                                 .color(TextColor.color(0x4974B)))
                         .append(Component.space());
             }
 
-            if (storage.equals("local") && Config.getInstance().getFtpConfig().isEnabled()) {
+            if (Backuper.getInstance().getStorageManager().getStorages().size() >= 2) {
                 message = message
-                        .append(Component.text("[COPY TO FTP]")
-                                .clickEvent(ClickEvent.runCommand("/backuper menu " + storage + " \"" + backupName + "\"" + " copyToFtpConfirmation"))
-                                .decorate(TextDecoration.BOLD)
-                                .color(TextColor.color(17, 102, 212)))
-                        .append(Component.space());
-            }
-
-            if (storage.equals("local") && Config.getInstance().getSftpConfig().isEnabled()) {
-                message = message
-                        .append(Component.text("[COPY TO SFTP]")
-                                .clickEvent(ClickEvent.runCommand("/backuper menu " + storage + " \"" + backupName + "\"" + " copyToSftpConfirmation"))
-                                .decorate(TextDecoration.BOLD)
-                                .color(TextColor.color(17, 102, 212)))
-                        .append(Component.space());
-            }
-
-            if (storage.equals("sftp") && Config.getInstance().getLocalConfig().isEnabled() ||
-                    storage.equals("ftp") && Config.getInstance().getFtpConfig().isEnabled() ||
-                    storage.equals("googleDrive") && Config.getInstance().getGoogleDriveConfig().isEnabled()) {
-                message = message
-                        .append(Component.text("[COPY TO LOCAL]")
-                                .clickEvent(ClickEvent.runCommand("/backuper menu " + storage + " \"" + backupName + "\"" + " copyToLocalConfirmation"))
+                        .append(Component.text("[COPY TO]")
+                                .clickEvent(ClickEvent.suggestCommand("/backuper menu %s \"%s\" copyto ".formatted(storage.getId(), backup.getName())))
                                 .decorate(TextDecoration.BOLD)
                                 .color(TextColor.color(17, 102, 212)))
                         .append(Component.space());
@@ -144,24 +138,42 @@ public class MenuCommand extends Command {
 
             message = message
                     .append(Component.text("[DELETE]")
-                            .clickEvent(ClickEvent.runCommand("/backuper menu " + storage + " \"" + backupName + "\"" + " deleteConfirmation"))
+                            .clickEvent(ClickEvent.callback((audience) -> {
+                                new DeleteCommand((CommandSender) audience,
+                                        new CommandArguments(
+                                                new Object[]{backup.getStorage().getId(), backup.getName()},
+                                                new HashMap<>(){
+                                                    {
+                                                        put("storage", backup.getStorage().getId());
+                                                        put("backupName", backup.getName());
+                                                    }
+                                                },
+                                                new String[]{ backup.getStorage().getId(), backup.getName() },
+                                                new HashMap<>() {
+                                                    {
+                                                        put("storage", backup.getStorage().getId());
+                                                        put("backupName", backup.getName());
+                                                    }
+                                                },
+                                                "/backuper menu \"%s\" \"%s\" delete".formatted(backup.getStorage().getId(), backup.getName())
+                                        )).executeConfirm();
+                            }))
                             .decorate(TextDecoration.BOLD)
                             .color(TextColor.color(0xB02100)));
 
             sendFramedMessage(header, message, 15);
 
         } else {
-
             message = message
                     .append(Component.text(backupFormattedName))
                     .append(Component.space())
-                    .append(Component.text("(" + storage + ")"))
+                    .append(Component.text("(%s)".formatted(backup.getStorage().getId())))
                     .append(Component.space())
-                    .append(Component.text(zipOrFolder))
+                    .append(Component.text(backup.getFileType().name()))
                     .append(Component.space())
                     .append(Component.text(backupMbSize))
                     .append(Component.space())
-                    .append(Component.text(" MB"));
+                    .append(Component.text("MB"));
 
             sendFramedMessage(header, message);
         }

@@ -23,68 +23,6 @@ permissions:
           backuper.backup.restart:
             default: op
 
-      backuper.local.*:
-        default: false
-        children:
-          backuper.local.list.*:
-            default: false
-            children:
-              backuper.local.list:
-                default: op
-              backuper.local.list.delete:
-                default: op
-              backuper.local.list.tozip:
-                default: op
-              backuper.local.list.unzip:
-                default: op
-              backuper.local.list.copytosftp:
-                default: op
-              backuper.local.list.copytoftp:
-                default: op
-              backuper.local.list.copytogoogledrive:
-                default: op
-
-      backuper.sftp.*:
-        default: false
-        children:
-          backuper.sftp.list.*:
-            default: false
-            children:
-              backuper.sftp.list:
-                default: op
-              backuper.sftp.list.delete:
-                default: op
-              backuper.sftp.list.copytolocal:
-                default: op
-
-      backuper.ftp.*:
-        default: false
-        children:
-          backuper.ftp.list.*:
-            default: false
-            children:
-              backuper.ftp.list:
-                default: op
-              backuper.ftp.list.delete:
-                default: op
-              backuper.ftp.list.copytolocal:
-                default: op
-
-      backuper.googledrive.*:
-        default: false
-        children:
-          backuper.googledrive.account:
-            default: op
-          backuper.googledrive.list.*:
-            default: false
-            children:
-              backuper.googledrive.list:
-                default: op
-              backuper.googledrive.list.delete:
-                default: op
-              backuper.googledrive.list.copytolocal:
-                default: op
-
       backuper.config.*:
         default: false
         children:
