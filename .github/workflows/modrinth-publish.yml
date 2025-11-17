@@ -1,16 +1,20 @@
-name: Publish to Modrinth
+name: Publish to Modrinth and Hangar
 
-# This workflow automatically publishes releases to Modrinth when a new GitHub release is created
+# This workflow automatically publishes releases to Modrinth and Hangar when a new GitHub release is created
 on:
   release:
     types: [published]
 
 jobs:
-  build-and-publish:
+  publish-modrinth:
     runs-on: ubuntu-latest
     
     permissions:
       contents: read
+    
+    outputs:
+      modrinth-version-id: ${{ steps.publish-modrinth.outputs.modrinth-version }}
+      modrinth-files: ${{ steps.publish-modrinth.outputs.modrinth-files }}
     
     steps:
       - name: Checkout repository
@@ -27,6 +31,7 @@ jobs:
         run: mvn clean package -DskipTests
       
       - name: Publish to Modrinth
+        id: publish-modrinth
         uses: Kir-Antipov/mc-publish@v3.3
         with:
           modrinth-id: Backuper
@@ -56,6 +61,67 @@ jobs:
           
           # Update Modrinth project description with README.md
           modrinth-body-file: README.md
+          
+          # Don't fail if version already exists
+          fail-if-version-exists: false
+  
+  publish-hangar:
+    runs-on: ubuntu-latest
+    needs: publish-modrinth
+    
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Get Modrinth download URL
+        id: modrinth-url
+        run: |
+          # Wait a moment for Modrinth to process the upload
+          sleep 5
+          
+          # Get the version info from Modrinth API
+          VERSION_DATA=$(curl -s "https://api.modrinth.com/v2/project/Backuper/version/${{ github.event.release.tag_name }}")
+          
+          # Extract the primary file URL
+          FILE_URL=$(echo "$VERSION_DATA" | jq -r '.files[0].url')
+          
+          echo "file_url=$FILE_URL" >> $GITHUB_OUTPUT
+          echo "Modrinth file URL: $FILE_URL"
+      
+      - name: Publish to Hangar
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          hangar-id: Backuper
+          hangar-token: ${{ secrets.HANGAR_TOKEN }}
+          
+          # Use external download link from Modrinth instead of uploading file
+          files: ${{ steps.modrinth-url.outputs.file_url }}
+          
+          name: Backuper ${{ github.event.release.tag_name }}
+          version: ${{ github.event.release.tag_name }}
+          version-type: release
+          
+          loaders: |
+            paper
+            folia
+          
+          game-versions: |
+            1.21.10
+            1.21.9
+            1.21.4
+            1.21.3
+            1.21.2
+            1.21.1
+            1.21
+            1.20.6
+          
+          changelog: ${{ github.event.release.body }}
+          
+          # Update Hangar project description with README.md
+          hangar-body-file: README.md
           
           # Don't fail if version already exists
           fail-if-version-exists: false
