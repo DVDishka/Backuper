@@ -13,8 +13,7 @@ jobs:
       contents: read
     
     outputs:
-      modrinth-version-id: ${{ steps.publish-modrinth.outputs.modrinth-version }}
-      modrinth-files: ${{ steps.publish-modrinth.outputs.modrinth-files }}
+      modrinth-url: ${{ steps.modrinth-url.outputs.file_url }}
     
     steps:
       - name: Checkout repository
@@ -32,49 +31,17 @@ jobs:
       
       - name: Publish to Modrinth
         id: publish-modrinth
-        uses: Kir-Antipov/mc-publish@v3.3
+        uses: benwoo1110/modrinth-upload-action@v1
         with:
-          modrinth-id: Backuper
-          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
-          
+          api_token: ${{ secrets.MODRINTH_TOKEN }}
+          project_id: Backuper
+          version_number: ${{ github.event.release.tag_name }}
           files: target/Backuper-*.jar
-          
           name: Backuper ${{ github.event.release.tag_name }}
-          version: ${{ github.event.release.tag_name }}
-          version-type: release
-          
-          loaders: |
-            paper
-            folia
-          
-          game-versions: |
-            1.21.10
-            1.21.9
-            1.21.4
-            1.21.3
-            1.21.2
-            1.21.1
-            1.21
-            1.20.6
-          
           changelog: ${{ github.event.release.body }}
-          
-          # Update Modrinth project description with README.md
-          modrinth-body-file: README.md
-          
-          # Don't fail if version already exists
-          fail-if-version-exists: false
-  
-  publish-hangar:
-    runs-on: ubuntu-latest
-    needs: publish-modrinth
-    
-    permissions:
-      contents: read
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+          version_type: release
+          loaders: '["paper", "folia"]'
+          game_versions: '["1.21.10", "1.21.9", "1.21.4", "1.21.3", "1.21.2", "1.21.1", "1.21", "1.20.6"]'
       
       - name: Get Modrinth download URL
         id: modrinth-url
@@ -117,37 +84,49 @@ jobs:
           
           echo "file_url=$FILE_URL" >> $GITHUB_OUTPUT
       
+      - name: Update Modrinth project description with README.md
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+        run: |
+          # Escape quotes and newlines for JSON
+          sed 's/"/\\"/g' README.md > README_work.md
+          sed -E ':a;N;$!ba;s/\r{0,1}\n/\\n/g' README_work.md > README_work2.md
+          
+          # Update project description via Modrinth API
+          curl -X PATCH \
+            -H "Content-Type: application/json" \
+            -H "Authorization: $MODRINTH_TOKEN" \
+            --data-raw "{\"body\": \"$(cat README_work2.md)\"}" \
+            https://api.modrinth.com/v2/project/Backuper
+  
+  publish-hangar:
+    runs-on: ubuntu-latest
+    needs: publish-modrinth
+    
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
       - name: Publish to Hangar
-        uses: Kir-Antipov/mc-publish@v3.3
+        uses: benwoo1110/hangar-upload-action@v1
         with:
-          hangar-id: Backuper
-          hangar-token: ${{ secrets.HANGAR_TOKEN }}
-          
-          # Use external download link from Modrinth instead of uploading file
-          files: ${{ steps.modrinth-url.outputs.file_url }}
-          
-          name: Backuper ${{ github.event.release.tag_name }}
+          api_token: ${{ secrets.HANGAR_TOKEN }}
+          slug: Backuper
           version: ${{ github.event.release.tag_name }}
-          version-type: release
-          
-          loaders: |
-            paper
-            folia
-          
-          game-versions: |
-            1.21.10
-            1.21.9
-            1.21.4
-            1.21.3
-            1.21.2
-            1.21.1
-            1.21
-            1.20.6
-          
-          changelog: ${{ github.event.release.body }}
-          
-          # Update Hangar project description with README.md
-          hangar-body-file: README.md
-          
-          # Don't fail if version already exists
-          fail-if-version-exists: false
+          channel: release
+          description: ${{ github.event.release.body }}
+          files: |
+            [
+              {
+                "platforms": ["PAPER"],
+                "url": true,
+                "externalUrl": "${{ needs.publish-modrinth.outputs.modrinth-url }}"
+              }
+            ]
+          platform_dependencies: |
+            {
+              "PAPER": ["1.20.6", "1.21.x"]
+            }
