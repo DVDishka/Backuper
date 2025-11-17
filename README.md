@@ -16,7 +16,7 @@ Simple backup plugin for Paper/Folia with **FTP/SFTP/Google Drive** support.
 
 ---
 
-## 🔗 Pages 🔗
+## 🔗 Page 🔗
 
 * [📖 Wiki](https://github.com/DVDishka/Backuper/wiki)
 * [<img width="20px" src="https://raw.githubusercontent.com/DVDishka/Backuper/refs/heads/master/images/backuper_logo.svg"></img>](https://backuper-mc.com)[ Backuper](https://backuper-mc.com)
