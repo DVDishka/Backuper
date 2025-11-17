@@ -43,3 +43,18 @@ jobs:
           version_type: release
           loaders: '["paper", "folia"]'
           game_versions: '["1.21.10", "1.21.9", "1.21.4", "1.21.3", "1.21.2", "1.21.1", "1.21", "1.20.6"]'
+      
+      - name: Update Modrinth project description with README.md
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+        run: |
+          # Escape quotes and newlines for JSON
+          sed 's/"/\\"/g' README.md > README_work.md
+          sed -E ':a;N;$!ba;s/\r{0,1}\n/\\n/g' README_work.md > README_work2.md
+          
+          # Update project description via Modrinth API
+          curl -X PATCH \
+            -H "Content-Type: application/json" \
+            -H "Authorization: $MODRINTH_TOKEN" \
+            --data-raw "{\"body\": \"$(cat README_work2.md)\"}" \
+            https://api.modrinth.com/v2/project/Backuper
