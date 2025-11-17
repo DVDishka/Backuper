@@ -1,0 +1,53 @@
+name: Sync Wiki
+
+# This workflow automatically syncs the wiki/ folder to the GitHub Wiki
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'wiki/**'
+
+jobs:
+  sync-wiki:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Checkout Wiki repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}.wiki
+          path: wiki-repo
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Sync wiki files
+        run: |
+          # Copy all files from wiki/ folder to wiki repository
+          cp -r wiki/* wiki-repo/
+          
+      - name: Commit and push changes
+        working-directory: wiki-repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Add all changes
+          git add .
+          
+          # Check if there are changes to commit
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Sync wiki from wiki/ folder
+            
+            Automated sync from commit ${{ github.sha }}"
+            git push
+          fi
