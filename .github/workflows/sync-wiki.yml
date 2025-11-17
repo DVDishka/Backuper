@@ -30,6 +30,9 @@ jobs:
       
       - name: Sync wiki files
         run: |
+          # Remove all existing files in wiki-repo (except .git folder)
+          find wiki-repo -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
+          
           # Copy all files from wiki/ folder to wiki repository
           cp -r wiki/* wiki-repo/
           
