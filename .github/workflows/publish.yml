@@ -41,7 +41,13 @@ jobs:
           changelog: ${{ github.event.release.body }}
           version_type: release
           loaders: '["paper", "folia"]'
-          game_versions: '["1.21.10", "1.21.9", "1.21.4", "1.21.3", "1.21.2", "1.21.1", "1.21", "1.20.6"]'
+          game_versions: '["1.21.10", "1.21.9", "1.21.8", "1.21.7", "1.21.6", "1.21.5", "1.21.4", "1.21.3", "1.21.2", "1.21.1", "1.21", "1.20.6"]'
+
+      - name: Update Modrinth description
+        uses: funnyboy-roks/modrinth-auto-desc@v1.7
+        with:
+          auth-token: ${{ secrets.MODRINTH_TOKEN }}
+          slug: Backuper
       
       - name: Get Modrinth download URL
         id: modrinth-url
@@ -83,21 +89,6 @@ jobs:
           fi
           
           echo "file_url=$FILE_URL" >> $GITHUB_OUTPUT
-      
-      - name: Update Modrinth project description with README.md
-        env:
-          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
-        run: |
-          # Escape quotes and newlines for JSON
-          sed 's/"/\\"/g' README.md > README_work.md
-          sed -E ':a;N;$!ba;s/\r{0,1}\n/\\n/g' README_work.md > README_work2.md
-          
-          # Update project description via Modrinth API
-          curl -X PATCH \
-            -H "Content-Type: application/json" \
-            -H "Authorization: $MODRINTH_TOKEN" \
-            --data-raw "{\"body\": \"$(cat README_work2.md)\"}" \
-            https://api.modrinth.com/v2/project/Backuper
   
   publish-hangar:
     runs-on: ubuntu-latest
