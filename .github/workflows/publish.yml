@@ -33,89 +33,43 @@ jobs:
           echo "Downloaded files:"
           ls -lh ./target/
 
-      - name: Set JAR file name
-        run: |
-          FILE_NAME=$(basename ${{ env.JAR_FILE }})
-          echo "JAR_FILE_NAME=$FILE_NAME" >> $GITHUB_ENV
-
-      - name: Create Modrinth version
-        id: create_version
+      - name: Publish to Modrinth via API
+        id: modrinth
         env:
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
-          JAR_FILE_NAME: ${{ env.JAR_FILE_NAME }}
+          JAR_FILE: ${{ env.JAR_FILE }}
         run: |
-          PROJECT_SLUG="backuper"
+          PROJECT_ID="backuper"
           VERSION_NAME="${GITHUB_REF_NAME}"  # тег GitHub
           CHANGELOG="${{ github.event.release.body }}"
           LOADERS='["paper","purpur","folia"]'
           GAME_VERSIONS='["1.21.10","1.21.9","1.21.8","1.21.7","1.21.6","1.21.5","1.21.4","1.21.3","1.21.2","1.21.1","1.21","1.20.6"]'
 
-          # Создаем версию без файла
-          RESPONSE=$(curl -s -X POST "https://api.modrinth.com/v2/project/$PROJECT_SLUG/version" \
+          echo "Creating new version on Modrinth..."
+
+          RESPONSE=$(curl -s -X POST "https://api.modrinth.com/v2/version" \
             -H "Authorization: Bearer $MODRINTH_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d "{
-                  \"name\": \"$VERSION_NAME\",
+            -F "data={
+                  \"project_id\": \"$PROJECT_ID\",
+                  \"name\": \"Backuper $VERSION_NAME\",
                   \"version_number\": \"$VERSION_NAME\",
                   \"changelog\": \"$CHANGELOG\",
                   \"game_versions\": $GAME_VERSIONS,
                   \"loaders\": $LOADERS,
                   \"featured\": true,
-                  \"version_type\": \"release\"
-            }")
+                  \"version_type\": \"release\",
+                  \"file_parts\": [\"file0\"]
+                }" \
+            -F "file0=@$JAR_FILE")
 
-          echo "Response: $RESPONSE"
+          echo "Response from Modrinth:"
+          echo "$RESPONSE"
 
-          # Получаем upload_url для файла
-          UPLOAD_URL=$(echo "$RESPONSE" | jq -r '.files[0].url // empty')
-          
-          # Если upload_url отсутствует, создаём ссылку через Modrinth API
-          if [ -z "$UPLOAD_URL" ]; then
-            VERSION_ID=$(echo "$RESPONSE" | jq -r '.id')
-            echo "No file yet, requesting upload URL..."
-            UPLOAD_DATA=$(curl -s -X POST "https://api.modrinth.com/v2/version/$VERSION_ID/file" \
-              -H "Authorization: Bearer $MODRINTH_TOKEN" \
-              -H "Content-Type: application/json" \
-              -d "{
-                    \"filename\": \"$JAR_FILE_NAME\",
-                    \"primary\": true
-              }")
-            UPLOAD_URL=$(echo "$UPLOAD_DATA" | jq -r '.url')
-          fi
-
-          if [ -z "$UPLOAD_URL" ] || [ "$UPLOAD_URL" = "null" ]; then
-            echo "Error: Failed to get upload URL"
-            exit 1
-          fi
-
-          echo "UPLOAD_URL=$UPLOAD_URL" >> $GITHUB_ENV
-          echo "Upload URL: $UPLOAD_URL"
-
-      - name: Upload JAR to Modrinth
-        env:
-          JAR_FILE: ${{ env.JAR_FILE }}
-          UPLOAD_URL: ${{ env.UPLOAD_URL }}
-        run: |
-          echo "Uploading JAR to Modrinth..."
-          curl -X PUT --upload-file "$JAR_FILE" "$UPLOAD_URL"
-          echo "File uploaded successfully!"
-
-      - name: Get Modrinth download URL
-        id: modrinth-url
-        env:
-          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
-        run: |
-          PROJECT_SLUG="backuper"
-          VERSION_NAME="${GITHUB_REF_NAME}"
-          sleep 10  # ждём обработки Modrinth
-
-          VERSION_DATA=$(curl -s "https://api.modrinth.com/v2/project/$PROJECT_SLUG/version/$VERSION_NAME")
-          FILE_URL=$(echo "$VERSION_DATA" | jq -r '.files[0].url')
-          
+          FILE_URL=$(echo "$RESPONSE" | jq -r '.files[0].url')
           if [ -z "$FILE_URL" ] || [ "$FILE_URL" = "null" ]; then
-            echo "Error: Failed to get Modrinth download URL"
+            echo "Error: Failed to get uploaded file URL"
             exit 1
           fi
 
-          echo "file_url=$FILE_URL" >> $GITHUB_OUTPUT
           echo "Modrinth file URL: $FILE_URL"
+          echo "file_url=$FILE_URL" >> $GITHUB_OUTPUT
