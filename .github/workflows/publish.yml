@@ -48,8 +48,7 @@ jobs:
           loaders: '["paper","purpur","folia"]'
           game-versions: '["1.21.10","1.21.9","1.21.8","1.21.7","1.21.6","1.21.5","1.21.4","1.21.3","1.21.2","1.21.1","1.21","1.20.6"]'
           files: '["${{ env.JAR_FILE }}"]'
-          primary-file: ${{ env.JAR_FILE }}
-          api-domain: api.modrinth.com
+          primary-file: ${{ env.JAR_FILE_NAME }}
           dependencies: '[]'
           status: listed
 
