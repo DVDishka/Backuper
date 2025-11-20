@@ -1,6 +1,7 @@
 name: Publish to Modrinth and Hangar
 
 # This workflow automatically publishes releases to Modrinth and Hangar when a new GitHub release is created
+# It uses the JAR file attached to the GitHub release instead of building from source
 on:
   release:
     types: [published]
@@ -19,15 +20,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-          cache: 'maven'
-      
-      - name: Build with Maven
-        run: mvn clean package -DskipTests
+      - name: Download release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Download the JAR file from the release assets
+          gh release download ${{ github.event.release.tag_name }} \
+            --pattern "Backuper-*.jar" \
+            --dir ./target
+          
+          # List downloaded files for verification
+          echo "Downloaded files:"
+          ls -lh ./target/
       
       - name: Publish to Modrinth
         id: publish-modrinth
