@@ -602,9 +602,8 @@ public class GoogleDriveStorage implements UserAuthStorage {
                     try {
                         result = Request.Get("%s/getgd?id=%s".formatted(AUTH_SERVICE_URL, id)).execute().returnContent().asString();
                     } catch (Exception e) {
-                        Backuper.getInstance().getLogManager().warn("Google authentication failed. Probably backuper-mc.com is down, inform developer on GitHub", sender);
-                        Backuper.getInstance().getLogManager().devWarn(e);
-                        return null;
+                        throw new StorageConnectionException(storage, "Failed to connect to AuthGD or AuthGD is down." +
+                                "Please let the developer know if you are sure that your network connection is ok", e);
                     }
 
                     if (!result.equals("null") && !result.equals("wrong")) {
@@ -619,7 +618,7 @@ public class GoogleDriveStorage implements UserAuthStorage {
                 throw new StorageConnectionException(storage, "Failed to get authGD server response", e);
             }
             if (t >= 300) {
-                throw new StorageConnectionException(storage, "Failed to get authGD server response");
+                throw new StorageConnectionException(storage, "AuthGD response timeout");
             }
 
             Gson gson = new GsonBuilder().create();
