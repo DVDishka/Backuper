@@ -40,7 +40,7 @@ jobs:
         id: publish-modrinth
         uses: RubixDev/modrinth-upload@v1.0.2
         with:
-          token: ${{ secrets.MODRINTH_TOKEN }}
+          token: ${{ github.token }}
           file_path: ${{ env.JAR_FILE }}
           name: Backuper ${{ github.event.release.tag_name }}
           version: ${{ github.event.release.tag_name }}
