@@ -49,13 +49,13 @@ jobs:
           release_type: release
           loaders: paper,purpur,folia
           featured: true
-          project_id: backuper
+          project_id: Backuper
 
       - name: Update Modrinth description
         uses: funnyboy-roks/modrinth-auto-desc@v1.7
         with:
           auth-token: ${{ secrets.MODRINTH_TOKEN }}
-          slug: backuper
+          slug: Backuper
       
       - name: Get Modrinth download URL
         id: modrinth-url
