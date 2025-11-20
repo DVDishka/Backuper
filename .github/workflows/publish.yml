@@ -1,4 +1,4 @@
-name: Publish to Modrinth and Hangar
+name: Publish to Modrinth (Direct API)
 
 on:
   release:
@@ -9,8 +9,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    outputs:
-      modrinth-url: ${{ steps.modrinth-url.outputs.file_url }}
 
     steps:
       - name: Checkout repository
@@ -25,89 +23,48 @@ jobs:
             --pattern "Backuper-*.jar" \
             --dir ./target
 
-          # Проверяем, что файл действительно скачался
           FILE=$(ls target/Backuper-*.jar)
           if [ -z "$FILE" ]; then
             echo "Error: JAR file not found!"
             exit 1
           fi
+
           echo "JAR_FILE=$FILE" >> $GITHUB_ENV
           echo "Downloaded files:"
           ls -lh ./target/
 
-      - name: Publish to Modrinth
-        id: publish-modrinth
-        uses: cloudnode-pro/modrinth-publish@v2.1.4
-        with:
-          token: ${{ secrets.MODRINTH_TOKEN }}
-          project: backuper
-          name: Backuper ${{ github.event.release.tag_name }}
-          version: ${{ github.event.release.tag_name }}
-          featured: true
-          changelog: ${{ github.event.release.body }}
-          loaders: '["paper","purpur","folia"]'
-          game-versions: '["1.21.10","1.21.9","1.21.8","1.21.7","1.21.6","1.21.5","1.21.4","1.21.3","1.21.2","1.21.1","1.21","1.20.6"]'
-          files: '["${{ env.JAR_FILE }}"]'
-          primary-file: ${{ env.JAR_FILE_NAME }}
-          dependencies: '[]'
-          status: listed
-
-      - name: Update Modrinth description
-        uses: funnyboy-roks/modrinth-auto-desc@v1.7
-        with:
-          auth-token: ${{ secrets.MODRINTH_TOKEN }}
-          slug: backuper
-
-      - name: Get Modrinth download URL
-        id: modrinth-url
+      - name: Create Modrinth version
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          JAR_FILE: ${{ env.JAR_FILE }}
         run: |
-          sleep 15  # Ждём, пока Modrinth обработает загрузку
-          MAX_RETRIES=5
-          RETRY_COUNT=0
-          FILE_URL=""
-          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-            echo "Attempt $((RETRY_COUNT+1))..."
-            VERSION_DATA=$(curl -s "https://api.modrinth.com/v2/project/backuper/version/${{ github.event.release.tag_name }}")
-            FILE_URL=$(echo "$VERSION_DATA" | jq -r '.files[0].url')
-            if [ "$FILE_URL" != "null" ] && [ -n "$FILE_URL" ]; then
-              echo "Modrinth file URL: $FILE_URL"
-              break
-            fi
-            RETRY_COUNT=$((RETRY_COUNT + 1))
-            sleep 10
-          done
-          if [ "$FILE_URL" = "null" ] || [ -z "$FILE_URL" ]; then
-            echo "Error: Failed to get Modrinth file URL"
+          PROJECT_SLUG="backuper"
+          VERSION_NAME="${GITHUB_REF_NAME}"  # можно использовать тег GitHub
+          CHANGELOG="${{ github.event.release.body }}"
+          LOADERS='["paper","purpur","folia"]'
+          GAME_VERSIONS='["1.21.10","1.21.9","1.21.8","1.21.7","1.21.6","1.21.5","1.21.4","1.21.3","1.21.2","1.21.1","1.21","1.20.6"]'
+
+          echo "Creating Modrinth version..."
+          RESPONSE=$(curl -s -X POST "https://api.modrinth.com/v2/project/$PROJECT_SLUG/version" \
+            -H "Authorization: Bearer $MODRINTH_TOKEN" \
+            -F "name=$VERSION_NAME" \
+            -F "version_number=$VERSION_NAME" \
+            -F "changelog=$CHANGELOG" \
+            -F "game_versions=$GAME_VERSIONS" \
+            -F "loaders=$LOADERS" \
+            -F "featured=true" \
+            -F "version_type=release" \
+            -F "file=@$JAR_FILE")
+
+          echo "Response from Modrinth:"
+          echo "$RESPONSE"
+
+          # Получаем URL файла из ответа JSON
+          FILE_URL=$(echo "$RESPONSE" | jq -r '.files[0].url')
+          if [ -z "$FILE_URL" ] || [ "$FILE_URL" = "null" ]; then
+            echo "Error: Failed to get uploaded file URL"
             exit 1
           fi
+
+          echo "Modrinth file URL: $FILE_URL"
           echo "file_url=$FILE_URL" >> $GITHUB_OUTPUT
-
-  publish-hangar:
-    runs-on: ubuntu-latest
-    needs: publish-modrinth
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Publish to Hangar
-        uses: benwoo1110/hangar-upload-action@v1
-        with:
-          api_token: ${{ secrets.HANGAR_TOKEN }}
-          slug: Backuper
-          version: ${{ github.event.release.tag_name }}
-          channel: release
-          description: ${{ github.event.release.body }}
-          files: |
-            [
-              {
-                "platforms": ["PAPER"],
-                "url": true,
-                "externalUrl": "${{ needs.publish-modrinth.outputs.modrinth-url }}"
-              }
-            ]
-          platform_dependencies: |
-            {
-              "PAPER": ["1.20.6","1.21.x"]
-            }
