@@ -29,6 +29,9 @@ jobs:
             --pattern "Backuper-*.jar" \
             --dir ./target
           
+          FILE=$(ls target/Backuper-*.jar)
+          echo "JAR_FILE=$FILE" >> $GITHUB_ENV
+          
           # List downloaded files for verification
           echo "Downloaded files:"
           ls -lh ./target/
@@ -38,21 +41,21 @@ jobs:
         uses: RubixDev/modrinth-upload@v1.0.2
         with:
           token: ${{ secrets.MODRINTH_TOKEN }}
-          file_path: target/Backuper-*.jar
+          file_path: ${{ env.JAR_FILE }}
           name: Backuper ${{ github.event.release.tag_name }}
           version: ${{ github.event.release.tag_name }}
           changelog: ${{ github.event.release.body }}
           game_versions: 1.21.10,1.21.9,1.21.8,1.21.7,1.21.6,1.21.5,1.21.4,1.21.3,1.21.2,1.21.1,1.21,1.20.6
+          release_type: release
           loaders: paper,purpur,folia
           featured: true
           project_id: backuper
-          version_type: release
 
       - name: Update Modrinth description
         uses: funnyboy-roks/modrinth-auto-desc@v1.7
         with:
           auth-token: ${{ secrets.MODRINTH_TOKEN }}
-          slug: Backuper
+          slug: backuper
       
       - name: Get Modrinth download URL
         id: modrinth-url
