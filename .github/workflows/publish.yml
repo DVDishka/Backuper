@@ -35,17 +35,18 @@ jobs:
       
       - name: Publish to Modrinth
         id: publish-modrinth
-        uses: benwoo1110/modrinth-upload-action@v1
+        uses: RubixDev/modrinth-upload@v1.0.2
         with:
-          api_token: ${{ secrets.MODRINTH_TOKEN }}
-          project_id: Backuper
-          version_number: ${{ github.event.release.tag_name }}
-          files: target/Backuper-*.jar
+          token: ${{ secrets.MODRINTH_TOKEN }}
+          file_path: target/Backuper-*.jar
           name: Backuper ${{ github.event.release.tag_name }}
+          version: ${{ github.event.release.tag_name }}
           changelog: ${{ github.event.release.body }}
+          game_versions: 1.21.10,1.21.9,1.21.8,1.21.7,1.21.6,1.21.5,1.21.4,1.21.3,1.21.2,1.21.1,1.21,1.20.6
+          loaders: paper,purpur,folia
+          featured: true
+          project_id: backuper
           version_type: release
-          loaders: '["paper", "folia"]'
-          game_versions: '["1.21.10", "1.21.9", "1.21.8", "1.21.7", "1.21.6", "1.21.5", "1.21.4", "1.21.3", "1.21.2", "1.21.1", "1.21", "1.20.6"]'
 
       - name: Update Modrinth description
         uses: funnyboy-roks/modrinth-auto-desc@v1.7
