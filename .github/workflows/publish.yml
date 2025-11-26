@@ -43,7 +43,8 @@ jobs:
           modrinth-featured: true
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
 
-          files: '["${{ env.JAR_FILE }}"]'
+          files: |
+            target/Backuper-*.jar
           
           name: Backuper ${{ github.event.release.tag_name }}
           version: ${{ github.event.release.tag_name }}
