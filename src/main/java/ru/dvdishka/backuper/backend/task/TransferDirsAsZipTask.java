@@ -60,6 +60,9 @@ public class TransferDirsAsZipTask extends BaseTask implements DoubleStorageTask
                 try (BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(pipedOutputStream, STREAM_BUFFER_SIZE);
                      ZipOutputStream targetZipOutputStream = new ZipOutputStream(bufferedOutputStream)) {
 
+                    // Set compression level once before adding any entries
+                    targetZipOutputStream.setLevel(targetStorage.getConfig().getZipCompressionLevel());
+
                     for (String sourceDirToAdd : sourceDirs) {
                         if (cancelled) return;
                         if (createRootDirInTargetZIP) {
@@ -133,8 +136,6 @@ public class TransferDirsAsZipTask extends BaseTask implements DoubleStorageTask
                         entry.setMethod(ZipEntry.STORED);
                         entry.setCompressedSize(sourceStorage.getDirByteSize(sourceDir));
                         entry.setCrc(crc);
-                    } else {
-                        zip.setLevel(targetStorage.getConfig().getZipCompressionLevel());
                     }
                     entry.setSize(sourceStorage.getDirByteSize(sourceDir));
                     zip.putNextEntry(entry);

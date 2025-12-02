@@ -81,7 +81,7 @@ public class GoogleDriveStorage implements UserAuthStorage {
         @Override
         public void handleRegularException(Exception e) throws StorageMethodException, StorageConnectionException, StorageLimitException, StorageQuotaExceededException {
             if (e instanceof GoogleJsonResponseException googleJsonResponseException) {
-                if (googleJsonResponseException.getDetails().getErrors() != null && googleJsonResponseException.getDetails().getErrors().stream().anyMatch(errorInfo -> errorInfo.getReason().equals("rateLimitExceeded"))) {
+                if (googleJsonResponseException.getDetails().getErrors() != null && googleJsonResponseException.getDetails().getErrors().stream().anyMatch(errorInfo -> errorInfo.getReason().equals("rateLimitExceeded") || errorInfo.getReason().equals("userRateLimitExceeded"))) {
                     Backuper.getInstance().getLogManager().devWarn("Rate limit exceeded, retry in %s seconds...".formatted(RATE_LIMIT_DELAY_MILLIS / 1000));
                     try {
                         Thread.sleep(RATE_LIMIT_DELAY_MILLIS);
@@ -100,16 +100,10 @@ public class GoogleDriveStorage implements UserAuthStorage {
                 }
                 if (googleJsonResponseException.getDetails().getErrors() != null) {
                     if (googleJsonResponseException.getDetails().getErrors().stream().anyMatch(errorInfo -> errorInfo.getReason().equals("storageQuotaExceeded"))) {
-                        return new StorageLimitException(getStorage(), "Storage limit exceeded");
+                        return new StorageLimitException(getStorage(), "Storage space limit exceeded");
                     }
-                    if (googleJsonResponseException.getDetails().getErrors().stream().anyMatch(errorInfo -> errorInfo.getReason().equals("rateLimitExceeded"))) {
-                        Backuper.getInstance().getLogManager().devWarn("Rate limit exceeded, retry in %s seconds...".formatted(RATE_LIMIT_DELAY_MILLIS / 1000));
-                        try {
-                            Thread.sleep(RATE_LIMIT_DELAY_MILLIS);
-                        } catch (Exception ignored) {
-                            // No need to handle wait interruption
-                        }
-                        return new StorageQuotaExceededException(getStorage(), "Storage quota limit exceeded");
+                    if (googleJsonResponseException.getDetails().getErrors().stream().anyMatch(errorInfo -> errorInfo.getReason().equals("rateLimitExceeded") || errorInfo.getReason().equals("userRateLimitExceeded"))) {
+                        return new StorageQuotaExceededException(getStorage(), "Storage rate limit exceeded");
                     }
                 }
             }
