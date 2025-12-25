@@ -68,11 +68,16 @@ public class ScheduleManager {
     }
 
     public void destroy(Plugin plugin) {
-        if (Utils.isFolia) {
-            Bukkit.getAsyncScheduler().cancelTasks(plugin);
-            Bukkit.getGlobalRegionScheduler().cancelTasks(plugin);
-        } else {
-            Bukkit.getScheduler().cancelTasks(plugin);
+        try {
+            if (Utils.isFolia) {
+                Bukkit.getAsyncScheduler().cancelTasks(plugin);
+                Bukkit.getGlobalRegionScheduler().cancelTasks(plugin);
+            } else {
+                Bukkit.getScheduler().cancelTasks(plugin);
+            }
+        } catch (Exception e) {
+            Backuper.getInstance().getLogManager().warn("Failed to cancel scheduler tasks");
+            Backuper.getInstance().getLogManager().warn(e);
         }
         try {
             this.quartzScheduler.shutdown(false);
