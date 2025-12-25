@@ -81,7 +81,7 @@ public class GoogleDriveStorage implements UserAuthStorage {
         @Override
         public void handleRegularException(Exception e) throws StorageMethodException, StorageConnectionException, StorageLimitException, StorageQuotaExceededException {
             if (e instanceof GoogleJsonResponseException googleJsonResponseException) {
-                if (googleJsonResponseException.getDetails().getErrors() != null && googleJsonResponseException.getDetails().getErrors().stream().anyMatch(errorInfo -> errorInfo.getReason().equals("rateLimitExceeded"))) {
+                if (googleJsonResponseException.getDetails().getErrors() != null && googleJsonResponseException.getDetails().getErrors().stream().anyMatch(errorInfo -> errorInfo.getReason().equals("rateLimitExceeded") || errorInfo.getReason().equals("userRateLimitExceeded"))) {
                     Backuper.getInstance().getLogManager().devWarn("Rate limit exceeded, retry in %s seconds...".formatted(RATE_LIMIT_DELAY_MILLIS / 1000));
                     try {
                         Thread.sleep(RATE_LIMIT_DELAY_MILLIS);
@@ -100,16 +100,10 @@ public class GoogleDriveStorage implements UserAuthStorage {
                 }
                 if (googleJsonResponseException.getDetails().getErrors() != null) {
                     if (googleJsonResponseException.getDetails().getErrors().stream().anyMatch(errorInfo -> errorInfo.getReason().equals("storageQuotaExceeded"))) {
-                        return new StorageLimitException(getStorage(), "Storage limit exceeded");
+                        return new StorageLimitException(getStorage(), "Storage space limit exceeded");
                     }
-                    if (googleJsonResponseException.getDetails().getErrors().stream().anyMatch(errorInfo -> errorInfo.getReason().equals("rateLimitExceeded"))) {
-                        Backuper.getInstance().getLogManager().devWarn("Rate limit exceeded, retry in %s seconds...".formatted(RATE_LIMIT_DELAY_MILLIS / 1000));
-                        try {
-                            Thread.sleep(RATE_LIMIT_DELAY_MILLIS);
-                        } catch (Exception ignored) {
-                            // No need to handle wait interruption
-                        }
-                        return new StorageQuotaExceededException(getStorage(), "Storage quota limit exceeded");
+                    if (googleJsonResponseException.getDetails().getErrors().stream().anyMatch(errorInfo -> errorInfo.getReason().equals("rateLimitExceeded") || errorInfo.getReason().equals("userRateLimitExceeded"))) {
+                        return new StorageQuotaExceededException(getStorage(), "Storage rate limit exceeded");
                     }
                 }
             }
@@ -602,9 +596,8 @@ public class GoogleDriveStorage implements UserAuthStorage {
                     try {
                         result = Request.Get("%s/getgd?id=%s".formatted(AUTH_SERVICE_URL, id)).execute().returnContent().asString();
                     } catch (Exception e) {
-                        Backuper.getInstance().getLogManager().warn("Google authentication failed. Probably backuper-mc.com is down, inform developer on GitHub", sender);
-                        Backuper.getInstance().getLogManager().devWarn(e);
-                        return null;
+                        throw new StorageConnectionException(storage, "Failed to connect to AuthGD or AuthGD is down." +
+                                "Please let the developer know if you are sure that your network connection is ok", e);
                     }
 
                     if (!result.equals("null") && !result.equals("wrong")) {
@@ -619,7 +612,7 @@ public class GoogleDriveStorage implements UserAuthStorage {
                 throw new StorageConnectionException(storage, "Failed to get authGD server response", e);
             }
             if (t >= 300) {
-                throw new StorageConnectionException(storage, "Failed to get authGD server response");
+                throw new StorageConnectionException(storage, "AuthGD response timeout");
             }
 
             Gson gson = new GsonBuilder().create();

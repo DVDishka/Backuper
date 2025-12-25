@@ -6,7 +6,7 @@
 
     <groupId>ru.dvdishka</groupId>
     <artifactId>Backuper</artifactId>
-    <version>4.0.0</version>
+    <version>4.0.2</version>
     <packaging>jar</packaging>
 
     <name>Backuper</name>
@@ -137,7 +137,7 @@
         <dependency>
             <groupId>dev.jorel</groupId>
             <artifactId>commandapi-paper-shade</artifactId>
-            <version>11.0.1-SNAPSHOT</version>
+            <version>11.1.0</version>
         </dependency>
         <dependency>
             <groupId>io.papermc.paper</groupId>
