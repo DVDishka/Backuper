@@ -49,7 +49,6 @@ public class Backuper extends JavaPlugin implements Listener {
     private static Backuper instance;
 
     public static boolean restarting = false;
-    public static boolean isTesting = false;
 
     public void onEnable() {
         instance = this;
@@ -84,7 +83,7 @@ public class Backuper extends JavaPlugin implements Listener {
             storageManager.loadSizeCache();
             storageManager.checkStoragesConnection();
         });
-        if (!isTesting) bstats.init(this); // Bstats doesn't work well with the test environment
+        bstats.init(this);
         checkDependencies();
         checkPluginVersion();
         sendIssueToGitHub(Bukkit.getConsoleSender());
@@ -110,7 +109,7 @@ public class Backuper extends JavaPlugin implements Listener {
         storageManager.destroy();
         autoBackupScheduleManager.destroy();
         scheduleManager.destroy(this);
-        if (!isTesting) bstats.destroy(); // Bstats doesn't work well with the test environment
+        bstats.destroy();
     }
 
     public void onLoad() {

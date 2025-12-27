@@ -15,22 +15,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
+public class ConfigTest extends BaseTest {
 
-public class ConfigTest {
-
-    private ServerMock server;
-    private File configFile = new File("plugins/Backuper/config.yml");
     private FileConfiguration defaultConfig;
 
     @BeforeEach
     public void setUp() {
-        try {
-            configFile.delete();
-        } catch (Exception ignored) {} // No problem if a file doesn't exist
-        Backuper.isTesting = true;
-        server = MockBukkit.mock();
-        MockCommandAPIPlugin.load();
-        MockBukkit.load(Backuper.class);
         defaultConfig = YamlConfiguration.loadConfiguration(new InputStreamReader(Backuper.getInstance().getResource("config.yml")));
     }
 
@@ -109,10 +99,5 @@ public class ConfigTest {
         config = YamlConfiguration.loadConfiguration(configFile);
 
         assert config.get("backup.autoBackupCron").equals("0 0 10 1/1 * ? *");
-    }
-
-    @AfterEach
-    public void tearDown() {
-        MockBukkit.unmock();
     }
 }
