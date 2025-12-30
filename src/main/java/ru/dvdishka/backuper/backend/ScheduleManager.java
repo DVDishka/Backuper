@@ -17,9 +17,9 @@ import java.util.concurrent.Executors;
 public class ScheduleManager {
 
     private org.quartz.Scheduler quartzScheduler;
-    private final ExecutorService mainExecutorService;
+    private ExecutorService mainExecutorService;
 
-    public ScheduleManager() {
+    public void init() {
         try {
             if (DirectSchedulerFactory.getInstance().getAllSchedulers().stream().noneMatch(scheduler -> {
                 try {

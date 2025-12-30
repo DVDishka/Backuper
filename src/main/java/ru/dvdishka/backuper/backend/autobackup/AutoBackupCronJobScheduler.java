@@ -8,14 +8,14 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Date;
 
-public class AutoBackupJobCronScheduler implements AutoBackupJobScheduler {
+public class AutoBackupCronJobScheduler implements AutoBackupJobScheduler {
 
     @Getter
     private final AutoBackupScheduleManager autoBackupScheduleManager;
     private CronTrigger cronTrigger;
     private boolean firstAlert = true;
 
-    public AutoBackupJobCronScheduler(AutoBackupScheduleManager autoBackupScheduleManager) {
+    public AutoBackupCronJobScheduler(AutoBackupScheduleManager autoBackupScheduleManager) {
         this.autoBackupScheduleManager = autoBackupScheduleManager;
     }
 
