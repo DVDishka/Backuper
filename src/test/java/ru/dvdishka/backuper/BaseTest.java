@@ -17,6 +17,7 @@ import ru.dvdishka.backuper.backend.ScheduleManager;
 import ru.dvdishka.backuper.handlers.commands.reload.ReloadCommand;
 
 import java.io.File;
+import java.io.IOException;
 
 public class BaseTest {
 
@@ -29,7 +30,7 @@ public class BaseTest {
     private MockedConstruction<ScheduleManager> mockScheduleManager;
 
     @BeforeEach
-    public void setup() {
+    public void setup() throws IOException {
         try {
             configFile.delete();
         } catch (Exception ignored) {
@@ -54,6 +55,10 @@ public class BaseTest {
 
         MockBukkit.load(Backuper.class);
         config = YamlConfiguration.loadConfiguration(configFile);
+
+        config.set("server.betterLogging", true);
+        config.save(configFile);
+        reload();
     }
 
     @AfterEach
