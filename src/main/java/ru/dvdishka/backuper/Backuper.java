@@ -86,11 +86,11 @@ public class Backuper extends JavaPlugin implements Listener {
         });
         bstats.init(this);
         checkDependencies();
-        checkPluginVersion();
-        sendIssueToGitHub(Bukkit.getConsoleSender());
-        Backuper.getInstance().getScheduleManager().runAsync(() ->
-            sendPluginVersionCheckResult(Bukkit.getConsoleSender())
-        );
+        Backuper.getInstance().getScheduleManager().runAsync(() -> {
+            checkPluginVersion();
+            sendIssueToGitHub(Bukkit.getConsoleSender());
+            sendPluginVersionCheckResult(Bukkit.getConsoleSender());
+        });
         taskManager.forceUnlock();
         autoBackupScheduleManager.init();
     }

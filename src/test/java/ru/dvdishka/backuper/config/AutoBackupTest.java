@@ -15,7 +15,6 @@ public class AutoBackupTest extends BaseTest {
     @Test
     public void testCronDelay() throws IOException {
         config.set("backup.autoBackupCron", "0 0 10 1/1 * ? *");
-        config.save(configFile);
         reload();
 
         LocalDateTime requiredNextBackup = LocalDateTime.of(LocalDateTime.now().toLocalDate(), LocalTime.of(10, 0))
@@ -32,7 +31,6 @@ public class AutoBackupTest extends BaseTest {
         Backuper.getInstance().getConfigManager().updateLastBackup();
         config.set("backup.autoBackupCron", "");
         config.set("backup.autoBackupPeriod", 2880);
-        config.save(configFile);
         reload();
 
         LocalDateTime requiredNextBackup = LocalDateTime.now().plusMinutes(2880);

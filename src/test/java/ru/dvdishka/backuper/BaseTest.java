@@ -57,7 +57,6 @@ public class BaseTest {
         config = YamlConfiguration.loadConfiguration(configFile);
 
         config.set("server.betterLogging", true);
-        config.save(configFile);
         reload();
     }
 
@@ -71,7 +70,8 @@ public class BaseTest {
     /***
      * reloads the plugin (like /backuper reload command) but in the current thread and updates config field
      */
-    protected void reload() {
+    protected void reload() throws IOException {
+        config.save(configFile);
         new ReloadCommand(server.getConsoleSender(), null).execute(); // We should be aware of using commands directly because they are executed asynchronously
         config = YamlConfiguration.loadConfiguration(configFile);
     }

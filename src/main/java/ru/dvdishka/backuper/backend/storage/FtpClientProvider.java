@@ -102,7 +102,7 @@ public class FtpClientProvider {
             throw new StorageConnectionException(storage, "Failed to establish FTP(S) connection");
         }
         try {
-            ftpClient.setFileType(FTP.BINARY_FILE_TYPE, FTP.BINARY_FILE_TYPE);
+            ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
             ftpClient.setFileTransferMode(FTP.STREAM_TRANSFER_MODE);
             ftpClient.setListHiddenFiles(true);
         } catch (IOException e) {

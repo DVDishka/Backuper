@@ -20,8 +20,8 @@ public class ConfigTest extends BaseTest {
     }
 
     @Test
-    public void testConfigReloading() {
-        Backuper.getInstance().getConfigManager().setConfigField("backup.autoBackup", false);
+    public void testConfigReloading() throws IOException {
+        config.set("backup.autoBackup", false);
         reload();
         assert !Backuper.getInstance().getConfigManager().getBackupConfig().isAutoBackup();
     }
@@ -31,8 +31,6 @@ public class ConfigTest extends BaseTest {
         config.set("backup.autoBackup", null);
         config.set("server.alertTimeBeforeRestart", null);
         config.set("storages.local.enabled", null);
-        config.save(configFile);
-
         reload();
 
         assert defaultConfig.getBoolean("backup.autoBackup") == Backuper.getInstance().getConfigManager().getBackupConfig().isAutoBackup();
@@ -43,8 +41,6 @@ public class ConfigTest extends BaseTest {
     @Test
     public void testStorageDeletion() throws IOException {
         config.set("storages.local", null);
-        config.save(configFile);
-
         reload();
 
         assert Backuper.getInstance().getStorageManager().getStorage("local") == null; // There must be no such storage because it must be not repaired
@@ -63,8 +59,6 @@ public class ConfigTest extends BaseTest {
         config.set("alertTimeBeforeRestart", 10);
 
         // Below 13 is checked in some of the Below 4 and Below 8 fields
-
-        config.save(configFile);
         reload();
 
         assert config.get("configVersion").equals(defaultConfig.get("configVersion"));
@@ -81,8 +75,6 @@ public class ConfigTest extends BaseTest {
         config.set("configVersion", 3.0);
         config.set("fixedBackupTime", true);
         config.set("firstBackupTime", 10);
-
-        config.save(configFile);
         reload();
 
         assert config.get("backup.autoBackupCron").equals("0 0 10 1/1 * ? *");
