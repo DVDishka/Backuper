@@ -11,9 +11,9 @@ public interface AutoBackupJobScheduler {
 
     long getNextBackupDelaySeconds();
 
-    default long getNextBackupAlertDelaySeconds() {
+    default long getNextAlertDelaySeconds() {
         long delay = getNextBackupDelaySeconds(); // Calculating delay to next backup
-        return max((delay - Backuper.getInstance().getConfigManager().getServerConfig().getAlertTimeBeforeRestart()) * 20, 1L); // Subtracting alert pre-delay from the new backup's delay
+        return max(delay - Backuper.getInstance().getConfigManager().getServerConfig().getAlertTimeBeforeRestart(), 1L); // Subtracting alert pre-delay from the new backup's delay
     }
 
     default long getNextAlertMessageSeconds() {
@@ -23,7 +23,7 @@ public interface AutoBackupJobScheduler {
     default void scheduleNextBackupAlert() {
         Backuper.getInstance().getScheduleManager().runGlobalRegionDelayed(Backuper.getInstance(), () -> {
             getAutoBackupScheduleManager().getAutoBackupJob().executeAlert(getNextAlertMessageSeconds(), Backuper.getInstance().getConfigManager().getBackupConfig().getAfterBackup());
-        }, getNextBackupAlertDelaySeconds() * 20L);
+        }, getNextAlertDelaySeconds() * 20L);
     }
 
     default void executeBackupAndScheduleNextAlert() {

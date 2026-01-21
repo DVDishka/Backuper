@@ -35,6 +35,6 @@ public class AutoBackupCronJobScheduler implements AutoBackupJobScheduler {
         Backuper.getInstance().getScheduleManager().runGlobalRegionDelayed(Backuper.getInstance(), () -> {
             getAutoBackupScheduleManager().getAutoBackupJob().executeAlert(getNextAlertMessageSeconds(), Backuper.getInstance().getConfigManager().getBackupConfig().getAfterBackup());
             firstAlert = false;
-        }, getNextBackupAlertDelaySeconds() * 20L);
+        }, getNextAlertDelaySeconds() * 20L);
     }
 }
