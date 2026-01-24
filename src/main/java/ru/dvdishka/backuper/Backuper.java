@@ -36,14 +36,14 @@ import java.net.HttpURLConnection;
 @Getter
 public class Backuper extends JavaPlugin implements Listener {
 
-    private TaskManager taskManager;
-    private LogManager logManager;
-    private ConfigManager configManager;
-    private ScheduleManager scheduleManager;
-    private StorageManager storageManager;
-    private CommandManager commandManager;
-    private AutoBackupScheduleManager autoBackupScheduleManager;
-    private Bstats bstats;
+    TaskManager taskManager;
+    LogManager logManager;
+    ConfigManager configManager;
+    ScheduleManager scheduleManager;
+    StorageManager storageManager;
+    CommandManager commandManager;
+    AutoBackupScheduleManager autoBackupScheduleManager;
+    Bstats bstats;
 
     @Getter
     private static Backuper instance;
@@ -55,9 +55,16 @@ public class Backuper extends JavaPlugin implements Listener {
         CommandAPI.onEnable();
         registerEventHandlers();
         init();
-        commandManager.registerCommands(); // Shouldn't be reloaded with plugin reload using command /backuper config reload
+        commandManager.init(); // Shouldn't be reloaded with plugin reload using command /backuper config reload
         scheduleManager.runAsync(() -> { // Very big performance impact if run it on every reload
             storageManager.indexStorages();
+        });
+
+        // We shouldn't really send all this information on every config reload
+        Backuper.getInstance().getScheduleManager().runAsync(() -> {
+            checkPluginVersion();
+            sendIssueToGitHub(Bukkit.getConsoleSender());
+            sendPluginVersionCheckResult(Bukkit.getConsoleSender());
         });
 
         Backuper.getInstance().getLogManager().log("Backuper plugin has been enabled!");
@@ -67,6 +74,7 @@ public class Backuper extends JavaPlugin implements Listener {
         this.configManager = new ConfigManager();
         this.logManager = new LogManager();
         this.taskManager = new TaskManager();
+        this.scheduleManager = new ScheduleManager();
         this.taskManager.forceLock();
         this.storageManager = new StorageManager();
         this.commandManager = new CommandManager();
@@ -78,18 +86,13 @@ public class Backuper extends JavaPlugin implements Listener {
         if (!pluginDir.exists() && !pluginDir.mkdirs()) Backuper.getInstance().getLogManager().warn("Can not create plugins/Backuper dir!");
 
         configManager.load(configFile, Bukkit.getConsoleSender());
-        scheduleManager = new ScheduleManager(); // Should be initialized after the config file
+        scheduleManager.init(); // Should be initialized after the config file
         scheduleManager.runAsync(() -> {
             storageManager.loadSizeCache();
             storageManager.checkStoragesConnection();
         });
         bstats.init(this);
         checkDependencies();
-        checkPluginVersion();
-        sendIssueToGitHub(Bukkit.getConsoleSender());
-        Backuper.getInstance().getScheduleManager().runAsync(() ->
-            sendPluginVersionCheckResult(Bukkit.getConsoleSender())
-        );
         taskManager.forceUnlock();
         autoBackupScheduleManager.init();
     }

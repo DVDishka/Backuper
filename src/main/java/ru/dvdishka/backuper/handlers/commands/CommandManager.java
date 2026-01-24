@@ -21,7 +21,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class CommandManager {
 
-    public void registerCommands() {
+    public void init() {
         CommandTree backupCommandTree = new CommandTree("backuper").withPermission(Permission.BACKUPER.getPermission());
         backupCommandTree
                 .then(new LiteralArgument("backup")

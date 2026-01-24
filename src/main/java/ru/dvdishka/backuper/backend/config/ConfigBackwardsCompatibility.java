@@ -15,7 +15,7 @@ public class ConfigBackwardsCompatibility {
             return;
         }
 
-        int backupPeriod = config.getInt("backupPeriod", 1440);
+        int backupPeriod = config.getInt("backupPeriod", 24);
         backupPeriod *= 60;
         config.set("backupPeriod", backupPeriod);
 
