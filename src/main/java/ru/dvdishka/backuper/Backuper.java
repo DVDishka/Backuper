@@ -60,6 +60,13 @@ public class Backuper extends JavaPlugin implements Listener {
             storageManager.indexStorages();
         });
 
+        // We shouldn't really send all this information on every config reload
+        Backuper.getInstance().getScheduleManager().runAsync(() -> {
+            checkPluginVersion();
+            sendIssueToGitHub(Bukkit.getConsoleSender());
+            sendPluginVersionCheckResult(Bukkit.getConsoleSender());
+        });
+
         Backuper.getInstance().getLogManager().log("Backuper plugin has been enabled!");
     }
 
@@ -86,11 +93,6 @@ public class Backuper extends JavaPlugin implements Listener {
         });
         bstats.init(this);
         checkDependencies();
-        Backuper.getInstance().getScheduleManager().runAsync(() -> {
-            checkPluginVersion();
-            sendIssueToGitHub(Bukkit.getConsoleSender());
-            sendPluginVersionCheckResult(Bukkit.getConsoleSender());
-        });
         taskManager.forceUnlock();
         autoBackupScheduleManager.init();
     }

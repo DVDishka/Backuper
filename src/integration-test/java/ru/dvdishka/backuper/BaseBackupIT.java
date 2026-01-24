@@ -29,12 +29,12 @@ public abstract class BaseBackupIT extends BaseTest {
 
     @Test
     public void bigFolderBackupTest() throws IOException, InterruptedException {
-        backupTest(10000000000L, false);
+        backupTest(10_000_000_000L, false);
     }
 
     @Test
     public void bigZipBackupTest() throws IOException, InterruptedException {
-        backupTest(10000000000L, true);
+        backupTest(10_000_000_000L, true);
     }
 
     public void backupTest(long targetBackupSize, boolean zipArchive) throws IOException, InterruptedException {
