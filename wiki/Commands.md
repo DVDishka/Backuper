@@ -27,7 +27,7 @@ Open interactive menu for backup management or execute specific action on backup
 - `delete` - Delete backup
 - `tozip` - Convert backup to ZIP archive
 - `unzip` - Extract ZIP archive to folder structure
-- `copyTo <storageId>` - Copy backup to another storage
+- `copyto <storageId>` - Copy backup to another storage
 
 ## Account Management
 
