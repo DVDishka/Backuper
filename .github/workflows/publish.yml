@@ -10,7 +10,7 @@ jobs:
     permissions:
       contents: read
     outputs:
-      modrinth-url: ${{ steps.modrinth-url.outputs.file_url }}
+      modrinth-url: ${{ steps.publish-modrinth.outputs.modrinth-url }}
 
     steps:
       - name: Checkout repository
@@ -25,7 +25,6 @@ jobs:
             --pattern "Backuper-*.jar" \
             --dir ./target
 
-          # Проверяем, что файл действительно скачался
           FILE=$(ls target/Backuper-*.jar)
           if [ -z "$FILE" ]; then
             echo "Error: JAR file not found!"
@@ -62,30 +61,6 @@ jobs:
         with:
           auth-token: ${{ secrets.MODRINTH_TOKEN }}
           slug: backuper
-
-      - name: Get Modrinth download URL
-        id: modrinth-url
-        run: |
-          sleep 15  # Ждём, пока Modrinth обработает загрузку
-          MAX_RETRIES=5
-          RETRY_COUNT=0
-          FILE_URL=""
-          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-            echo "Attempt $((RETRY_COUNT+1))..."
-            VERSION_DATA=$(curl -s "https://api.modrinth.com/v2/project/backuper/version/${{ github.event.release.tag_name }}")
-            FILE_URL=$(echo "$VERSION_DATA" | jq -r '.files[0].url')
-            if [ "$FILE_URL" != "null" ] && [ -n "$FILE_URL" ]; then
-              echo "Modrinth file URL: $FILE_URL"
-              break
-            fi
-            RETRY_COUNT=$((RETRY_COUNT + 1))
-            sleep 10
-          done
-          if [ "$FILE_URL" = "null" ] || [ -z "$FILE_URL" ]; then
-            echo "Error: Failed to get Modrinth file URL"
-            exit 1
-          fi
-          echo "file_url=$FILE_URL" >> $GITHUB_OUTPUT
 
   publish-hangar:
     runs-on: ubuntu-latest
