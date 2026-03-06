@@ -3,16 +3,7 @@ package ru.dvdishka.backuper;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPIPaperConfig;
 import lombok.Getter;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.event.ClickEvent;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
-import org.bukkit.command.CommandSender;
-import org.bukkit.command.ConsoleCommandSender;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.dvdishka.backuper.backend.Bstats;
 import ru.dvdishka.backuper.backend.LogManager;
@@ -23,18 +14,16 @@ import ru.dvdishka.backuper.backend.storage.StorageManager;
 import ru.dvdishka.backuper.backend.task.SetWorldsWritableTask;
 import ru.dvdishka.backuper.backend.task.Task;
 import ru.dvdishka.backuper.backend.task.TaskManager;
-import ru.dvdishka.backuper.backend.util.UIUtils;
+import ru.dvdishka.backuper.backend.util.AdminInfoUtils;
 import ru.dvdishka.backuper.backend.util.Utils;
+import ru.dvdishka.backuper.handlers.AdminJoinHandler;
 import ru.dvdishka.backuper.handlers.commands.CommandManager;
 import ru.dvdishka.backuper.handlers.worldchangecatch.WorldChangeCatcherNew;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
 
 @Getter
-public class Backuper extends JavaPlugin implements Listener {
+public class Backuper extends JavaPlugin {
 
     TaskManager taskManager;
     LogManager logManager;
@@ -62,9 +51,8 @@ public class Backuper extends JavaPlugin implements Listener {
 
         // We shouldn't really send all this information on every config reload
         Backuper.getInstance().getScheduleManager().runAsync(() -> {
-            checkPluginVersion();
-            sendIssueToGitHub(Bukkit.getConsoleSender());
-            sendPluginVersionCheckResult(Bukkit.getConsoleSender());
+            AdminInfoUtils.sendIssueToGitHub(Bukkit.getConsoleSender());
+            AdminInfoUtils.sendPluginVersionCheck(Bukkit.getConsoleSender());
         });
 
         Backuper.getInstance().getLogManager().log("Backuper plugin has been enabled!");
@@ -125,14 +113,9 @@ public class Backuper extends JavaPlugin implements Listener {
         Backuper.getInstance().getLogManager().log("Backuper plugin has been disabled!");
     }
 
-    @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event) {
-        sendPluginVersionCheckResult(event.getPlayer());
-    }
-
     private void registerEventHandlers() {
 
-        Bukkit.getPluginManager().registerEvents(this, Backuper.getInstance());
+        Bukkit.getPluginManager().registerEvents(new AdminJoinHandler(), Backuper.getInstance());
         Bukkit.getPluginManager().registerEvents(new StorageManager(), Backuper.getInstance());
 
         boolean doWorldChangeEventExist = true;
@@ -157,79 +140,5 @@ public class Backuper extends JavaPlugin implements Listener {
             Utils.isFolia = false;
             Backuper.getInstance().getLogManager().devLog("Folia/Paper(1.20+) has not been detected!");
         }
-    }
-
-    private boolean checkPluginVersion() {
-
-        if (!Backuper.getInstance().getConfigManager().getServerConfig().isCheckUpdates()) return true;
-
-        try {
-            HttpURLConnection connection = (HttpURLConnection) Utils.getLatestVersionURL.openConnection();
-            connection.setRequestMethod("GET");
-
-            BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-            String input;
-            StringBuilder response = new StringBuilder();
-
-            while ((input = in.readLine()) != null) {
-                response.append(input);
-            }
-            in.close();
-
-            return response.toString().equals(Utils.getProperty("version"));
-        } catch (Exception e) {
-            Backuper.getInstance().getLogManager().warn("Failed to check the Backuper updates!");
-            Backuper.getInstance().getLogManager().warn(e);
-            return true; // We shouldn't say that the plugin should be updated if there is some problem during the check
-        }
-    }
-
-    private void sendPluginVersionCheckResult(CommandSender sender) {
-        if (sender.isOp() && !checkPluginVersion()) {
-            Component header = Component.empty();
-            header = header
-                    .append(Component.text("Backuper is outdated")
-                            .decorate(TextDecoration.BOLD)
-                            .color(NamedTextColor.RED));
-
-            Component message = Component.empty();
-            message = message
-                    .append(Component.text("You are using an outdated version of Backuper!\nPlease update it to the latest and check the changelist!"));
-
-            int downloadLinkNumber = 0;
-            for (String downloadLink : Utils.downloadLinks) {
-                message = message.append(Component.newline());
-                message = message
-                        .append(Component.text("Download link:"))
-                        .append(Component.space())
-                        .append(Component.text(sender instanceof ConsoleCommandSender ? downloadLink : Utils.downloadLinksName.get(downloadLinkNumber))
-                                .clickEvent(ClickEvent.openUrl(downloadLink))
-                                .decorate(TextDecoration.UNDERLINED));
-                downloadLinkNumber++;
-            }
-            UIUtils.sendFramedMessage(header, message, sender);
-        }
-    }
-
-    private void sendIssueToGitHub(CommandSender sender) {
-        if (!sender.isOp()) return;
-
-        Component header = Component.empty();
-        header = header
-                .append(Component.text("Issue tracking")
-                        .decorate(TextDecoration.BOLD)
-                        .color(NamedTextColor.RED));
-
-        Component message = Component.empty();
-        message = message
-                .append(Component.text("Please, if you find any issues related to the Backuper"))
-                .append(Component.newline())
-                .append(Component.text("Create an issue using the link:"))
-                .append(Component.space())
-                .append(Component.text("https://github.com/DVDishka/Backuper/issues")
-                        .clickEvent(ClickEvent.openUrl("https://github.com/DVDishka/Backuper/issues"))
-                        .decorate(TextDecoration.UNDERLINED));
-
-        UIUtils.sendFramedMessage(header, message, sender);
     }
 }
