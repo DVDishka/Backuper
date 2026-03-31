@@ -19,12 +19,12 @@ public abstract class BaseBackupIT extends BaseTest {
 
     @Test
     public void smallFolderTest() throws IOException, InterruptedException {
-        backupTest(10000, false);
+        backupTest(100000, false);
     }
 
     @Test
     public void smallZipBackupTest() throws IOException, InterruptedException {
-        backupTest(10000, true);
+        backupTest(100000, true);
     }
 
     @Test
@@ -38,11 +38,34 @@ public abstract class BaseBackupIT extends BaseTest {
     }
 
     public void backupTest(long targetBackupSize, boolean zipArchive) throws IOException, InterruptedException {
-        File file = new File("%s-%s-%sbyte-backupTest.test".formatted(storage.getId(), zipArchive ? "zip" : "folder", targetBackupSize));
-        ITUtils.generateRandomFile(file, targetBackupSize);
+        File testDir = new File("%s-%s-%sbyte-backupTest".formatted(storage.getId(), zipArchive ? "zip" : "folder", targetBackupSize));
+        testDir.mkdirs();
+        testDir.deleteOnExit();
+
+        // Generate one heavy file
+        File bigTestFile = new File(testDir, "big.test");
+        bigTestFile.createNewFile();
+        bigTestFile.deleteOnExit();
+        ITUtils.generateRandomFile(bigTestFile, targetBackupSize - 45);
+
+        File currentDir = testDir;
+        // Generate light file structure
+        for (int i = 0; i < 10; i++) {
+            currentDir = currentDir.toPath().resolve("0").toFile();
+            currentDir.mkdirs();
+            currentDir.deleteOnExit();
+
+            for (int j = 1; j <= i; j++) {
+                File testFile = currentDir.toPath().resolve(String.valueOf(j)).toFile();
+                testFile.createNewFile();
+                testFile.deleteOnExit();
+
+                ITUtils.generateRandomFile(testFile, 1);
+            }
+        }
 
         config.set("storages.%s.zipArchive".formatted(storage.getId()), zipArchive);
-        config.set("backup.addDirectoryToBackup", List.of(file.getName()));
+        config.set("backup.addDirectoryToBackup", List.of(testDir.getName()));
         reload();
         storage = Backuper.getInstance().getStorageManager().getStorage(storage.getId()); // We should update storage after reloading
 
@@ -59,7 +82,7 @@ public abstract class BaseBackupIT extends BaseTest {
             List<Backup> backups = storage.getBackupManager().getBackupList();
 
             Assertions.assertEquals(1, backups.size());
-            Backup backup = backups.get(0);
+            Backup backup = backups.getFirst();
 
             Assertions.assertEquals(zipArchive ? Backup.BackupFileType.ZIP : Backup.BackupFileType.DIR, backup.getFileType());
 
