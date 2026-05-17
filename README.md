@@ -128,6 +128,7 @@ See [Permissions System](https://github.com/DVDishka/Backuper/wiki/Permissions-S
 - **1.x.x → 2.x.x**: Complete permission and command system overhaul
 - **2.x.x → 3.x.x**: Storage-specific permissions and required storage specification in commands
 - **3.x.x → 4.x.x**: Storage Type replaced with Storage Id, support for multiple storages of the same type, and reworked permissions system
+- **4.0.6**: Requires Java 25
 
 ---
 
