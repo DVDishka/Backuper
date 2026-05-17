@@ -314,7 +314,11 @@ public class BackupTask extends BaseTask {
 
     private List<String> getWorldsDirectoryToBackup() {
         // Get the path of all worlds as a list of strings
-        return Bukkit.getWorlds().stream().map(world -> world.getWorldFolder().getPath()).toList();
+        try {
+            return List.of(Bukkit.getServer().getLevelDirectory().toFile().getPath());
+        } catch (Throwable e) {
+            return Bukkit.getWorlds().stream().map(world -> world.getWorldFolder().getPath()).toList();
+        }
     }
 
     private List<String> getAddDirectoryToBackup() {
