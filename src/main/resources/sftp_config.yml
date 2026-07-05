@@ -38,3 +38,7 @@ auth:
   knownHostsFilePath: ''
   # (Path)
   sshConfigFilePath: ''
+
+debug:
+  # (true/false) Write SFTP operations and JSch debug messages to plugins/Backuper/logs/{storageId}.log
+  protocolLogging: true

@@ -32,6 +32,7 @@ public class FtpStorage implements PathStorage {
     private final FtpClientProvider mainClient;
     private final FtpClientProvider downloadClient;
     private final FtpClientProvider uploadClient;
+    private final FtpProtocolLogger protocolLogger;
 
     private final Retriable.RetriableExceptionHandler retriableExceptionHandler = new Retriable.RetriableExceptionHandler() {
 
@@ -102,9 +103,10 @@ public class FtpStorage implements PathStorage {
     public FtpStorage(FtpConfig config) {
         this.config = config;
         this.backupManager = new BackupManager(this);
-        this.mainClient = new FtpClientProvider(this);
-        this.downloadClient = new FtpClientProvider(this);
-        this.uploadClient = new FtpClientProvider(this);
+        this.protocolLogger = config.isProtocolLogging() ? new FtpProtocolLogger(config.getId()) : null;
+        this.mainClient = new FtpClientProvider(this, "main");
+        this.downloadClient = new FtpClientProvider(this, "download");
+        this.uploadClient = new FtpClientProvider(this, "upload");
     }
 
     @Override
@@ -151,7 +153,7 @@ public class FtpStorage implements PathStorage {
         return ((Retriable<List<String>>) () -> {
             synchronized (mainClient) {
                 FTPClient ftp = mainClient.getClient();
-                ftp.changeWorkingDirectory(path);
+                changeWorkingDirectory(ftp, path);
                 FTPFile[] files = ftp.listFiles();
                 if (files == null) {
                     throw new IOException("Failed to list files in directory: " + path);
@@ -217,7 +219,7 @@ public class FtpStorage implements PathStorage {
                 String parentPath = getParentPath(path);
                 String fileName = getFileNameFromPath(path);
 
-                ftp.changeWorkingDirectory(parentPath);
+                changeWorkingDirectory(ftp, parentPath);
 
                 if (isFile(path)) {
                     dirSize += Long.valueOf(ftp.getSize(fileName));
@@ -245,8 +247,8 @@ public class FtpStorage implements PathStorage {
         ((Retriable<Void>) () -> {
             synchronized (mainClient) {
                 FTPClient ftp = mainClient.getClient();
-                ftp.changeWorkingDirectory(parentDir);
-                ftp.mkd(newDirName);
+                changeWorkingDirectory(ftp, parentDir);
+                makeDirectory(ftp, newDirName);
                 return null;
             }
         }).retry(retriableExceptionHandler);
@@ -259,7 +261,7 @@ public class FtpStorage implements PathStorage {
             synchronized (uploadClient) {
                 FTPClient ftp = uploadClient.getClient();
                 ftp.setCopyStreamListener(new FtpStorageProgressListener(progressListener));
-                ftp.changeWorkingDirectory(targetParentDir);
+                changeWorkingDirectory(ftp, targetParentDir);
                 if (!ftp.storeFile(newFileName, sourceStream)) {
                     throw new StorageMethodException(this, "Failed to upload stream to \"%s\"".formatted(this.resolve(ftp.printWorkingDirectory(), newFileName)), new RuntimeException(ftp.getReplyString()));
                 }
@@ -276,7 +278,7 @@ public class FtpStorage implements PathStorage {
                 String parentPath = getParentPath(sourcePath);
                 String fileName = getFileNameFromPath(sourcePath);
 
-                ftp.changeWorkingDirectory(parentPath);
+                changeWorkingDirectory(ftp, parentPath);
                 return new FtpStorageInputStream(ftp.retrieveFileStream(fileName), progressListener);
             }
         }).retry(retriableExceptionHandler);
@@ -305,17 +307,17 @@ public class FtpStorage implements PathStorage {
                 String parentPath = getParentPath(path);
                 String fileName = getFileNameFromPath(path);
 
-                ftp.changeWorkingDirectory(parentPath);
+                changeWorkingDirectory(ftp, parentPath);
                 if (isFile(path)) {
                     mainClient.resetWorkingDirectory(); // Working directory might be changed by isFile method
-                    ftp.changeWorkingDirectory(parentPath);
+                    changeWorkingDirectory(ftp, parentPath);
 
-                    ftp.deleteFile(fileName);
+                    deleteFile(ftp, fileName);
                 } else {
                     mainClient.resetWorkingDirectory(); // Working directory might be changed by isFile method
-                    ftp.changeWorkingDirectory(parentPath);
+                    changeWorkingDirectory(ftp, parentPath);
 
-                    ftp.removeDirectory(fileName);
+                    removeDirectory(ftp, fileName);
                 }
                 return null;
             }
@@ -330,8 +332,8 @@ public class FtpStorage implements PathStorage {
                 String parentPath = getParentPath(path);
                 String fileName = getFileNameFromPath(path);
 
-                ftp.changeWorkingDirectory(parentPath);
-                ftp.rename(fileName, newFileName);
+                changeWorkingDirectory(ftp, parentPath);
+                rename(ftp, fileName, newFileName);
                 return null;
             }
         }).retry(retriableExceptionHandler);
@@ -347,6 +349,47 @@ public class FtpStorage implements PathStorage {
         mainClient.disconnect();
         downloadClient.disconnect();
         uploadClient.disconnect();
+        if (protocolLogger != null) {
+            protocolLogger.close();
+        }
+    }
+
+    FtpProtocolLogger getProtocolLogger() {
+        return protocolLogger;
+    }
+
+    private void changeWorkingDirectory(FTPClient ftp, String path) throws IOException {
+        if (!ftp.changeWorkingDirectory(path)) {
+            throw ftpCommandException(ftp, "change working directory to \"%s\"".formatted(path));
+        }
+    }
+
+    private void makeDirectory(FTPClient ftp, String path) throws IOException {
+        if (!ftp.makeDirectory(path)) {
+            throw ftpCommandException(ftp, "create directory \"%s\"".formatted(path));
+        }
+    }
+
+    private void deleteFile(FTPClient ftp, String path) throws IOException {
+        if (!ftp.deleteFile(path)) {
+            throw ftpCommandException(ftp, "delete file \"%s\"".formatted(path));
+        }
+    }
+
+    private void removeDirectory(FTPClient ftp, String path) throws IOException {
+        if (!ftp.removeDirectory(path)) {
+            throw ftpCommandException(ftp, "remove directory \"%s\"".formatted(path));
+        }
+    }
+
+    private void rename(FTPClient ftp, String from, String to) throws IOException {
+        if (!ftp.rename(from, to)) {
+            throw ftpCommandException(ftp, "rename \"%s\" to \"%s\"".formatted(from, to));
+        }
+    }
+
+    private StorageMethodException ftpCommandException(FTPClient ftp, String action) {
+        return new StorageMethodException(this, "Failed to %s. FTP reply: %s".formatted(action, ftp.getReplyString()));
     }
 
     private static class FtpStorageProgressListener implements CopyStreamListener {

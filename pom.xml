@@ -14,6 +14,7 @@
     <description>Simple backup plugin for Paper/Folia with FTP/GOOGLE DRIVE/SFTP support</description>
     <properties>
         <java.version>25</java.version>
+        <paper.version>26.1.2.build.72-stable</paper.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
     <url>backuper-mc.com</url>
@@ -224,7 +225,7 @@
         <dependency>
             <groupId>org.mockbukkit.mockbukkit</groupId>
             <artifactId>mockbukkit-v26.1.2</artifactId>
-            <version>4.113.1</version>
+            <version>4.114.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -281,7 +282,7 @@
         <dependency>
             <groupId>io.papermc.paper</groupId>
             <artifactId>paper-api</artifactId>
-            <version>[26.1.2.build,)</version>
+            <version>${paper.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

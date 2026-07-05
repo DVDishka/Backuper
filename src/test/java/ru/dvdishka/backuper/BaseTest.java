@@ -62,9 +62,15 @@ public class BaseTest {
 
     @AfterEach
     public void tearDown() {
-        mockBstats.close();
-        mockScheduleManager.close();
-        MockBukkit.unmock();
+        if (mockBstats != null) {
+            mockBstats.close();
+        }
+        if (mockScheduleManager != null) {
+            mockScheduleManager.close();
+        }
+        if (server != null) {
+            MockBukkit.unmock();
+        }
     }
 
     /***

@@ -12,12 +12,14 @@ import java.time.Duration;
 public class FtpClientProvider {
 
     private final FtpStorage storage;
+    private final String clientRole;
 
     private FTPClient ftpClient = null; // Effectively final
     private String defaultPath = ".";
 
-    FtpClientProvider(FtpStorage storage) {
+    FtpClientProvider(FtpStorage storage, String clientRole) {
         this.storage = storage;
+        this.clientRole = clientRole;
     }
 
     synchronized FTPClient getClient() throws StorageConnectionException {
@@ -44,8 +46,7 @@ public class FtpClientProvider {
         }
 
         ftpClient = new FTPClient();
-        // Enable FTP logging
-        // ftpClient.addProtocolCommandListener(new PrintCommandListener(new PrintWriter(System.out)));
+        addProtocolLogger();
         connect();
         try {
             defaultPath = ftpClient.printWorkingDirectory();
@@ -57,12 +58,19 @@ public class FtpClientProvider {
 
     synchronized void resetWorkingDirectory() {
         try {
-            ftpClient.changeWorkingDirectory(defaultPath);
+            if (!ftpClient.changeWorkingDirectory(defaultPath)) {
+                Backuper.getInstance().getLogManager().devWarn("Failed to reset FTP working directory to \"%s\". FTP reply: %s".formatted(defaultPath, ftpClient.getReplyString()));
+            }
         } catch (Exception ignored) {
         }
     }
 
     private void connect() {
+        if (ftpClient == null) {
+            ftpClient = new FTPClient();
+            addProtocolLogger();
+        }
+        logLifecycle("Connecting to %s:%d".formatted(storage.getConfig().getAddress(), storage.getConfig().getPort()));
         ftpClient.setConnectTimeout(30 * 1000);
         ftpClient.setDefaultTimeout(30 * 1000);
         ftpClient.setDataTimeout(Duration.ofSeconds(30));
@@ -114,16 +122,40 @@ public class FtpClientProvider {
         } catch (IOException e) {
             Backuper.getInstance().getLogManager().warn("Failed to send FTP(S) server ping");
         }
+        logLifecycle("Connected. Default path: %s".formatted(getCurrentWorkingDirectory()));
     }
 
     void disconnect() {
         if (ftpClient != null) {
             try {
+                logLifecycle("Disconnecting");
                 ftpClient.disconnect();
             } catch (Exception ignored) {
                 // Ignore disconnect errors
             }
         }
         ftpClient = null;
+    }
+
+    private void addProtocolLogger() {
+        FtpProtocolLogger protocolLogger = storage.getProtocolLogger();
+        if (protocolLogger != null) {
+            ftpClient.addProtocolCommandListener(protocolLogger.createListener(clientRole));
+        }
+    }
+
+    private void logLifecycle(String message) {
+        FtpProtocolLogger protocolLogger = storage.getProtocolLogger();
+        if (protocolLogger != null) {
+            protocolLogger.logLifecycle(clientRole, message);
+        }
+    }
+
+    private String getCurrentWorkingDirectory() {
+        try {
+            return ftpClient.printWorkingDirectory();
+        } catch (Exception e) {
+            return "unknown";
+        }
     }
 }

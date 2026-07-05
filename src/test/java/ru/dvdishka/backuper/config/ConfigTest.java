@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.BaseTest;
+import ru.dvdishka.backuper.backend.config.ConfigBackwardsCompatibility;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -67,6 +68,23 @@ public class ConfigTest extends BaseTest {
         assert !config.getBoolean("backup.autoBackup");
         assert config.get("storages.local.backupsFolder").equals("testFolder");
         assert config.getInt("server.alertTimeBeforeRestart") == 10;
+    }
+
+    @Test
+    public void testConfigBackwardsCompatibilityWithStorageProtocolLogging() {
+        FileConfiguration legacyConfig = YamlConfiguration.loadConfiguration(new InputStreamReader(Backuper.getInstance().getResource("config.yml")));
+        legacyConfig.set("configVersion", 13.0);
+        legacyConfig.set("storages.local.debug.protocolLogging", null);
+        legacyConfig.set("storages.ftp.debug.protocolLogging", null);
+        legacyConfig.set("storages.sftp.debug.protocolLogging", null);
+        legacyConfig.set("storages.googleDrive.debug.protocolLogging", null);
+
+        ConfigBackwardsCompatibility.configBelow14(legacyConfig);
+
+        assert legacyConfig.getBoolean("storages.local.debug.protocolLogging");
+        assert legacyConfig.getBoolean("storages.ftp.debug.protocolLogging");
+        assert legacyConfig.getBoolean("storages.sftp.debug.protocolLogging");
+        assert legacyConfig.getBoolean("storages.googleDrive.debug.protocolLogging");
     }
 
     @Test

@@ -22,3 +22,7 @@ zipCompressionLevel: 5
 auth:
   # Directory where you want to store your Google authentication tokens
   tokenFolderPath: ./plugins/Backuper/GoogleDrive/tokens
+
+debug:
+  # (true/false) Write Google Drive API operations to plugins/Backuper/logs/{storageId}.log
+  protocolLogging: true

@@ -24,6 +24,7 @@ public class FtpConfig implements PathStorageConfig {
     private int port;
     private boolean zipArchive;
     private int zipCompressionLevel;
+    private boolean protocolLogging;
 
     private ConfigurationSection config;
 
@@ -42,6 +43,7 @@ public class FtpConfig implements PathStorageConfig {
         this.port = config.getInt("auth.port");
         this.username = config.getString("auth.username");
         this.password = config.getString("auth.password");
+        this.protocolLogging = config.getBoolean("debug.protocolLogging");
 
         if (zipCompressionLevel > 9 || zipCompressionLevel < 0) {
             Backuper.getInstance().getLogManager().warn("Failed to load config value!");

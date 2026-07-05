@@ -120,13 +120,15 @@ public class ListCommand extends Command {
                     .append(Component.text("<<<<<<<<")
                             .decorate(TextDecoration.BOLD)
                             .color(UIUtils.getSecondaryColor())
-                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list %s %s".formatted(storage.getId(), pageNumber - 1))))
+                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND,
+                                    ClickEvent.Payload.string("/backuper list %s %s".formatted(storage.getId(), pageNumber - 1)))))
                     .append(Component.text(String.valueOf(pageNumber))
                             .decorate(TextDecoration.BOLD))
                     .append(Component.text(">>>>>>>>")
                             .decorate(TextDecoration.BOLD)
                             .color(UIUtils.getSecondaryColor())
-                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list %s %s".formatted(storage.getId(), pageNumber + 1))))
+                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND,
+                                    ClickEvent.Payload.string("/backuper list %s %s".formatted(storage.getId(), pageNumber + 1)))))
                     .append(Component.newline());
 
             if (pages.size() >= pageNumber) {
@@ -142,13 +144,15 @@ public class ListCommand extends Command {
                     .append(Component.text("<<<<<<<<")
                             .decorate(TextDecoration.BOLD)
                             .color(UIUtils.getSecondaryColor())
-                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list %s %s".formatted(storage.getId(), pageNumber - 1))))
+                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND,
+                                    ClickEvent.Payload.string("/backuper list %s %s".formatted(storage.getId(), pageNumber - 1)))))
                     .append(Component.text(String.valueOf(pageNumber))
                             .decorate(TextDecoration.BOLD))
                     .append(Component.text(">>>>>>>>")
                             .decorate(TextDecoration.BOLD)
                             .color(UIUtils.getSecondaryColor())
-                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/backuper list %s %s".formatted(storage.getId(), pageNumber + 1))));
+                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND,
+                                    ClickEvent.Payload.string("/backuper list %s %s".formatted(storage.getId(), pageNumber + 1)))));
 
         // For console
         } else {

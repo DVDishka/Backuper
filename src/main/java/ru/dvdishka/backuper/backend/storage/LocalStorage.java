@@ -24,12 +24,14 @@ public class LocalStorage implements PathStorage {
     private String id = null;
     private final BackupManager backupManager;
     private final LocalConfig config;
+    private final StorageProtocolLogger protocolLogger;
 
     private final int FILE_BUFFER_SIZE = 65536;
 
     public LocalStorage(LocalConfig config) {
         this.config = config;
         this.backupManager = new BackupManager(this);
+        this.protocolLogger = config.isProtocolLogging() ? new StorageProtocolLogger(config.getId()) : null;
     }
 
     @Override
@@ -95,6 +97,7 @@ public class LocalStorage implements PathStorage {
     public List<String> ls(String path) throws StorageMethodException, StorageConnectionException {
         try {
             File directory = new File(path);
+            logOperation("LS", path);
             if (!directory.exists() || !directory.isDirectory()) {
                 throw new StorageMethodException(this, "Directory does not exist or is not a directory: %s".formatted(path));
             }
@@ -116,12 +119,14 @@ public class LocalStorage implements PathStorage {
 
     @Override
     public boolean exists(String path) throws StorageMethodException, StorageConnectionException {
+        logOperation("EXISTS", path);
         return new File(path).exists();
     }
 
     @Override
     public boolean isFile(String path) throws StorageMethodException, StorageConnectionException {
         File file = new File(path);
+        logOperation("STAT", path);
         if (!file.exists()) {
             throw new StorageMethodException(this, "File \"%s\" does not exist".formatted(path));
         }
@@ -132,6 +137,7 @@ public class LocalStorage implements PathStorage {
     public long getDirByteSize(String path) throws StorageMethodException, StorageConnectionException {
         try {
             File file = new File(path);
+            logOperation("SIZE", path);
             if (!file.exists()) {
                 throw new StorageMethodException(this, "File or directory does not exist: %s".formatted(path));
             }
@@ -146,6 +152,7 @@ public class LocalStorage implements PathStorage {
     public void createDir(String newDirName, String parentDir) throws StorageMethodException, StorageConnectionException {
         try {
             File folder = new File(resolve(parentDir, newDirName));
+            logOperation("MKDIR", folder.getAbsolutePath());
             if (folder.exists()) {
                 if (!folder.isDirectory()) {
                     throw new StorageMethodException(this, "Path exists but is not a directory: %s".formatted(parentDir));
@@ -156,6 +163,9 @@ public class LocalStorage implements PathStorage {
             if (!folder.mkdirs()) {
                 throw new StorageMethodException(this, "Failed to create directory: %s".formatted(parentDir));
             }
+            if (!folder.exists() || !folder.isDirectory()) {
+                throw new StorageMethodException(this, "Directory creation verification failed: %s".formatted(folder.getAbsolutePath()));
+            }
         } catch (Exception e) {
             throw new StorageMethodException(this, "Failed to create dir \"%s\" using local storage".formatted(parentDir), e);
         }
@@ -164,6 +174,7 @@ public class LocalStorage implements PathStorage {
     @Override
     public void uploadFile(InputStream sourceStream, String newFileName, String targetParentDir, StorageProgressListener progressListener) throws StorageLimitException, StorageMethodException, StorageConnectionException {
         File target = new File(resolve(targetParentDir, newFileName));
+        logOperation("UPLOAD", target.getAbsolutePath());
 
         try (OutputStream targetStream = new FileOutputStream(target)) {
             byte[] buffer = new byte[FILE_BUFFER_SIZE];
@@ -175,11 +186,16 @@ public class LocalStorage implements PathStorage {
         } catch (IOException e) {
             throw new StorageMethodException(this, "Failed to copy stream to \"%s\" in %s storage".formatted(target.getAbsolutePath(), id), e);
         }
+
+        if (!target.exists() || !target.isFile()) {
+            throw new StorageMethodException(this, "Upload verification failed: %s".formatted(target.getAbsolutePath()));
+        }
     }
 
     @Override
     public InputStream downloadFile(String sourcePath, StorageProgressListener progressListener) throws StorageMethodException, StorageConnectionException {
         File file = new File(sourcePath);
+        logOperation("DOWNLOAD", sourcePath);
         if (!file.exists()) {
             throw new StorageMethodException(this, "Source file \"%s\" does not exist".formatted(sourcePath));
         }
@@ -194,8 +210,12 @@ public class LocalStorage implements PathStorage {
     @Override
     public void delete(String path) throws StorageMethodException, StorageConnectionException {
         File file = new File(path);
+        logOperation("DELETE", path);
         if (!file.delete()) {
             throw new StorageMethodException(this, "Failed to delete \"%s\" file/dir from local storage".formatted(path));
+        }
+        if (file.exists()) {
+            throw new StorageMethodException(this, "Delete verification failed: %s".formatted(path));
         }
     }
 
@@ -203,6 +223,7 @@ public class LocalStorage implements PathStorage {
     public void renameFile(String path, String newFileName) throws StorageMethodException, StorageConnectionException {
         File sourceFile = new File(path);
         File targetFile = new File(resolve(getParentPath(path), newFileName));
+        logOperation("RENAME", "%s -> %s".formatted(sourceFile.getAbsolutePath(), targetFile.getAbsolutePath()));
 
         if (!sourceFile.exists())
             throw new StorageMethodException(this, "Source file does not exist: %s".formatted(path));
@@ -224,6 +245,9 @@ public class LocalStorage implements PathStorage {
                     // Try using Files.move as fallback
                     Files.move(sourceFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
                 }
+                if (!targetFile.exists() || sourceFile.exists()) {
+                    throw new StorageMethodException(this, "Rename verification failed from \"%s\" to \"%s\" using local storage".formatted(path, newFileName));
+                }
                 break;
             } catch (Exception e) {
                 if (i == 999999) throw new StorageMethodException(this, "Failed to rename file \"%s\" to \"%s\" using local storage".formatted(path, newFileName), e);
@@ -237,10 +261,20 @@ public class LocalStorage implements PathStorage {
     }
 
     @Override
-    public void destroy() {}
+    public void destroy() {
+        if (protocolLogger != null) {
+            protocolLogger.close();
+        }
+    }
 
     @Override
     public void downloadCompleted() throws StorageMethodException, StorageConnectionException {
         // Для локального хранилища не требуется дополнительных действий
+    }
+
+    private void logOperation(String operation, String message) {
+        if (protocolLogger != null) {
+            protocolLogger.logOperation(operation, message);
+        }
     }
 }

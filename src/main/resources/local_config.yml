@@ -16,3 +16,7 @@ maxBackupsWeight: 0
 zipArchive: true
 # (0 - 9) archive compression level. A higher value may reduce file size but may also increase the time required to archive and decompress
 zipCompressionLevel: 5
+
+debug:
+  # (true/false) Write local storage operations to plugins/Backuper/logs/{storageId}.log
+  protocolLogging: true

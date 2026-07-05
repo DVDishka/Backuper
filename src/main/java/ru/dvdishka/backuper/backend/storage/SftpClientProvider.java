@@ -8,12 +8,14 @@ import java.util.Properties;
 public class SftpClientProvider {
 
     private final SftpStorage storage;
+    private final String clientRole;
 
     private Session sshSession = null; // Effectively final
     private ChannelSftp sftpChannel = null; // Effectively final
 
-    SftpClientProvider(SftpStorage storage) {
+    SftpClientProvider(SftpStorage storage, String clientRole) {
         this.storage = storage;
+        this.clientRole = clientRole;
     }
 
     synchronized ChannelSftp getClient() {
@@ -52,6 +54,11 @@ public class SftpClientProvider {
         ChannelSftp channel = null;
 
         try {
+            SftpProtocolLogger protocolLogger = storage.getProtocolLogger();
+            if (protocolLogger != null) {
+                JSch.setLogger(protocolLogger.createJSchLogger(clientRole));
+                protocolLogger.logLifecycle(clientRole, "Connecting to %s:%d".formatted(storage.getConfig().getAddress(), storage.getConfig().getPort()));
+            }
             if (!storage.getConfig().getSshConfigFilePath().isEmpty()) {
                 jsch.setConfigRepository(OpenSSHConfig.parseFile(storage.getConfig().getSshConfigFilePath()));
             } else {
@@ -84,6 +91,9 @@ public class SftpClientProvider {
                 session.setServerAliveInterval(60 * 1000);
                 channel = (ChannelSftp) session.openChannel("sftp");
                 channel.connect(15000);
+                if (protocolLogger != null) {
+                    protocolLogger.logLifecycle(clientRole, "Connected. Working directory: %s".formatted(channel.pwd()));
+                }
 
                 this.sshSession = session; // Already not null
                 this.sftpChannel = channel; // Already not null
@@ -110,6 +120,10 @@ public class SftpClientProvider {
     void disconnect() {
         if (sftpChannel != null) {
             try {
+                SftpProtocolLogger protocolLogger = storage.getProtocolLogger();
+                if (protocolLogger != null) {
+                    protocolLogger.logLifecycle(clientRole, "Disconnecting");
+                }
                 sftpChannel.disconnect();
             } catch (Exception ignored) {
                 // Ignore disconnect errors

@@ -28,3 +28,7 @@ auth:
   username: ''
   # (Password) FTP server password to use for authentication
   password: ''
+
+debug:
+  # (true/false) Write FTP protocol commands and replies to plugins/Backuper/logs/{storageId}.log
+  protocolLogging: true

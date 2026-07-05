@@ -1,5 +1,5 @@
 # DO NOT CHANGE
-configVersion: 13.0
+configVersion: 14.0
 lastBackup: 0
 lastChange: 0
 
@@ -78,6 +78,10 @@ storages:
     # (0 - 9) archive compression level. A higher value may reduce file size but may also increase the time required to archive and decompress
     zipCompressionLevel: 5
 
+    debug:
+      # (true/false) Write local storage operations to plugins/Backuper/logs/{storageId}.log
+      protocolLogging: true
+
   googleDrive:
     type: googleDrive
     # (true/false) Enable Google Drive storage to use it via Backuper
@@ -103,6 +107,10 @@ storages:
     auth:
       # Directory where you want to store your Google authentication tokens
       tokenFolderPath: ./plugins/Backuper/GoogleDrive/tokens
+
+    debug:
+      # (true/false) Write Google Drive API operations to plugins/Backuper/logs/{storageId}.log
+      protocolLogging: true
 
   ftp:
     type: ftp
@@ -135,6 +143,10 @@ storages:
       username: ''
       # (Password) FTP server password to use for authentication
       password: ''
+
+    debug:
+      # (true/false) Write FTP protocol commands and replies to plugins/Backuper/logs/{storageId}.log
+      protocolLogging: true
 
   sftp:
     type: sftp
@@ -177,3 +189,7 @@ storages:
       knownHostsFilePath: ''
       # (Path)
       sshConfigFilePath: ''
+
+    debug:
+      # (true/false) Write SFTP operations and JSch debug messages to plugins/Backuper/logs/{storageId}.log
+      protocolLogging: true

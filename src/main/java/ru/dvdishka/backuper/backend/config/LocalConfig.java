@@ -20,6 +20,7 @@ public class LocalConfig implements PathStorageConfig {
     private long backupsWeight;
     private boolean zipArchive;
     private int zipCompressionLevel;
+    private boolean protocolLogging;
     private String pathSeparatorSymbol = Utils.isWindows ? "\\" : "/";
 
     private ConfigurationSection config;
@@ -33,6 +34,7 @@ public class LocalConfig implements PathStorageConfig {
         long backupsWeight = config.getLong("maxBackupsWeight") * 1_048_576L;
         this.zipArchive = config.getBoolean("zipArchive");
         this.backupsFolder = config.getString("backupsFolder");
+        this.protocolLogging = config.getBoolean("debug.protocolLogging");
         int zipCompressionLevel = config.getInt("zipCompressionLevel");
 
         if (backupsNumber < 0) {

@@ -143,4 +143,19 @@ public class ConfigBackwardsCompatibility {
             config.set("storages.googleDrive", googleDriveSection);
         }
     }
+
+    public static void configBelow14(FileConfiguration config) {
+
+        double configVersion = config.getDouble("configVersion");
+        if (configVersion >= 14.0) {
+            return;
+        }
+
+        for (String storageId : List.of("local", "ftp", "sftp", "googleDrive")) {
+            ConfigurationSection storageSection = config.getConfigurationSection("storages.%s".formatted(storageId));
+            if (storageSection != null && !storageSection.isSet("debug.protocolLogging")) {
+                storageSection.set("debug.protocolLogging", true);
+            }
+        }
+    }
 }

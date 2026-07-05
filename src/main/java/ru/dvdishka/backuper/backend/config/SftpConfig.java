@@ -28,6 +28,7 @@ public class SftpConfig implements PathStorageConfig {
     private long backupsWeight;
     private boolean zipArchive;
     private int zipCompressionLevel;
+    private boolean protocolLogging;
     private int port;
 
     private ConfigurationSection config;
@@ -49,6 +50,7 @@ public class SftpConfig implements PathStorageConfig {
         this.password = config.getString("auth.password");
         this.address = config.getString("auth.address");
         this.port = config.getInt("auth.port");
+        this.protocolLogging = config.getBoolean("debug.protocolLogging");
         this.useKnownHostsFile = config.getString("auth.useKnownHostsFile");
         this.knownHostsFilePath = config.getString("auth.knownHostsFilePath");
         this.sshConfigFilePath = config.getString("auth.sshConfigFilePath");

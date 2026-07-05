@@ -24,6 +24,7 @@ public class GoogleDriveConfig implements StorageConfig {
     private long backupsWeight;
     private boolean zipArchive;
     private int zipCompressionLevel;
+    private boolean protocolLogging;
 
     private ConfigurationSection config;
 
@@ -39,6 +40,7 @@ public class GoogleDriveConfig implements StorageConfig {
         this.backupsNumber = config.getInt("maxBackupsNumber");
         this.backupsWeight = config.getLong("maxBackupsWeight") * 1_048_576L;
         this.zipArchive = config.getBoolean("zipArchive");
+        this.protocolLogging = config.getBoolean("debug.protocolLogging");
         int zipCompressionLevel = config.getInt("zipCompressionLevel");
 
         if (zipCompressionLevel > 9 || zipCompressionLevel < 0) {

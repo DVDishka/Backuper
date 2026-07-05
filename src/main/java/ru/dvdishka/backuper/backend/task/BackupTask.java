@@ -5,6 +5,7 @@ import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.ApiStatus;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.storage.Storage;
+import ru.dvdishka.backuper.backend.storage.exception.StorageMethodException;
 import ru.dvdishka.backuper.backend.util.Utils;
 
 import java.io.File;
@@ -135,7 +136,16 @@ public class BackupTask extends BaseTask {
                         }
 
                         try {
-                            storage.renameFile(storage.resolve(storage.getConfig().getBackupsFolder(), backupName + fileType), backupName.replace(" in progress", "") + fileType);
+                            String backupsFolder = storage.getConfig().getBackupsFolder();
+                            String inProgressFileName = backupName + fileType;
+                            String inProgressPath = storage.resolve(backupsFolder, inProgressFileName);
+                            String finalFileName = backupName.replace(" in progress", "") + fileType;
+
+                            verifyBackupExists(storage, inProgressPath, "Backup upload verification failed. In-progress backup does not exist: %s".formatted(inProgressPath));
+                            storage.renameFile(inProgressPath, finalFileName);
+                            String finalPath = storage.resolve(backupsFolder, finalFileName);
+                            verifyBackupExists(storage, finalPath, "Backup rename verification failed. Final backup does not exist: %s".formatted(finalPath));
+                            verifyBackupNameDoesNotExist(storage, backupsFolder, inProgressFileName, "Backup rename verification failed. In-progress backup still exists: %s".formatted(inProgressFileName));
 
                             // Add new backup size to cache (ONLY IF NOT ZIP. ZIP SIZE IS NOT COUNTED). MUST ONLY BE EXECUTED AFTER RENAMING
                             if (!storage.getConfig().isZipArchive()) {
@@ -143,7 +153,7 @@ public class BackupTask extends BaseTask {
                                 devLog("New backup size in %s storage has been cached".formatted(storage.getId()));
                             }
                         } catch (Exception e) {
-                            warn("Failed to rename file %s in %s storage".formatted(backupName, storage.getId()), sender);
+                            warn("Failed to finalize backup %s in %s storage".formatted(backupName, storage.getId()), sender);
                             warn(e);
                         }
                         devLog("The Rename \"in progress\" Folder %s storage task has been finished".formatted(storage.getId()));
@@ -283,6 +293,19 @@ public class BackupTask extends BaseTask {
             case TransferDirsAsZipTask addLocalDirToZipTask -> max(addLocalDirToZipTask.getTargetStorage().getZipProgressMultiplier(), addLocalDirToZipTask.getSourceStorage().getZipProgressMultiplier());
             default -> 1;
         };
+    }
+
+    private void verifyBackupExists(Storage storage, String path, String errorMessage) {
+        if (path == null || !storage.exists(path)) {
+            throw new StorageMethodException(storage, errorMessage);
+        }
+    }
+
+    private void verifyBackupNameDoesNotExist(Storage storage, String parentPath, String fileName, String errorMessage) {
+        String path = storage.resolve(parentPath, fileName);
+        if (path != null && storage.exists(path)) {
+            throw new StorageMethodException(storage, errorMessage);
+        }
     }
 
     @Override
