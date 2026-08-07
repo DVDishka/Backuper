@@ -11,7 +11,7 @@
 
     <name>Backuper</name>
 
-    <description>Simple backup plugin for Paper/Folia with FTP/GOOGLE DRIVE/SFTP support</description>
+    <description>Simple backup plugin for Paper/Folia with FTP/SFTP/WebDAV/Google Drive support</description>
     <properties>
         <java.version>25</java.version>
         <paper.version>26.1.2.build.72-stable</paper.version>

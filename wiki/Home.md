@@ -4,7 +4,7 @@
 
 <img height="128" src="https://raw.githubusercontent.com/DVDishka/Backuper/refs/heads/master/images/backuper_logo.svg" width="128" alt=""/>
 
-Simple backup plugin for Paper/Folia with **FTP/SFTP/Google Drive** support.
+Simple backup plugin for Paper/Folia with **FTP/SFTP/WebDAV/Google Drive** support.
 
 ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/DVDishka/Backuper/total?label=GitHub%20Downloads)
 ![Modrinth Downloads](https://img.shields.io/modrinth/dt/Backuper?label=Modrinth%20Downloads)
@@ -27,7 +27,7 @@ Simple backup plugin for Paper/Folia with **FTP/SFTP/Google Drive** support.
 
 ## ⭐ Key Features ⭐
 
-- **Multiple Storage Types (Local/SFTP/FTP/Google Drive)**
+- **Multiple Storage Types (Local/SFTP/FTP/WebDAV/Google Drive)**
 - **Automatic backups with customizable schedule**
 - **Backups Management**
 - **Archieving or storing backup as a folder**
@@ -89,7 +89,7 @@ storages:
 - **zipArchive** - Store as ZIP files or folders
 - **zipCompressionLevel** - Compression level (0-9)
 
-For detailed configuration and remote storage options (**FTP/SFTP/Google Drive**), see [[Configuration]]
+For detailed configuration and remote storage options (**FTP/SFTP/WebDAV/Google Drive**), see [[Configuration]]
 
 ---
 
@@ -98,6 +98,7 @@ For detailed configuration and remote storage options (**FTP/SFTP/Google Drive**
 - **Local** - Store backups on the same server
 - **FTP** - Upload backups to FTP servers
 - **SFTP** - Secure file transfer via SSH
+- **WebDAV** - Store backups on HTTP(S) WebDAV services such as Nextcloud
 - **Google Drive** - Cloud storage with OAuth authentication
 
 ---

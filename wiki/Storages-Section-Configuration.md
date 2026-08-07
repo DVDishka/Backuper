@@ -3,6 +3,7 @@
 - `local` - Local file system storage
 - `ftp` - FTP server storage
 - `sftp` - SFTP server storage
+- `webdav` - HTTP(S) WebDAV server storage
 - `googleDrive` - Google Drive cloud storage
 
 ## Storage IDs
@@ -28,6 +29,10 @@ storages:
     
   backupServerSftp:     # <- Storage ID
     type: sftp
+    # ... other settings
+
+  offsiteWebDav:         # <- Storage ID
+    type: webdav
     # ... other settings
     
   companyDrive:          # <- Storage ID
@@ -57,4 +62,5 @@ storages:
 - [[Local Storage|Local-Storage]]
 - [[FTP Storage|FTP-Storage]]
 - [[SFTP Storage|SFTP-Storage]]
+- [[WebDAV Storage|WebDAV-Storage]]
 - [[Google Drive Storage|Google-Drive-Storage]]

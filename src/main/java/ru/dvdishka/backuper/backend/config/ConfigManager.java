@@ -63,6 +63,7 @@ public class ConfigManager {
         ConfigBackwardsCompatibility.configBelow8(config);
         ConfigBackwardsCompatibility.configBelow13(config);
         ConfigBackwardsCompatibility.configBelow14(config);
+        ConfigBackwardsCompatibility.configBelow15(config);
 
         loadBackupConfig(config);
         loadStorages(config);
@@ -102,6 +103,7 @@ public class ConfigManager {
                 case "local" -> new LocalStorage((LocalConfig) new LocalConfig().repairThenLoad(storageSection));
                 case "ftp" -> new FtpStorage((FtpConfig) new FtpConfig().repairThenLoad(storageSection));
                 case "sftp" -> new SftpStorage((SftpConfig) new SftpConfig().repairThenLoad(storageSection));
+                case "webdav" -> new WebDavStorage((WebDavConfig) new WebDavConfig().repairThenLoad(storageSection));
                 case "googleDrive" -> new GoogleDriveStorage((GoogleDriveConfig) new GoogleDriveConfig().repairThenLoad(storageSection));
                 default -> {
                     Backuper.getInstance().getLogManager().warn("Wrong storage type \"%s\" in \"%s\" storage in config.yml. Skipping this storage...".formatted(storageType, storageId));

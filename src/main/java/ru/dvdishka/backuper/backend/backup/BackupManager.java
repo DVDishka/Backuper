@@ -43,6 +43,7 @@ public class BackupManager {
             case LocalStorage localStorage -> backups.computeIfAbsent(backupName, (name) -> new LocalBackup(localStorage, name));
             case FtpStorage ftpStorage -> backups.computeIfAbsent(backupName, (name) -> new FtpBackup(ftpStorage, name));
             case SftpStorage sftpStorage -> backups.computeIfAbsent(backupName, (name) -> new SftpBackup(sftpStorage, name));
+            case WebDavStorage webDavStorage -> backups.computeIfAbsent(backupName, (name) -> new WebDavBackup(webDavStorage, name));
             case GoogleDriveStorage googleDriveStorage -> backups.computeIfAbsent(backupName, (name) -> new GoogleDriveBackup(googleDriveStorage, name));
             default -> null;
         };
