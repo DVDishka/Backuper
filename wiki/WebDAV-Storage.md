@@ -74,11 +74,14 @@ http:
   bufferUploadsToDisk: false
 ```
 
-- **requestTimeoutSeconds**: Maximum duration of one HTTP request. Increase it for very large backups or slow links. Set to `0` to disable the request timeout.
-- **deleteConfirmationTimeoutSeconds**: Maximum time to poll for completion after a server accepts deletion with HTTP `202 Accepted`. Set to `0` to treat `202` as success without waiting for confirmation.
-- **bufferUploadsToDisk**: By default, uploads stream directly and may use HTTP/1.1 chunked transfer encoding. Enable this option if the WebDAV server returns HTTP `411 Length Required` or rejects chunked PUT requests. Backuper then writes each upload to a temporary file before sending it with a fixed `Content-Length`, so sufficient temporary disk space is required.
-- Redirects are followed only when they stay on the same scheme, host, port, and configured WebDAV root. Credentials are never forwarded to another origin.
-- Redirect and PROPFIND paths containing relative segments or percent-encoded path separators are rejected to preserve the configured root boundary.
+- **requestTimeoutSeconds**: Timeout for each HTTP attempt. Increase it for large files or slow connections. Set to `0` to disable it. Backuper makes at most two attempts when a request times out.
+- **deleteConfirmationTimeoutSeconds**: How long Backuper waits for deletion to finish after receiving `202 Accepted`. Set to `0` to accept the response without checking that deletion finished.
+- **bufferUploadsToDisk**: Saves each upload to a temporary file and sends it with a fixed `Content-Length`. Enable this if the server rejects chunked uploads with `411 Length Required`, or if uploads need to be retryable. The temporary directory must have enough free space for the file being uploaded. Streaming uploads are not retried.
+- Redirects must keep the same scheme, host, and port and remain under the path configured by `auth.url`. Credentials are never sent to another origin.
+
+Backuper makes up to five attempts for temporary network failures and HTTP `408`, `425`, `429`, `500`, `502`, `503`, and `504` responses. It follows `Retry-After` delays of up to 60 seconds. A longer delay stops the operation. Authentication, certificate, TLS protocol, HTTP protocol, and storage limit errors are not retried.
+
+If a buffered upload fails after the server may have saved the file, Backuper downloads the remote file and compares it with the temporary copy. A strong ETag is required before Backuper can retry `DELETE` or `MOVE`, which prevents it from modifying a resource that another client replaced.
 
 ### Backup Limits and Compression
 

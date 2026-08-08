@@ -25,9 +25,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -130,6 +133,372 @@ public class WebDavStorageTest {
         assertEquals(payload.length, progress.getCurrentProgress());
         assertArrayEquals(payload, server.files.get("/dav/backups/fixed-length.bin"));
         assertEquals(1, server.mutationRedirectCount.get());
+        server.assertHealthy();
+    }
+
+    @Test
+    public void retriesTransientMetadataFailuresButNotPermanentHttpFailures() {
+        storage = createStorage(true, false);
+        server.failNext("PROPFIND", 503, false);
+
+        assertTrue(storage.exists("backups"));
+        assertTrue(server.methodRequestCount("PROPFIND") >= 2);
+
+        int requestsBeforePermanentFailure = server.methodRequestCount("PROPFIND");
+        server.failAlways("PROPFIND", 401);
+        assertThrows(StorageConnectionException.class, () -> storage.exists("backups"));
+        assertEquals(requestsBeforePermanentFailure + 1, server.methodRequestCount("PROPFIND"));
+        server.assertHealthy();
+    }
+
+    @Test
+    public void retriesAConnectionFailureWhileParsingPropFindResponse() {
+        String path = "/dav/backups/interrupted-metadata.bin";
+        server.addFile(path, new byte[]{1, 2, 3});
+        server.truncateNextPropFindResponse.set(true);
+        storage = createStorage(true, false);
+
+        assertTrue(storage.exists("backups/interrupted-metadata.bin"));
+
+        assertEquals(2, server.methodRequestCount("PROPFIND"));
+        server.assertHealthy();
+    }
+
+    @Test
+    public void retriesBufferedUploadsWithAReplayableBody() {
+        storage = createStorage(true, true);
+        byte[] payload = "replayed buffered upload".getBytes(StandardCharsets.UTF_8);
+        BasicStorageProgressListener progress = new BasicStorageProgressListener();
+        server.failNext("PUT", 503, false);
+
+        storage.uploadFile(new ByteArrayInputStream(payload), "replayed.bin", "backups", progress);
+
+        assertArrayEquals(payload, server.files.get("/dav/backups/replayed.bin"));
+        assertEquals(payload.length, progress.getCurrentProgress());
+        assertEquals(2, server.methodRequestCount("PUT"));
+        server.assertHealthy();
+    }
+
+    @Test
+    public void reconcilesABufferedUploadCommittedBeforeATransientResponse() {
+        storage = createStorage(true, true);
+        byte[] payload = "committed buffered upload".getBytes(StandardCharsets.UTF_8);
+        BasicStorageProgressListener progress = new BasicStorageProgressListener();
+        server.failNext("PUT", 503, true);
+
+        storage.uploadFile(new ByteArrayInputStream(payload), "committed.bin", "backups", progress);
+
+        assertArrayEquals(payload, server.files.get("/dav/backups/committed.bin"));
+        assertEquals(payload.length, progress.getCurrentProgress());
+        assertEquals(1, server.methodRequestCount("PUT"));
+        server.assertHealthy();
+    }
+
+    @Test
+    public void doesNotMistakeAPreexistingSameLengthFileForACommittedUpload() {
+        storage = createStorage(true, true);
+        String path = "/dav/backups/existing.bin";
+        byte[] payload = new byte[]{4, 5, 6};
+        server.addFile(path, new byte[]{1, 2, 3});
+        server.failNext("PUT", 503, false);
+
+        storage.uploadFile(new ByteArrayInputStream(payload), "existing.bin", "backups",
+                new BasicStorageProgressListener());
+
+        assertArrayEquals(payload, server.files.get(path));
+        assertEquals(2, server.methodRequestCount("PUT"));
+        server.assertHealthy();
+    }
+
+    @Test
+    public void doesNotConfirmAnotherWritersSameLengthFileAsACommittedUpload()
+            throws InterruptedException {
+        storage = createStorage(true, true);
+        String path = "/dav/backups/concurrent.bin";
+        byte[] payload = new byte[]{4, 5, 6};
+        byte[] concurrentContent = new byte[]{1, 2, 3};
+        server.failNext("PUT", 503, false, "1");
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+
+        Thread uploadThread = new Thread(() -> {
+            try {
+                storage.uploadFile(new ByteArrayInputStream(payload), "concurrent.bin", "backups",
+                        new BasicStorageProgressListener());
+            } catch (Throwable throwable) {
+                failure.set(throwable);
+            }
+        });
+        uploadThread.start();
+
+        assertTrue(server.awaitTransientFailure(1, TimeUnit.SECONDS));
+        server.addFile(path, concurrentContent);
+        uploadThread.join(5_000);
+
+        assertFalse(uploadThread.isAlive());
+        assertTrue(failure.get() instanceof StorageMethodException);
+        assertArrayEquals(concurrentContent, server.files.get(path));
+        assertEquals(2, server.methodRequestCount("PUT"));
+        server.assertHealthy();
+    }
+
+    @Test
+    public void doesNotRetryAStreamingUploadWithAConsumedBody() {
+        storage = createStorage(true, false);
+        server.failNext("PUT", 503, false);
+
+        assertThrows(StorageConnectionException.class,
+                () -> storage.uploadFile(new ByteArrayInputStream(new byte[]{1, 2, 3}),
+                        "streaming-retry.bin", "backups", new BasicStorageProgressListener()));
+
+        assertEquals(1, server.methodRequestCount("PUT"));
+        assertFalse(server.files.containsKey("/dav/backups/streaming-retry.bin"));
+        server.assertHealthy();
+    }
+
+    @Test
+    public void doesNotReplayAStreamingUploadCommittedBeforeATransientResponse() {
+        storage = createStorage(true, false);
+        byte[] payload = new byte[]{1, 2, 3};
+        server.failNext("PUT", 503, true);
+
+        assertThrows(StorageConnectionException.class,
+                () -> storage.uploadFile(new ByteArrayInputStream(payload),
+                        "committed-stream.bin", "backups", new BasicStorageProgressListener()));
+
+        assertArrayEquals(payload, server.files.get("/dav/backups/committed-stream.bin"));
+        assertEquals(1, server.methodRequestCount("PUT"));
+        server.assertHealthy();
+    }
+
+    @Test
+    public void reconcilesMutationsCommittedBeforeATransientFailureResponse() {
+        storage = createStorage(true, false);
+
+        server.failNext("MKCOL", 503, true);
+        storage.createDir("recovered", "backups");
+        assertTrue(storage.exists("backups/recovered"));
+        assertEquals(1, server.methodRequestCount("MKCOL"));
+
+        server.addFile("/dav/backups/recovered/source.bin", new byte[]{1, 2, 3});
+        server.failNext("MOVE", 503, true);
+        storage.renameFile("backups/recovered/source.bin", "target.bin");
+        assertFalse(storage.exists("backups/recovered/source.bin"));
+        assertTrue(storage.exists("backups/recovered/target.bin"));
+        assertEquals(1, server.methodRequestCount("MOVE"));
+
+        server.failNext("DELETE", 503, true);
+        storage.delete("backups/recovered/target.bin");
+        assertFalse(storage.exists("backups/recovered/target.bin"));
+        assertEquals(1, server.methodRequestCount("DELETE"));
+        server.assertHealthy();
+    }
+
+    @Test
+    public void retriesUncommittedMutations() {
+        storage = createStorage(true, false);
+
+        server.failNext("MKCOL", 503, false);
+        storage.createDir("retried", "backups");
+        assertTrue(storage.exists("backups/retried"));
+        assertEquals(2, server.methodRequestCount("MKCOL"));
+
+        server.addFile("/dav/backups/retried/source.bin", new byte[]{1, 2, 3});
+        server.failNext("MOVE", 503, false);
+        storage.renameFile("backups/retried/source.bin", "target.bin");
+        assertFalse(storage.exists("backups/retried/source.bin"));
+        assertTrue(storage.exists("backups/retried/target.bin"));
+        assertEquals(2, server.methodRequestCount("MOVE"));
+
+        server.failNext("DELETE", 503, false);
+        storage.delete("backups/retried/target.bin");
+        assertFalse(storage.exists("backups/retried/target.bin"));
+        assertEquals(2, server.methodRequestCount("DELETE"));
+        server.assertHealthy();
+    }
+
+    @Test
+    public void reconcilesMutationsCommittedOnTheFinalAttempt() {
+        storage = createStorage(true, false);
+
+        server.failBeforeThenAfterMutation("MKCOL", 503, 4, "0");
+        storage.createDir("terminal", "backups");
+        assertTrue(storage.exists("backups/terminal"));
+        assertEquals(5, server.methodRequestCount("MKCOL"));
+
+        server.addFile("/dav/backups/terminal/source.bin", new byte[]{1, 2, 3});
+        server.failBeforeThenAfterMutation("MOVE", 503, 4, "0");
+        storage.renameFile("backups/terminal/source.bin", "target.bin");
+        assertFalse(storage.exists("backups/terminal/source.bin"));
+        assertTrue(storage.exists("backups/terminal/target.bin"));
+        assertEquals(5, server.methodRequestCount("MOVE"));
+
+        server.failBeforeThenAfterMutation("DELETE", 503, 4, "0");
+        storage.delete("backups/terminal/target.bin");
+        assertFalse(storage.exists("backups/terminal/target.bin"));
+        assertEquals(5, server.methodRequestCount("DELETE"));
+        server.assertHealthy();
+    }
+
+    @Test
+    public void reconcilesABufferedUploadCommittedOnTheFinalAttempt() {
+        storage = createStorage(true, true);
+        byte[] payload = "terminal buffered upload".getBytes(StandardCharsets.UTF_8);
+        BasicStorageProgressListener progress = new BasicStorageProgressListener();
+        server.failBeforeThenAfterMutation("PUT", 503, 4, "0");
+
+        storage.uploadFile(new ByteArrayInputStream(payload), "terminal.bin", "backups", progress);
+
+        assertArrayEquals(payload, server.files.get("/dav/backups/terminal.bin"));
+        assertEquals(payload.length, progress.getCurrentProgress());
+        assertEquals(5, server.methodRequestCount("PUT"));
+        server.assertHealthy();
+    }
+
+    @Test
+    public void reconcilesACommittedMutationWhenRetryAfterStopsRetries() {
+        storage = createStorage(true, false);
+        server.failNext("MKCOL", 503, true, "61");
+
+        storage.createDir("retry-after-stop", "backups");
+
+        assertTrue(storage.exists("backups/retry-after-stop"));
+        assertEquals(1, server.methodRequestCount("MKCOL"));
+        server.assertHealthy();
+    }
+
+    @Test
+    public void refusesToReplayDeleteWhenTheResourceWasReplaced() throws InterruptedException {
+        storage = createStorage(true, false);
+        String path = "/dav/backups/replaced.bin";
+        byte[] replacement = new byte[]{9, 8, 7};
+        server.addFile(path, new byte[]{1, 2, 3});
+        server.failNext("DELETE", 503, false, "1");
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+
+        Thread deleteThread = new Thread(() -> {
+            try {
+                storage.delete("backups/replaced.bin");
+            } catch (Throwable throwable) {
+                failure.set(throwable);
+            }
+        });
+        deleteThread.start();
+
+        assertTrue(server.awaitTransientFailure(1, TimeUnit.SECONDS));
+        server.addFile(path, replacement);
+        deleteThread.join(5_000);
+
+        assertFalse(deleteThread.isAlive());
+        assertTrue(failure.get() instanceof StorageMethodException);
+        assertTrue(failure.get().getMessage().contains("resource changed"));
+        assertArrayEquals(replacement, server.files.get(path));
+        assertEquals(1, server.methodRequestCount("DELETE"));
+        server.assertHealthy();
+    }
+
+    @Test
+    public void refusesToReplayRenameWhenTheSourceWasReplaced() throws InterruptedException {
+        storage = createStorage(true, false);
+        String sourcePath = "/dav/backups/rename-source.bin";
+        String targetPath = "/dav/backups/rename-target.bin";
+        byte[] replacement = new byte[]{9, 8, 7};
+        server.addFile(sourcePath, new byte[]{1, 2, 3});
+        server.failNext("MOVE", 503, false, "1");
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+
+        Thread renameThread = new Thread(() -> {
+            try {
+                storage.renameFile("backups/rename-source.bin", "rename-target.bin");
+            } catch (Throwable throwable) {
+                failure.set(throwable);
+            }
+        });
+        renameThread.start();
+
+        assertTrue(server.awaitTransientFailure(1, TimeUnit.SECONDS));
+        server.addFile(sourcePath, replacement);
+        renameThread.join(5_000);
+
+        assertFalse(renameThread.isAlive());
+        assertTrue(failure.get() instanceof StorageMethodException);
+        assertTrue(failure.get().getMessage().contains("resource changed"));
+        assertArrayEquals(replacement, server.files.get(sourcePath));
+        assertFalse(server.files.containsKey(targetPath));
+        assertEquals(1, server.methodRequestCount("MOVE"));
+        server.assertHealthy();
+    }
+
+    @Test
+    public void refusesToConfirmRenameWhenTheTargetDoesNotMatch() throws InterruptedException {
+        storage = createStorage(true, false);
+        String sourcePath = "/dav/backups/mismatch-source.bin";
+        String targetPath = "/dav/backups/mismatch-target.bin";
+        server.addFile(sourcePath, new byte[]{1, 2, 3});
+        server.failNext("MOVE", 503, false, "1");
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+
+        Thread renameThread = new Thread(() -> {
+            try {
+                storage.renameFile("backups/mismatch-source.bin", "mismatch-target.bin");
+            } catch (Throwable throwable) {
+                failure.set(throwable);
+            }
+        });
+        renameThread.start();
+
+        assertTrue(server.awaitTransientFailure(1, TimeUnit.SECONDS));
+        server.remove(sourcePath);
+        server.addFile(targetPath, new byte[]{9, 8, 7});
+        renameThread.join(5_000);
+
+        assertFalse(renameThread.isAlive());
+        assertTrue(failure.get() instanceof StorageMethodException);
+        assertTrue(failure.get().getMessage().contains("could not prove"));
+        assertArrayEquals(new byte[]{9, 8, 7}, server.files.get(targetPath));
+        assertEquals(1, server.methodRequestCount("MOVE"));
+        server.assertHealthy();
+    }
+
+    @Test
+    public void destroyStopsAnOperationInRetryBackoff() throws InterruptedException {
+        storage = createStorage(true, false);
+        server.failNext("PROPFIND", 503, false, "60");
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+
+        Thread requestThread = new Thread(() -> {
+            try {
+                storage.exists("backups");
+            } catch (Throwable throwable) {
+                failure.set(throwable);
+            }
+        });
+        requestThread.start();
+
+        assertTrue(server.awaitTransientFailure(1, TimeUnit.SECONDS));
+        storage.destroy();
+        requestThread.join(1_000);
+
+        assertFalse(requestThread.isAlive());
+        assertTrue(failure.get() instanceof StorageConnectionException);
+        assertEquals(1, server.methodRequestCount("PROPFIND"));
+        server.assertHealthy();
+    }
+
+    @Test
+    public void refusesToReplayDeleteWithoutAStrongEtag() {
+        storage = createStorage(true, false);
+        String path = "/dav/backups/no-etag.bin";
+        byte[] content = new byte[]{1, 2, 3};
+        server.addFile(path, content);
+        server.etags.remove(path);
+        server.failNext("DELETE", 503, false);
+
+        StorageMethodException exception = assertThrows(StorageMethodException.class,
+                () -> storage.delete("backups/no-etag.bin"));
+
+        assertTrue(exception.getMessage().contains("did not provide a strong ETag"));
+        assertArrayEquals(content, server.files.get(path));
+        assertEquals(1, server.methodRequestCount("DELETE"));
         server.assertHealthy();
     }
 
@@ -272,6 +641,24 @@ public class WebDavStorageTest {
     }
 
     @Test
+    public void asynchronousDeleteConfirmationHonorsRetryAfterAndDeadline() {
+        server.addFile("/dav/backups/rate-limited-delete.bin", new byte[]{1});
+        server.asyncDelete = true;
+        server.deleteConfirmationRetryAfter.set("10");
+        storage = createStorage(server.baseUrl(), true, false, 10, 1);
+
+        long startedAt = System.nanoTime();
+        StorageMethodException exception = assertThrows(StorageMethodException.class,
+                () -> storage.delete("backups/rate-limited-delete.bin"));
+        long elapsedMillis = (System.nanoTime() - startedAt) / 1_000_000L;
+
+        assertTrue(exception.getMessage().contains("not confirmed within 1 seconds"));
+        assertTrue(elapsedMillis < 1_800, "Delete confirmation took %d ms".formatted(elapsedMillis));
+        assertEquals(2, server.methodRequestCount("PROPFIND"));
+        server.assertHealthy();
+    }
+
+    @Test
     public void rejectsUnknownFileSizesAndListingAFileAsADirectory() {
         server.addFile("/dav/backups/no-size.bin", new byte[]{1, 2, 3});
         server.omitContentLengthPath = "/dav/backups/no-size.bin";
@@ -349,14 +736,21 @@ public class WebDavStorageTest {
         private final String expectedAuthorization;
         private final Set<String> directories = ConcurrentHashMap.newKeySet();
         private final Map<String, byte[]> files = new ConcurrentHashMap<>();
+        private final Map<String, String> etags = new ConcurrentHashMap<>();
         private final Map<String, Integer> pendingDeletes = new ConcurrentHashMap<>();
         private final AtomicBoolean authorizationFailed = new AtomicBoolean();
         private final AtomicReference<Throwable> handlerFailure = new AtomicReference<>();
+        private final AtomicReference<String> deleteConfirmationRetryAfter = new AtomicReference<>();
         private final AtomicInteger requestCount = new AtomicInteger();
         private final AtomicInteger redirectCount = new AtomicInteger();
         private final AtomicInteger mutationRedirectCount = new AtomicInteger();
         private final List<String> rawPaths = new CopyOnWriteArrayList<>();
         private final List<String> additionalPropFindHrefs = new CopyOnWriteArrayList<>();
+        private final Map<String, AtomicInteger> methodRequestCounts = new ConcurrentHashMap<>();
+        private final AtomicInteger transientFailuresBeforeMutation = new AtomicInteger();
+        private final AtomicBoolean transientFailureAfterMutationPending = new AtomicBoolean();
+        private final AtomicBoolean truncateNextPropFindResponse = new AtomicBoolean();
+        private final AtomicLong etagSequence = new AtomicLong();
 
         private volatile boolean asyncDelete;
         private volatile boolean stallDownloads;
@@ -369,13 +763,19 @@ public class WebDavStorageTest {
         private volatile String omitContentLengthPath;
         private volatile String lastPutContentLength;
         private volatile String lastPutTransferEncoding;
+        private volatile String transientFailureMethod;
+        private volatile int transientFailureStatus;
+        private volatile String transientFailureRetryAfter;
+        private volatile String permanentFailureMethod;
+        private volatile int permanentFailureStatus;
+        private volatile CountDownLatch transientFailureObserved = new CountDownLatch(0);
 
         private InMemoryWebDavServer(String username, String password) throws IOException {
             server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
             expectedAuthorization = "Basic " + Base64.getEncoder().encodeToString(
                     "%s:%s".formatted(username, password).getBytes(StandardCharsets.UTF_8));
-            directories.add("/dav");
-            directories.add("/dav/backups");
+            addDirectory("/dav");
+            addDirectory("/dav/backups");
             server.createContext("/dav", this::handle);
         }
 
@@ -388,15 +788,64 @@ public class WebDavStorageTest {
         }
 
         private void addDirectory(String path) {
-            directories.add(normalize(path));
+            String normalizedPath = normalize(path);
+            directories.add(normalizedPath);
+            etags.put(normalizedPath, nextEtag());
         }
 
         private void addFile(String path, byte[] content) {
-            files.put(normalize(path), content.clone());
+            String normalizedPath = normalize(path);
+            files.put(normalizedPath, content.clone());
+            etags.put(normalizedPath, nextEtag());
+        }
+
+        private void failNext(String method, int statusCode, boolean afterMutation) {
+            failNext(method, statusCode, afterMutation, "0");
+        }
+
+        private void failNext(String method, int statusCode, boolean afterMutation, String retryAfter) {
+            configureTransientFailure(method, statusCode, retryAfter);
+            if (afterMutation) {
+                transientFailureAfterMutationPending.set(true);
+            } else {
+                transientFailuresBeforeMutation.set(1);
+            }
+        }
+
+        private void failBeforeThenAfterMutation(String method, int statusCode,
+                                                 int failuresBeforeMutation, String retryAfter) {
+            configureTransientFailure(method, statusCode, retryAfter);
+            transientFailuresBeforeMutation.set(failuresBeforeMutation);
+            transientFailureAfterMutationPending.set(true);
+        }
+
+        private void configureTransientFailure(String method, int statusCode, String retryAfter) {
+            transientFailureMethod = method;
+            transientFailureStatus = statusCode;
+            transientFailureRetryAfter = retryAfter;
+            transientFailureObserved = new CountDownLatch(1);
+            transientFailuresBeforeMutation.set(0);
+            transientFailureAfterMutationPending.set(false);
+        }
+
+        private boolean awaitTransientFailure(long timeout, TimeUnit unit) throws InterruptedException {
+            return transientFailureObserved.await(timeout, unit);
+        }
+
+        private void failAlways(String method, int statusCode) {
+            permanentFailureMethod = method;
+            permanentFailureStatus = statusCode;
+        }
+
+        private int methodRequestCount(String method) {
+            AtomicInteger count = methodRequestCounts.get(method);
+            return count == null ? 0 : count.get();
         }
 
         private void handle(HttpExchange exchange) throws IOException {
             requestCount.incrementAndGet();
+            String method = exchange.getRequestMethod();
+            methodRequestCounts.computeIfAbsent(method, ignored -> new AtomicInteger()).incrementAndGet();
             rawPaths.add(exchange.getRequestURI().getRawPath());
             try {
                 if (!expectedAuthorization.equals(exchange.getRequestHeaders().getFirst("Authorization"))) {
@@ -404,14 +853,27 @@ public class WebDavStorageTest {
                     send(exchange, 401, "Unauthorized");
                     return;
                 }
-                if (redirectLocation != null && "PROPFIND".equals(exchange.getRequestMethod())) {
+                if (permanentFailureMethod != null && permanentFailureMethod.equals(method)) {
+                    exchange.getRequestBody().readAllBytes();
+                    send(exchange, permanentFailureStatus, "Permanent failure");
+                    return;
+                }
+                Integer transientFailureBeforeMutation = takeTransientFailure(method, false);
+                if (transientFailureBeforeMutation != null) {
+                    exchange.getRequestBody().readAllBytes();
+                    addTransientFailureHeaders(exchange);
+                    send(exchange, transientFailureBeforeMutation, "Transient failure");
+                    transientFailureObserved.countDown();
+                    return;
+                }
+                if (redirectLocation != null && "PROPFIND".equals(method)) {
                     exchange.getResponseHeaders().set("Location", redirectLocation);
                     redirectCount.incrementAndGet();
                     send(exchange, 302, "");
                     return;
                 }
                 if (mutationRedirectMethod != null
-                        && mutationRedirectMethod.equals(exchange.getRequestMethod())
+                        && mutationRedirectMethod.equals(method)
                         && mutationRedirectCount.compareAndSet(0, 1)) {
                     exchange.getRequestBody().readAllBytes();
                     exchange.getResponseHeaders().set("Location", mutationRedirectLocation);
@@ -419,13 +881,17 @@ public class WebDavStorageTest {
                     return;
                 }
 
-                switch (exchange.getRequestMethod()) {
+                Integer transientFailureAfterMutationStatus = takeTransientFailure(method, true);
+                if (transientFailureAfterMutationStatus != null) {
+                    addTransientFailureHeaders(exchange);
+                }
+                switch (method) {
                     case "PROPFIND" -> propFind(exchange);
-                    case "MKCOL" -> makeCollection(exchange);
-                    case "PUT" -> put(exchange);
+                    case "MKCOL" -> makeCollection(exchange, transientFailureAfterMutationStatus);
+                    case "PUT" -> put(exchange, transientFailureAfterMutationStatus);
                     case "GET" -> get(exchange);
-                    case "MOVE" -> move(exchange);
-                    case "DELETE" -> delete(exchange);
+                    case "MOVE" -> move(exchange, transientFailureAfterMutationStatus);
+                    case "DELETE" -> delete(exchange, transientFailureAfterMutationStatus);
                     default -> send(exchange, 405, "Method Not Allowed");
                 }
             } catch (Throwable throwable) {
@@ -437,8 +903,43 @@ public class WebDavStorageTest {
             }
         }
 
+        private Integer takeTransientFailure(String method, boolean afterMutation) {
+            if (!method.equals(transientFailureMethod)) {
+                return null;
+            }
+            if (afterMutation) {
+                return transientFailureAfterMutationPending.compareAndSet(true, false)
+                        ? transientFailureStatus
+                        : null;
+            }
+            while (true) {
+                int remainingFailures = transientFailuresBeforeMutation.get();
+                if (remainingFailures <= 0) {
+                    return null;
+                }
+                if (transientFailuresBeforeMutation.compareAndSet(
+                        remainingFailures, remainingFailures - 1)) {
+                    return transientFailureStatus;
+                }
+            }
+        }
+
+        private void addTransientFailureHeaders(HttpExchange exchange) {
+            if (transientFailureRetryAfter != null) {
+                exchange.getResponseHeaders().set("Retry-After", transientFailureRetryAfter);
+            }
+        }
+
         private void propFind(HttpExchange exchange) throws IOException {
             String path = normalize(exchange.getRequestURI().getPath());
+            if (pendingDeletes.containsKey(path)) {
+                String retryAfter = deleteConfirmationRetryAfter.getAndSet(null);
+                if (retryAfter != null) {
+                    exchange.getResponseHeaders().set("Retry-After", retryAfter);
+                    send(exchange, 503, "Delete confirmation is temporarily unavailable");
+                    return;
+                }
+            }
             if (deleteConfirmationDelayMillis > 0 && pendingDeletes.containsKey(path)) {
                 try {
                     Thread.sleep(deleteConfirmationDelayMillis);
@@ -479,22 +980,32 @@ public class WebDavStorageTest {
                 Long contentLength = resource.equals(omitContentLengthPath)
                         ? null
                         : directory ? 0L : files.get(resource).length;
+                String etag = etags.get(resource);
                 String href = resource.equals(path) && propFindHrefOverride != null
                         ? propFindHrefOverride
                         : rawPath(resource) + (directory ? "/" : "");
-                appendPropFindResponse(xml, href, directory, contentLength);
+                appendPropFindResponse(xml, href, directory, contentLength, etag);
             }
             if (path.equals("/dav/backups")) {
                 for (String href : additionalPropFindHrefs) {
-                    appendPropFindResponse(xml, href, false, 1L);
+                    appendPropFindResponse(xml, href, false, 1L, "\"additional\"");
                 }
             }
             xml.append("</d:multistatus>");
             exchange.getResponseHeaders().set("Content-Type", "application/xml; charset=%s".formatted(propFindCharset.name()));
-            send(exchange, 207, xml.toString().getBytes(propFindCharset));
+            byte[] responseBytes = xml.toString().getBytes(propFindCharset);
+            if (truncateNextPropFindResponse.compareAndSet(true, false)) {
+                exchange.sendResponseHeaders(207, responseBytes.length + 128L);
+                exchange.getResponseBody().write(responseBytes, 0,
+                        Math.max(1, responseBytes.length / 2));
+                exchange.close();
+                return;
+            }
+            send(exchange, 207, responseBytes);
         }
 
-        private void appendPropFindResponse(StringBuilder xml, String href, boolean directory, Long contentLength) {
+        private void appendPropFindResponse(StringBuilder xml, String href, boolean directory,
+                                            Long contentLength, String etag) {
             xml.append("<d:response><d:href>")
                     .append(xmlEscape(href))
                     .append("</d:href>")
@@ -509,10 +1020,15 @@ public class WebDavStorageTest {
                         .append(contentLength)
                         .append("</d:getcontentlength>");
             }
+            if (etag != null) {
+                xml.append("<d:getetag>")
+                        .append(xmlEscape(etag))
+                        .append("</d:getetag>");
+            }
             xml.append("</d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>");
         }
 
-        private void makeCollection(HttpExchange exchange) throws IOException {
+        private void makeCollection(HttpExchange exchange, Integer responseStatusOverride) throws IOException {
             String path = normalize(exchange.getRequestURI().getPath());
             if (!directories.contains(parent(path))) {
                 send(exchange, 409, "Parent does not exist");
@@ -522,19 +1038,29 @@ public class WebDavStorageTest {
                 send(exchange, 405, "Already exists");
                 return;
             }
-            send(exchange, 201, "");
+            etags.put(path, nextEtag());
+            send(exchange, responseStatusOverride == null ? 201 : responseStatusOverride,
+                    responseStatusOverride == null ? "" : "Transient failure after mutation");
         }
 
-        private void put(HttpExchange exchange) throws IOException {
+        private void put(HttpExchange exchange, Integer responseStatusOverride) throws IOException {
             String path = normalize(exchange.getRequestURI().getPath());
             if (!directories.contains(parent(path))) {
                 send(exchange, 409, "Parent does not exist");
                 return;
             }
+            if (!matchesIfMatch(exchange, path)
+                    || ("*".equals(exchange.getRequestHeaders().getFirst("If-None-Match"))
+                    && (directories.contains(path) || files.containsKey(path)))) {
+                send(exchange, 412, "Upload precondition does not match");
+                return;
+            }
             lastPutContentLength = exchange.getRequestHeaders().getFirst("Content-Length");
             lastPutTransferEncoding = exchange.getRequestHeaders().getFirst("Transfer-Encoding");
             files.put(path, exchange.getRequestBody().readAllBytes());
-            send(exchange, 201, "");
+            etags.put(path, nextEtag());
+            send(exchange, responseStatusOverride == null ? 201 : responseStatusOverride,
+                    responseStatusOverride == null ? "" : "Transient failure after mutation");
         }
 
         private void get(HttpExchange exchange) throws IOException {
@@ -560,8 +1086,12 @@ public class WebDavStorageTest {
             exchange.close();
         }
 
-        private void move(HttpExchange exchange) throws IOException {
+        private void move(HttpExchange exchange, Integer responseStatusOverride) throws IOException {
             String source = normalize(exchange.getRequestURI().getPath());
+            if (!matchesIfMatch(exchange, source)) {
+                send(exchange, 412, "ETag does not match");
+                return;
+            }
             URI destinationUri = URI.create(exchange.getRequestHeaders().getFirst("Destination"));
             String destination = normalize(destinationUri.getPath());
             if ("F".equals(exchange.getRequestHeaders().getFirst("Overwrite"))
@@ -570,14 +1100,19 @@ public class WebDavStorageTest {
                 return;
             }
             if (files.containsKey(source)) {
+                String sourceEtag = etags.remove(source);
                 files.put(destination, files.remove(source));
+                if (sourceEtag != null) {
+                    etags.put(destination, sourceEtag);
+                }
             } else if (directories.contains(source)) {
                 moveDirectory(source, destination);
             } else {
                 send(exchange, 404, "Not Found");
                 return;
             }
-            send(exchange, 201, "");
+            send(exchange, responseStatusOverride == null ? 201 : responseStatusOverride,
+                    responseStatusOverride == null ? "" : "Transient failure after mutation");
         }
 
         private void moveDirectory(String source, String destination) {
@@ -589,22 +1124,42 @@ public class WebDavStorageTest {
                     .collect(ConcurrentHashMap::new, (map, entry) -> map.put(entry.getKey(), entry.getValue()), Map::putAll);
             sourceDirectories.forEach(directories::remove);
             sourceFiles.keySet().forEach(files::remove);
-            sourceDirectories.forEach(path -> directories.add(destination + path.substring(source.length())));
-            sourceFiles.forEach((path, content) -> files.put(destination + path.substring(source.length()), content));
+            sourceDirectories.forEach(path -> {
+                String sourceEtag = etags.remove(path);
+                String targetPath = destination + path.substring(source.length());
+                directories.add(targetPath);
+                if (sourceEtag != null) {
+                    etags.put(targetPath, sourceEtag);
+                }
+            });
+            sourceFiles.forEach((path, content) -> {
+                String sourceEtag = etags.remove(path);
+                String targetPath = destination + path.substring(source.length());
+                files.put(targetPath, content);
+                if (sourceEtag != null) {
+                    etags.put(targetPath, sourceEtag);
+                }
+            });
         }
 
-        private void delete(HttpExchange exchange) throws IOException {
+        private void delete(HttpExchange exchange, Integer responseStatusOverride) throws IOException {
             String path = normalize(exchange.getRequestURI().getPath());
+            if (!matchesIfMatch(exchange, path)) {
+                send(exchange, 412, "ETag does not match");
+                return;
+            }
             if (!directories.contains(path) && !files.containsKey(path)) {
                 send(exchange, 404, "Not Found");
                 return;
             }
             if (asyncDelete) {
                 pendingDeletes.put(path, 2);
-                send(exchange, 202, "");
+                send(exchange, responseStatusOverride == null ? 202 : responseStatusOverride,
+                        responseStatusOverride == null ? "" : "Transient failure after mutation");
             } else {
                 remove(path);
-                send(exchange, 204, "");
+                send(exchange, responseStatusOverride == null ? 204 : responseStatusOverride,
+                        responseStatusOverride == null ? "" : "Transient failure after mutation");
             }
         }
 
@@ -624,6 +1179,16 @@ public class WebDavStorageTest {
         private void remove(String path) {
             files.keySet().removeIf(resource -> resource.equals(path) || resource.startsWith(path + "/"));
             directories.removeIf(resource -> resource.equals(path) || resource.startsWith(path + "/"));
+            etags.keySet().removeIf(resource -> resource.equals(path) || resource.startsWith(path + "/"));
+        }
+
+        private boolean matchesIfMatch(HttpExchange exchange, String path) {
+            String ifMatch = exchange.getRequestHeaders().getFirst("If-Match");
+            return ifMatch == null || ifMatch.equals(etags.get(path));
+        }
+
+        private String nextEtag() {
+            return "\"etag-%d\"".formatted(etagSequence.incrementAndGet());
         }
 
         private String parent(String path) {

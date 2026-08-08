@@ -8,6 +8,7 @@ import ru.dvdishka.backuper.backend.config.WebDavConfig;
 import ru.dvdishka.backuper.backend.storage.exception.StorageConnectionException;
 import ru.dvdishka.backuper.backend.storage.exception.StorageLimitException;
 import ru.dvdishka.backuper.backend.storage.exception.StorageMethodException;
+import ru.dvdishka.backuper.backend.storage.util.Retriable;
 import ru.dvdishka.backuper.backend.storage.util.StorageProgressInputStream;
 import ru.dvdishka.backuper.backend.storage.util.StorageProgressListener;
 
@@ -24,6 +25,7 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
@@ -38,6 +40,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -54,11 +57,13 @@ public class WebDavStorage implements PathStorage {
               <d:prop>
                 <d:resourcetype/>
                 <d:getcontentlength/>
+                <d:getetag/>
               </d:prop>
             </d:propfind>
             """;
     private static final int MAX_REDIRECTS = 5;
     private static final int MAX_ERROR_BODY_BYTES = 512;
+    private static final int CONTENT_COMPARISON_BUFFER_SIZE = 8192;
     private static final long DELETE_CONFIRMATION_INTERVAL_MILLIS = 100L;
     private static final long NO_DEADLINE = Long.MIN_VALUE;
 
@@ -74,6 +79,34 @@ public class WebDavStorage implements PathStorage {
     private volatile HttpClient httpClient;
     private volatile ScheduledExecutorService responseTimeoutExecutor;
     private volatile boolean destroyed;
+    private final CountDownLatch destroyedSignal = new CountDownLatch(1);
+
+    private final Retriable.RetriableExceptionHandler retriableExceptionHandler = new Retriable.RetriableExceptionHandler() {
+
+        @Override
+        public Retriable.RetryDecision decide(Exception e, Retriable.RetryContext context) {
+            if (!destroyed && e instanceof TransientWebDavException transientException) {
+                return transientException.retryDecision(context);
+            }
+            return Retriable.RetryDecision.stop();
+        }
+
+        @Override
+        public void handleRegularException(Exception e) {
+            // HTTP and transport details are already recorded by WebDavProtocolLogger.
+        }
+
+        @Override
+        public RuntimeException handleFinalException(Exception e) {
+            if (e instanceof InterruptedException) {
+                return new StorageConnectionException(WebDavStorage.this, "WebDAV retry was interrupted", e);
+            }
+            if (e instanceof RuntimeException runtimeException) {
+                return runtimeException;
+            }
+            return new StorageMethodException(WebDavStorage.this, "Unexpected WebDAV operation failure", e);
+        }
+    };
 
     public WebDavStorage(WebDavConfig config) {
         this.config = config;
@@ -124,7 +157,7 @@ public class WebDavStorage implements PathStorage {
     @Override
     public boolean checkConnection(CommandSender sender) {
         try {
-            if (!stat(config.getBackupsFolder()).directory()) {
+            if (!retryWebDav(() -> statOnce(config.getBackupsFolder())).directory()) {
                 throw new StorageMethodException(this,
                         "WebDAV backups folder is not a directory: %s".formatted(config.getBackupsFolder()));
             }
@@ -138,6 +171,10 @@ public class WebDavStorage implements PathStorage {
 
     @Override
     public List<String> ls(String path) throws StorageMethodException, StorageConnectionException {
+        return retryWebDav(() -> lsOnce(path));
+    }
+
+    private List<String> lsOnce(String path) {
         PropFindResult result = propFind(path, true, "1", false, "list directory");
         WebDavResource requestedResource = requestedResource(result)
                 .orElseThrow(() -> new StorageMethodException(this,
@@ -156,10 +193,14 @@ public class WebDavStorage implements PathStorage {
 
     @Override
     public boolean exists(String path) throws StorageMethodException, StorageConnectionException {
-        return exists(path, NO_DEADLINE);
+        return retryWebDav(() -> existsOnce(path, NO_DEADLINE));
     }
 
-    private boolean exists(String path, long deadlineNanos) throws StorageMethodException, StorageConnectionException {
+    private boolean existsOnce(String path) {
+        return existsOnce(path, NO_DEADLINE);
+    }
+
+    private boolean existsOnce(String path, long deadlineNanos) {
         PropFindResult result = propFind(path, false, "0", true, "check resource existence", deadlineNanos);
         if (result.statusCode() == 404) {
             return false;
@@ -172,12 +213,16 @@ public class WebDavStorage implements PathStorage {
 
     @Override
     public boolean isFile(String path) throws StorageMethodException, StorageConnectionException {
-        return !stat(path).directory();
+        return retryWebDav(() -> !statOnce(path).directory());
     }
 
     @Override
     public long getDirByteSize(String path) throws StorageMethodException, StorageConnectionException {
-        WebDavResource resource = stat(path);
+        return retryWebDav(() -> getDirByteSizeOnce(path));
+    }
+
+    private long getDirByteSizeOnce(String path) {
+        WebDavResource resource = statOnce(path);
         if (!resource.directory()) {
             if (resource.contentLength() == null) {
                 throw new StorageMethodException(this,
@@ -187,9 +232,9 @@ public class WebDavStorage implements PathStorage {
         }
 
         long size = 0;
-        for (String child : ls(path)) {
+        for (String child : lsOnce(path)) {
             try {
-                size = Math.addExact(size, getDirByteSize(resolve(path, child)));
+                size = Math.addExact(size, getDirByteSizeOnce(resolve(path, child)));
             } catch (ArithmeticException e) {
                 throw new StorageMethodException(this, "WebDAV directory size exceeds the supported range: %s".formatted(path), e);
             }
@@ -201,12 +246,34 @@ public class WebDavStorage implements PathStorage {
     public void createDir(String newDirName, String parentDir) throws StorageLimitException, StorageMethodException, StorageConnectionException {
         String path = resolve(parentDir, newDirName);
         URI uri = resourceUri(path, true);
-        executeFollowingRedirects(uri, redirectUri -> newRequest(redirectUri)
-                .method("MKCOL", HttpRequest.BodyPublishers.noBody())
-                .build(), "create directory", true, 200, 201, 204);
-        if (!stat(path).directory()) {
-            throw new StorageMethodException(this, "Directory creation verification failed: %s".formatted(path));
-        }
+        AtomicBoolean creationAttempted = new AtomicBoolean();
+
+        retryWebDav(() -> {
+            if (creationAttempted.get() && createdDirectoryExistsOnce(path)) {
+                return null;
+            }
+
+            creationAttempted.set(true);
+            try {
+                executeFollowingRedirects(uri, redirectUri -> newRequest(redirectUri)
+                        .method("MKCOL", HttpRequest.BodyPublishers.noBody())
+                        .build(), "create directory", true, 200, 201, 204);
+                if (!statOnce(path).directory()) {
+                    throw new StorageMethodException(this,
+                            "Directory creation verification failed: %s".formatted(path));
+                }
+                return null;
+            } catch (TransientWebDavException mutationFailure) {
+                try {
+                    if (createdDirectoryExistsOnce(path)) {
+                        return null;
+                    }
+                } catch (TransientWebDavException recoveryFailure) {
+                    mutationFailure.addSuppressed(recoveryFailure);
+                }
+                throw mutationFailure;
+            }
+        });
     }
 
     @Override
@@ -216,39 +283,99 @@ public class WebDavStorage implements PathStorage {
         URI uri = resourceUri(path, false);
         Path bufferedUpload = null;
         try {
-            HttpRequest.BodyPublisher body;
             if (config.isBufferUploadsToDisk()) {
-                bufferedUpload = Files.createTempFile("backuper-webdav-", ".upload");
-                Files.copy(sourceStream, bufferedUpload, StandardCopyOption.REPLACE_EXISTING);
-                body = fixedLengthBodyPublisher(bufferedUpload, progressListener);
-            } else {
-                body = streamingBodyPublisher(sourceStream, progressListener);
-            }
+                Path uploadPath = Files.createTempFile("backuper-webdav-", ".upload");
+                bufferedUpload = uploadPath;
+                Files.copy(sourceStream, uploadPath, StandardCopyOption.REPLACE_EXISTING);
+                long contentLength = Files.size(uploadPath);
+                StorageProgressListener cappedProgressListener = new CappedProgressListener(progressListener, contentLength);
+                Optional<WebDavResource> originalUploadResource = retryWebDav(() -> resourceIfExistsOnce(path));
+                if (originalUploadResource.isPresent() && originalUploadResource.get().directory()) {
+                    throw new StorageMethodException(this,
+                            "Cannot upload a file over a WebDAV directory: %s".formatted(path));
+                }
+                boolean targetInitiallyAbsent = originalUploadResource.isEmpty();
+                String originalEtag = originalUploadResource.map(this::strongEtag).orElse(null);
+                AtomicBoolean uploadAttempted = new AtomicBoolean();
 
-            HttpRequest.BodyPublisher requestBody = body;
-            executeFollowingRedirects(uri, redirectUri -> newRequest(redirectUri)
-                    .header("Content-Type", "application/octet-stream")
-                    .PUT(requestBody)
-                    .build(), "upload file", config.isBufferUploadsToDisk(), 200, 201, 204);
+                retryWebDav(() -> {
+                    if (uploadAttempted.get()
+                            && uploadedFileMatchesOnce(path, uploadPath, contentLength)) {
+                        return null;
+                    }
+                    uploadAttempted.set(true);
+                    try {
+                        uploadOnce(uri,
+                                fixedLengthBodyPublisher(uploadPath, contentLength, cappedProgressListener),
+                                true, targetInitiallyAbsent, originalEtag);
+                        verifyUploadedFileOnce(path, contentLength);
+                        return null;
+                    } catch (TransientWebDavException mutationFailure) {
+                        try {
+                            if (uploadedFileMatchesOnce(path, uploadPath, contentLength)) {
+                                return null;
+                            }
+                        } catch (TransientWebDavException recoveryFailure) {
+                            mutationFailure.addSuppressed(recoveryFailure);
+                        }
+                        throw mutationFailure;
+                    }
+                });
+            } else {
+                uploadOnce(uri, streamingBodyPublisher(sourceStream, progressListener),
+                        false, false, null);
+                retryWebDav(() -> {
+                    verifyUploadedFileOnce(path, null);
+                    return null;
+                });
+            }
         } catch (IOException e) {
             throw new StorageMethodException(this, "Failed to buffer WebDAV upload", e);
         } finally {
             deleteTemporaryUpload(bufferedUpload);
         }
+    }
 
-        if (stat(path).directory()) {
+    private void uploadOnce(URI uri, HttpRequest.BodyPublisher body, boolean replayable,
+                            boolean targetInitiallyAbsent, String originalEtag) {
+        executeFollowingRedirects(uri, redirectUri -> {
+            HttpRequest.Builder builder = newRequest(redirectUri)
+                    .header("Content-Type", "application/octet-stream");
+            if (replayable) {
+                if (targetInitiallyAbsent) {
+                    builder.header("If-None-Match", "*");
+                } else if (originalEtag != null) {
+                    builder.header("If-Match", originalEtag);
+                }
+            }
+            return builder.PUT(body).build();
+        }, "upload file", replayable, 200, 201, 204);
+    }
+
+    private void verifyUploadedFileOnce(String path, Long expectedContentLength) {
+        WebDavResource uploadedResource = statOnce(path);
+        if (uploadedResource.directory()) {
             throw new StorageMethodException(this, "Upload verification failed: %s".formatted(path));
+        }
+        if (expectedContentLength != null && uploadedResource.contentLength() != null
+                && !expectedContentLength.equals(uploadedResource.contentLength())) {
+            throw new StorageMethodException(this,
+                    "Upload verification found an unexpected content length for: %s".formatted(path));
         }
     }
 
     @Override
     public InputStream downloadFile(String sourcePath, StorageProgressListener progressListener) throws StorageMethodException, StorageConnectionException {
+        return retryWebDav(() -> downloadFileOnce(sourcePath, progressListener));
+    }
+
+    private InputStream downloadFileOnce(String sourcePath, StorageProgressListener progressListener) {
         URI uri = resourceUri(sourcePath, false);
         HttpResponse<InputStream> response = sendFollowingRedirects(uri,
                 redirectUri -> newRequest(redirectUri).GET().build(), "download file");
         if (response.statusCode() != 200) {
             try (InputStream body = timedResponseBody(response.body(), "download file")) {
-                throw statusException("download file", response.statusCode(), body);
+                throw statusException("download file", response.statusCode(), response.headers(), body);
             } catch (IOException e) {
                 throw connectionException("download file", e);
             }
@@ -263,35 +390,99 @@ public class WebDavStorage implements PathStorage {
 
     @Override
     public void delete(String path) throws StorageMethodException, StorageConnectionException {
-        boolean directory = stat(path).directory();
+        WebDavResource originalResource = retryWebDav(() -> statOnce(path));
+        boolean directory = originalResource.directory();
+        String originalEtag = strongEtag(originalResource);
         URI uri = resourceUri(path, directory);
-        int statusCode = executeFollowingRedirects(uri, redirectUri -> newRequest(redirectUri)
-                .method("DELETE", HttpRequest.BodyPublishers.noBody())
-                .build(), "delete resource", true, 200, 202, 204);
+        AtomicBoolean deletionAttempted = new AtomicBoolean();
 
-        if (statusCode == 202) {
+        DeleteResult result = retryWebDav(() -> {
+            if (deletionAttempted.get() && deletedResourceIsAbsentOnce(path, originalEtag)) {
+                return DeleteResult.CONFIRMED;
+            }
+
+            deletionAttempted.set(true);
+            try {
+                int statusCode = executeFollowingRedirects(uri, redirectUri -> {
+                    HttpRequest.Builder builder = newRequest(redirectUri);
+                    if (originalEtag != null) {
+                        builder.header("If-Match", originalEtag);
+                    }
+                    return builder.method("DELETE", HttpRequest.BodyPublishers.noBody()).build();
+                }, "delete resource", true, 200, 202, 204);
+
+                if (statusCode == 202) {
+                    return DeleteResult.ACCEPTED;
+                }
+                if (existsOnce(path)) {
+                    throw new StorageMethodException(this,
+                            "Delete verification failed: %s".formatted(path));
+                }
+                return DeleteResult.CONFIRMED;
+            } catch (TransientWebDavException mutationFailure) {
+                try {
+                    if (deletedResourceIsAbsentOnce(path, originalEtag)) {
+                        return DeleteResult.CONFIRMED;
+                    }
+                } catch (TransientWebDavException recoveryFailure) {
+                    mutationFailure.addSuppressed(recoveryFailure);
+                }
+                throw mutationFailure;
+            }
+        });
+
+        if (result == DeleteResult.ACCEPTED) {
             if (config.getDeleteConfirmationTimeoutSeconds() > 0) {
                 waitUntilDeleted(path, Duration.ofSeconds(config.getDeleteConfirmationTimeoutSeconds()));
             }
-        } else if (exists(path)) {
-            throw new StorageMethodException(this, "Delete verification failed: %s".formatted(path));
         }
     }
 
     @Override
     public void renameFile(String path, String newFileName) throws StorageMethodException, StorageConnectionException {
-        boolean directory = stat(path).directory();
+        WebDavResource originalResource = retryWebDav(() -> statOnce(path));
+        boolean directory = originalResource.directory();
+        String originalEtag = strongEtag(originalResource);
         String targetPath = resolve(getParentPath(path), newFileName);
         URI sourceUri = resourceUri(path, directory);
         URI targetUri = resourceUri(targetPath, directory);
-        executeFollowingRedirects(sourceUri, redirectUri -> newRequest(redirectUri)
-                .header("Destination", targetUri.toASCIIString())
-                .header("Overwrite", "F")
-                .method("MOVE", HttpRequest.BodyPublishers.noBody())
-                .build(), "rename resource", true, 201, 204);
-        if (!exists(targetPath) || exists(path)) {
-            throw new StorageMethodException(this, "Rename verification failed from \"%s\" to \"%s\"".formatted(path, targetPath));
-        }
+        AtomicBoolean renameAttempted = new AtomicBoolean();
+
+        retryWebDav(() -> {
+            if (renameAttempted.get()
+                    && movedResourceIsConfirmedOnce(path, targetPath, originalResource, originalEtag)) {
+                return null;
+            }
+
+            renameAttempted.set(true);
+            try {
+                executeFollowingRedirects(sourceUri, redirectUri -> {
+                    HttpRequest.Builder builder = newRequest(redirectUri)
+                            .header("Destination", targetUri.toASCIIString())
+                            .header("Overwrite", "F");
+                    if (originalEtag != null) {
+                        builder.header("If-Match", originalEtag);
+                    }
+                    return builder.method("MOVE", HttpRequest.BodyPublishers.noBody()).build();
+                }, "rename resource", true, 201, 204);
+                Optional<WebDavResource> movedResource = resourceIfExistsOnce(targetPath);
+                if (movedResource.isEmpty() || existsOnce(path)) {
+                    throw new StorageMethodException(this,
+                            "Rename verification failed from \"%s\" to \"%s\"".formatted(path, targetPath));
+                }
+                validateMovedTarget(path, targetPath, originalResource, movedResource.get());
+                return null;
+            } catch (TransientWebDavException mutationFailure) {
+                try {
+                    if (movedResourceIsConfirmedOnce(path, targetPath, originalResource, originalEtag)) {
+                        return null;
+                    }
+                } catch (TransientWebDavException recoveryFailure) {
+                    mutationFailure.addSuppressed(recoveryFailure);
+                }
+                throw mutationFailure;
+            }
+        });
     }
 
     @Override
@@ -302,6 +493,7 @@ public class WebDavStorage implements PathStorage {
     @Override
     public synchronized void destroy() {
         destroyed = true;
+        destroyedSignal.countDown();
         if (responseTimeoutExecutor != null) {
             responseTimeoutExecutor.shutdownNow();
         }
@@ -313,13 +505,194 @@ public class WebDavStorage implements PathStorage {
         }
     }
 
-    private WebDavResource stat(String path) {
+    private <T> T retryWebDav(Retriable<T> operation) {
+        return operation.retry(retriableExceptionHandler, Retriable.DEFAULT_RETRIES,
+                Retriable.DEFAULT_RETRY_DELAY_MILLIS, this::awaitRetry);
+    }
+
+    private void awaitRetry(Duration delay) throws InterruptedException {
+        if (destroyedSignal.await(delay.toMillis(), TimeUnit.MILLISECONDS)) {
+            throw new StorageConnectionException(this, "WebDAV storage has been destroyed");
+        }
+    }
+
+    private WebDavResource statOnce(String path) {
         PropFindResult result = propFind(path, false, "0", true, "read resource metadata");
         if (result.statusCode() == 404) {
             throw statusException("read resource metadata", 404, InputStream.nullInputStream());
         }
         return requestedResource(result)
                 .orElseThrow(() -> new StorageMethodException(this, "WebDAV server returned no resource metadata for \"%s\"".formatted(path)));
+    }
+
+    private Optional<WebDavResource> resourceIfExistsOnce(String path) {
+        PropFindResult result = propFind(path, false, "0", true, "read resource metadata");
+        if (result.statusCode() == 404) {
+            return Optional.empty();
+        }
+        return Optional.of(requestedResource(result)
+                .orElseThrow(() -> new StorageMethodException(this,
+                        "WebDAV server returned no resource metadata for \"%s\"".formatted(path))));
+    }
+
+    private boolean createdDirectoryExistsOnce(String path) {
+        Optional<WebDavResource> existingResource = resourceIfExistsOnce(path);
+        if (existingResource.isEmpty()) {
+            return false;
+        }
+        if (!existingResource.get().directory()) {
+            throw new StorageMethodException(this,
+                    "Directory creation left a non-directory resource at: %s".formatted(path));
+        }
+        return true;
+    }
+
+    private boolean uploadedFileMatchesOnce(String path, Path expectedContent,
+                                            long expectedContentLength) {
+        Optional<WebDavResource> uploadedResource = resourceIfExistsOnce(path);
+        if (uploadedResource.isEmpty()) {
+            return false;
+        }
+        if (uploadedResource.get().directory()) {
+            throw new StorageMethodException(this,
+                    "Upload recovery found a directory instead of a file at: %s".formatted(path));
+        }
+        if (uploadedResource.get().contentLength() == null
+                || uploadedResource.get().contentLength() != expectedContentLength) {
+            if (uploadedResource.get().contentLength() != null) {
+                return false;
+            }
+        }
+
+        String action = "verify ambiguous upload content";
+        URI uri = resourceUri(path, false);
+        HttpResponse<InputStream> response = sendFollowingRedirects(uri,
+                redirectUri -> newRequest(redirectUri).GET().build(), action);
+        try (InputStream remoteContent = timedResponseBody(response.body(), action)) {
+            if (response.statusCode() == 404) {
+                return false;
+            }
+            requireStatus(action, response, remoteContent, 200);
+            return contentMatchesBufferedUpload(expectedContent, remoteContent);
+        } catch (IOException e) {
+            throw connectionException(action, e);
+        }
+    }
+
+    private boolean contentMatchesBufferedUpload(Path expectedContent, InputStream remoteContent) {
+        try (InputStream expectedInput = Files.newInputStream(expectedContent)) {
+            byte[] expectedBuffer = new byte[CONTENT_COMPARISON_BUFFER_SIZE];
+            byte[] remoteBuffer = new byte[CONTENT_COMPARISON_BUFFER_SIZE];
+            while (true) {
+                int expectedBytes;
+                try {
+                    expectedBytes = expectedInput.readNBytes(
+                            expectedBuffer, 0, expectedBuffer.length);
+                } catch (IOException e) {
+                    throw new StorageMethodException(this,
+                            "Failed to read buffered WebDAV upload during verification", e);
+                }
+
+                if (expectedBytes == 0) {
+                    try {
+                        return remoteContent.read() == -1;
+                    } catch (IOException e) {
+                        throw connectionException("verify ambiguous upload content", e);
+                    }
+                }
+
+                int remoteBytes;
+                try {
+                    remoteBytes = remoteContent.readNBytes(remoteBuffer, 0, expectedBytes);
+                } catch (IOException e) {
+                    throw connectionException("verify ambiguous upload content", e);
+                }
+                if (remoteBytes != expectedBytes) {
+                    return false;
+                }
+                for (int index = 0; index < expectedBytes; index++) {
+                    if (expectedBuffer[index] != remoteBuffer[index]) {
+                        return false;
+                    }
+                }
+            }
+        } catch (IOException e) {
+            throw new StorageMethodException(this,
+                    "Failed to open buffered WebDAV upload during verification", e);
+        }
+    }
+
+    private boolean deletedResourceIsAbsentOnce(String path, String originalEtag) {
+        Optional<WebDavResource> currentResource = resourceIfExistsOnce(path);
+        if (currentResource.isEmpty()) {
+            return true;
+        }
+        requireSameResourceForRetry("delete", path, originalEtag, currentResource.get());
+        return false;
+    }
+
+    private boolean movedResourceIsConfirmedOnce(String sourcePath, String targetPath,
+                                                  WebDavResource originalResource, String originalEtag) {
+        Optional<WebDavResource> sourceResource = resourceIfExistsOnce(sourcePath);
+        Optional<WebDavResource> targetResource = resourceIfExistsOnce(targetPath);
+        if (sourceResource.isEmpty() && targetResource.isPresent()) {
+            validateMovedTarget(sourcePath, targetPath, originalResource, targetResource.get());
+            String targetEtag = strongEtag(targetResource.get());
+            if (originalEtag == null || !originalEtag.equals(targetEtag)) {
+                throw new StorageMethodException(this,
+                        "Rename recovery could not prove that target \"%s\" is the original resource"
+                                .formatted(targetPath));
+            }
+            return true;
+        }
+        if (sourceResource.isEmpty()) {
+            throw new StorageMethodException(this,
+                    "Rename recovery could not find either source or target resource");
+        }
+        if (targetResource.isPresent()) {
+            throw new StorageMethodException(this,
+                    "Rename recovery found both source and target resources; refusing to overwrite the target");
+        }
+        requireSameResourceForRetry("rename", sourcePath, originalEtag, sourceResource.get());
+        return false;
+    }
+
+    private String strongEtag(WebDavResource resource) {
+        String etag = resource.etag();
+        if (etag == null || etag.length() < 2 || etag.startsWith("W/")
+                || etag.charAt(0) != '"' || etag.charAt(etag.length() - 1) != '"') {
+            return null;
+        }
+        return etag;
+    }
+
+    private void requireSameResourceForRetry(String action, String path, String expectedEtag,
+                                             WebDavResource currentResource) {
+        if (expectedEtag == null) {
+            throw new StorageMethodException(this,
+                    "Cannot safely retry WebDAV %s because the server did not provide a strong ETag for: %s"
+                            .formatted(action, path));
+        }
+        if (!expectedEtag.equals(strongEtag(currentResource))) {
+            throw new StorageMethodException(this,
+                    "Cannot safely retry WebDAV %s because the resource changed: %s".formatted(action, path));
+        }
+    }
+
+    private void validateMovedTarget(String sourcePath, String targetPath, WebDavResource originalResource,
+                                     WebDavResource targetResource) {
+        if (originalResource.directory() != targetResource.directory()) {
+            throw new StorageMethodException(this,
+                    "Rename verification found a different resource type at target \"%s\""
+                            .formatted(targetPath));
+        }
+        if (!originalResource.directory() && originalResource.contentLength() != null
+                && targetResource.contentLength() != null
+                && !originalResource.contentLength().equals(targetResource.contentLength())) {
+            throw new StorageMethodException(this,
+                    "Rename verification found a different content length from \"%s\" to \"%s\""
+                            .formatted(sourcePath, targetPath));
+        }
     }
 
     private Optional<WebDavResource> requestedResource(PropFindResult result) {
@@ -349,7 +722,7 @@ public class WebDavStorage implements PathStorage {
             if (response.statusCode() == 404) {
                 return new PropFindResult(responseUri, 404, List.of());
             }
-            requireStatus(action, response.statusCode(), body, 200, 207);
+            requireStatus(action, response, body, 200, 207);
             return new PropFindResult(responseUri, response.statusCode(), parseResources(body, responseUri, action));
         } catch (IOException e) {
             throw connectionException(action, e);
@@ -457,23 +830,30 @@ public class WebDavStorage implements PathStorage {
         HttpResponse<InputStream> response = sendFollowingRedirects(
                 initialUri, requestFactory, action, replayable, true);
         try (InputStream body = timedResponseBody(response.body(), action)) {
-            requireStatus(action, response.statusCode(), body, expectedStatuses);
+            requireStatus(action, response, body, expectedStatuses);
             return response.statusCode();
         } catch (IOException e) {
             throw connectionException(action, e);
         }
     }
 
-    private void requireStatus(String action, int statusCode, InputStream responseBody, int... expectedStatuses) {
+    private void requireStatus(String action, HttpResponse<?> response, InputStream responseBody,
+                               int... expectedStatuses) {
+        int statusCode = response.statusCode();
         for (int expectedStatus : expectedStatuses) {
             if (statusCode == expectedStatus) {
                 return;
             }
         }
-        throw statusException(action, statusCode, responseBody);
+        throw statusException(action, statusCode, response.headers(), responseBody);
     }
 
     private RuntimeException statusException(String action, int statusCode, InputStream responseBody) {
+        return statusException(action, statusCode, null, responseBody);
+    }
+
+    private RuntimeException statusException(String action, int statusCode, HttpHeaders responseHeaders,
+                                             InputStream responseBody) {
         String details = readResponseDetails(responseBody);
         String message = "Failed to %s. WebDAV server returned HTTP %d%s".formatted(
                 action, statusCode, details.isEmpty() ? "" : ": " + details);
@@ -483,8 +863,11 @@ public class WebDavStorage implements PathStorage {
         if (statusCode == 507) {
             return new StorageLimitException(this, message);
         }
-        if (statusCode == 408 || statusCode == 429 || statusCode >= 500) {
-            return new StorageConnectionException(this, message);
+        if (WebDavRetryPolicy.isTransientStatus(statusCode)) {
+            Retriable.RetryDecision retryDecision = responseHeaders == null ? null
+                    : WebDavRetryPolicy.retryDecision(responseHeaders,
+                            Duration.ofMillis(Retriable.DEFAULT_RETRY_DELAY_MILLIS));
+            return new TransientWebDavException(this, message, retryDecision);
         }
         return new StorageMethodException(this, message);
     }
@@ -506,7 +889,12 @@ public class WebDavStorage implements PathStorage {
                 : exception instanceof ConnectException ? "connection failed"
                 : exception instanceof UnknownHostException ? "host could not be resolved"
                 : "request failed";
-        return new StorageConnectionException(this, "Failed to %s: WebDAV %s".formatted(action, reason), exception);
+        String message = "Failed to %s: WebDAV %s".formatted(action, reason);
+        if (destroyed || exception instanceof InterruptedException
+                || WebDavRetryPolicy.isPermanentTransportFailure(exception)) {
+            return new StorageConnectionException(this, message, exception);
+        }
+        return new TransientWebDavException(this, message, exception);
     }
 
     private URI resourceUri(String path, boolean directory) {
@@ -646,8 +1034,8 @@ public class WebDavStorage implements PathStorage {
         } catch (XMLStreamException e) {
             Throwable cause = e;
             while (cause != null) {
-                if (cause instanceof HttpTimeoutException timeoutException) {
-                    throw connectionException(action, timeoutException);
+                if (cause instanceof IOException ioException) {
+                    throw connectionException(action, ioException);
                 }
                 cause = cause.getCause();
             }
@@ -693,7 +1081,8 @@ public class WebDavStorage implements PathStorage {
         }
         URI resourceUri = resolveResourceHref(requestUri, href);
         String resourcePath = resourceUri.getPath();
-        return new WebDavResource(resourcePath, fileName(resourcePath), properties.directory(), properties.contentLength());
+        return new WebDavResource(resourcePath, fileName(resourcePath), properties.directory(),
+                properties.contentLength(), properties.etag());
     }
 
     private WebDavPropStat parsePropStat(XMLStreamReader reader) throws XMLStreamException {
@@ -716,6 +1105,7 @@ public class WebDavStorage implements PathStorage {
     private WebDavProperties parseProperties(XMLStreamReader reader) throws XMLStreamException {
         boolean directory = false;
         Long contentLength = null;
+        String etag = null;
         while (reader.hasNext()) {
             int event = reader.next();
             if (event == XMLStreamConstants.START_ELEMENT) {
@@ -723,12 +1113,15 @@ public class WebDavStorage implements PathStorage {
                     directory = true;
                 } else if ("getcontentlength".equals(reader.getLocalName())) {
                     contentLength = parseContentLength(reader.getElementText().strip());
+                } else if ("getetag".equals(reader.getLocalName())) {
+                    String value = reader.getElementText().strip();
+                    etag = value.isEmpty() ? null : value;
                 }
             } else if (event == XMLStreamConstants.END_ELEMENT && "prop".equals(reader.getLocalName())) {
                 break;
             }
         }
-        return new WebDavProperties(directory, contentLength);
+        return new WebDavProperties(directory, contentLength, etag);
     }
 
     private WebDavProperties mergeProperties(WebDavProperties first, WebDavProperties second) {
@@ -739,7 +1132,8 @@ public class WebDavStorage implements PathStorage {
             return first;
         }
         Long contentLength = second.contentLength() == null ? first.contentLength() : second.contentLength();
-        return new WebDavProperties(first.directory() || second.directory(), contentLength);
+        String etag = second.etag() == null ? first.etag() : second.etag();
+        return new WebDavProperties(first.directory() || second.directory(), contentLength, etag);
     }
 
     private void setXmlPropertyIfSupported(XMLInputFactory factory, String property, Object value) {
@@ -768,15 +1162,14 @@ public class WebDavStorage implements PathStorage {
         }
     }
 
-    private HttpRequest.BodyPublisher fixedLengthBodyPublisher(Path path, StorageProgressListener progressListener) throws IOException {
-        long contentLength = Files.size(path);
+    private HttpRequest.BodyPublisher fixedLengthBodyPublisher(Path path, long contentLength,
+                                                               StorageProgressListener progressListener) {
         if (contentLength == 0) {
             return HttpRequest.BodyPublishers.noBody();
         }
-        StorageProgressListener cappedProgressListener = new CappedProgressListener(progressListener, contentLength);
         HttpRequest.BodyPublisher body = HttpRequest.BodyPublishers.ofInputStream(() -> {
             try {
-                return new StorageProgressInputStream(Files.newInputStream(path), cappedProgressListener);
+                return new StorageProgressInputStream(Files.newInputStream(path), progressListener);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -808,28 +1201,51 @@ public class WebDavStorage implements PathStorage {
 
     private void waitUntilDeleted(String path, Duration timeout) {
         long deadline = System.nanoTime() + timeout.toNanos();
+        int transientFailures = 0;
+        Duration confirmationInterval = Duration.ofMillis(DELETE_CONFIRMATION_INTERVAL_MILLIS);
         while (true) {
             throwIfDeleteConfirmationTimedOut(path, timeout, deadline);
             try {
-                if (!exists(path, deadline)) {
+                if (!existsOnce(path, deadline)) {
                     return;
                 }
             } catch (StorageConnectionException e) {
                 if (deadline - System.nanoTime() <= 0) {
                     throw deleteConfirmationTimeout(path, timeout);
                 }
-                throw e;
+                if (!(e instanceof TransientWebDavException)) {
+                    throw e;
+                }
+
+                Retriable.RetryDecision decision = retriableExceptionHandler.decide(e,
+                        new Retriable.RetryContext(++transientFailures, Integer.MAX_VALUE,
+                                Duration.ofMillis(Retriable.DEFAULT_RETRY_DELAY_MILLIS)));
+                if (!decision.retry()) {
+                    throw e;
+                }
+                Duration retryDelay = decision.delay().compareTo(confirmationInterval) < 0
+                        ? confirmationInterval
+                        : decision.delay();
+                awaitDeleteConfirmationDelay(path, timeout, deadline, retryDelay);
+                continue;
             }
 
-            long remainingNanos = deadline - System.nanoTime();
-            throwIfDeleteConfirmationTimedOut(path, timeout, deadline);
-            try {
-                TimeUnit.NANOSECONDS.sleep(Math.min(
-                        TimeUnit.MILLISECONDS.toNanos(DELETE_CONFIRMATION_INTERVAL_MILLIS), remainingNanos));
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw connectionException("confirm resource deletion", e);
-            }
+            awaitDeleteConfirmationDelay(path, timeout, deadline, confirmationInterval);
+        }
+    }
+
+    private void awaitDeleteConfirmationDelay(String path, Duration timeout, long deadline,
+                                              Duration requestedDelay) {
+        long remainingNanos = deadline - System.nanoTime();
+        throwIfDeleteConfirmationTimedOut(path, timeout, deadline);
+        if (requestedDelay.compareTo(Duration.ofNanos(remainingNanos)) >= 0) {
+            throw deleteConfirmationTimeout(path, timeout);
+        }
+        try {
+            awaitRetry(requestedDelay);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw connectionException("confirm resource deletion", e);
         }
     }
 
@@ -1123,12 +1539,44 @@ public class WebDavStorage implements PathStorage {
     private record PropFindResult(URI uri, int statusCode, List<WebDavResource> resources) {
     }
 
-    private record WebDavResource(String path, String name, boolean directory, Long contentLength) {
+    private record WebDavResource(String path, String name, boolean directory, Long contentLength, String etag) {
     }
 
-    private record WebDavProperties(boolean directory, Long contentLength) {
+    private record WebDavProperties(boolean directory, Long contentLength, String etag) {
     }
 
     private record WebDavPropStat(String status, WebDavProperties properties) {
+    }
+
+    private enum DeleteResult {
+        ACCEPTED,
+        CONFIRMED
+    }
+
+    private static class TransientWebDavException extends StorageConnectionException {
+
+        private final Retriable.RetryDecision retryDecision;
+
+        private TransientWebDavException(WebDavStorage storage, String message) {
+            super(storage, message);
+            this.retryDecision = null;
+        }
+
+        private TransientWebDavException(WebDavStorage storage, String message,
+                                         Retriable.RetryDecision retryDecision) {
+            super(storage, message);
+            this.retryDecision = retryDecision;
+        }
+
+        private TransientWebDavException(WebDavStorage storage, String message, Exception exception) {
+            super(storage, message, exception);
+            this.retryDecision = null;
+        }
+
+        private Retriable.RetryDecision retryDecision(Retriable.RetryContext context) {
+            return retryDecision == null
+                    ? WebDavRetryPolicy.transportRetryDecision(getCause(), context)
+                    : retryDecision;
+        }
     }
 }
