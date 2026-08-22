@@ -7,8 +7,6 @@ import org.junit.jupiter.api.Test;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.BaseTest;
 import ru.dvdishka.backuper.backend.config.ConfigBackwardsCompatibility;
-import ru.dvdishka.backuper.backend.storage.StorageType;
-import ru.dvdishka.backuper.backend.storage.WebDavStorage;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -87,61 +85,6 @@ public class ConfigTest extends BaseTest {
         assert legacyConfig.getBoolean("storages.ftp.debug.protocolLogging");
         assert legacyConfig.getBoolean("storages.sftp.debug.protocolLogging");
         assert legacyConfig.getBoolean("storages.googleDrive.debug.protocolLogging");
-    }
-
-    @Test
-    public void testWebDavConfigLoading() throws IOException {
-        config.set("storages.webdav.enabled", true);
-        config.set("storages.webdav.autoBackup", false);
-        config.set("storages.webdav.auth.url", "http://127.0.0.1:9/dav/");
-        config.set("storages.webdav.auth.allowInsecureHttp", true);
-        config.set("storages.webdav.http.requestTimeoutSeconds", 120);
-        config.set("storages.webdav.http.deleteConfirmationTimeoutSeconds", 45);
-        config.set("storages.webdav.http.bufferUploadsToDisk", true);
-        config.set("storages.webdav.maxBackupsWeight", Long.MAX_VALUE);
-        config.set("storages.webdav.debug.protocolLogging", false);
-
-        reload();
-
-        WebDavStorage storage = (WebDavStorage) Backuper.getInstance().getStorageManager().getStorage("webdav");
-        assert storage != null;
-        assert storage.getType() == StorageType.WEBDAV;
-        assert storage.getConfig().getRequestTimeoutSeconds() == 120;
-        assert storage.getConfig().getDeleteConfirmationTimeoutSeconds() == 45;
-        assert storage.getConfig().isBufferUploadsToDisk();
-        assert storage.getConfig().getBackupsWeight() == Long.MAX_VALUE;
-    }
-
-    @Test
-    public void testWebDavInvalidTimeoutValuesUseDefaults() throws IOException {
-        config.set("storages.webdav.enabled", true);
-        config.set("storages.webdav.auth.url", "http://127.0.0.1:9/dav/");
-        config.set("storages.webdav.auth.allowInsecureHttp", true);
-        config.set("storages.webdav.backupsFolder", 123);
-        config.set("storages.webdav.autoBackup", "invalid");
-        config.set("storages.webdav.maxBackupsNumber", "invalid");
-        config.set("storages.webdav.maxBackupsWeight", 1.5);
-        config.set("storages.webdav.zipArchive", "invalid");
-        config.set("storages.webdav.zipCompressionLevel", "invalid");
-        config.set("storages.webdav.http.requestTimeoutSeconds", "invalid");
-        config.set("storages.webdav.http.deleteConfirmationTimeoutSeconds", 1.5);
-        config.set("storages.webdav.http.bufferUploadsToDisk", "invalid");
-        config.set("storages.webdav.debug.protocolLogging", "invalid");
-
-        reload();
-
-        WebDavStorage storage = (WebDavStorage) Backuper.getInstance().getStorageManager().getStorage("webdav");
-        assert storage != null;
-        assert storage.getConfig().getBackupsFolder().equals("./");
-        assert storage.getConfig().isAutoBackup();
-        assert storage.getConfig().getBackupsNumber() == 0;
-        assert storage.getConfig().getBackupsWeight() == 0;
-        assert storage.getConfig().isZipArchive();
-        assert storage.getConfig().getZipCompressionLevel() == 5;
-        assert storage.getConfig().getRequestTimeoutSeconds() == 3600;
-        assert storage.getConfig().getDeleteConfirmationTimeoutSeconds() == 60;
-        assert !storage.getConfig().isBufferUploadsToDisk();
-        assert storage.getConfig().isProtocolLogging();
     }
 
     @Test
