@@ -63,7 +63,6 @@ public class ConfigManager {
         ConfigBackwardsCompatibility.configBelow8(config);
         ConfigBackwardsCompatibility.configBelow13(config);
         ConfigBackwardsCompatibility.configBelow14(config);
-        ConfigBackwardsCompatibility.configBelow15(config);
 
         loadBackupConfig(config);
         loadStorages(config);

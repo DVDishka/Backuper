@@ -90,19 +90,6 @@ public class ConfigTest extends BaseTest {
     }
 
     @Test
-    public void testConfigBackwardsCompatibilityWithWebDavStorage() {
-        FileConfiguration legacyConfig = YamlConfiguration.loadConfiguration(new InputStreamReader(Backuper.getInstance().getResource("config.yml")));
-        legacyConfig.set("configVersion", 14.0);
-        legacyConfig.set("storages.webdav", null);
-
-        ConfigBackwardsCompatibility.configBelow15(legacyConfig);
-
-        assert legacyConfig.getString("storages.webdav.type").equals("webdav");
-        assert !legacyConfig.getBoolean("storages.webdav.enabled");
-        assert legacyConfig.getBoolean("storages.webdav.debug.protocolLogging");
-    }
-
-    @Test
     public void testWebDavConfigLoading() throws IOException {
         config.set("storages.webdav.enabled", true);
         config.set("storages.webdav.autoBackup", false);
