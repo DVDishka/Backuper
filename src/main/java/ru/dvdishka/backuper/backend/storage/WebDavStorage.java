@@ -17,6 +17,7 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -24,27 +25,14 @@ import java.net.ConnectException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
-import java.net.http.HttpClient;
-import java.net.http.HttpHeaders;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.net.http.HttpTimeoutException;
+import java.net.http.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
@@ -1183,7 +1171,12 @@ public class WebDavStorage implements PathStorage {
             if (!opened.compareAndSet(false, true)) {
                 throw new UncheckedIOException(new IOException("WebDAV streaming upload cannot be replayed"));
             }
-            return new StorageProgressInputStream(sourceStream, progressListener);
+            // Creating an interlayer stream to not let the HTTP client close the source stream.
+            return new FilterInputStream(new StorageProgressInputStream(sourceStream, progressListener)) {
+                @Override
+                public void close() {
+                }
+            };
         });
     }
 

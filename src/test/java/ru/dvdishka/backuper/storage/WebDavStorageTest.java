@@ -18,27 +18,17 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -133,6 +123,26 @@ public class WebDavStorageTest {
         assertEquals(payload.length, progress.getCurrentProgress());
         assertArrayEquals(payload, server.files.get("/dav/backups/fixed-length.bin"));
         assertEquals(1, server.mutationRedirectCount.get());
+        server.assertHealthy();
+    }
+
+    @Test
+    public void streamingUploadDoesNotCloseSourceStream() {
+        storage = createStorage(true, false);
+        byte[] payload = "caller-owned stream".getBytes(StandardCharsets.UTF_8);
+        AtomicBoolean sourceClosed = new AtomicBoolean();
+        InputStream sourceStream = new ByteArrayInputStream(payload) {
+            @Override
+            public void close() {
+                sourceClosed.set(true);
+            }
+        };
+
+        storage.uploadFile(sourceStream, "caller-owned.bin", "backups",
+                new BasicStorageProgressListener());
+
+        assertFalse(sourceClosed.get());
+        assertArrayEquals(payload, server.files.get("/dav/backups/caller-owned.bin"));
         server.assertHealthy();
     }
 
