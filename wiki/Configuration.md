@@ -78,7 +78,7 @@ server:
 
 ### System Settings
 ```yaml
-configVersion: 14.0
+configVersion: 15.0
 lastBackup: 0
 lastChange: 0
 ```

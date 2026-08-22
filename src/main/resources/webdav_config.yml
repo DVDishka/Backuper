@@ -1,0 +1,40 @@
+type: webdav
+# (true/false) Enable WebDAV storage to use it via the Backuper
+enabled: false
+# (true/false) With automatic backup, backups will be saved to the specified WebDAV server. Works only if 'enabled: true'
+autoBackup: true
+
+# (Path) Directory relative to the configured WebDAV URL where backups will be stored
+backupsFolder: ./
+
+# (>= 0) Max backups in backups folder, 0 to make it unlimited
+maxBackupsNumber: 0
+# (MB >= 0) Max backups folder weight, 0 to make it unlimited
+maxBackupsWeight: 0
+
+# (true/false) Should backups be packaged in a zip archive
+zipArchive: true
+# (0 - 9) Archive compression level. A higher value may reduce file size but may also increase the time required to archive and decompress
+zipCompressionLevel: 5
+
+auth:
+  # (URL) HTTP(S) WebDAV root URL. Do not include credentials, query parameters, fragments, relative path segments, or encoded path separators.
+  url: ''
+  # (Username) Username for HTTP Basic authentication. It cannot contain ':'. Leave empty if the server allows anonymous access.
+  username: ''
+  # (Password) Password or app password for HTTP Basic authentication.
+  password: ''
+  # (true/false) Allow Basic authentication over unencrypted HTTP. Keep false unless the connection is protected by another trusted transport.
+  allowInsecureHttp: false
+
+http:
+  # (SECONDS >= 0) Maximum time for one HTTP request. Use 0 to disable the request timeout.
+  requestTimeoutSeconds: 3600
+  # (SECONDS >= 0) Maximum time to wait for a deletion accepted with HTTP 202. Use 0 to accept it without confirmation.
+  deleteConfirmationTimeoutSeconds: 60
+  # (true/false) Buffer each upload to a temporary file and send a fixed Content-Length. Enable only for servers that reject streaming/chunked PUT requests.
+  bufferUploadsToDisk: false
+
+debug:
+  # (true/false) Write WebDAV request methods, paths, and response status codes to plugins/Backuper/logs/{storageId}.log. Credentials are never logged.
+  protocolLogging: true

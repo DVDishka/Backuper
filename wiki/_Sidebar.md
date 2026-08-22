@@ -8,6 +8,7 @@
     * [[Local Storage|Local-Storage]]
     * [[FTP Storage|FTP-Storage]]
     * [[SFTP Storage|SFTP-Storage]]
+    * [[WebDAV Storage|WebDAV-Storage]]
     * [[Google Drive Storage|Google-Drive-Storage]]
 
 ---

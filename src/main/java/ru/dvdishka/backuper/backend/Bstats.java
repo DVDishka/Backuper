@@ -8,6 +8,7 @@ import ru.dvdishka.backuper.backend.storage.FtpStorage;
 import ru.dvdishka.backuper.backend.storage.GoogleDriveStorage;
 import ru.dvdishka.backuper.backend.storage.LocalStorage;
 import ru.dvdishka.backuper.backend.storage.SftpStorage;
+import ru.dvdishka.backuper.backend.storage.WebDavStorage;
 
 public class Bstats {
 
@@ -22,6 +23,7 @@ public class Bstats {
         bStats.addCustomChart(new SimplePie("local_storages_amount", () -> String.valueOf(Backuper.getInstance().getStorageManager().getStorages().stream().filter(storage -> storage instanceof LocalStorage).count())));
         bStats.addCustomChart(new SimplePie("ftp_storages_amount", () -> String.valueOf(Backuper.getInstance().getStorageManager().getStorages().stream().filter(storage -> storage instanceof FtpStorage).count())));
         bStats.addCustomChart(new SimplePie("sftp_storages_amount", () -> String.valueOf(Backuper.getInstance().getStorageManager().getStorages().stream().filter(storage -> storage instanceof SftpStorage).count())));
+        bStats.addCustomChart(new SimplePie("webdav_storages_amount", () -> String.valueOf(Backuper.getInstance().getStorageManager().getStorages().stream().filter(storage -> storage instanceof WebDavStorage).count())));
         bStats.addCustomChart(new SimplePie("google_drive_storages_amount", () -> String.valueOf(Backuper.getInstance().getStorageManager().getStorages().stream().filter(storage -> storage instanceof GoogleDriveStorage).count())));
 
         Backuper.getInstance().getLogManager().log("BStats initialization completed");

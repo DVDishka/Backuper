@@ -2,8 +2,14 @@ package ru.dvdishka.backuper.backend.config;
 
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import ru.dvdishka.backuper.Backuper;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class ConfigBackwardsCompatibility {
@@ -155,6 +161,27 @@ public class ConfigBackwardsCompatibility {
             ConfigurationSection storageSection = config.getConfigurationSection("storages.%s".formatted(storageId));
             if (storageSection != null && !storageSection.isSet("debug.protocolLogging")) {
                 storageSection.set("debug.protocolLogging", true);
+            }
+        }
+    }
+
+    public static void configBelow15(FileConfiguration config) {
+
+        double configVersion = config.getDouble("configVersion");
+        if (configVersion >= 15.0) {
+            return;
+        }
+
+        if (config.getConfigurationSection("storages.webdav") == null) {
+            try (InputStream resource = Backuper.getInstance().getResource("webdav_config.yml")) {
+                if (resource == null) {
+                    throw new IllegalStateException("Missing bundled resource: webdav_config.yml");
+                }
+                FileConfiguration defaultWebDavConfig = YamlConfiguration.loadConfiguration(
+                        new InputStreamReader(resource, StandardCharsets.UTF_8));
+                config.createSection("storages.webdav", defaultWebDavConfig.getValues(true));
+            } catch (IOException e) {
+                throw new UncheckedIOException("Failed to close webdav_config.yml", e);
             }
         }
     }

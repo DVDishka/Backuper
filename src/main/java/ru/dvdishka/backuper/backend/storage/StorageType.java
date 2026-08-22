@@ -4,6 +4,7 @@ public enum StorageType {
     LOCAL,
     FTP,
     SFTP,
+    WEBDAV,
     GOOGLE_DRIVE,
     NULL
 }
