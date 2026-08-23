@@ -91,3 +91,43 @@ jobs:
             {
               "PAPER": ["1.20.6","1.21.x", "26.1.x", "26.2"]
             }
+
+      - name: Update Hangar description
+        env:
+          HANGAR_TOKEN: ${{ secrets.HANGAR_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          AUTH_RESPONSE="$RUNNER_TEMP/hangar-auth-response.json"
+          if ! curl \
+            --fail-with-body \
+            --silent \
+            --show-error \
+            --get \
+            --request POST \
+            --data-urlencode "apiKey=$HANGAR_TOKEN" \
+            --header "User-Agent: Backuper GitHub Actions (DVDishka/Backuper)" \
+            --output "$AUTH_RESPONSE" \
+            https://hangar.papermc.io/api/v1/authenticate; then
+            if [ -s "$AUTH_RESPONSE" ]; then
+              cat "$AUTH_RESPONSE" >&2
+            fi
+            exit 1
+          fi
+
+          HANGAR_JWT=$(jq -er '.token | select(type == "string" and length > 0)' "$AUTH_RESPONSE")
+          echo "::add-mask::$HANGAR_JWT"
+
+          DESCRIPTION_PAYLOAD="$RUNNER_TEMP/hangar-description.json"
+          jq -Rs '{content: .}' README.md > "$DESCRIPTION_PAYLOAD"
+
+          curl \
+            --fail-with-body \
+            --silent \
+            --show-error \
+            --request PATCH \
+            --header "Authorization: HangarAuth $HANGAR_JWT" \
+            --header "Content-Type: application/json" \
+            --header "User-Agent: Backuper GitHub Actions (DVDishka/Backuper)" \
+            --data-binary "@$DESCRIPTION_PAYLOAD" \
+            https://hangar.papermc.io/api/v1/pages/editmain/Backuper
