@@ -1,3 +1,5 @@
+> **Important:** `WebDavStorage` supports only `Basic` authentication method.
+
 ## Default Configuration
 
 ```yaml
