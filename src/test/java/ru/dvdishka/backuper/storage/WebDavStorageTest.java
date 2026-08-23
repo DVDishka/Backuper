@@ -5,6 +5,9 @@ import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import ru.dvdishka.backuper.Backuper;
+import ru.dvdishka.backuper.backend.LogManager;
 import ru.dvdishka.backuper.backend.config.WebDavConfig;
 import ru.dvdishka.backuper.backend.storage.WebDavStorage;
 import ru.dvdishka.backuper.backend.storage.exception.StorageConnectionException;
@@ -29,8 +32,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class WebDavStorageTest {
 
@@ -172,6 +174,27 @@ public class WebDavStorageTest {
 
         assertEquals(2, server.methodRequestCount("PROPFIND"));
         server.assertHealthy();
+    }
+
+    @Test
+    public void connectionCheckTimesOutAfterFiveSecondsWithoutRetrying() {
+        storage = createStorage(server.baseUrl(), true, false, 3600);
+        server.stallPropFind = true;
+        Backuper backuper = mock(Backuper.class);
+        when(backuper.getLogManager()).thenReturn(mock(LogManager.class));
+
+        long startedAt = System.nanoTime();
+        try (MockedStatic<Backuper> backuperStatic = mockStatic(Backuper.class)) {
+            backuperStatic.when(Backuper::getInstance).thenReturn(backuper);
+            assertFalse(storage.checkConnection());
+        } finally {
+            server.releaseStalledPropFind();
+        }
+        long elapsedMillis = (System.nanoTime() - startedAt) / 1_000_000L;
+
+        assertTrue(elapsedMillis >= 4_500, "Connection check timed out too early: %d ms".formatted(elapsedMillis));
+        assertTrue(elapsedMillis < 7_000, "Connection check exceeded its deadline: %d ms".formatted(elapsedMillis));
+        assertEquals(1, server.methodRequestCount("PROPFIND"));
     }
 
     @Test
@@ -760,10 +783,12 @@ public class WebDavStorageTest {
         private final AtomicInteger transientFailuresBeforeMutation = new AtomicInteger();
         private final AtomicBoolean transientFailureAfterMutationPending = new AtomicBoolean();
         private final AtomicBoolean truncateNextPropFindResponse = new AtomicBoolean();
+        private final CountDownLatch stalledPropFindRelease = new CountDownLatch(1);
         private final AtomicLong etagSequence = new AtomicLong();
 
         private volatile boolean asyncDelete;
         private volatile boolean stallDownloads;
+        private volatile boolean stallPropFind;
         private volatile long deleteConfirmationDelayMillis;
         private volatile String redirectLocation;
         private volatile String mutationRedirectMethod;
@@ -941,6 +966,15 @@ public class WebDavStorageTest {
         }
 
         private void propFind(HttpExchange exchange) throws IOException {
+            if (stallPropFind) {
+                try {
+                    stalledPropFindRelease.await();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                exchange.close();
+                return;
+            }
             String path = normalize(exchange.getRequestURI().getPath());
             if (pendingDeletes.containsKey(path)) {
                 String retryAfter = deleteConfirmationRetryAfter.getAndSet(null);
@@ -1247,6 +1281,10 @@ public class WebDavStorageTest {
         private void assertHealthy() {
             assertFalse(authorizationFailed.get(), "WebDAV request did not include the expected Basic Authorization header");
             assertNull(handlerFailure.get(), () -> "WebDAV test server failed: " + handlerFailure.get());
+        }
+
+        private void releaseStalledPropFind() {
+            stalledPropFindRelease.countDown();
         }
 
         @Override

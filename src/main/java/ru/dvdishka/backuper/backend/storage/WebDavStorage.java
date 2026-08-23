@@ -54,6 +54,7 @@ public class WebDavStorage implements PathStorage {
     private static final int CONTENT_COMPARISON_BUFFER_SIZE = 8192;
     private static final long DELETE_CONFIRMATION_INTERVAL_MILLIS = 100L;
     private static final long NO_DEADLINE = Long.MIN_VALUE;
+    private static final Duration CHECK_CONNECTION_TIMEOUT = Duration.ofSeconds(5);
 
     @Setter
     private String id;
@@ -145,7 +146,8 @@ public class WebDavStorage implements PathStorage {
     @Override
     public boolean checkConnection(CommandSender sender) {
         try {
-            if (!retryWebDav(() -> statOnce(config.getBackupsFolder())).directory()) {
+            long deadlineNanos = System.nanoTime() + CHECK_CONNECTION_TIMEOUT.toNanos();
+            if (!statOnce(config.getBackupsFolder(), deadlineNanos).directory()) {
                 throw new StorageMethodException(this,
                         "WebDAV backups folder is not a directory: %s".formatted(config.getBackupsFolder()));
             }
@@ -505,7 +507,11 @@ public class WebDavStorage implements PathStorage {
     }
 
     private WebDavResource statOnce(String path) {
-        PropFindResult result = propFind(path, false, "0", true, "read resource metadata");
+        return statOnce(path, NO_DEADLINE);
+    }
+
+    private WebDavResource statOnce(String path, long deadlineNanos) {
+        PropFindResult result = propFind(path, false, "0", true, "read resource metadata", deadlineNanos);
         if (result.statusCode() == 404) {
             throw statusException("read resource metadata", 404, InputStream.nullInputStream());
         }
