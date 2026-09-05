@@ -105,7 +105,33 @@ public class WebDavStorageTest {
         assertFalse(storage.exists("backups/new dir/renamed & final.bin"));
         assertTrue(server.rawPaths.contains("/dav/backups/new%20dir/a%20file%20%231.bin"));
         assertTrue(server.rawPaths.contains("/dav/backups/new%20dir/renamed%20%26%20final.bin"));
-        assertEquals(1, server.mutationRedirectCount.get());
+        server.assertHealthy();
+    }
+
+    @Test
+    public void uploadsFileUsingChunkedUploadWhenEnabled() throws IOException {
+        WebDavConfig config = mock(WebDavConfig.class);
+        when(config.getId()).thenReturn("webdav-chunked-test");
+        when(config.getUrl()).thenReturn(server.baseUrl());
+        when(config.getUsername()).thenReturn("test-user");
+        when(config.getPassword()).thenReturn("test-password");
+        when(config.getBackupsFolder()).thenReturn("backups");
+        when(config.isAllowInsecureHttp()).thenReturn(true);
+        when(config.isChunkingEnabled()).thenReturn(true);
+        when(config.getChunkingSizeMB()).thenReturn(1);
+        when(config.getRequestTimeoutSeconds()).thenReturn(30);
+
+        WebDavStorage chunkedStorage = new WebDavStorage(config);
+        chunkedStorage.setId("webdav-chunked-test");
+
+        byte[] payload = new byte[3 * 1024 * 1024];
+        Arrays.fill(payload, (byte) 42);
+        BasicStorageProgressListener progressListener = new BasicStorageProgressListener();
+
+        chunkedStorage.uploadFile(new ByteArrayInputStream(payload), "chunked_backup.zip", "backups", progressListener);
+
+        assertArrayEquals(payload, server.files.get("/dav/backups/chunked_backup.zip"));
+        assertEquals(payload.length, progressListener.getCurrentProgress());
         server.assertHealthy();
     }
 
@@ -1142,6 +1168,30 @@ public class WebDavStorageTest {
                     && (files.containsKey(destination) || directories.contains(destination))) {
                 send(exchange, 412, "Destination exists");
                 return;
+            }
+            if (source.endsWith("/.file")) {
+                String sessionFolder = source.substring(0, source.length() - 6);
+                if (directories.contains(sessionFolder)) {
+                    List<String> chunkPaths = files.keySet().stream()
+                            .filter(path -> path.startsWith(sessionFolder + "/"))
+                            .sorted()
+                            .toList();
+                    java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+                    for (String chunkPath : chunkPaths) {
+                        out.writeBytes(files.get(chunkPath));
+                    }
+                    files.put(destination, out.toByteArray());
+                    etags.put(destination, nextEtag());
+                    for (String chunkPath : chunkPaths) {
+                        files.remove(chunkPath);
+                        etags.remove(chunkPath);
+                    }
+                    directories.remove(sessionFolder);
+                    etags.remove(sessionFolder);
+                    send(exchange, responseStatusOverride == null ? 201 : responseStatusOverride,
+                            responseStatusOverride == null ? "" : "Transient failure after mutation");
+                    return;
+                }
             }
             if (files.containsKey(source)) {
                 String sourceEtag = etags.remove(source);

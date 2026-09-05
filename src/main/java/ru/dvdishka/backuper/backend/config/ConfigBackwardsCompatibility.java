@@ -158,4 +158,22 @@ public class ConfigBackwardsCompatibility {
             }
         }
     }
+
+    public static void configBelow15(FileConfiguration config) {
+        double configVersion = config.getDouble("configVersion");
+        if (configVersion >= 15.0) {
+            return;
+        }
+
+        ConfigurationSection webdavSection = config.getConfigurationSection("storages.webdav");
+        if (webdavSection != null) {
+            if (!webdavSection.isSet("chunking.enabled")) {
+                webdavSection.set("chunking.enabled", true);
+            }
+            if (!webdavSection.isSet("chunking.chunkSizeMB")) {
+                webdavSection.set("chunking.chunkSizeMB", 50);
+            }
+        }
+        config.set("configVersion", 15.0);
+    }
 }

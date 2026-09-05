@@ -269,6 +269,10 @@ public class WebDavStorage implements PathStorage {
     @Override
     public void uploadFile(InputStream sourceStream, String newFileName, String targetParentDir, StorageProgressListener progressListener)
             throws StorageLimitException, StorageMethodException, StorageConnectionException {
+        if (config.isChunkingEnabled()) {
+            uploadFileChunked(sourceStream, newFileName, targetParentDir, progressListener);
+            return;
+        }
         String path = resolve(targetParentDir, newFileName);
         URI uri = resourceUri(path, false);
         Path bufferedUpload = null;
@@ -323,6 +327,76 @@ public class WebDavStorage implements PathStorage {
             throw new StorageMethodException(this, "Failed to buffer WebDAV upload", e);
         } finally {
             deleteTemporaryUpload(bufferedUpload);
+        }
+    }
+
+    private void uploadFileChunked(InputStream sourceStream, String newFileName, String targetParentDir, StorageProgressListener progressListener)
+            throws StorageMethodException, StorageConnectionException {
+        String targetPath = resolve(targetParentDir, newFileName);
+        Path uploadPath = null;
+        try {
+            uploadPath = Files.createTempFile("backuper-webdav-chunked-", ".upload");
+            Files.copy(sourceStream, uploadPath, StandardCopyOption.REPLACE_EXISTING);
+            final Path tempUploadFile = uploadPath;
+            long totalSize = Files.size(tempUploadFile);
+            StorageProgressListener cappedProgressListener = new CappedProgressListener(progressListener, totalSize);
+
+            String uploadId = UUID.randomUUID().toString();
+            String usernamePath = config.getUsername() != null && !config.getUsername().isBlank() ? config.getUsername() + "/" : "";
+            String uploadSessionPath = "uploads/" + usernamePath + uploadId;
+
+            // 1. Create upload session directory
+            createDir(uploadSessionPath, "./");
+
+            try {
+                long chunkSize = (long) config.getChunkingSizeMB() * 1_048_576L;
+                long startByte = 0;
+
+                // 2. Upload chunks sequentially
+                while (startByte < totalSize) {
+                    long endByte = Math.min(startByte + chunkSize - 1, totalSize - 1);
+                    long currentChunkLength = endByte - startByte + 1;
+                    String chunkFileName = String.format("%016d-%016d", startByte, endByte);
+                    String chunkPath = resolve(uploadSessionPath, chunkFileName);
+                    URI chunkUri = resourceUri(chunkPath, false);
+
+                    long offset = startByte;
+                    retryWebDav(() -> {
+                        uploadOnce(chunkUri, fixedLengthBodyPublisher(tempUploadFile, offset, currentChunkLength, cappedProgressListener), true, true, null);
+                        return null;
+                    });
+
+                    startByte += chunkSize;
+                }
+
+                // 3. Finalize upload session via MOVE .file -> targetPath
+                String sessionDotFile = resolve(uploadSessionPath, ".file");
+                URI sourceDotFileUri = resourceUri(sessionDotFile, false);
+                URI targetFileUri = resourceUri(targetPath, false);
+
+                retryWebDav(() -> {
+                    executeFollowingRedirects(sourceDotFileUri, redirectUri -> newRequest(redirectUri)
+                            .header("Destination", targetFileUri.toASCIIString())
+                            .header("Overwrite", "T")
+                            .method("MOVE", HttpRequest.BodyPublishers.noBody())
+                            .build(), "finalize chunked upload", true, 201, 204);
+                    verifyUploadedFileOnce(targetPath, totalSize);
+                    return null;
+                });
+            } catch (Exception e) {
+                try {
+                    delete(uploadSessionPath);
+                } catch (Exception ignored) {
+                }
+                if (e instanceof RuntimeException re) {
+                    throw re;
+                }
+                throw new StorageMethodException(this, "Failed to upload chunked WebDAV file", e);
+            }
+        } catch (IOException e) {
+            throw new StorageMethodException(this, "Failed to buffer WebDAV chunked upload", e);
+        } finally {
+            deleteTemporaryUpload(uploadPath);
         }
     }
 
@@ -1158,12 +1232,29 @@ public class WebDavStorage implements PathStorage {
 
     private HttpRequest.BodyPublisher fixedLengthBodyPublisher(Path path, long contentLength,
                                                                StorageProgressListener progressListener) {
+        return fixedLengthBodyPublisher(path, 0, contentLength, progressListener);
+    }
+
+    private HttpRequest.BodyPublisher fixedLengthBodyPublisher(Path path, long offset, long contentLength,
+                                                               StorageProgressListener progressListener) {
         if (contentLength == 0) {
             return HttpRequest.BodyPublishers.noBody();
         }
         HttpRequest.BodyPublisher body = HttpRequest.BodyPublishers.ofInputStream(() -> {
             try {
-                return new StorageProgressInputStream(Files.newInputStream(path), progressListener);
+                InputStream is = Files.newInputStream(path);
+                if (offset > 0) {
+                    long skipped = 0;
+                    while (skipped < offset) {
+                        long n = is.skip(offset - skipped);
+                        if (n <= 0) {
+                            if (is.read() == -1) break;
+                            n = 1;
+                        }
+                        skipped += n;
+                    }
+                }
+                return new BoundedInputStream(new StorageProgressInputStream(is, progressListener), contentLength);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -1576,6 +1667,40 @@ public class WebDavStorage implements PathStorage {
             return retryDecision == null
                     ? WebDavRetryPolicy.transportRetryDecision(getCause(), context)
                     : retryDecision;
+        }
+    }
+
+    private static class BoundedInputStream extends FilterInputStream {
+        private long remaining;
+
+        protected BoundedInputStream(InputStream in, long limit) {
+            super(in);
+            this.remaining = limit;
+        }
+
+        @Override
+        public int read() throws IOException {
+            if (remaining <= 0) {
+                return -1;
+            }
+            int result = super.read();
+            if (result != -1) {
+                remaining--;
+            }
+            return result;
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            if (remaining <= 0) {
+                return -1;
+            }
+            int maxToRead = (int) Math.min(len, remaining);
+            int bytesRead = super.read(b, off, maxToRead);
+            if (bytesRead != -1) {
+                remaining -= bytesRead;
+            }
+            return bytesRead;
         }
     }
 }

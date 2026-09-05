@@ -35,6 +35,13 @@ http:
   # (true/false) Buffer each upload to a temporary file and send a fixed Content-Length. Enable only for servers that reject streaming/chunked PUT requests.
   bufferUploadsToDisk: false
 
+chunking:
+  # (true/false) Enable Nextcloud/ownCloud WebDAV chunked file uploads to prevent HTTP 413 or timeout errors on large backups.
+  enabled: false
+  # (MB > 0) Chunk size in MB (e.g., 50).
+  chunkSizeMB: 50
+
 debug:
   # (true/false) Write WebDAV request methods, paths, and response status codes to plugins/Backuper/logs/{storageId}.log. Credentials are never logged.
   protocolLogging: true
+
