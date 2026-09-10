@@ -105,32 +105,64 @@ public class WebDavStorageTest {
         assertFalse(storage.exists("backups/new dir/renamed & final.bin"));
         assertTrue(server.rawPaths.contains("/dav/backups/new%20dir/a%20file%20%231.bin"));
         assertTrue(server.rawPaths.contains("/dav/backups/new%20dir/renamed%20%26%20final.bin"));
+        assertEquals(1, server.mutationRedirectCount.get());
         server.assertHealthy();
     }
 
     @Test
-    public void uploadsFileUsingChunkedUploadWhenEnabled() throws IOException {
+    public void uploadsFileUsingStreamingChunkedUploadWhenEnabled() throws IOException {
         WebDavConfig config = mock(WebDavConfig.class);
-        when(config.getId()).thenReturn("webdav-chunked-test");
+        when(config.getId()).thenReturn("webdav-chunked-streaming-test");
         when(config.getUrl()).thenReturn(server.baseUrl());
         when(config.getUsername()).thenReturn("test-user");
         when(config.getPassword()).thenReturn("test-password");
         when(config.getBackupsFolder()).thenReturn("backups");
         when(config.isAllowInsecureHttp()).thenReturn(true);
         when(config.isChunkingEnabled()).thenReturn(true);
+        when(config.isBufferUploadsToDisk()).thenReturn(false);
         when(config.getChunkingSizeMB()).thenReturn(1);
         when(config.getRequestTimeoutSeconds()).thenReturn(30);
+        when(config.getPathSeparatorSymbol()).thenReturn("/");
 
         WebDavStorage chunkedStorage = new WebDavStorage(config);
-        chunkedStorage.setId("webdav-chunked-test");
+        chunkedStorage.setId("webdav-chunked-streaming-test");
 
         byte[] payload = new byte[3 * 1024 * 1024];
         Arrays.fill(payload, (byte) 42);
         BasicStorageProgressListener progressListener = new BasicStorageProgressListener();
 
-        chunkedStorage.uploadFile(new ByteArrayInputStream(payload), "chunked_backup.zip", "backups", progressListener);
+        chunkedStorage.uploadFile(new ByteArrayInputStream(payload), "chunked_streaming_backup.zip", "backups", progressListener);
 
-        assertArrayEquals(payload, server.files.get("/dav/backups/chunked_backup.zip"));
+        assertArrayEquals(payload, server.files.get("/dav/backups/chunked_streaming_backup.zip"));
+        assertEquals(payload.length, progressListener.getCurrentProgress());
+        server.assertHealthy();
+    }
+
+    @Test
+    public void uploadsFileUsingBufferedChunkedUploadWhenEnabled() throws IOException {
+        WebDavConfig config = mock(WebDavConfig.class);
+        when(config.getId()).thenReturn("webdav-chunked-buffered-test");
+        when(config.getUrl()).thenReturn(server.baseUrl());
+        when(config.getUsername()).thenReturn("test-user");
+        when(config.getPassword()).thenReturn("test-password");
+        when(config.getBackupsFolder()).thenReturn("backups");
+        when(config.isAllowInsecureHttp()).thenReturn(true);
+        when(config.isChunkingEnabled()).thenReturn(true);
+        when(config.isBufferUploadsToDisk()).thenReturn(true);
+        when(config.getChunkingSizeMB()).thenReturn(1);
+        when(config.getRequestTimeoutSeconds()).thenReturn(30);
+        when(config.getPathSeparatorSymbol()).thenReturn("/");
+
+        WebDavStorage chunkedStorage = new WebDavStorage(config);
+        chunkedStorage.setId("webdav-chunked-buffered-test");
+
+        byte[] payload = new byte[3 * 1024 * 1024];
+        Arrays.fill(payload, (byte) 99);
+        BasicStorageProgressListener progressListener = new BasicStorageProgressListener();
+
+        chunkedStorage.uploadFile(new ByteArrayInputStream(payload), "chunked_buffered_backup.zip", "backups", progressListener);
+
+        assertArrayEquals(payload, server.files.get("/dav/backups/chunked_buffered_backup.zip"));
         assertEquals(payload.length, progressListener.getCurrentProgress());
         server.assertHealthy();
     }

@@ -266,6 +266,31 @@ public class WebDavStorage implements PathStorage {
         });
     }
 
+    private void createDirRecursive(String path) throws StorageLimitException, StorageMethodException, StorageConnectionException {
+        String[] parts = path.split("/");
+        StringBuilder currentPath = new StringBuilder();
+        for (String part : parts) {
+            if (part.isBlank() || part.equals(".")) {
+                continue;
+            }
+            String parent = currentPath.isEmpty() ? "./" : currentPath.toString();
+            if (currentPath.length() > 0) {
+                currentPath.append("/");
+            }
+            currentPath.append(part);
+            String fullPath = currentPath.toString();
+            if (!exists(fullPath)) {
+                try {
+                    createDir(part, parent);
+                } catch (StorageMethodException e) {
+                    if (!exists(fullPath)) {
+                        throw e;
+                    }
+                }
+            }
+        }
+    }
+
     @Override
     public void uploadFile(InputStream sourceStream, String newFileName, String targetParentDir, StorageProgressListener progressListener)
             throws StorageLimitException, StorageMethodException, StorageConnectionException {
@@ -332,6 +357,92 @@ public class WebDavStorage implements PathStorage {
 
     private void uploadFileChunked(InputStream sourceStream, String newFileName, String targetParentDir, StorageProgressListener progressListener)
             throws StorageMethodException, StorageConnectionException {
+        if (config.isBufferUploadsToDisk()) {
+            uploadFileChunkedFromDisk(sourceStream, newFileName, targetParentDir, progressListener);
+        } else {
+            uploadFileChunkedStreaming(sourceStream, newFileName, targetParentDir, progressListener);
+        }
+    }
+
+    private void uploadFileChunkedStreaming(InputStream sourceStream, String newFileName, String targetParentDir, StorageProgressListener progressListener)
+            throws StorageMethodException, StorageConnectionException {
+        String targetPath = resolve(targetParentDir, newFileName);
+        String uploadId = UUID.randomUUID().toString();
+        String usernamePath = config.getUsername() != null && !config.getUsername().isBlank() ? config.getUsername() + "/" : "";
+        String uploadSessionPath = "uploads/" + usernamePath + uploadId;
+
+        // 1. Create upload session directory
+        createDirRecursive(uploadSessionPath);
+
+        try {
+            int maxChunkSize = config.getChunkingSizeMB() * 1_048_576;
+            long startByte = 0;
+            byte[] chunkBuffer = new byte[maxChunkSize];
+
+            // 2. Read and upload chunks directly from sourceStream
+            while (true) {
+                int bytesRead = readChunk(sourceStream, chunkBuffer);
+                if (bytesRead <= 0) {
+                    break;
+                }
+                long endByte = startByte + bytesRead - 1;
+                String chunkFileName = String.format("%016d-%016d", startByte, endByte);
+                String chunkPath = resolve(uploadSessionPath, chunkFileName);
+                URI chunkUri = resourceUri(chunkPath, false);
+
+                final byte[] currentChunk = bytesRead == chunkBuffer.length ? chunkBuffer : Arrays.copyOf(chunkBuffer, bytesRead);
+                HttpRequest.BodyPublisher bodyPublisher = HttpRequest.BodyPublishers.ofByteArray(currentChunk);
+
+                uploadOnce(chunkUri, bodyPublisher, false, true, null);
+                if (progressListener != null) {
+                    progressListener.incrementProgress(bytesRead);
+                }
+
+                startByte += bytesRead;
+            }
+
+            final long totalUploadedBytes = startByte;
+
+            // 3. Finalize upload session via MOVE .file -> targetPath
+            String sessionDotFile = resolve(uploadSessionPath, ".file");
+            URI sourceDotFileUri = resourceUri(sessionDotFile, false);
+            URI targetFileUri = resourceUri(targetPath, false);
+
+            retryWebDav(() -> {
+                executeFollowingRedirects(sourceDotFileUri, redirectUri -> newRequest(redirectUri)
+                        .header("Destination", targetFileUri.toASCIIString())
+                        .header("Overwrite", "T")
+                        .method("MOVE", HttpRequest.BodyPublishers.noBody())
+                        .build(), "finalize chunked upload", true, 201, 204);
+                verifyUploadedFileOnce(targetPath, totalUploadedBytes > 0 ? totalUploadedBytes : null);
+                return null;
+            });
+        } catch (Exception e) {
+            try {
+                delete(uploadSessionPath);
+            } catch (Exception ignored) {
+            }
+            if (e instanceof RuntimeException re) {
+                throw re;
+            }
+            throw new StorageMethodException(this, "Failed to upload streaming chunked WebDAV file", e);
+        }
+    }
+
+    private int readChunk(InputStream input, byte[] buffer) throws IOException {
+        int totalRead = 0;
+        while (totalRead < buffer.length) {
+            int read = input.read(buffer, totalRead, buffer.length - totalRead);
+            if (read == -1) {
+                break;
+            }
+            totalRead += read;
+        }
+        return totalRead;
+    }
+
+    private void uploadFileChunkedFromDisk(InputStream sourceStream, String newFileName, String targetParentDir, StorageProgressListener progressListener)
+            throws StorageMethodException, StorageConnectionException {
         String targetPath = resolve(targetParentDir, newFileName);
         Path uploadPath = null;
         try {
@@ -346,7 +457,7 @@ public class WebDavStorage implements PathStorage {
             String uploadSessionPath = "uploads/" + usernamePath + uploadId;
 
             // 1. Create upload session directory
-            createDir(uploadSessionPath, "./");
+            createDirRecursive(uploadSessionPath);
 
             try {
                 long chunkSize = (long) config.getChunkingSizeMB() * 1_048_576L;

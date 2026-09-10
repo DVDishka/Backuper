@@ -37,7 +37,7 @@ http:
 
 chunking:
   # (true/false) Enable Nextcloud/ownCloud WebDAV chunked file uploads to prevent HTTP 413 or timeout errors on large backups.
-  enabled: false
+  enabled: true
   # (MB > 0) Chunk size in MB (e.g., 50).
   chunkSizeMB: 50
 
