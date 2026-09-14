@@ -16,6 +16,7 @@
         <java.version>25</java.version>
         <paper.version>26.2.build.111-stable</paper.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <aws.version>2.29.52</aws.version>
     </properties>
     <url>backuper-mc.com</url>
 
@@ -51,6 +52,10 @@
                         <relocation>
                             <pattern>dev.jorel.commandapi</pattern>
                             <shadedPattern>ru.dvdishka.shade.commandapi</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>software.amazon</pattern>
+                            <shadedPattern>ru.dvdishka.shade.amazon</shadedPattern>
                         </relocation>
                     </relocations>
                 </configuration>
@@ -349,6 +354,26 @@
             <artifactId>lombok</artifactId>
             <version>1.18.46</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
+            <version>${aws.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>software.amazon.awssdk</groupId>
+                    <artifactId>netty-nio-client</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>software.amazon.awssdk</groupId>
+                    <artifactId>apache-client</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>url-connection-client</artifactId>
+            <version>${aws.version}</version>
         </dependency>
     </dependencies>
 </project>

@@ -6,5 +6,6 @@ public enum StorageType {
     SFTP,
     WEBDAV,
     GOOGLE_DRIVE,
+    S3,
     NULL
 }

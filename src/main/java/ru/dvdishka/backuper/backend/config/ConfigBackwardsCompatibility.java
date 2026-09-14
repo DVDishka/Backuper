@@ -158,4 +158,22 @@ public class ConfigBackwardsCompatibility {
             }
         }
     }
+
+    public static void configBelow16(FileConfiguration config) {
+
+        double configVersion = config.getDouble("configVersion");
+        if (configVersion >= 16.0) {
+            return;
+        }
+
+        ConfigurationSection storagesSection = config.getConfigurationSection("storages");
+        if (storagesSection != null) {
+            for (String storageId : storagesSection.getKeys(false)) {
+                ConfigurationSection storageSection = storagesSection.getConfigurationSection(storageId);
+                if (storageSection != null && "s3".equalsIgnoreCase(storageSection.getString("type")) && !storageSection.isSet("debug.protocolLogging")) {
+                    storageSection.set("debug.protocolLogging", true);
+                }
+            }
+        }
+    }
 }

@@ -97,4 +97,26 @@ public class ConfigTest extends BaseTest {
 
         assert config.get("backup.autoBackupCron").equals("0 0 10 1/1 * ? *");
     }
+
+    @Test
+    public void testConfigBackwardsCompatibilityWithS3ProtocolLogging() {
+        FileConfiguration legacyConfig = YamlConfiguration.loadConfiguration(new InputStreamReader(Backuper.getInstance().getResource("config.yml")));
+        legacyConfig.set("configVersion", 14.0);
+        legacyConfig.set("storages.s3.debug.protocolLogging", null);
+
+        ConfigBackwardsCompatibility.configBelow16(legacyConfig);
+
+        assert legacyConfig.getBoolean("storages.s3.debug.protocolLogging");
+    }
+
+    @Test
+    public void testS3ConfigReparation() throws IOException {
+        config = YamlConfiguration.loadConfiguration(new InputStreamReader(Backuper.getInstance().getResource("config.yml")));
+        config.set("storages.s3.region", null);
+        config.set("storages.s3.transfer.partSizeMb", null);
+        reload();
+
+        assert defaultConfig.getString("storages.s3.region").equals(config.getString("storages.s3.region"));
+        assert defaultConfig.getInt("storages.s3.transfer.partSizeMb") == config.getInt("storages.s3.transfer.partSizeMb");
+    }
 }
