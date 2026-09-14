@@ -1,5 +1,5 @@
 # DO NOT CHANGE
-configVersion: 14.0
+configVersion: 16.0
 lastBackup: 0
 lastChange: 0
 
@@ -235,3 +235,56 @@ storages:
     debug:
       # (true/false) Write WebDAV request methods, paths, and response status codes to plugins/Backuper/logs/{storageId}.log. Credentials are never logged.
       protocolLogging: true
+
+  s3:
+    type: s3
+    # (true/false) Enable S3 storage to use it via the Backuper
+    enabled: false
+    # (true/false) With automatic backup, backups will be saved to specified S3 storage. Works only if 'enabled: true'
+    autoBackup: true
+
+    # S3 bucket name where backups will be stored
+    bucket: ''
+    # (Region) AWS or provider region (e.g. us-east-1, eu-central-1, auto)
+    region: 'us-east-1'
+    # (URL) Custom endpoint URL for S3-compatible services (e.g. MinIO, Cloudflare R2, Wasabi). Leave empty for standard AWS S3
+    endpoint: ''
+    # (true/false) Force path-style access (endpoint/bucket/key). Useful for MinIO or localstack. Default is false (virtual-hosted-style)
+    pathStyleAccess: false
+
+    # (Path) Directory / key prefix in the bucket where backups will be stored
+    backupsFolder: backups/
+
+    # (>= 0) Max backups in backups folder, 0 to make it unlimited
+    maxBackupsNumber: 0
+    # (MB >= 0) Max backups folder weight, 0 to make it unlimited
+    maxBackupsWeight: 0
+
+    # (true/false) Should backups be packaged in a zip archive
+    zipArchive: true
+    # (0 - 9) Archive compression level. A higher value may reduce file size but may also increase the time required to archive and decompress
+    zipCompressionLevel: 5
+
+    # S3 Storage Class (e.g. STANDARD, STANDARD_IA, ONEZONE_IA, GLACIER_IR, INTELLIGENT_TIERING). Leave empty to use bucket default (recommended for Cloudflare R2, MinIO, Wasabi)
+    storageClass: ''
+
+    auth:
+      # (Access Key ID) S3 access key ID
+      accessKeyId: ''
+      # (Secret Access Key) S3 secret access key
+      secretAccessKey: ''
+      # (Session Token) S3 session token (optional, for temporary credentials)
+      sessionToken: ''
+
+    transfer:
+      # (MB >= 5) Size of each part for multipart upload (minimum 5 MB)
+      partSizeMb: 8
+      # (true/false) Buffer each upload to a temporary file on disk before uploading. Useful if direct streaming is restricted
+      bufferUploadsToDisk: false
+      # (SECONDS >= 0) Maximum time for S3 requests. 0 for default
+      requestTimeoutSeconds: 3600
+
+    debug:
+      # (true/false) Write S3 operations to plugins/Backuper/logs/{storageId}.log. Credentials and object data are never logged.
+      protocolLogging: true
+
