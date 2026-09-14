@@ -4,6 +4,7 @@
 - `ftp` - FTP server storage
 - `sftp` - SFTP server storage
 - `webdav` - HTTP(S) WebDAV server storage
+- `s3` - Amazon S3 and S3-compatible cloud storage
 - `googleDrive` - Google Drive cloud storage
 
 ## Storage IDs
@@ -34,6 +35,10 @@ storages:
   offsiteWebDav:         # <- Storage ID
     type: webdav
     # ... other settings
+
+  cloudS3:               # <- Storage ID
+    type: s3
+    # ... other settings
     
   companyDrive:          # <- Storage ID
     type: googleDrive
@@ -63,4 +68,5 @@ storages:
 - [[FTP Storage|FTP-Storage]]
 - [[SFTP Storage|SFTP-Storage]]
 - [[WebDAV Storage|WebDAV-Storage]]
+- [[S3 Storage|S3-Storage]]
 - [[Google Drive Storage|Google-Drive-Storage]]
