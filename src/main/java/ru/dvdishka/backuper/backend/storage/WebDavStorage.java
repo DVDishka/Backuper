@@ -298,6 +298,7 @@ public class WebDavStorage implements PathStorage {
             uploadFileChunked(sourceStream, newFileName, targetParentDir, progressListener);
             return;
         }
+        createDirRecursive(targetParentDir);
         String path = resolve(targetParentDir, newFileName);
         URI uri = resourceUri(path, false);
         Path bufferedUpload = null;
@@ -371,7 +372,8 @@ public class WebDavStorage implements PathStorage {
         String usernamePath = config.getUsername() != null && !config.getUsername().isBlank() ? config.getUsername() + "/" : "";
         String uploadSessionPath = "uploads/" + usernamePath + uploadId;
 
-        // 1. Create upload session directory
+        // 1. Create target parent directory and upload session directory
+        createDirRecursive(targetParentDir);
         createDirRecursive(uploadSessionPath);
 
         try {
@@ -456,7 +458,8 @@ public class WebDavStorage implements PathStorage {
             String usernamePath = config.getUsername() != null && !config.getUsername().isBlank() ? config.getUsername() + "/" : "";
             String uploadSessionPath = "uploads/" + usernamePath + uploadId;
 
-            // 1. Create upload session directory
+            // 1. Create target parent directory and upload session directory
+            createDirRecursive(targetParentDir);
             createDirRecursive(uploadSessionPath);
 
             try {
@@ -1099,6 +1102,12 @@ public class WebDavStorage implements PathStorage {
             endpointPath += "/";
         }
 
+        if (path != null && (path.equals("uploads") || path.startsWith("uploads/"))) {
+            if (endpointPath.contains("/files/")) {
+                endpointPath = endpointPath.substring(0, endpointPath.indexOf("/files/")) + "/";
+            }
+        }
+
         List<String> encodedSegments = new ArrayList<>();
         if (path != null) {
             for (String segment : path.replace('\\', '/').split("/")) {
@@ -1159,8 +1168,17 @@ public class WebDavStorage implements PathStorage {
         }
         String endpointPath = normalizeUriPath(endpoint.getPath());
         String resourcePath = normalizeUriPath(uri.getPath());
-        return endpointPath.equals("/") || resourcePath.equals(endpointPath)
-                || resourcePath.startsWith(endpointPath + "/");
+        if (endpointPath.equals("/") || resourcePath.equals(endpointPath)
+                || resourcePath.startsWith(endpointPath + "/")) {
+            return true;
+        }
+        if (sameOrigin(endpoint, uri)) {
+            if ((endpointPath.startsWith("/remote.php/dav/") || endpointPath.startsWith("/remote.php/webdav/"))
+                    && (resourcePath.startsWith("/remote.php/dav/") || resourcePath.startsWith("/remote.php/webdav/"))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean sameOrigin(URI first, URI second) {

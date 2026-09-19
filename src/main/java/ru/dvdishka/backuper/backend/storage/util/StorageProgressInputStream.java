@@ -20,7 +20,7 @@ public class StorageProgressInputStream extends InputStream {
     public int read() throws IOException {
         int result = inputStream.read();
         if (result != -1) {
-            progressListener.incrementProgress(1);
+            if (progressListener != null) progressListener.incrementProgress(1);
         }
         return result;
     }
@@ -29,7 +29,7 @@ public class StorageProgressInputStream extends InputStream {
     public int read(byte[] b) throws IOException {
         int bytesRead = inputStream.read(b);
         if (bytesRead > 0) {
-            progressListener.incrementProgress(bytesRead);
+            if (progressListener != null) progressListener.incrementProgress(bytesRead);
         }
         return bytesRead;
     }
@@ -38,7 +38,7 @@ public class StorageProgressInputStream extends InputStream {
     public int read(byte[] b, int off, int len) throws IOException {
         int bytesRead = inputStream.read(b, off, len);
         if (bytesRead > 0) {
-            progressListener.incrementProgress(bytesRead);
+            if (progressListener != null) progressListener.incrementProgress(bytesRead);
         }
         return bytesRead;
     }
