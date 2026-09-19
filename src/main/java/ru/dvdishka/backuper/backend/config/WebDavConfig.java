@@ -31,6 +31,8 @@ public class WebDavConfig implements PathStorageConfig {
     private int requestTimeoutSeconds;
     private int deleteConfirmationTimeoutSeconds;
     private boolean bufferUploadsToDisk;
+    private boolean chunkingEnabled;
+    private int chunkingSizeMB;
     private boolean protocolLogging;
 
     private ConfigurationSection config;
@@ -53,6 +55,8 @@ public class WebDavConfig implements PathStorageConfig {
         int requestTimeoutSeconds = getInteger(config, "http.requestTimeoutSeconds", 3600);
         int deleteConfirmationTimeoutSeconds = getInteger(config, "http.deleteConfirmationTimeoutSeconds", 60);
         this.bufferUploadsToDisk = getBoolean(config, "http.bufferUploadsToDisk", false);
+        this.chunkingEnabled = getBoolean(config, "chunking.enabled", false);
+        int chunkingSizeMB = getInteger(config, "chunking.chunkSizeMB", 50);
         this.protocolLogging = getBoolean(config, "debug.protocolLogging", true);
 
         if (backupsNumber < 0) {
@@ -88,6 +92,13 @@ public class WebDavConfig implements PathStorageConfig {
             deleteConfirmationTimeoutSeconds = 60;
         }
         this.deleteConfirmationTimeoutSeconds = deleteConfirmationTimeoutSeconds;
+
+        if (chunkingSizeMB <= 0) {
+            Backuper.getInstance().getLogManager().warn("Failed to load config value!");
+            Backuper.getInstance().getLogManager().warn("%s.chunking.chunkSizeMB must be > 0, using default 50 value...".formatted(config.getCurrentPath()));
+            chunkingSizeMB = 50;
+        }
+        this.chunkingSizeMB = chunkingSizeMB;
 
         if (zipCompressionLevel < 0 || zipCompressionLevel > 9) {
             Backuper.getInstance().getLogManager().warn("Failed to load config value!");

@@ -110,6 +110,64 @@ public class WebDavStorageTest {
     }
 
     @Test
+    public void uploadsFileUsingStreamingChunkedUploadWhenEnabled() throws IOException {
+        WebDavConfig config = mock(WebDavConfig.class);
+        when(config.getId()).thenReturn("webdav-chunked-streaming-test");
+        when(config.getUrl()).thenReturn(server.baseUrl());
+        when(config.getUsername()).thenReturn("test-user");
+        when(config.getPassword()).thenReturn("test-password");
+        when(config.getBackupsFolder()).thenReturn("backups");
+        when(config.isAllowInsecureHttp()).thenReturn(true);
+        when(config.isChunkingEnabled()).thenReturn(true);
+        when(config.isBufferUploadsToDisk()).thenReturn(false);
+        when(config.getChunkingSizeMB()).thenReturn(1);
+        when(config.getRequestTimeoutSeconds()).thenReturn(30);
+        when(config.getPathSeparatorSymbol()).thenReturn("/");
+
+        WebDavStorage chunkedStorage = new WebDavStorage(config);
+        chunkedStorage.setId("webdav-chunked-streaming-test");
+
+        byte[] payload = new byte[3 * 1024 * 1024];
+        Arrays.fill(payload, (byte) 42);
+        BasicStorageProgressListener progressListener = new BasicStorageProgressListener();
+
+        chunkedStorage.uploadFile(new ByteArrayInputStream(payload), "chunked_streaming_backup.zip", "backups", progressListener);
+
+        assertArrayEquals(payload, server.files.get("/dav/backups/chunked_streaming_backup.zip"));
+        assertEquals(payload.length, progressListener.getCurrentProgress());
+        server.assertHealthy();
+    }
+
+    @Test
+    public void uploadsFileUsingBufferedChunkedUploadWhenEnabled() throws IOException {
+        WebDavConfig config = mock(WebDavConfig.class);
+        when(config.getId()).thenReturn("webdav-chunked-buffered-test");
+        when(config.getUrl()).thenReturn(server.baseUrl());
+        when(config.getUsername()).thenReturn("test-user");
+        when(config.getPassword()).thenReturn("test-password");
+        when(config.getBackupsFolder()).thenReturn("backups");
+        when(config.isAllowInsecureHttp()).thenReturn(true);
+        when(config.isChunkingEnabled()).thenReturn(true);
+        when(config.isBufferUploadsToDisk()).thenReturn(true);
+        when(config.getChunkingSizeMB()).thenReturn(1);
+        when(config.getRequestTimeoutSeconds()).thenReturn(30);
+        when(config.getPathSeparatorSymbol()).thenReturn("/");
+
+        WebDavStorage chunkedStorage = new WebDavStorage(config);
+        chunkedStorage.setId("webdav-chunked-buffered-test");
+
+        byte[] payload = new byte[3 * 1024 * 1024];
+        Arrays.fill(payload, (byte) 99);
+        BasicStorageProgressListener progressListener = new BasicStorageProgressListener();
+
+        chunkedStorage.uploadFile(new ByteArrayInputStream(payload), "chunked_buffered_backup.zip", "backups", progressListener);
+
+        assertArrayEquals(payload, server.files.get("/dav/backups/chunked_buffered_backup.zip"));
+        assertEquals(payload.length, progressListener.getCurrentProgress());
+        server.assertHealthy();
+    }
+
+    @Test
     public void bufferedUploadSendsFixedContentLength() {
         storage = createStorage(true, true);
         byte[] payload = new byte[128 * 1024];
@@ -1142,6 +1200,30 @@ public class WebDavStorageTest {
                     && (files.containsKey(destination) || directories.contains(destination))) {
                 send(exchange, 412, "Destination exists");
                 return;
+            }
+            if (source.endsWith("/.file")) {
+                String sessionFolder = source.substring(0, source.length() - 6);
+                if (directories.contains(sessionFolder)) {
+                    List<String> chunkPaths = files.keySet().stream()
+                            .filter(path -> path.startsWith(sessionFolder + "/"))
+                            .sorted()
+                            .toList();
+                    java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+                    for (String chunkPath : chunkPaths) {
+                        out.writeBytes(files.get(chunkPath));
+                    }
+                    files.put(destination, out.toByteArray());
+                    etags.put(destination, nextEtag());
+                    for (String chunkPath : chunkPaths) {
+                        files.remove(chunkPath);
+                        etags.remove(chunkPath);
+                    }
+                    directories.remove(sessionFolder);
+                    etags.remove(sessionFolder);
+                    send(exchange, responseStatusOverride == null ? 201 : responseStatusOverride,
+                            responseStatusOverride == null ? "" : "Transient failure after mutation");
+                    return;
+                }
             }
             if (files.containsKey(source)) {
                 String sourceEtag = etags.remove(source);
