@@ -1,4 +1,6 @@
-> **Important:** `WebDavStorage` supports only `Basic` authentication method.
+> [!IMPORTANT]
+> - `WebDavStorage` supports only the `Basic` authentication method.
+> - Chunked file upload (`chunking.enabled`) resolves HTTP 413 or timeout errors when uploading large backups, but is **only supported on Nextcloud and ownCloud** WebDAV servers. Keep it `false` for standard WebDAV servers.
 
 ## Default Configuration
 
@@ -27,6 +29,10 @@ storages:
       requestTimeoutSeconds: 3600
       deleteConfirmationTimeoutSeconds: 60
       bufferUploadsToDisk: false
+
+    chunking:
+      enabled: false
+      chunkSizeMB: 50
 ```
 
 ## Configuration Options
@@ -84,6 +90,19 @@ http:
 Backuper makes up to five attempts for temporary network failures and HTTP `408`, `425`, `429`, `500`, `502`, `503`, and `504` responses. It follows `Retry-After` delays of up to 60 seconds. A longer delay stops the operation. Authentication, certificate, TLS protocol, HTTP protocol, and storage limit errors are not retried.
 
 If a buffered upload fails after the server may have saved the file, Backuper downloads the remote file and compares it with the temporary copy. A strong ETag is required before Backuper can retry `DELETE` or `MOVE`, which prevents it from modifying a resource that another client replaced.
+
+
+
+### Nextcloud / ownCloud Chunking
+
+```yaml
+chunking:
+  enabled: false
+  chunkSizeMB: 50
+```
+
+- **enabled**: Enables Nextcloud/ownCloud WebDAV chunked file uploads (`v1` API) to prevent HTTP `413 Payload Too Large` or timeout errors on large backups. Keep `false` for standard WebDAV servers.
+- **chunkSizeMB**: Chunk size in megabytes (e.g. `50`).
 
 ### Backup Limits and Compression
 

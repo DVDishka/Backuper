@@ -55,7 +55,7 @@ public class WebDavConfig implements PathStorageConfig {
         int requestTimeoutSeconds = getInteger(config, "http.requestTimeoutSeconds", 3600);
         int deleteConfirmationTimeoutSeconds = getInteger(config, "http.deleteConfirmationTimeoutSeconds", 60);
         this.bufferUploadsToDisk = getBoolean(config, "http.bufferUploadsToDisk", false);
-        this.chunkingEnabled = getBoolean(config, "chunking.enabled", true);
+        this.chunkingEnabled = getBoolean(config, "chunking.enabled", false);
         int chunkingSizeMB = getInteger(config, "chunking.chunkSizeMB", 50);
         this.protocolLogging = getBoolean(config, "debug.protocolLogging", true);
 
