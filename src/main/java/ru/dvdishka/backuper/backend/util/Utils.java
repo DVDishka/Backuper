@@ -11,7 +11,6 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
@@ -21,7 +20,7 @@ public class Utils {
     public static final Properties properties = new Properties();
 
     public static boolean errorSetWritable = false;
-    public static volatile HashMap<String, Boolean> isAutoSaveEnabled = new HashMap<>();
+    public static final java.util.concurrent.ConcurrentMap<String, Boolean> isAutoSaveEnabled = new java.util.concurrent.ConcurrentHashMap<>();
 
     static {
         try {

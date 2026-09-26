@@ -9,7 +9,11 @@ import ru.dvdishka.backuper.backend.storage.util.StorageProgressListener;
 import ru.dvdishka.backuper.backend.util.Utils;
 
 import java.io.*;
+import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
@@ -29,8 +33,10 @@ public class TransferDirsAsZipTask extends BaseTask implements DoubleStorageTask
     private final String targetParentDir;
     private final String targetZipFileName;
 
-    private final List<StorageProgressListener> downloadProgressListeners = new java.util.ArrayList<>();
+    private final Collection<StorageProgressListener> downloadProgressListeners = new ConcurrentLinkedQueue<>();
     private final AtomicLong bytesUploaded = new AtomicLong(0);
+
+    private volatile PipedInputStream activePipe;
 
     /***
      * @param sourceDirs Absolute paths. Don't try to add there a file you want to send without createRootDirInTargetZIP a true option
@@ -50,38 +56,53 @@ public class TransferDirsAsZipTask extends BaseTask implements DoubleStorageTask
 
     @Override
     public void run() {
-
-        try (PipedInputStream pipedInputStream = new PipedInputStream(PIPE_BUFFER_SIZE);
-             PipedOutputStream pipedOutputStream = new PipedOutputStream(pipedInputStream)) {
-
-            Backuper.getInstance().getScheduleManager().runAsync(() -> {
-
-                // Use BufferedOutputStream for better performance
-                try (BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(pipedOutputStream, STREAM_BUFFER_SIZE);
-                     ZipOutputStream targetZipOutputStream = new ZipOutputStream(bufferedOutputStream)) {
-
-                    // Set compression level once before adding any entries
-                    targetZipOutputStream.setLevel(targetStorage.getConfig().getZipCompressionLevel());
-
-                    for (String sourceDirToAdd : sourceDirs) {
-                        if (cancelled) return;
-                        if (createRootDirInTargetZIP) {
-                            addDirToZip(targetZipOutputStream, sourceDirToAdd, sourceStorage.getFileNameFromPath(sourceDirToAdd));
-                        } else {
-                            addDirToZip(targetZipOutputStream, sourceDirToAdd, "");
+        TaskManager taskManager = Backuper.getInstance().getTaskManager();
+        CompletableFuture<Void> writer = null;
+        Throwable failure = null;
+        try (PipedInputStream input = new PipedInputStream(PIPE_BUFFER_SIZE);
+             PipedOutputStream output = new PipedOutputStream(input)) {
+            activePipe = input;
+            checkCancelled();
+            writer = Backuper.getInstance().getScheduleManager().runAsync(() -> {
+                try {
+                    taskManager.registerCurrentThread(this);
+                    try (BufferedOutputStream buffered = new BufferedOutputStream(output, STREAM_BUFFER_SIZE);
+                         ZipOutputStream zip = new ZipOutputStream(buffered)) {
+                        zip.setLevel(targetStorage.getConfig().getZipCompressionLevel());
+                        for (String dir : sourceDirs) {
+                            checkCancelled();
+                            addDirToZip(zip, dir, createRootDirInTargetZIP ? sourceStorage.getFileNameFromPath(dir) : "");
                         }
+                        checkCancelled();
+                    } finally {
+                        taskManager.unregisterCurrentThread(this);
                     }
-
                 } catch (Exception e) {
-                    warn("Failed to send ZIP entry to %s storage".formatted(targetStorage), sender);
-                    warn(e);
+                    throw new CompletionException(e);
+                } finally {
+                    // Also signal EOF when cancellation happens before the ZIP stream is constructed.
+                    try { output.close(); } catch (IOException ignored) { }
                 }
             });
-
-            targetStorage.uploadFile(pipedInputStream, targetZipFileName, targetParentDir);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            targetStorage.uploadFile(input, targetZipFileName, targetParentDir);
+            checkCancelled();
+        } catch (Throwable e) {
+            failure = e;
+            taskManager.interruptRunningThreads(this);
+        } finally {
+            activePipe = null;
+            if (writer != null) {
+                try {
+                    // Completion means the writer has really exited, including closing its source stream.
+                    writer.join();
+                } catch (CompletionException e) {
+                    if (failure == null) failure = e.getCause();
+                    else failure.addSuppressed(e.getCause());
+                }
+            }
         }
+        if (failure instanceof Error error) throw error;
+        if (failure != null) throw new CompletionException(failure);
     }
 
     @Override
@@ -105,14 +126,18 @@ public class TransferDirsAsZipTask extends BaseTask implements DoubleStorageTask
 
     @Override
     public void cancel() {
-        cancelled = true;
+        super.cancel();
+        PipedInputStream pipe = activePipe;
+        if (pipe != null) {
+            try { pipe.close(); } catch (IOException ignored) { }
+        }
     }
 
     /**
      * Recursively add a directory (or file) into the ZIP output stream.
      */
-    private void addDirToZip(ZipOutputStream zip, String sourceDir, String relativeDirPath) {
-        if (cancelled) return;
+    private void addDirToZip(ZipOutputStream zip, String sourceDir, String relativeDirPath) throws IOException {
+        checkCancelled();
         if (!sourceStorage.exists(sourceDir)) {
             warn("Directory does not exist: %s".formatted(sourceDir), sender);
             return;
@@ -142,7 +167,7 @@ public class TransferDirsAsZipTask extends BaseTask implements DoubleStorageTask
                     byte[] buffer = new byte[FILE_BUFFER_SIZE];
                     int read;
                     while ((read = bufferedInputStream.read(buffer)) != -1) {
-                        if (cancelled) return;
+                        checkCancelled();
                         zip.write(buffer, 0, read);
                         bytesUploaded.getAndAdd(read);
                     }
@@ -157,14 +182,16 @@ public class TransferDirsAsZipTask extends BaseTask implements DoubleStorageTask
         }
         if (sourceStorage.isDir(sourceDir)) {
             try {
-                ZipEntry entry = new ZipEntry(relativeDirPath.endsWith("/") ? relativeDirPath : "%s/".formatted(relativeDirPath));
-                zip.putNextEntry(entry);
-                zip.closeEntry();
+                if (!relativeDirPath.isEmpty()) {
+                    ZipEntry entry = new ZipEntry(relativeDirPath.endsWith("/") ? relativeDirPath : relativeDirPath + "/");
+                    zip.putNextEntry(entry);
+                    zip.closeEntry();
+                }
 
                 List<String> ls = sourceStorage.ls(sourceDir);
                 for (String file : ls) {
                     if (!"session.lock".equals(file)) {
-                        addDirToZip(zip, sourceStorage.resolve(sourceDir, file), "%s/%s".formatted(relativeDirPath, file));
+                        addDirToZip(zip, sourceStorage.resolve(sourceDir, file), relativeDirPath.isEmpty() ? file : relativeDirPath + "/" + file);
                     }
                 }
             } catch (Exception e) {
@@ -198,6 +225,7 @@ public class TransferDirsAsZipTask extends BaseTask implements DoubleStorageTask
             byte[] buffer = new byte[FILE_BUFFER_SIZE];
             int read;
             while ((read = bis.read(buffer)) != -1) {
+                checkCancelled();
                 crc.update(buffer, 0, read);
             }
             return crc.getValue();

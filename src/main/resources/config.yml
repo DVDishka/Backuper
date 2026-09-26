@@ -1,5 +1,5 @@
 # DO NOT CHANGE
-configVersion: 15.0
+configVersion: 16.0
 lastBackup: 0
 lastChange: 0
 
@@ -48,8 +48,6 @@ server:
 
   # (Path) Size cache file
   sizeCacheFile: ./plugins/Backuper/sizeCache.json
-  # (>= 0) Target number of threads that the backuper will use in parallel (It'll try, but it isn't a hard limitation) (0 to automatically set it equal to the number of threads on the server)
-  threadNumber: 0
 
   # (true/false) Check for new versions of the Backuper to stay up to date
   checkUpdates: true

@@ -44,7 +44,7 @@ public class BackupToZipTask extends BaseTask {
 
     @Override
     public void cancel() {
-        cancelled = true;
+        super.cancel();
         if (toZipTask != null) Backuper.getInstance().getTaskManager().cancelTaskRaw(toZipTask);
         if (deleteFolderTask != null) Backuper.getInstance().getTaskManager().cancelTaskRaw(deleteFolderTask);
     }

@@ -89,7 +89,7 @@ jobs:
             ]
           platform_dependencies: |
             {
-              "PAPER": ["1.20.6","1.21.x", "26.1.x", "26.2"]
+              "PAPER": ["1.20.6","1.21.x", "26.1.x", "26.2", "26.3"]
             }
 
       - name: Update Hangar description

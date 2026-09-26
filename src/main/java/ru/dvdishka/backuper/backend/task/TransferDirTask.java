@@ -15,7 +15,8 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
+import java.util.Collection;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 
 public class TransferDirTask extends BaseTask implements DoubleStorageTask {
@@ -27,7 +28,7 @@ public class TransferDirTask extends BaseTask implements DoubleStorageTask {
     private final String targetFileName;
     private final boolean forceExcludedDirs;
 
-    private ArrayList<StorageProgressListener> downloadProgressListeners;
+    private final Collection<StorageProgressListener> downloadProgressListeners = new ConcurrentLinkedQueue<>();
 
     private static final int STREAM_BUFFER_SIZE = 1048576;
 
@@ -43,7 +44,6 @@ public class TransferDirTask extends BaseTask implements DoubleStorageTask {
 
     @Override
     public void run() {
-        downloadProgressListeners = new ArrayList<>();
         if (!cancelled) {
             sendFolder(sourceDir, targetParentDir, targetFileName);
         }
@@ -107,7 +107,7 @@ public class TransferDirTask extends BaseTask implements DoubleStorageTask {
 
     @Override
     public void cancel() {
-        cancelled = true;
+        super.cancel();
     }
 
     @Override

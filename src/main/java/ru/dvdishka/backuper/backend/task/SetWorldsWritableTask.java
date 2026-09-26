@@ -38,6 +38,7 @@ public class SetWorldsWritableTask extends BaseTask {
 
             if (Utils.isAutoSaveEnabled.containsKey(world.getName())) {
                 world.setAutoSave(force || Utils.isAutoSaveEnabled.get(world.getName()));
+                Utils.isAutoSaveEnabled.remove(world.getName());
             }
         }
     }
@@ -48,6 +49,6 @@ public class SetWorldsWritableTask extends BaseTask {
 
     @Override
     public void cancel() {
-        cancelled = true;
+        super.cancel();
     }
 }

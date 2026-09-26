@@ -42,7 +42,7 @@ public class DeleteBrokenBackupsTask extends BaseTask {
 
     @Override
     public void cancel() {
-        cancelled = true;
+        super.cancel();
         for (Task task : tasks) {
             Backuper.getInstance().getTaskManager().cancelTaskRaw(task);
         }

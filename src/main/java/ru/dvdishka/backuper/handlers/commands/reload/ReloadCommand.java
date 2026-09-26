@@ -28,10 +28,24 @@ public class ReloadCommand extends Command {
 
     @Override
     public void run() {
+        Backuper plugin = Backuper.getInstance();
+        if (!plugin.getTaskManager().tryLockForReload()) {
+            returnFailure("Blocked by another operation!");
+            return;
+        }
         Backuper.restarting = true;
-        Backuper.getInstance().shutdown();
-        Backuper.getInstance().init();
-        returnSuccess("Reloading completed");
-        Backuper.restarting = false;
+        try {
+            if (!plugin.shutdown()) {
+                returnFailure("Reload aborted: previous tasks have not stopped. See the server log.");
+                return;
+            }
+            plugin.init();
+            returnSuccess("Reloading completed");
+        } catch (Exception e) {
+            plugin.getLogManager().warn(e);
+            returnFailure("Reload failed; see the server log. Restart the server before using Backuper again.");
+        } finally {
+            Backuper.restarting = false;
+        }
     }
 }

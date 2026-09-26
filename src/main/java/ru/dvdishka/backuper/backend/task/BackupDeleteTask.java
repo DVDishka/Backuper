@@ -36,7 +36,7 @@ public class BackupDeleteTask extends BaseTask {
 
     @Override
     public void cancel() {
-        cancelled = true;
+        super.cancel();
         if (deleteBackupTask != null) {
             Backuper.getInstance().getTaskManager().cancelTaskRaw(deleteBackupTask);
         }

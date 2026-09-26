@@ -58,11 +58,9 @@ server:
 ```yaml
 server:
   sizeCacheFile: './plugins/Backuper/sizeCache.json'
-  threadNumber: 0
 ```
 
 - **sizeCacheFile**: Path to file that caches backup size calculations for performance.
-- **threadNumber**: Number of threads for parallel operations. `0` automatically uses optimal number.
 
 ### Updates
 ```yaml
@@ -78,7 +76,7 @@ server:
 
 ### System Settings
 ```yaml
-configVersion: 15.0
+configVersion: 16.0
 lastBackup: 0
 lastChange: 0
 ```

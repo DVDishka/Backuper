@@ -28,9 +28,7 @@ public class SetWorldsReadOnlyTask extends BaseTask {
         }
 
         for (World world : Bukkit.getWorlds()) {
-            if (!Utils.errorSetWritable) {
-                Utils.isAutoSaveEnabled.put(world.getName(), world.isAutoSave());
-            }
+            Utils.isAutoSaveEnabled.putIfAbsent(world.getName(), world.isAutoSave());
 
             world.setAutoSave(false);
             if (!world.getWorldFolder().setReadOnly()) {
@@ -45,6 +43,6 @@ public class SetWorldsReadOnlyTask extends BaseTask {
 
     @Override
     public void cancel() {
-        cancelled = true;
+        super.cancel();
     }
 }

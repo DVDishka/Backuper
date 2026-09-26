@@ -14,7 +14,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Stream;
 
 import static java.lang.Long.max;
@@ -30,7 +33,7 @@ public class BackupTask extends BaseTask {
      **/
     private String backupName;
 
-    private final List<Task> tasks = new ArrayList<>();
+    private final List<Task> tasks = new CopyOnWriteArrayList<>();
 
     public BackupTask(List<Storage> storages, String afterBackup, boolean isAutoBackup) {
         super();
@@ -55,7 +58,6 @@ public class BackupTask extends BaseTask {
 
                 if (afterBackup.equals("RESTART")) {
                     Backuper.getInstance().getScheduleManager().runGlobalRegionDelayed(Backuper.getInstance(), () -> {
-                        Backuper.getInstance().getScheduleManager().destroy(Backuper.getInstance());
                         Bukkit.getServer().restart();
                     }, 20);
 
@@ -87,88 +89,97 @@ public class BackupTask extends BaseTask {
     @Override
     public void run() {
 
-        HashMap<Storage, Long> storageBackupByteSize = new HashMap<>();
+        Map<Storage, Long> storageBackupByteSize = new ConcurrentHashMap<>();
         List<CompletableFuture<Void>> taskFutures = new ArrayList<>();
 
-        // Lock world folders if necessary
-        if (!cancelled) {
-            try {
-                Backuper.getInstance().getTaskManager().startTaskRaw(new SetWorldsReadOnlyTask(), sender);
-            } catch (TaskException e) {
-                warn(e);
-            }
-        }
-        HashMap<Storage, List<Task>> storageTasks = new HashMap<>();
-        for (Task task : tasks) {
-            if (task instanceof DoubleStorageTask doubleStorageTask) {
-                storageTasks.compute(doubleStorageTask.getTargetStorage(), (storage, tasks) -> {
-                    if (tasks == null) tasks = new ArrayList<>();
-                    tasks.add(doubleStorageTask);
-                    return tasks;
-                });
-            } else {
-                Backuper.getInstance().getLogManager().warn("Non-DoubleStorageTask found in BackupTask tasks list: %s".formatted(task.getClass().getName()));
-            }
-        }
-
-        for (Storage storage : storageTasks.keySet()) {
-            if (cancelled) break;
-
-            taskFutures.add(Backuper.getInstance().getScheduleManager().runAsync(() -> { // One thread for one storage
+        try {
+            // Lock world folders if necessary
+            if (!cancelled) {
                 try {
-                    for (Task task : storageTasks.get(storage)) {
-                        if (cancelled) break;
-
-                        Backuper.getInstance().getTaskManager().startTaskRaw(task, sender);
-
-                        // Calculate a new backup size
-                        if (!cancelled && (task instanceof TransferDirTask transferDirTask)) {
-                            storageBackupByteSize.compute(transferDirTask.getTargetStorage(), (transferTaskStorage, size) -> size == null ? transferDirTask.getTaskMaxProgress() : size + transferDirTask.getTaskMaxProgress()); // There might be several tasks for one storage
-                        }
-                    }
-
-                    // RENAME TASK
-                    if (!cancelled) {
-                        devLog("The Rename \"in progress\" in %s storage task has been started".formatted(storage.getId()));
-                        String fileType = "";
-                        if (storage.getConfig().isZipArchive()) {
-                            fileType = ".zip";
-                        }
-
-                        try {
-                            String backupsFolder = storage.getConfig().getBackupsFolder();
-                            String inProgressFileName = backupName + fileType;
-                            String inProgressPath = storage.resolve(backupsFolder, inProgressFileName);
-                            String finalFileName = backupName.replace(" in progress", "") + fileType;
-
-                            verifyBackupExists(storage, inProgressPath, "Backup upload verification failed. In-progress backup does not exist: %s".formatted(inProgressPath));
-                            storage.renameFile(inProgressPath, finalFileName);
-                            String finalPath = storage.resolve(backupsFolder, finalFileName);
-                            verifyBackupExists(storage, finalPath, "Backup rename verification failed. Final backup does not exist: %s".formatted(finalPath));
-                            verifyBackupNameDoesNotExist(storage, backupsFolder, inProgressFileName, "Backup rename verification failed. In-progress backup still exists: %s".formatted(inProgressFileName));
-
-                            // Add new backup size to cache (ONLY IF NOT ZIP. ZIP SIZE IS NOT COUNTED). MUST ONLY BE EXECUTED AFTER RENAMING
-                            if (!storage.getConfig().isZipArchive()) {
-                                storage.getBackupManager().saveBackupSizeToCache(backupName.replace(" in progress", ""), storageBackupByteSize.get(storage));
-                                devLog("New backup size in %s storage has been cached".formatted(storage.getId()));
-                            }
-                        } catch (Exception e) {
-                            warn("Failed to finalize backup %s in %s storage".formatted(backupName, storage.getId()), sender);
-                            warn(e);
-                        }
-                        devLog("The Rename \"in progress\" Folder %s storage task has been finished".formatted(storage.getId()));
-                    }
+                    Backuper.getInstance().getTaskManager().startTaskRaw(new SetWorldsReadOnlyTask(), sender);
                 } catch (TaskException e) {
                     warn(e);
                 }
-            }));
-        }
+            }
+            HashMap<Storage, List<Task>> storageTasks = new HashMap<>();
+            for (Task task : tasks) {
+                if (task instanceof DoubleStorageTask doubleStorageTask) {
+                    storageTasks.compute(doubleStorageTask.getTargetStorage(), (storage, tasks) -> {
+                        if (tasks == null) tasks = new ArrayList<>();
+                        tasks.add(doubleStorageTask);
+                        return tasks;
+                    });
+                } else {
+                    warn("Non-DoubleStorageTask found in BackupTask tasks list: %s".formatted(task.getClass().getName()));
+                }
+            }
 
-        CompletableFuture.allOf(taskFutures.toArray(new CompletableFuture[0])).join(); // Waiting for all tasks to be completed
-        try {
-            Backuper.getInstance().getTaskManager().startTaskRaw(new SetWorldsWritableTask(), sender); // We should unlock folders even if they weren't locked
-        } catch (TaskException e) {
-            warn(e);
+            for (Storage storage : storageTasks.keySet()) {
+                if (cancelled) break;
+
+                taskFutures.add(Backuper.getInstance().getScheduleManager().runAsync(() -> { // One thread for one storage
+                    try {
+                        for (Task task : storageTasks.get(storage)) {
+                            if (cancelled) break;
+
+                            Backuper.getInstance().getTaskManager().startTaskRaw(task, sender);
+
+                            // Calculate a new backup size
+                            if (!cancelled && (task instanceof TransferDirTask transferDirTask)) {
+                                storageBackupByteSize.compute(transferDirTask.getTargetStorage(), (transferTaskStorage, size) -> size == null ? transferDirTask.getTaskMaxProgress() : size + transferDirTask.getTaskMaxProgress()); // There might be several tasks for one storage
+                            }
+                        }
+
+                        // RENAME TASK
+                        if (!cancelled) {
+                            devLog("The Rename \"in progress\" in %s storage task has been started".formatted(storage.getId()));
+                            String fileType = "";
+                            if (storage.getConfig().isZipArchive()) {
+                                fileType = ".zip";
+                            }
+
+                            try {
+                                String backupsFolder = storage.getConfig().getBackupsFolder();
+                                String inProgressFileName = backupName + fileType;
+                                String inProgressPath = storage.resolve(backupsFolder, inProgressFileName);
+                                String finalFileName = backupName.replace(" in progress", "") + fileType;
+
+                                verifyBackupExists(storage, inProgressPath, "Backup upload verification failed. In-progress backup does not exist: %s".formatted(inProgressPath));
+                                storage.renameFile(inProgressPath, finalFileName);
+                                String finalPath = storage.resolve(backupsFolder, finalFileName);
+                                verifyBackupExists(storage, finalPath, "Backup rename verification failed. Final backup does not exist: %s".formatted(finalPath));
+                                verifyBackupNameDoesNotExist(storage, backupsFolder, inProgressFileName, "Backup rename verification failed. In-progress backup still exists: %s".formatted(inProgressFileName));
+
+                                // Add new backup size to cache (ONLY IF NOT ZIP. ZIP SIZE IS NOT COUNTED). MUST ONLY BE EXECUTED AFTER RENAMING
+                                if (!storage.getConfig().isZipArchive()) {
+                                    storage.getBackupManager().saveBackupSizeToCache(backupName.replace(" in progress", ""), storageBackupByteSize.get(storage));
+                                    devLog("New backup size in %s storage has been cached".formatted(storage.getId()));
+                                }
+                            } catch (Exception e) {
+                                warn("Failed to finalize backup %s in %s storage".formatted(backupName, storage.getId()), sender);
+                                warn(e);
+                            }
+                            devLog("The Rename \"in progress\" Folder %s storage task has been finished".formatted(storage.getId()));
+                        }
+                    } catch (TaskException e) {
+                        warn(e);
+                    }
+                }));
+            }
+
+        } finally {
+            try {
+                // Do not release the operation slot while any storage task is still running.
+                CompletableFuture.allOf(taskFutures.toArray(new CompletableFuture[0])).join();
+            } finally {
+                if (!Backuper.getInstance().getScheduleManager().isStopping()) {
+                    try {
+                        Backuper.getInstance().getTaskManager().startTaskRaw(new SetWorldsWritableTask(), sender);
+                    } catch (TaskException e) {
+                        warn(e);
+                    }
+                }
+            }
         }
 
         // UPDATE VARIABLES
@@ -203,7 +214,6 @@ public class BackupTask extends BaseTask {
         if (!cancelled) {
             if (afterBackup.equals("RESTART")) {
                 Backuper.getInstance().getScheduleManager().runGlobalRegionDelayed(Backuper.getInstance(), () -> {
-                    Backuper.getInstance().getScheduleManager().destroy(Backuper.getInstance());
                     Bukkit.getServer().restart();
                 }, 20);
 
@@ -320,7 +330,7 @@ public class BackupTask extends BaseTask {
 
     @Override
     public void cancel() {
-        cancelled = true;
+        super.cancel();
         for (Task task : tasks) {
             Backuper.getInstance().getTaskManager().cancelTaskRaw(task);
         }

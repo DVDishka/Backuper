@@ -10,14 +10,15 @@ import org.quartz.simpl.SimpleThreadPool;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.util.Utils;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 
 public class ScheduleManager {
 
     private org.quartz.Scheduler quartzScheduler;
-    private ExecutorService mainExecutorService;
+    private AsyncExecutor mainExecutorService;
+    private volatile boolean stopping = true;
 
     public void init() {
         try {
@@ -38,36 +39,43 @@ public class ScheduleManager {
             Backuper.getInstance().getLogManager().warn(e);
         }
 
-        if (Backuper.getInstance().getConfigManager().getServerConfig().getThreadNumber() == 0) {
-            this.mainExecutorService = Executors.newWorkStealingPool();
-        } else {
-            this.mainExecutorService = Executors.newWorkStealingPool(Backuper.getInstance().getConfigManager().getServerConfig().getThreadNumber());
-        }
+        this.mainExecutorService = new AsyncExecutor();
+        this.stopping = false;
     }
 
     public ScheduledTask runGlobalRegionDelayed(Plugin plugin, Runnable task, long delayTicks) {
+        if (isStopping()) throw new RejectedExecutionException("Backuper is stopping");
+        Runnable guarded = () -> { if (!isStopping()) task.run(); };
         if (Utils.isFolia) {
-            return Bukkit.getGlobalRegionScheduler().runDelayed(plugin, (scheduledTask) -> task.run(), delayTicks);
+            return Bukkit.getGlobalRegionScheduler().runDelayed(plugin, (scheduledTask) -> guarded.run(), delayTicks);
         } else {
-            Bukkit.getScheduler().runTaskLater(plugin, task, delayTicks);
+            Bukkit.getScheduler().runTaskLater(plugin, guarded, delayTicks);
         }
         return null;
     }
 
     public ScheduledTask runGlobalRegionRepeatingTask(Plugin plugin, Runnable task, long delayTicks, long periodTicks) {
+        if (isStopping()) throw new RejectedExecutionException("Backuper is stopping");
+        Runnable guarded = () -> { if (!isStopping()) task.run(); };
         if (Utils.isFolia) {
-            return Bukkit.getGlobalRegionScheduler().runAtFixedRate(plugin, (scheduledTask) -> task.run(), delayTicks, periodTicks);
+            return Bukkit.getGlobalRegionScheduler().runAtFixedRate(plugin, (scheduledTask) -> guarded.run(), delayTicks, periodTicks);
         } else {
-            Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, task, delayTicks, periodTicks);
+            Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, guarded, delayTicks, periodTicks);
         }
         return null;
     }
 
     public CompletableFuture<Void> runAsync(Runnable task) {
-        return CompletableFuture.runAsync(task, mainExecutorService);
+        if (isStopping()) throw new RejectedExecutionException("Backuper is stopping");
+        return mainExecutorService.submit(task);
     }
 
-    public void destroy(Plugin plugin) {
+    public boolean isStopping() {
+        return stopping || mainExecutorService == null || mainExecutorService.isStopping();
+    }
+
+    public boolean destroy(Plugin plugin) {
+        stopping = true;
         try {
             if (Utils.isFolia) {
                 Bukkit.getAsyncScheduler().cancelTasks(plugin);
@@ -80,12 +88,12 @@ public class ScheduleManager {
             Backuper.getInstance().getLogManager().warn(e);
         }
         try {
-            this.quartzScheduler.shutdown(false);
+            if (this.quartzScheduler != null) this.quartzScheduler.shutdown(false);
         } catch (SchedulerException e) {
             Backuper.getInstance().getLogManager().warn("Failed to shutdown Quartz Scheduler");
             Backuper.getInstance().getLogManager().warn(e);
         }
-        this.mainExecutorService.shutdownNow();
+        return mainExecutorService == null || mainExecutorService.stop(Duration.ofMinutes(3));
     }
 
     /***
@@ -99,6 +107,8 @@ public class ScheduleManager {
         try {
 
             JobDetail jobDetail = JobBuilder.newJob(job).withIdentity(jobName, jobGroup).build();
+            jobDetail.getJobDataMap().put("backuperScheduler", this);
+            jobDetail.getJobDataMap().put("backuperAutoBackup", Backuper.getInstance().getAutoBackupScheduleManager());
             CronTrigger trigger = TriggerBuilder.newTrigger()
                     .withIdentity(jobName, jobGroup)
                     .withSchedule(CronScheduleBuilder.cronSchedule(cronExpression))

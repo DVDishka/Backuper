@@ -4,6 +4,7 @@ import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.ApiStatus;
 import ru.dvdishka.backuper.Backuper;
 
+import java.io.InterruptedIOException;
 import java.util.concurrent.CompletableFuture;
 
 import static java.lang.Math.min;
@@ -13,12 +14,18 @@ public abstract class BaseTask implements Task {
     protected CommandSender sender = null; //Any task must be able to send some information to sender without crash (For example when only one storage is not available and the BackupTask shouldn't be aborted)
     protected String taskName;
 
-    protected long currentProgress = 0;
-    protected long maxProgress = 0;
-    protected boolean cancelled = false;
+    protected volatile long currentProgress = 0;
+    protected volatile long maxProgress = 0;
+    protected volatile boolean cancelled = false;
 
-    protected CompletableFuture<Void> prepareTaskFuture = null;
-    protected CompletableFuture<Void> taskFuture = null;
+    protected volatile CompletableFuture<Void> prepareTaskFuture = null;
+    protected volatile CompletableFuture<Void> taskFuture = null;
+
+    protected void checkCancelled() throws InterruptedIOException {
+        if (cancelled || Thread.currentThread().isInterrupted()) {
+            throw new InterruptedIOException("Task cancelled");
+        }
+    }
 
     protected BaseTask() {}
 
@@ -94,10 +101,12 @@ public abstract class BaseTask implements Task {
     }
 
     /***
-     * This method should only be used to declare Task's cancel logic, don't use it to cancel any task. Use TaskManager.cancel instead
+     * Overrides must call super.cancel() before cancelling child tasks or closing resources.
      */
     @ApiStatus.Internal
-    public abstract void cancel();
+    public void cancel() {
+        cancelled = true;
+    }
 
     @Override
     public void setPrepareTaskFuture(CompletableFuture<Void> future) {
@@ -120,18 +129,22 @@ public abstract class BaseTask implements Task {
     }
 
     protected void warn(String message) {
+        if (cancelled) return;
         Backuper.getInstance().getLogManager().warn(message);
     }
 
     protected void warn(String message, CommandSender sender) {
+        if (cancelled) return;
         Backuper.getInstance().getLogManager().warn(message, sender);
     }
 
     protected void warn(Exception e) {
+        if (cancelled) return;
         Backuper.getInstance().getLogManager().warn(e);
     }
 
     protected void warn(TaskException e) {
+        if (cancelled || e.getTask().isCancelled()) return;
         Backuper.getInstance().getLogManager().warn(e);
     }
 
@@ -148,10 +161,12 @@ public abstract class BaseTask implements Task {
     }
 
     protected void devWarn(String message) {
+        if (cancelled) return;
         Backuper.getInstance().getLogManager().devWarn(message);
     }
 
     protected void devWarn(Exception e) {
+        if (cancelled) return;
         Backuper.getInstance().getLogManager().devWarn(e);
     }
 

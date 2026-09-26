@@ -33,7 +33,7 @@ public class DeleteOldBackupsTask extends BaseTask {
 
     @Override
     public void cancel() {
-        cancelled = true;
+        super.cancel();
         for (Task task : tasks) {
             Backuper.getInstance().getTaskManager().cancelTaskRaw(task);
         }
@@ -82,7 +82,7 @@ public class DeleteOldBackupsTask extends BaseTask {
                                 backupsFolderByteSize -= backup.getByteSize();
                             }
                         } catch (Throwable e) {
-                            Backuper.getInstance().getLogManager().warn(new RuntimeException(e));
+                            warn(new RuntimeException(e));
                         }
                     }
                     backupsToDelete--;
@@ -110,7 +110,7 @@ public class DeleteOldBackupsTask extends BaseTask {
                                 backupsToDeleteList.add(fileName);
                             }
                         } catch (Throwable e) {
-                            Backuper.getInstance().getLogManager().warn(new RuntimeException(e));
+                            warn(new RuntimeException(e));
                         }
                     }
                 }

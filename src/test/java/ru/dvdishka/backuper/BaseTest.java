@@ -53,6 +53,12 @@ public class BaseTest {
             }).when(mock).runGlobalRegionRepeatingTask(Mockito.any(), Mockito.any(), Mockito.anyLong(), Mockito.anyLong());
         });
 
+        // Tests run under target/ and never probe the public update service.
+        configFile.getParentFile().mkdirs();
+        var initialConfig = YamlConfiguration.loadConfiguration(new java.io.InputStreamReader(
+                BaseTest.class.getClassLoader().getResourceAsStream("config.yml")));
+        initialConfig.set("server.checkUpdates", false);
+        initialConfig.save(configFile);
         MockBukkit.load(Backuper.class);
         config = YamlConfiguration.loadConfiguration(configFile);
 

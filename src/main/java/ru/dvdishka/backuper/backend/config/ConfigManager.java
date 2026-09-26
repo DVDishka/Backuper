@@ -21,9 +21,9 @@ public class ConfigManager {
     private File configFile;
 
     @Getter
-    private long lastBackup;
+    private volatile long lastBackup;
     @Getter
-    private long lastChange;
+    private volatile long lastChange;
 
     @Getter
     private BackupConfig backupConfig;
@@ -63,6 +63,7 @@ public class ConfigManager {
         ConfigBackwardsCompatibility.configBelow8(config);
         ConfigBackwardsCompatibility.configBelow13(config);
         ConfigBackwardsCompatibility.configBelow14(config);
+        ConfigBackwardsCompatibility.configBelow16(config);
 
         loadBackupConfig(config);
         loadStorages(config);

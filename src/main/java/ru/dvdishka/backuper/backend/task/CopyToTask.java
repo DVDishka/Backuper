@@ -49,7 +49,7 @@ public class CopyToTask extends BaseTask {
 
     @Override
     public void cancel() {
-        cancelled = true;
+        super.cancel();
         if (copyToTask != null) Backuper.getInstance().getTaskManager().cancelTaskRaw(copyToTask);
     }
 

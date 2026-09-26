@@ -92,7 +92,7 @@ public class UnpackZipTask extends BaseTask implements SingleStorageTask {
 
     @Override
     public void cancel() {
-        cancelled = true;
+        super.cancel();
     }
 
     @Override

@@ -10,54 +10,106 @@ import org.bukkit.command.ConsoleCommandSender;
 import ru.dvdishka.backuper.Backuper;
 import ru.dvdishka.backuper.backend.util.UIUtils;
 
+import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CompletionException;
 import java.util.function.Function;
 
 public class TaskManager {
 
     @Getter
-    private Task currentTask;
+    private volatile Task currentTask;
     private List<String> currentTaskPermissions;
-    boolean forceLock = false;
+    private boolean forceLock = false;
+    // Preparation may nest inside startTaskRaw on the same thread.
+    private final Map<Task, Map<Thread, Integer>> runningThreads = new IdentityHashMap<>();
+
+    void registerCurrentThread(Task task) {
+        synchronized (runningThreads) {
+            if (task.isCancelled()) throw new CancellationException("Task cancelled");
+            runningThreads.computeIfAbsent(task, ignored -> new HashMap<>())
+                    .merge(Thread.currentThread(), 1, Integer::sum);
+        }
+    }
+
+    void unregisterCurrentThread(Task task) {
+        synchronized (runningThreads) {
+            Map<Thread, Integer> threads = runningThreads.get(task);
+            if (threads == null) return;
+            threads.computeIfPresent(Thread.currentThread(), (thread, depth) -> depth == 1 ? null : depth - 1);
+            if (threads.isEmpty()) runningThreads.remove(task);
+        }
+    }
+
+    void interruptRunningThreads(Task task) {
+        synchronized (runningThreads) {
+            Map<Thread, Integer> threads = runningThreads.get(task);
+            if (threads == null) return;
+            threads.keySet().stream().filter(thread -> thread != Thread.currentThread()).forEach(Thread::interrupt);
+        }
+    }
 
     private Result start(Task task, CommandSender sender, List<String> permissions, Function<Runnable, CompletableFuture<Void>> taskExecutor) {
-        if (isLocked()) {
-            return Result.LOCKED.sendMessage(task, sender);
-        }
         if (!hasPermissions(permissions, sender)) {
             return Result.NO_PERMISSION.sendMessage(task, sender);
         }
-        currentTask = task;
-        currentTaskPermissions = permissions;
-        Result.STARTED.sendMessage(task, sender);
-        CompletableFuture<Void> taskFuture = taskExecutor.apply(() -> {
-            try {
-                Backuper.getInstance().getTaskManager().startTaskRaw(currentTask, sender);
-            } catch (Exception e) {
-                Backuper.getInstance().getLogManager().warn("An error occurred while executing task %s".formatted(task.getTaskName()));
-                Backuper.getInstance().getLogManager().warn(e);
+        synchronized (this) {
+            if (isLocked()) return Result.LOCKED.sendMessage(task, sender);
+            currentTask = task;
+            currentTaskPermissions = List.copyOf(permissions);
+        }
+        try {
+            Result.STARTED.sendMessage(task, sender);
+            CompletableFuture<Void> taskFuture = taskExecutor.apply(() -> {
+                Result outcome = Result.COMPLETED;
+                Exception failure = null;
+                try {
+                    startTaskRaw(task, sender);
+                } catch (Exception e) {
+                    failure = e;
+                    outcome = task.isCancelled() ? Result.CANCELLED : Result.FAILED;
+                    if (!task.isCancelled()) {
+                        Backuper.getInstance().getLogManager().warn("An error occurred while executing task %s".formatted(task.getTaskName()));
+                        Backuper.getInstance().getLogManager().warn(e);
+                    }
+                } finally {
+                    synchronized (this) {
+                        currentTaskPermissions = null;
+                        currentTask = null;
+                    }
+                }
+                if (!task.isCancelled()) {
+                    outcome.sendMessage(task, sender);
+                    if (outcome == Result.FAILED) throw new CompletionException(failure);
+                }
+            });
+            task.setTaskFuture(taskFuture);
+            return taskFuture.isCompletedExceptionally() ? Result.FAILED :
+                    taskFuture.isDone() ? (task.isCancelled() ? Result.CANCELLED : Result.COMPLETED) : Result.STARTED;
+        } catch (RuntimeException e) {
+            synchronized (this) {
+                if (currentTask == task) {
+                    currentTask = null;
+                    currentTaskPermissions = null;
+                }
             }
-            this.currentTaskPermissions = null;
-            this.currentTask = null;
-            Result.COMPLETED.sendMessage(task, sender);
-        });
-        task.setTaskFuture(taskFuture);
-        if (taskFuture.isDone()) {
-            return Result.COMPLETED;
-        } else {
-            return Result.STARTED;
+            throw e;
         }
     }
 
     /***
-     * Run task using current thread
+     * Run a task using the current thread
      */
     public Result startTask(Task task, CommandSender sender, List<String> permissions) {
         return start(task, sender, permissions, (runnable) -> {
-            runnable.run();
-            return CompletableFuture.completedFuture(null);
+            CompletableFuture<Void> future = new CompletableFuture<>();
+            try { runnable.run(); future.complete(null); }
+            catch (Throwable e) { future.completeExceptionally(e); }
+            return future;
         });
     }
 
@@ -69,69 +121,74 @@ public class TaskManager {
     }
 
     public void startTaskRaw(Task task, CommandSender sender) throws TaskException {
-        Backuper.getInstance().getLogManager().devLog("Task %s started".formatted(task.getTaskName()));
-        task.start(sender);
-        Backuper.getInstance().getLogManager().devLog("Task %s completed".formatted(task.getTaskName()));
+        registerCurrentThread(task);
+        try {
+            if (!task.isCancelled()) Backuper.getInstance().getLogManager().devLog("Task %s started".formatted(task.getTaskName()));
+            task.start(sender);
+            if (!task.isCancelled()) Backuper.getInstance().getLogManager().devLog("Task %s completed".formatted(task.getTaskName()));
+        } finally {
+            unregisterCurrentThread(task);
+        }
     }
 
     public void cancelTaskRaw(Task task) {
-        task.cancel();
-        if (task.getPrepareTaskFuture() != null) {
-            try {
-                task.getPrepareTaskFuture().cancel(false);
-                task.getPrepareTaskFuture().join();
-            } catch (Exception e) {
-                // No need to handle if it was interrupted
-            }
+        try {
+            task.cancel();
+        } finally {
+            interruptRunningThreads(task);
         }
-        if (task.getTaskFuture() != null) {
-            try {
-                task.getTaskFuture().cancel(false);
-                task.getTaskFuture().join();
-            } catch (Exception e) {
-                // No need to handle if it was interrupted
-            }
-        }
+        // Futures describe actual completion, not merely a cancellation request.
     }
 
-    /***
-     * Preparation will be completed using a random thread, not current, but this method waits for preparation to be completed
-     */
+    /** Prepare in the calling thread and track its actual completion. */
     public void prepareTask(Task task, CommandSender sender) throws Throwable {
-        CompletableFuture<Void> prepareTaskFuture = Backuper.getInstance().getScheduleManager().runAsync(() -> {
-            Backuper.getInstance().getLogManager().devLog("Preparing task %s".formatted(task.getTaskName()));
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        task.setPrepareTaskFuture(future);
+        try {
+            registerCurrentThread(task);
             try {
                 task.prepareTask(sender);
-            } catch (Throwable e) {
-                throw new RuntimeException(e);
             } finally {
-                Backuper.getInstance().getLogManager().devLog("%s task preparation completed".formatted(task.getTaskName()));
+                unregisterCurrentThread(task);
             }
-        });
-        task.setPrepareTaskFuture(prepareTaskFuture);
-        try {
-            prepareTaskFuture.get();
-        } catch (InterruptedException ignored) {
-            // No need to handle if it was interrupted
-        } catch (ExecutionException e) {
-            throw e.getCause().getCause();
+            future.complete(null);
+        } catch (Throwable e) {
+            future.completeExceptionally(e);
+            throw e;
         }
     }
 
     public Result cancelCurrentTask(CommandSender sender) {
-        if (currentTask == null) {
-            return Result.NO_TASK_RUNNING.sendMessage(null, sender);
+        Task task;
+        List<String> permissions;
+        synchronized (this) {
+            task = currentTask;
+            permissions = currentTaskPermissions;
         }
-        if (!hasPermissions(currentTaskPermissions, sender)) {
-            return Result.NO_PERMISSION.sendMessage(currentTask, sender);
-        }
-        sendCancellingMessage(sender); // Message that a cancelling process is started. (Cancelling may take a while)
-        cancelTaskRaw(currentTask);
+        if (task == null) return Result.NO_TASK_RUNNING.sendMessage(null, sender);
+        if (!hasPermissions(permissions, sender)) return Result.NO_PERMISSION.sendMessage(task, sender);
+        Backuper.getInstance().getLogManager().log("Cancelling %s task...".formatted(task.getTaskName()), sender);
+        cancelTaskRaw(task);
         return Result.CANCELLED;
     }
 
-    public boolean isLocked() {
-        return currentTask != null && !forceLock;
+    public synchronized boolean isLocked() {
+        return currentTask != null || forceLock;
+    }
+
+    public synchronized boolean tryLockForReload() {
+        if (isLocked()) return false;
+        forceLock = true;
+        return true;
+    }
+
+    public void stop() {
+        Task task;
+        synchronized (this) {
+            forceLock = true;
+            task = currentTask;
+        }
+        if (task != null) cancelTaskRaw(task);
     }
 
     private boolean hasPermissions(List<String> permissions, CommandSender sender) {
@@ -140,6 +197,7 @@ public class TaskManager {
 
     public enum Result {
         STARTED(""),
+        FAILED("%s task failed; see the server log"),
         COMPLETED(""),
         CANCELLED("%s task has been successfully cancelled"),
         NO_PERMISSION("You don't have enough permissions"),
@@ -159,7 +217,7 @@ public class TaskManager {
             if (COMPLETED.equals(this)) {
                 return getTaskCompletedMessage(task, sender);
             }
-            return Component.text(this.message.formatted(task.getTaskName()));
+            return Component.text(this.message.formatted(task == null ? "" : task.getTaskName()));
         }
 
         /***
@@ -241,15 +299,11 @@ public class TaskManager {
         }
     }
 
-    private void sendCancellingMessage(CommandSender sender) {
-        Backuper.getInstance().getLogManager().log("Cancelling %s task...".formatted(currentTask.getTaskName()), sender);
-    }
-
-    public void forceLock() {
+    public synchronized void forceLock() {
         forceLock = true;
     }
 
-    public void forceUnlock() {
+    public synchronized void forceUnlock() {
         forceLock = false;
     }
 }

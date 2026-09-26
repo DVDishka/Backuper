@@ -21,6 +21,19 @@ public class ConfigTest extends BaseTest {
     }
 
     @Test
+    public void testThreadNumberRemovedDuringMigration() throws IOException {
+        config.set("configVersion", 15.0);
+        config.set("server.threadNumber", 1);
+        config.set("server.checkUpdates", false);
+        reload();
+        org.junit.jupiter.api.Assertions.assertEquals(16.0, config.getDouble("configVersion"));
+        org.junit.jupiter.api.Assertions.assertFalse(config.contains("server.threadNumber"));
+        org.junit.jupiter.api.Assertions.assertFalse(config.getBoolean("server.checkUpdates"));
+        reload();
+        org.junit.jupiter.api.Assertions.assertFalse(config.contains("server.threadNumber"));
+    }
+
+    @Test
     public void testConfigReloading() throws IOException {
         config.set("backup.autoBackup", false);
         reload();

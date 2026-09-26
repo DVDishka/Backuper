@@ -9,9 +9,9 @@ import ru.dvdishka.backuper.backend.storage.exception.StorageMethodException;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
@@ -19,7 +19,7 @@ public class BackupManager {
 
     private final Storage storage;
 
-    private final HashMap<String, Backup> backups = new HashMap<>();
+    private final ConcurrentMap<String, Backup> backups = new ConcurrentHashMap<>();
     final Cache<String, Long> cachedBackupsSize = Caffeine.newBuilder().build();
     private final Cache<String, List<Backup>> cacheGetBackupList = Caffeine
             .newBuilder()

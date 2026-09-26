@@ -158,4 +158,10 @@ public class ConfigBackwardsCompatibility {
             }
         }
     }
+
+    public static void configBelow16(FileConfiguration config) {
+        if (config.getDouble("configVersion") >= 16.0) return;
+        config.set("server.threadNumber", null);
+        config.set("threadNumber", null);
+    }
 }

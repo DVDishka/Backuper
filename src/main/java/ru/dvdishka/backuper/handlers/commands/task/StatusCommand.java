@@ -20,7 +20,7 @@ public class StatusCommand extends Command {
 
     @Override
     public boolean check() {
-        if (!Backuper.getInstance().getTaskManager().isLocked()) {
+        if (Backuper.getInstance().getTaskManager().getCurrentTask() == null) {
             returnFailure("No task is currently running");
             return false;
         }
@@ -34,9 +34,14 @@ public class StatusCommand extends Command {
 
     @Override
     public void run() {
-        long progress = Backuper.getInstance().getTaskManager().getCurrentTask().getTaskPercentProgress();
+        var task = Backuper.getInstance().getTaskManager().getCurrentTask();
+        if (task == null) {
+            returnFailure("No task is currently running");
+            return;
+        }
+        long progress = task.getTaskPercentProgress();
         TextColor color;
-        if (!Backuper.getInstance().getTaskManager().getCurrentTask().isTaskPrepared()) {
+        if (!task.isTaskPrepared()) {
             color = TextColor.color(190, 20, 255);
         } else if (progress < 40) {
             color = TextColor.color(190, 0, 27);
@@ -49,14 +54,14 @@ public class StatusCommand extends Command {
         message = message
                 .append(Component.text("Current task:"))
                 .append(Component.space())
-                .append(Component.text(Backuper.getInstance().getTaskManager().getCurrentTask().getTaskName())
+                .append(Component.text(task.getTaskName())
                         .decorate(TextDecoration.BOLD)
                         .color(UIUtils.getSecondaryColor()))
                 .append(Component.newline())
                 .append(Component.text("Task progress:"))
                 .append(Component.space())
-                .append(Component.text((!Backuper.getInstance().getTaskManager().getCurrentTask().isTaskPrepared() ? "Preparing..." : "%s%%".formatted(progress)) +
-                                (Backuper.getInstance().getTaskManager().getCurrentTask().isCancelled() ? " (Cancelling...)" : ""))
+                .append(Component.text((!task.isTaskPrepared() ? "Preparing..." : "%s%%".formatted(progress)) +
+                                (task.isCancelled() ? " (Cancelling...)" : ""))
                         .decorate(TextDecoration.BOLD)
                         .color(color));
 

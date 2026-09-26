@@ -12,7 +12,6 @@ import ru.dvdishka.backuper.backend.autobackup.AutoBackupScheduleManager;
 import ru.dvdishka.backuper.backend.config.ConfigManager;
 import ru.dvdishka.backuper.backend.storage.StorageManager;
 import ru.dvdishka.backuper.backend.task.SetWorldsWritableTask;
-import ru.dvdishka.backuper.backend.task.Task;
 import ru.dvdishka.backuper.backend.task.TaskManager;
 import ru.dvdishka.backuper.backend.util.AdminInfoUtils;
 import ru.dvdishka.backuper.backend.util.Utils;
@@ -25,19 +24,19 @@ import java.io.File;
 @Getter
 public class Backuper extends JavaPlugin {
 
-    TaskManager taskManager;
-    LogManager logManager;
-    ConfigManager configManager;
-    ScheduleManager scheduleManager;
-    StorageManager storageManager;
-    CommandManager commandManager;
-    AutoBackupScheduleManager autoBackupScheduleManager;
-    Bstats bstats;
+    volatile TaskManager taskManager;
+    volatile LogManager logManager;
+    volatile ConfigManager configManager;
+    volatile ScheduleManager scheduleManager;
+    volatile StorageManager storageManager;
+    volatile CommandManager commandManager;
+    volatile AutoBackupScheduleManager autoBackupScheduleManager;
+    volatile Bstats bstats;
 
     @Getter
-    private static Backuper instance;
+    private static volatile Backuper instance;
 
-    public static boolean restarting = false;
+    public static volatile boolean restarting = false;
 
     public void onEnable() {
         instance = this;
@@ -85,22 +84,22 @@ public class Backuper extends JavaPlugin {
         autoBackupScheduleManager.init();
     }
 
-    public void shutdown() {
-        taskManager.forceLock();
-        storageManager.saveSizeCache();
-        Task setWorldsWritableTask = new SetWorldsWritableTask();
-        try {
-            getTaskManager().startTaskRaw(setWorldsWritableTask, Bukkit.getConsoleSender());
-        } catch (Exception e) {
-            Backuper.getInstance().getLogManager().warn(e);
+    public boolean shutdown() {
+        taskManager.stop();
+        boolean stopped = scheduleManager.destroy(this);
+        new SetWorldsWritableTask().run();
+        autoBackupScheduleManager.destroy();
+        bstats.destroy();
+        if (!stopped) {
+            logManager.warn("Backuper tasks did not stop within 10 seconds. Reload is blocked; restart the server before using Backuper again.");
+            return false;
         }
-        Backuper.getInstance().getScheduleManager().destroy(this);
+
+        storageManager.saveSizeCache();
         configManager.setConfigField("lastBackup", configManager.getLastBackup());
         configManager.setConfigField("lastChange", configManager.getLastChange());
         storageManager.destroy();
-        autoBackupScheduleManager.destroy();
-        scheduleManager.destroy(this);
-        bstats.destroy();
+        return true;
     }
 
     public void onLoad() {
