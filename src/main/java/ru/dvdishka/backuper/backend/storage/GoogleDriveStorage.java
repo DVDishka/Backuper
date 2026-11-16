@@ -605,7 +605,7 @@ public class GoogleDriveStorage implements UserAuthStorage {
             Component message = Component.empty()
                     .append(Component.space())
                     .append(Component.text(url)
-                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.OPEN_URL, ClickEvent.Payload.string(url)))
+                            .clickEvent(ClickEvent.openUrl(url))
                             .decorate(TextDecoration.UNDERLINED));
 
             UIUtils.sendFramedMessage(header, message, sender);
